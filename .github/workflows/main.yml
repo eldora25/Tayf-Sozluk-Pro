@@ -8,10 +8,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Sürüm v3'ten v4'e yükseltildi (Güvenli ve güncel checkout)
       - uses: actions/checkout@v4
 
-      # Sürüm v3'ten v4'e yükseltildi (Java kurulumu)
+      <Step subtitle="Environment Setup" title="Set up Java and Flutter">
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -22,6 +21,11 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+      </Step>
+
+      # Önbellekteki v1 embedding kalıntılarını temizlemek için bu adım kritik önem taşır
+      - name: Clean project cache
+        run: flutter clean
 
       - name: Install dependencies
         run: flutter pub get
@@ -32,7 +36,6 @@ jobs:
           APP_VERSION_NAME: "1.0.${{ github.run_number }}"
         run: flutter build apk --debug
 
-      # Hatanın ana sebebi olan v3, en güncel ve kararlı sürüm olan v4 ile değiştirildi
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
