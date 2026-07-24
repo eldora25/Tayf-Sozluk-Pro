@@ -1,6 +1,6 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
+    id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -14,8 +14,7 @@ def computeBuildNumber() {
 
 android {
     namespace "com.tayfunyamak.tayfsozlukpro"
-    compileSdk flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    compileSdk 34
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -26,14 +25,10 @@ android {
         jvmTarget = '1.8'
     }
 
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
-
     defaultConfig {
         applicationId "com.tayfunyamak.tayfsozlukpro"
         minSdkVersion 21
-        targetSdkVersion flutter.targetSdkVersion
+        targetSdkVersion 34
         versionCode computeBuildNumber().toInteger()
         versionName computeVersionName()
     }
@@ -44,7 +39,7 @@ android {
         }
     }
 
-    // APK çıktısının adını dinamik olarak değiştirir
+    // APK çıktısının adını dinamik olarak değiştiren kod bloğu (Korundu)
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
             def buildNo = computeBuildNumber()
@@ -56,5 +51,3 @@ android {
 flutter {
     source '../..'
 }
-
-dependencies {}
