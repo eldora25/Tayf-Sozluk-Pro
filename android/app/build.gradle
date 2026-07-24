@@ -1,18 +1,20 @@
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
+android {
+    namespace "com.tayfunyamak.tayfsozlukpro"
+    compileSdk 34 // Dinamik değişken yerine doğrudan 34 yapılarak v1 esnekliği kapatıldı.
+
+    defaultConfig {
+        applicationId "com.tayfunyamak.tayfsozlukpro"
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode computeBuildNumber().toInteger()
+        versionName computeVersionName()
     }
-}
-
-rootProject.buildDir = '../build'
-subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(':app')
-}
-
-tasks.register("clean", Delete) {
-    delete rootProject.buildDir
+    
+    // Dinamik isimlendirme kodu aynen korundu
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def buildNo = computeBuildNumber()
+            outputFileName = "TY-Sozluk-v1.0.${buildNo}-debug.apk"
+        }
+    }
 }
