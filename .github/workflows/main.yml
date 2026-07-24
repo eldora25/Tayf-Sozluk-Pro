@@ -23,14 +23,15 @@ jobs:
         with:
           channel: 'stable'
 
-      # Eski v1 eklenti eşleşme dosyalarını diskten tamamen temizleme
-      - name: Purge old plugin configurations
+      # KÖKTEN TEMİZLİK: Eski eklenti önbellekleri ve otomatik üretilen v1 kod blokları tamamen silinir
+      - name: Force Purge Old Android Legacy Embeddings
         run: |
           rm -f .flutter-plugins
           rm -f .flutter-plugins-dependencies
+          rm -rf android/app/src/main/java/io/flutter/plugins/
           flutter clean
 
-      # Bağımlılıkları Yükleme ve v2 Haritasını Yeniden Oluşturma
+      # Bağımlılıkları Yükleme (Modern v2 Eşleşme Haritası Sıfırdan Üretilir)
       - name: Install dependencies
         run: flutter pub get
 
