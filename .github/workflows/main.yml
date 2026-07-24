@@ -10,32 +10,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      <Step subtitle="Environment Setup" title="Set up Java and Flutter">
+      # Java Kurulumu
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
+      # Flutter Kurulumu
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      </Step>
 
-      # Önbellekteki v1 embedding kalıntılarını temizlemek için bu adım kritik önem taşır
+      # Önbellekteki v1 kalıntılarını temizleme
       - name: Clean project cache
         run: flutter clean
 
+      # Bağımlılıkları Yükleme
       - name: Install dependencies
         run: flutter pub get
 
+      # Dinamik APK Derleme
       - name: Build Debug APK with Dynamic Name
         env:
           APP_BUILD_NUMBER: ${{ github.run_number }}
           APP_VERSION_NAME: "1.0.${{ github.run_number }}"
         run: flutter build apk --debug
 
+      # Çıktıyı GitHub Üzerine Yükleme
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
