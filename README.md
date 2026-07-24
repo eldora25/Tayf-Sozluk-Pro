@@ -1,0 +1,2 @@
+# Tayf-Sozluk-Pro
+gemini
