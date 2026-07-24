@@ -23,20 +23,22 @@ jobs:
         with:
           channel: 'stable'
 
-      # Derleme öncesi tüm kilitli bağımlılık haritalarını ve v1 cache yapılarını tamamen uçurma
+      # NİHAİ RADİKAL TEMİZLİK: Eski eklenti izleri ve önbellekler tamamen kazınır
       - name: Hard Purge Legacy Metadata & Cache
         run: |
           rm -f pubspec.lock
           rm -f .flutter-plugins
           rm -f .flutter-plugins-dependencies
+          rm -f android/.flutter-plugins
+          rm -f android/.flutter-plugins-dependencies
           rm -rf android/app/src/main/java/io/flutter/plugins/
           flutter clean
 
-      # Bağımlılıkları Yeni pubspec.yaml Kurallarına Göre Sıfırdan Yükleme
+      # Bağımlılıkları Yeniden Yükleme
       - name: Install dependencies
         run: flutter pub get
 
-      # Dinamik APK Derleme
+      # Dinamik APK Derleme (v2 standardını zorunlu kılacak şekilde tetiklenir)
       - name: Build Debug APK with Dynamic Name
         env:
           APP_BUILD_NUMBER: ${{ github.run_number }}
