@@ -8,10 +8,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      # Sürüm v3'ten v4'e yükseltildi (Güvenli ve güncel checkout)
+      - uses: actions/checkout@v4
 
+      # Sürüm v3'ten v4'e yükseltildi (Java kurulumu)
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -30,8 +32,9 @@ jobs:
           APP_VERSION_NAME: "1.0.${{ github.run_number }}"
         run: flutter build apk --debug
 
+      # Hatanın ana sebebi olan v3, en güncel ve kararlı sürüm olan v4 ile değiştirildi
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Dynamic-Debug-APK
           path: build/app/outputs/flutter-apk/TY-Sozluk-v1.0.*-debug.apk
