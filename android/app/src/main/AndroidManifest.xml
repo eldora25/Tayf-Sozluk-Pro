@@ -3,10 +3,10 @@
    
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <!-- application altındaki android:name v2 embedding standartlarına uygun hale getirildi -->
+    <!-- application altındaki name alanı doğrudan modern FlutterApplication sınıfına bağlandı -->
     <application
         android:label="Tayf Sözlük Pro"
-        android:name="${applicationName}"
+        android:name="io.flutter.embedding.android.FlutterApplication"
         android:icon="@mipmap/ic_launcher">
         
         <activity
@@ -22,12 +22,6 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme"
                 />
-            
-            <!-- v2 embedding geçişi için kritik olan meta-data satırı eklendi -->
-            <meta-data
-                android:name="io.flutter.embedding.android.SplashScreenDrawable"
-                android:resource="@drawable/launch_background"
-                />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -35,7 +29,7 @@
             </intent-filter>
         </activity>
         
-        <!-- Flutter mimarisinin arka planda eklentileri tanımasını sağlayan meta-data -->
+        <!-- v2 mimarisinin zorunlu meta-datası -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
