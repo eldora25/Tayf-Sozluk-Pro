@@ -23,15 +23,16 @@ jobs:
         with:
           channel: 'stable'
 
-      # KÖKTEN TEMİZLİK: Eski eklenti önbellekleri ve otomatik üretilen v1 kod blokları tamamen silinir
-      - name: Force Purge Old Android Legacy Embeddings
+      # Derleme öncesi tüm kilitli bağımlılık haritalarını ve v1 cache yapılarını tamamen uçurma
+      - name: Hard Purge Legacy Metadata & Cache
         run: |
+          rm -f pubspec.lock
           rm -f .flutter-plugins
           rm -f .flutter-plugins-dependencies
           rm -rf android/app/src/main/java/io/flutter/plugins/
           flutter clean
 
-      # Bağımlılıkları Yükleme (Modern v2 Eşleşme Haritası Sıfırdan Üretilir)
+      # Bağımlılıkları Yeni pubspec.yaml Kurallarına Göre Sıfırdan Yükleme
       - name: Install dependencies
         run: flutter pub get
 
