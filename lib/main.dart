@@ -69,7 +69,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  // GitHub Run Number'ı alıyoruz
+  // GitHub Run Number'ı dinamik olarak alıyoruz
   static const String buildNo = String.fromEnvironment('BUILD_NUMBER', defaultValue: 'Dev');
 
   final FlutterTts flutterTts = FlutterTts();
@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<WordModel> allWords = [];
   List<WordModel> learnedWords = [];
   List<WordModel> toRepeatWords = [];
-  List<WordModel> wrongWords = []; // Quiz'de veya 'Tekrar' ile yanlış yapılanlar
+  List<WordModel> wrongWords = []; 
 
   String selectedLibrary = 'Varsayılan';
   String selectedLevel = 'Genel';
@@ -109,7 +109,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  // --- VERİ KAYIT & YÜKLEME ---
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -157,7 +156,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _saveData();
   }
 
-  // --- FİLTRELEME VE KART MANTIĞI ---
   List<WordModel> get filteredWords {
     return allWords.where((w) => w.libraryName == selectedLibrary && w.level == selectedLevel).toList();
   }
@@ -182,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _flipController.reverse();
     } else {
       _flipController.forward();
-      flutterTts.speak(word.word); // Arka yüz çevrilirken seslendir
+      flutterTts.speak(word.word); 
     }
     setState(() => isFlipped = !isFlipped);
   }
@@ -200,7 +198,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     setState(() {
       if (!toRepeatWords.any((w) => w.word == word.word)) toRepeatWords.add(word);
       
-      // Yanlış kelimelere ekle veya sayısını artır
       var existingWrong = wrongWords.where((w) => w.word == word.word).toList();
       if (existingWrong.isNotEmpty) {
         existingWrong.first.wrongCount++;
@@ -213,7 +210,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _saveData();
   }
 
-  // --- İÇE AKTARMA (CSV, JSON) ---
   Future<void> _importFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom, 
@@ -226,7 +222,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       String content = await file.readAsString(encoding: utf8);
       String extension = result.files.single.extension ?? '';
 
-      // Kütüphane ismini kullanıcıya sor
       String? customLibraryName = await _showInputDialog("Kütüphane Adı", fileName);
       if (customLibraryName == null || customLibraryName.isEmpty) return;
 
@@ -244,7 +239,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             libraryName: customLibraryName,
           )).toList();
         } else {
-          // CSV / TXT Parsing (Format: word, meaning1;meaning2, example1;example2, level)
           List<List<dynamic>> rows = const CsvToListConverter().convert(content);
           for (var row in rows) {
             if (row.isEmpty) continue;
@@ -286,7 +280,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // --- UI OLUŞTURMA ---
   @override
   Widget build(BuildContext context) {
     var activeList = filteredWords;
@@ -307,7 +300,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         : Column(
             children: [
               const SizedBox(height: 20),
-              // İlerleme Çubuğu
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
@@ -319,7 +311,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
               ),
               const Spacer(),
-              // Animasyonlu Kart
               GestureDetector(
                 onTap: () => _flipCard(currentWord!),
                 child: AnimatedBuilder(
@@ -342,7 +333,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
               ),
               const Spacer(),
-              // Aksiyon Butonları
               if (isFlipped)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -438,56 +428,57 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               children: [
                 const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                 Text("Build: v1.0.$buildNo", style: const TextStyle(color: Colors.white70)),
-                const Text("Tayfun Yamak ©", style: TextStyle(color: Colors.white50, fontSize: 12)),
+                // HATA DÜZELTİLDİ: Colors.white50 yerine Colors.white54 kullanıldı
+                const Text("Tayfun Yamak ©", style: TextStyle(color: Colors.white54, fontSize: 12)),
               ],
             ),
           ),
-         ListTile(
-  leading: const Icon(Icons.add_box),
-  title: const Text("Kelime Ekle"),
-  onTap: () {
-    Navigator.pop(context);
-    Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(
-      availableLibraries: availableLibraries,
-      onSave: (newWord) {
-        setState(() => allWords.add(newWord));
-        _saveData();
-      }
-    )));
-  }
-),
-ListTile(
-  leading: const Icon(Icons.list_alt),
-  title: const Text("Kelime Listesi"),
-  onTap: () {
-    Navigator.pop(context);
-    Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(
-      words: allWords,
-      onDelete: (wordToDelete) {
-        setState(() => allWords.removeWhere((w) => w.word == wordToDelete.word));
-        _saveData();
-      }
-    )));
-  }
-),
-ListTile(
-  leading: const Icon(Icons.settings),
-  title: const Text("Ayarlar"),
-  onTap: () {
-    Navigator.pop(context);
-    Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-      currentGoal: dailyGoal,
-      currentThreshold: quizThreshold,
-      onSaveSettings: (newGoal, newThreshold) {
-        setState(() {
-          dailyGoal = newGoal;
-          quizThreshold = newThreshold;
-        });
-        _saveData();
-      }
-    )));
-  }
-),
+          ListTile(
+            leading: const Icon(Icons.add_box),
+            title: const Text("Kelime Ekle"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(
+                availableLibraries: availableLibraries,
+                onSave: (newWord) {
+                  setState(() => allWords.add(newWord));
+                  _saveData();
+                }
+              )));
+            }
+          ),
+          ListTile(
+            leading: const Icon(Icons.list_alt),
+            title: const Text("Kelime Listesi"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(
+                words: allWords,
+                onDelete: (wordToDelete) {
+                  setState(() => allWords.removeWhere((w) => w.word == wordToDelete.word));
+                  _saveData();
+                }
+              )));
+            }
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text("Ayarlar"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+                currentGoal: dailyGoal,
+                currentThreshold: quizThreshold,
+                onSaveSettings: (newGoal, newThreshold) {
+                  setState(() {
+                    dailyGoal = newGoal;
+                    quizThreshold = newThreshold;
+                  });
+                  _saveData();
+                }
+              )));
+            }
+          ),
           ListTile(
             leading: const Icon(Icons.library_books),
             title: const Text("Kütüphane Seç"),
@@ -525,7 +516,6 @@ ListTile(
             title: const Text("Yanlış Kelimeler"),
             trailing: CircleAvatar(radius: 12, child: Text(wrongWords.length.toString(), style: const TextStyle(fontSize: 12))),
             onTap: () {
-              // Hızlı bir liste görünümü
               Navigator.push(context, MaterialPageRoute(builder: (context) => Scaffold(
                 appBar: AppBar(title: const Text("Yanlış Kelimeler")),
                 body: ListView.builder(
