@@ -26,6 +26,9 @@ import 'manage_list_screen.dart';
 import 'logger_screen.dart';
 import 'notification_service.dart';
 
+// YENİ: OYUN EKRANI EKLENDİ
+import 'match_game_screen.dart';
+
 late Isar isar;
 
 int getNextReviewOffset(int level) {
@@ -835,7 +838,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           const Spacer(),
                           
                           Dismissible(
-                            key: ValueKey('${currentWord!.word}_$currentCardIndex'), // KESİN ÇÖZÜM: '!' eklendi
+                            key: ValueKey('${currentWord!.word}_$currentCardIndex'), 
                             direction: isFlipped ? DismissDirection.horizontal : DismissDirection.none,
                             background: Row( 
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -865,13 +868,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                             onDismissed: (direction) {
                               if (direction == DismissDirection.startToEnd) {
-                                _markAsLearned(currentWord!); // KESİN ÇÖZÜM: '!' eklendi
+                                _markAsLearned(currentWord!); 
                               } else if (direction == DismissDirection.endToStart) {
-                                _markAsToRepeat(currentWord!); // KESİN ÇÖZÜM: '!' eklendi
+                                _markAsToRepeat(currentWord!); 
                               }
                             },
                             child: GestureDetector(
-                              onTap: () => _flipCard(currentWord!), // KESİN ÇÖZÜM: '!' eklendi
+                              onTap: () => _flipCard(currentWord!), 
                               child: AnimatedBuilder(
                                 animation: _flipAnimation,
                                 builder: (context, child) {
@@ -880,7 +883,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   return Transform(
                                     transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle),
                                     alignment: Alignment.center,
-                                    child: isFront ? _buildCardFront(currentWord!) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!)), // KESİN ÇÖZÜM: '!' eklendi
+                                    child: isFront ? _buildCardFront(currentWord!) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!)), 
                                   );
                                 }
                               ),
@@ -892,8 +895,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!)), // KESİN ÇÖZÜM: '!' eklendi
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!)), // KESİN ÇÖZÜM: '!' eklendi
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!)), 
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!)), 
                               ],
                             ),
                           const Spacer(),
@@ -1083,8 +1086,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             
             const Divider(),
             ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: toRepeatWords, wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
+            
+            // YENİ OYUN MENÜSÜ EKLENDİ
             ListTile(
-              leading: const Icon(Icons.quiz), title: const Text("Quiz"),
+              leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(
+                  words: filteredWords,
+                  onGameFinished: (points) { 
+                    _recordActivity(points); 
+                    _saveData(); 
+                  },
+                )));
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
