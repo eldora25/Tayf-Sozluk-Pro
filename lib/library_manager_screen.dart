@@ -28,7 +28,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     Set<String> libs = {};
     libs.addAll(widget.allWords.map((e) => e.libraryName));
     libs.addAll(widget.learnedWords.map((e) => e.libraryName));
-    libs.remove('Tekrarlanması Gerekenler'); // Sanal kütüphaneyi gizle
+    libs.remove('Tekrarlanması Gerekenler'); 
     return libs.toList();
   }
 
@@ -151,13 +151,20 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text("Toplam: $total", style: const TextStyle(fontWeight: FontWeight.bold)),
-                              Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                              Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                            ],
+                          // KESİN ÇÖZÜM: Taşmayı önleyen FittedBox yapısı
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("Toplam: $total", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 16),
+                                Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 16),
+                                Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 12),
                           LinearProgressIndicator(
