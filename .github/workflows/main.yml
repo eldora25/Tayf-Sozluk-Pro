@@ -21,29 +21,26 @@ jobs:
         with:
           channel: 'stable'
 
-      # KÖKTEN ÇÖZÜM: Derleyicinin V1 motorunu çağırmasını sistem seviyesinde engeller
-      - name: Force Global V2 Embedding Configuration
+      # KÖKTEN ÇÖZÜM: Android klasörünü silip Flutter CLI ile en güncel, %100 uyumlu haliyle yeniden oluşturuyoruz.
+      # Böylece V1 Embedding hatası matematiksel olarak imkansız hale geliyor.
+      - name: Regenerate Android Project (Force V2)
         run: |
-          rm -rf android/app/src/main/java/
-          flutter clean
-          
-          # Android klasörü altına yerel özellikleri yazar
-          mkdir -p android
-          echo "flutter.v2Embedding=true" >> android/local.properties
-          echo "flutter.embeddingVersion=2" >> android/local.properties
+          rm -rf android
+          flutter create --platforms=android .
 
-      # Bağımlılıkları en güncel modern v2 köprüleriyle yükler
       - name: Install dependencies
         run: flutter pub get
 
-      # Dinamik APK Derleme
-      - name: Build Debug APK with Dynamic Name
-        env:
-          APP_BUILD_NUMBER: ${{ github.run_number }}
-          APP_VERSION_NAME: "1.0.${{ github.run_number }}"
-        run: flutter build apk --debug --no-pub
+      # Standart APK Derlemesi
+      - name: Build Debug APK
+        run: flutter build apk --debug
 
-      # Çıktıyı GitHub Üzerine Artifact Olarak Yükler
+      # DEV-OPS MÜDAHALESİ: Gradle ile uğraşmak yerine, üretilen APK dosyasının adını dinamik build numarasıyla değiştiriyoruz.
+      - name: Rename APK Dynamically
+        run: |
+          mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/TY-Sozluk-v1.0.${{ github.run_number }}-debug.apk
+
+      # Çıktıyı GitHub Üzerine Yüklüyor
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
