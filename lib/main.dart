@@ -114,6 +114,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int totalQuizQuestions = 0;
   int totalQuizWrong = 0;
 
+  // Öğrenme Hızı Zaman Damgaları (Timestamps)
+  List<String> learnedWordTimestamps = [];
+  List<String> completedQuizTimestamps = [];
+  List<String> viewedCardTimestamps = [];
+  List<String> wrongAnswerTimestamps = [];
+  int firstUseTimestamp = 0;
+
   @override
   void initState() {
     super.initState();
@@ -144,6 +151,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       totalQuizQuestions = prefs.getInt('totalQuizQuestions') ?? 0;
       totalQuizWrong = prefs.getInt('totalQuizWrong') ?? 0;
 
+      learnedWordTimestamps = prefs.getStringList('learnedWordTimestamps') ?? [];
+      completedQuizTimestamps = prefs.getStringList('completedQuizTimestamps') ?? [];
+      viewedCardTimestamps = prefs.getStringList('viewedCardTimestamps') ?? [];
+      wrongAnswerTimestamps = prefs.getStringList('wrongAnswerTimestamps') ?? [];
+      
+      firstUseTimestamp = prefs.getInt('firstUseTimestamp') ?? 0;
+      if (firstUseTimestamp == 0) {
+        firstUseTimestamp = DateTime.now().millisecondsSinceEpoch;
+        prefs.setInt('firstUseTimestamp', firstUseTimestamp);
+      }
+
       allWords = _parseWordList(prefs.getStringList('allWords'));
       learnedWords = _parseWordList(prefs.getStringList('learnedWords'));
       toRepeatWords = _parseWordList(prefs.getStringList('toRepeatWords'));
@@ -173,6 +191,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     prefs.setInt('totalQuizTimeSeconds', totalQuizTimeSeconds);
     prefs.setInt('totalQuizQuestions', totalQuizQuestions);
     prefs.setInt('totalQuizWrong', totalQuizWrong);
+
+    prefs.setStringList('learnedWordTimestamps', learnedWordTimestamps);
+    prefs.setStringList('completedQuizTimestamps', completedQuizTimestamps);
+    prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
+    prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
 
     prefs.setStringList('allWords', allWords.map((e) => e.toJson()).toList());
     prefs.setStringList('learnedWords', learnedWords.map((e) => e.toJson()).toList());
@@ -232,7 +255,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _flipController.reverse();
     } else {
       _flipController.forward();
-      _speakWord(word, isMeaning: true); // Arka yüzde anlamı okur
+      _speakWord(word, isMeaning: true); 
+      // Bakılan Kart Logu
+      viewedCardTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     }
     setState(() => isFlipped = !isFlipped);
   }
@@ -241,6 +266,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     setState(() {
       if (!learnedWords.any((w) => w.word == word.word)) {
         learnedWords.add(word);
+        // Öğrenilen Kelime Logu
+        learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
       }
       allWords.removeWhere((w) => w.word == word.word);
       toRepeatWords.removeWhere((w) => w.word == word.word);
@@ -261,6 +288,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         word.wrongCount = 1;
         wrongWords.add(word);
       }
+      // Yanlış / Tekrar Logu
+      wrongAnswerTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
       _nextCard();
     });
     _saveData();
@@ -622,194 +651,207 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildDrawer() {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                Text("Build: v1.0.$buildNo", style: const TextStyle(color: Colors.white70)),
-                const Text("Tayfun Yamak ©", style: TextStyle(color: Colors.white54, fontSize: 12)),
-              ],
+      // KESİN ÇÖZÜM: SafeArea eklendi, Drawer listesi sanal butonların altında kalmayacak.
+      child: SafeArea(
+        bottom: true,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 20),
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text("Build: v1.0.$buildNo", style: const TextStyle(color: Colors.white70)),
+                  const Text("Tayfun Yamak ©", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                ],
+              ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.add_box),
-            title: const Text("Kelime Ekle"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(
-                availableLibraries: availableLibraries,
-                onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }
-              )));
-            }
-          ),
-          ListTile(
-            leading: const Icon(Icons.list_alt),
-            title: const Text("Kelime Listesi"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(
-                words: filteredWords, // SADECE AKTİF KÜTÜPHANENİN KELİMELERİ
-                onDelete: (wordToDelete) {
-                  setState(() {
-                    allWords.removeWhere((w) => w.word == wordToDelete.word);
-                    toRepeatWords.removeWhere((w) => w.word == wordToDelete.word);
-                  });
-                  _saveData();
-                }
-              )));
-            }
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text("Ayarlar, Temalar, Seçimler"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                currentGoal: dailyGoal,
-                currentThreshold: quizThreshold,
-                currentQuestionCount: quizQuestionCount,
-                currentThemeIndex: widget.themeIndex,
-                selectedLibrary: selectedLibrary,
-                selectedLevel: selectedLevel,
-                availableLibraries: availableLibraries,
-                onSaveSettings: (newGoal, newThreshold, newQCount, newThemeIdx, newLib, newLevel) {
-                  setState(() {
-                    dailyGoal = newGoal;
-                    quizThreshold = newThreshold;
-                    quizQuestionCount = newQCount;
-                    widget.onThemeChanged(newThemeIdx);
-                    selectedLibrary = newLib;
-                    selectedLevel = newLevel;
-                    currentCardIndex = 0;
-                  });
-                  _saveData();
-                },
-                onAddPackage: (assetPath, ext, name) => _loadPackageFromAssets(assetPath, ext, name),
-              )));
-            }
-          ),
-          const Divider(),
-          // LİSTE YÖNETİMİ BUTONLARI
-          ListTile(
-            leading: const Icon(Icons.check_circle_outline, color: Colors.green),
-            title: const Text("Öğrenilen Kelimeler"),
-            subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
-                title: "Öğrenilen Kelimeler", words: learnedWords,
-                onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); },
-                onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }
-              )));
-            }
-          ),
-          ListTile(
-            leading: const Icon(Icons.repeat, color: Colors.orange),
-            title: const Text("Tekrar Listesi"),
-            subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
-                title: "Tekrar Listesi", words: toRepeatWords,
-                onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); },
-                onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }
-              )));
-            }
-          ),
-          ListTile(
-            leading: const Icon(Icons.cancel, color: Colors.red),
-            title: const Text("Yanlış Kelimeler"),
-            subtitle: Text("${wrongWords.length} kelime", style: const TextStyle(fontSize: 12)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
-                title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true,
-                onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); },
-                onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }
-              )));
-            }
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.my_library_books),
-            title: const Text("Kütüphane Yönetimi"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(
-                allWords: allWords, learnedWords: learnedWords, wrongWords: wrongWords,
-                onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary,
-              )));
-            }
-          ),
-          ListTile(
-            leading: const Icon(Icons.quiz),
-            title: const Text("Quiz"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
-                words: filteredWords,
-                threshold: quizThreshold,
-                questionCount: quizQuestionCount,
-                onWordLearned: (w) {
-                  setState(() {
-                    if (!learnedWords.any((existing) => existing.word == w.word)) learnedWords.add(w);
-                    allWords.removeWhere((existing) => existing.word == w.word);
-                    toRepeatWords.removeWhere((existing) => existing.word == w.word);
-                  });
-                  _saveData();
-                },
-                onWordWrong: (w) {
-                  setState(() {
-                    if (!toRepeatWords.any((existing) => existing.word == w.word)) toRepeatWords.add(w);
-                    var existingWrong = wrongWords.where((existing) => existing.word == w.word).toList();
-                    if (existingWrong.isNotEmpty) {
-                      existingWrong.first.wrongCount++;
-                    } else {
-                      w.wrongCount = 1;
-                      wrongWords.add(w);
-                    }
-                  });
-                  _saveData();
-                },
-                onQuizFinished: (timeElapsed, answered, wrong) {
-                  setState(() {
-                    totalCompletedQuizzes++;
-                    totalQuizTimeSeconds += timeElapsed;
-                    totalQuizQuestions += answered;
-                    totalQuizWrong += wrong;
-                  });
-                  _saveData();
-                },
-              )));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text("İstatistikler"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(
-                allWords: allWords,
-                learnedWords: learnedWords,
-                wrongWords: wrongWords,
-                availableLibraries: availableLibraries,
-                totalCompletedQuizzes: totalCompletedQuizzes,
-                totalQuizTimeSeconds: totalQuizTimeSeconds,
-                totalQuizQuestions: totalQuizQuestions,
-                totalQuizWrong: totalQuizWrong,
-              )));
-            },
-          ),
-          const Divider(),
-          ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
-          ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
-        ],
+            ListTile(
+              leading: const Icon(Icons.add_box),
+              title: const Text("Kelime Ekle"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(
+                  availableLibraries: availableLibraries,
+                  onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }
+                )));
+              }
+            ),
+            ListTile(
+              leading: const Icon(Icons.list_alt),
+              title: const Text("Kelime Listesi"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(
+                  words: filteredWords,
+                  onDelete: (wordToDelete) {
+                    setState(() {
+                      allWords.removeWhere((w) => w.word == wordToDelete.word);
+                      toRepeatWords.removeWhere((w) => w.word == wordToDelete.word);
+                    });
+                    _saveData();
+                  }
+                )));
+              }
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text("Ayarlar, Temalar, Seçimler"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+                  currentGoal: dailyGoal,
+                  currentThreshold: quizThreshold,
+                  currentQuestionCount: quizQuestionCount,
+                  currentThemeIndex: widget.themeIndex,
+                  selectedLibrary: selectedLibrary,
+                  selectedLevel: selectedLevel,
+                  availableLibraries: availableLibraries,
+                  onSaveSettings: (newGoal, newThreshold, newQCount, newThemeIdx, newLib, newLevel) {
+                    setState(() {
+                      dailyGoal = newGoal;
+                      quizThreshold = newThreshold;
+                      quizQuestionCount = newQCount;
+                      widget.onThemeChanged(newThemeIdx);
+                      selectedLibrary = newLib;
+                      selectedLevel = newLevel;
+                      currentCardIndex = 0;
+                    });
+                    _saveData();
+                  },
+                  onAddPackage: (assetPath, ext, name) => _loadPackageFromAssets(assetPath, ext, name),
+                )));
+              }
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+              title: const Text("Öğrenilen Kelimeler"),
+              subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
+                  title: "Öğrenilen Kelimeler", words: learnedWords,
+                  onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); },
+                  onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }
+                )));
+              }
+            ),
+            ListTile(
+              leading: const Icon(Icons.repeat, color: Colors.orange),
+              title: const Text("Tekrar Listesi"),
+              subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
+                  title: "Tekrar Listesi", words: toRepeatWords,
+                  onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); },
+                  onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }
+                )));
+              }
+            ),
+            ListTile(
+              leading: const Icon(Icons.cancel, color: Colors.red),
+              title: const Text("Yanlış Kelimeler"),
+              subtitle: Text("${wrongWords.length} kelime", style: const TextStyle(fontSize: 12)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
+                  title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true,
+                  onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); },
+                  onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }
+                )));
+              }
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.my_library_books),
+              title: const Text("Kütüphane Yönetimi"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(
+                  allWords: allWords, learnedWords: learnedWords, wrongWords: wrongWords,
+                  onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary,
+                )));
+              }
+            ),
+            ListTile(
+              leading: const Icon(Icons.quiz),
+              title: const Text("Quiz"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
+                  words: filteredWords,
+                  threshold: quizThreshold,
+                  questionCount: quizQuestionCount,
+                  onWordLearned: (w) {
+                    setState(() {
+                      if (!learnedWords.any((existing) => existing.word == w.word)) {
+                        learnedWords.add(w);
+                        learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
+                      }
+                      allWords.removeWhere((existing) => existing.word == w.word);
+                      toRepeatWords.removeWhere((existing) => existing.word == w.word);
+                    });
+                    _saveData();
+                  },
+                  onWordWrong: (w) {
+                    setState(() {
+                      if (!toRepeatWords.any((existing) => existing.word == w.word)) toRepeatWords.add(w);
+                      var existingWrong = wrongWords.where((existing) => existing.word == w.word).toList();
+                      if (existingWrong.isNotEmpty) {
+                        existingWrong.first.wrongCount++;
+                      } else {
+                        w.wrongCount = 1;
+                        wrongWords.add(w);
+                      }
+                      wrongAnswerTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
+                    });
+                    _saveData();
+                  },
+                  onQuizFinished: (timeElapsed, answered, wrong) {
+                    setState(() {
+                      totalCompletedQuizzes++;
+                      totalQuizTimeSeconds += timeElapsed;
+                      totalQuizQuestions += answered;
+                      totalQuizWrong += wrong;
+                      completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
+                    });
+                    _saveData();
+                  },
+                )));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.analytics),
+              title: const Text("İstatistikler"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(
+                  allWords: allWords,
+                  learnedWords: learnedWords,
+                  wrongWords: wrongWords,
+                  availableLibraries: availableLibraries,
+                  totalCompletedQuizzes: totalCompletedQuizzes,
+                  totalQuizTimeSeconds: totalQuizTimeSeconds,
+                  totalQuizQuestions: totalQuizQuestions,
+                  totalQuizWrong: totalQuizWrong,
+                  learnedWordTimestamps: learnedWordTimestamps,
+                  completedQuizTimestamps: completedQuizTimestamps,
+                  viewedCardTimestamps: viewedCardTimestamps,
+                  wrongAnswerTimestamps: wrongAnswerTimestamps,
+                  firstUseTimestamp: firstUseTimestamp,
+                )));
+              },
+            ),
+            const Divider(),
+            ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
+            ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
+          ],
+        ),
       ),
     );
   }
