@@ -118,10 +118,9 @@ class StatisticsScreen extends StatelessWidget {
     int totalSystemWords = allWords.length + learnedWords.length;
     int totalWrongCount = wrongWords.fold(0, (a, b) => a + b.wrongCount);
 
-    // Ortalama Öğrenme Hızı Hesaplaması
     DateTime firstUse = DateTime.fromMillisecondsSinceEpoch(firstUseTimestamp);
     int daysUsed = DateTime.now().difference(firstUse).inDays;
-    if (daysUsed < 1) daysUsed = 1; // 0'a bölünmeyi engellemek için
+    if (daysUsed < 1) daysUsed = 1; 
     double wordsPerDay = learnedWords.length / daysUsed;
 
     return DefaultTabController(
@@ -152,7 +151,7 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
             
-            // 2. ÖĞRENME HIZI (YENİ SEKME)
+            // 2. ÖĞRENME HIZI
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -215,13 +214,20 @@ class StatisticsScreen extends StatelessWidget {
                       children: [
                         Text(libName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("Toplam: $total"),
-                            Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                            Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                          ],
+                        // KESİN ÇÖZÜM: Taşmayı önleyen FittedBox yapısı
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("Toplam: $total", style: const TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 16),
+                              Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 16),
+                              Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 12),
                         LinearProgressIndicator(value: progress, color: Colors.green, backgroundColor: Colors.grey[300], minHeight: 6),
