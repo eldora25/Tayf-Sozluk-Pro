@@ -17,3 +17,8 @@ Build #186: Commit 7a99799 ISAR DATABASE GEÇİŞİ YAPILDI
 **************************************************************************
 Leitner Algoritması, öğrenmeyi kolaylaştıran ve bilginin uzun süre akılda kalmasını sağlayan aralıklı tekrar (SRS) yöntemi kuruldu
 **************************************************************************
+Ateşli Seri (Streak) Sistemi: Kullanıcı art arda her gün uygulamaya girip kelime öğrendiğinde ana ekranda yanan bir ateş emojisi (🔥) ve "5 Günlük Seri!" yazısı gösteren sistem kuruldu. Bir gün girmezse seri kırılır. Seri Dondurma (Streak Freeze): Kullanıcının seriyi bozmamak için satın alabileceği veya kazanabileceği "pas geçme" hakkı sistemi kuruldu. Seri Dondurma (Buz Kalkanı ❄️) İçin Sistem ve Entegrasyonu yapıldı.
+Kullanıcının uygulamada yaptığı her öğrenme işlemi (Kelimeyi 'Biliyorum' demek veya Quiz çözmek) ona Tayf Puan (TP 💎) kazandırır.
+Eğer kullanıcı bir gün girmeyi unutursa ve serisinin kırılmasından korkarsa, menüdeki mağazadan biriktirdiği 50 TP karşılığında 1 Buz Kalkanı (❄️) satın alabilir.
+Kalkan aktifken kullanıcı 1 gün uygulamaya girmese bile arka plandaki zaman damgası kontrolü "Kalkanı kırar" ama Seriyi korur.
+**************************************************************************
