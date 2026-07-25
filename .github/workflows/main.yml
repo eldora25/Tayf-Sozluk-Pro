@@ -31,15 +31,13 @@ jobs:
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle.kts
           
           # KESİN ÇÖZÜM: DESUGARING AKTİVASYONU (Local Notifications Hatası İçin)
-          # Java sürümünden bağımsız olarak doğrudan compileOptions bloğunu hedefler
           sed -i '/compileOptions {/a \        isCoreLibraryDesugaringEnabled = true' android/app/build.gradle.kts
-          
-          # Gerekli kütüphaneyi dosyanın sonuna güvenli bir şekilde ekler
           echo 'dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4") }' >> android/app/build.gradle.kts
 
-      - name: Add Android Notification Permissions
+      # YENİ: MİKROFON İZNİ (RECORD_AUDIO) EKLENDİ
+      - name: Add Android Permissions
         run: |
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>' android/app/src/main/AndroidManifest.xml
 
       - name: Install dependencies
         run: flutter pub get
