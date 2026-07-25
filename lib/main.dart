@@ -11,6 +11,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:isar/isar.dart';
 
 import 'models.dart';
 import 'quiz_screen.dart';
@@ -23,16 +24,16 @@ import 'library_manager_screen.dart';
 import 'manage_list_screen.dart';
 import 'logger_screen.dart';
 
-// --- OPTİMİZE EDİLMİŞ ARKA PLAN İŞLEMCİSİ (RAM TAŞMASINI ENGELLER) ---
+// GLOBAL ISAR VERİTABANI ÖRNEĞİ
+late Isar isar;
+
+// --- ARKA PLAN (ISOLATE) DOSYA OKUYUCUSU ---
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
   String customLibraryName = params['libraryName'];
 
   List<String> parsedList = [];
-
-  // BELLEK (RAM) DOSTU: RegExp objelerini döngünün DIŞINDA BİR KERE oluşturuyoruz.
-  // Bu, yüz binlerce obje oluşturulmasını engelleyerek OOM Crash (çökme) ihtimalini yok eder.
   final RegExp splitRegExp = RegExp(r';|\|\|\||,|\n');
   final RegExp prefixRegExp = RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*');
   final RegExp spaceRegExp = RegExp(r'\s+');
@@ -63,7 +64,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       for (var e in list) {
         parsedList.add(json.encode({
           'word': e['word'] ?? '', 'meanings': cleanMeanings(e['meanings'] ?? []), 'examples': cleanMeanings(e['examples'] ?? []),
-          'level': e['level'] ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0,
+          'level': e['level'] ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all'
         }));
       }
     } else if (extension == 'txt') {
@@ -73,7 +74,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         var parts = line.split(':');
         parsedList.add(json.encode({
           'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': <String>[],
-          'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0,
+          'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all'
         }));
       }
     } else {
@@ -86,7 +87,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         parsedList.add(json.encode({
           'word': wordStr, 'meanings': cleanMeanings([row[1]]), 'examples': row.length > 2 ? cleanMeanings([row[2]]) : <String>[],
           'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
-          'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0,
+          'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all'
         }));
       }
     }
@@ -99,7 +100,13 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // GLOBAL HATA YAKALAYICILAR - Crash anında log dosyasına yazar
+  // ISAR VERİTABANINI BAŞLAT
+  final dir = await getApplicationDocumentsDirectory();
+  isar = await Isar.open(
+    [WordModelSchema],
+    directory: dir.path,
+  );
+
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     AppLogger.logError("FLUTTER ERROR: ${details.exception}\n${details.stack}");
@@ -250,11 +257,39 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           firstUseTimestamp = DateTime.now().millisecondsSinceEpoch;
           prefs.setInt('firstUseTimestamp', firstUseTimestamp);
         }
+      });
 
-        allWords = (prefs.getStringList('allWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
-        learnedWords = (prefs.getStringList('learnedWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
-        toRepeatWords = (prefs.getStringList('toRepeatWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
-        wrongWords = (prefs.getStringList('wrongWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
+      // ---- ISAR MIGRATION (GÖÇ) & YÜKLEME MANTIĞI ----
+      List<WordModel> fromIsar = await isar.wordModels.where().findAll();
+
+      if (fromIsar.isEmpty && prefs.containsKey('allWords')) {
+        AppLogger.logError("ISAR MIGRATION BAŞLADI...");
+        List<WordModel> oldAll = (prefs.getStringList('allWords') ?? []).map((e) => WordModel.fromJson(e)..listType='all').toList();
+        List<WordModel> oldLearned = (prefs.getStringList('learnedWords') ?? []).map((e) => WordModel.fromJson(e)..listType='learned').toList();
+        List<WordModel> oldRepeat = (prefs.getStringList('toRepeatWords') ?? []).map((e) => WordModel.fromJson(e)..listType='toRepeat').toList();
+        List<WordModel> oldWrong = (prefs.getStringList('wrongWords') ?? []).map((e) => WordModel.fromJson(e)..listType='wrong').toList();
+        
+        List<WordModel> allToSave = [...oldAll, ...oldLearned, ...oldRepeat, ...oldWrong];
+        
+        await isar.writeTxn(() async {
+          await isar.wordModels.putAll(allToSave);
+        });
+        
+        // RAM'i rahatlatmak için eski çöp verileri siliyoruz
+        prefs.remove('allWords');
+        prefs.remove('learnedWords');
+        prefs.remove('toRepeatWords');
+        prefs.remove('wrongWords');
+        
+        fromIsar = allToSave;
+        AppLogger.logError("ISAR MIGRATION BAŞARIYLA BİTTİ!");
+      }
+
+      setState(() {
+        allWords = fromIsar.where((w) => w.listType == 'all').toList();
+        learnedWords = fromIsar.where((w) => w.listType == 'learned').toList();
+        toRepeatWords = fromIsar.where((w) => w.listType == 'toRepeat').toList();
+        wrongWords = fromIsar.where((w) => w.listType == 'wrong').toList();
 
         if (allWords.isEmpty && learnedWords.isEmpty) {
           _createDefaultLibrary();
@@ -285,27 +320,29 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
       prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
 
-      // RAM OPTİMİZASYONU: compute (isolate) ile yüz binlerce obje kopyalamak
-      // cihazın hafızasını doldurup çökmesine (OOM) neden oluyordu.
-      // Bu işlem doğrudan senkron olarak listeye dönüştürüldü.
-      List<String> encodedAll = allWords.map((e) => e.toJson()).toList();
-      List<String> encodedLearned = learnedWords.map((e) => e.toJson()).toList();
-      List<String> encodedRepeat = toRepeatWords.map((e) => e.toJson()).toList();
-      List<String> encodedWrong = wrongWords.map((e) => e.toJson()).toList();
+      // LİSTELERİ ISAR İÇİN HAZIRLA
+      for (var w in allWords) { w.listType = 'all'; }
+      for (var w in learnedWords) { w.listType = 'learned'; }
+      for (var w in toRepeatWords) { w.listType = 'toRepeat'; }
+      for (var w in wrongWords) { w.listType = 'wrong'; }
 
-      prefs.setStringList('allWords', encodedAll);
-      prefs.setStringList('learnedWords', encodedLearned);
-      prefs.setStringList('toRepeatWords', encodedRepeat);
-      prefs.setStringList('wrongWords', encodedWrong);
+      List<WordModel> allToSave = [...allWords, ...learnedWords, ...toRepeatWords, ...wrongWords];
+
+      // ISAR İŞLEMİ: JSON kodlama gecikmesi olmadan mili-saniyede diske yazar
+      await isar.writeTxn(() async {
+        await isar.wordModels.clear();
+        await isar.wordModels.putAll(allToSave);
+      });
+
     } catch (e, stack) {
-      AppLogger.logError("Veri Kaydetme Hatası (_saveData): Bellek limitine ulaşılmış olabilir.\n$e\n$stack");
+      AppLogger.logError("Veri Kaydetme Hatası (_saveData): $e\n$stack");
     }
   }
 
   void _createDefaultLibrary() {
     allWords = [
-      WordModel(word: 'Apple', meanings: ['Elma', 'Meyve'], examples: ['I ate an apple.'], libraryName: 'Varsayılan (İng-Tr)'),
-      WordModel(word: 'Book', meanings: ['Kitap', 'Ayırtmak'], examples: ['Read a book.', 'Book a flight.'], libraryName: 'Varsayılan (İng-Tr)'),
+      WordModel(word: 'Apple', meanings: ['Elma', 'Meyve'], examples: ['I ate an apple.'], libraryName: 'Varsayılan (İng-Tr)', listType: 'all'),
+      WordModel(word: 'Book', meanings: ['Kitap', 'Ayırtmak'], examples: ['Read a book.', 'Book a flight.'], libraryName: 'Varsayılan (İng-Tr)', listType: 'all'),
     ];
     _saveData();
   }
@@ -421,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           return;
         }
 
-        List<WordModel> newWords = parsedJsons.map((e) => WordModel.fromJson(e)).toList();
+        List<WordModel> newWords = parsedJsons.map((e) => WordModel.fromJson(e)..listType = 'all').toList();
         setState(() {
           allWords.addAll(newWords);
           selectedLibrary = customLibraryName;
@@ -456,7 +493,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         return;
       }
 
-      List<WordModel> newWords = parsedJsons.map((e) => WordModel.fromJson(e)).toList();
+      List<WordModel> newWords = parsedJsons.map((e) => WordModel.fromJson(e)..listType = 'all').toList();
       setState(() {
         allWords.addAll(newWords);
         selectedLibrary = customLibraryName;
