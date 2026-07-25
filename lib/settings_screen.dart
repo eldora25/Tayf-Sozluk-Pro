@@ -7,7 +7,7 @@ class SettingsScreen extends StatefulWidget {
   final String selectedLevel;
   final List<String> availableLibraries;
   final Function(int, int, String, String) onSaveSettings;
-  final Function(String, String, String) onAddPackage; // assetPath, extension, libraryName
+  final Function(String, String, String) onAddPackage; 
 
   const SettingsScreen({
     super.key, 
@@ -143,20 +143,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 widget.onAddPackage("assets/Babylon_Turkish_English_donustu.csv", "csv", "Babylon Tr-İng");
               },
             ),
+            const SizedBox(height: 10),
 
-            const SizedBox(height: 40),
-             // 5. Free Txt Paketi
+            // 5. FreeDict İng-Tr (TXT ama CSV formatında)
             ListTile(
-              tileColor: Colors.deepPurple.withOpacity(0.1),
+              tileColor: Colors.purple.withOpacity(0.1),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text("Free Eng-TR (TXT)"),
-              trailing: const Icon(Icons.download, color: Colors.orange),
+              title: const Text("FreeDict İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Geniş Kapsamlı Sözlük (Free-KH)"),
+              trailing: const Icon(Icons.download, color: Colors.purple),
               onTap: () {
-                widget.onAddPackage("assets/Free-KH.txt", "txt", "Free-KH İng-Tr");
+                // Free-KH.txt dosyasının içeriği virgülle ayrılmış (CSV) formatında olduğu için 'csv' olarak okutuyoruz.
+                widget.onAddPackage("assets/Free-KH.txt", "csv", "Free-KH İng-Tr");
               },
             ),
-            const SizedBox(height: 10),
+
+            const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
