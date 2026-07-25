@@ -26,18 +26,21 @@ jobs:
           rm -rf android
           flutter create --platforms=android .
           
-          # API 36 ZORLAMASI
+          # ANA PROJE İÇİN API 36 ZORLAMASI
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle.kts
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle.kts
 
       - name: Install dependencies
         run: flutter pub get
 
-      # KESİN ÇÖZÜM: Isar Eklentisi Namespace (AGP 8.0+) Hatasını Otomatik Onarır
-      # Eklentinin içindeki 'android {' bloğunu bulup doğrudan içine namespace ekler.
-      - name: Fix Isar Plugin Namespace
+      # KESİN ÇÖZÜM: Isar Eklentisinin SDK ve Namespace Hatalarını Onarır
+      - name: Fix Isar Plugin Compatibility
         run: |
+          # 1. Namespace hatasını çözer
           find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/android {/android {\n    namespace "dev.isar.isar_flutter_libs"/g' {} +
+          # 2. SDK 30 Çakışmasını Çözer (Eklentiyi zorla API 36 yapar)
+          find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/compileSdkVersion 30/compileSdkVersion 36/g' {} +
+          find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/targetSdkVersion 30/targetSdkVersion 36/g' {} +
 
       # Isar veritabanı tablolarını otomatik oluşturur
       - name: Generate Isar Models
