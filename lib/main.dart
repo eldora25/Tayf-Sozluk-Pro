@@ -13,6 +13,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 
+// YENİ: MODERN FONT KÜTÜPHANESİ
+import 'package:google_fonts/google_fonts.dart';
+
 import 'models.dart';
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
@@ -23,8 +26,6 @@ import 'edit_word_screen.dart';
 import 'library_manager_screen.dart';
 import 'manage_list_screen.dart';
 import 'logger_screen.dart';
-
-// YENİ EKLENEN BİLDİRİM SERVİSİ
 import 'notification_service.dart';
 
 late Isar isar;
@@ -115,8 +116,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // BİLDİRİM MOTORUNU BAŞLAT
   await NotificationService.init();
 
   final dir = await getApplicationDocumentsDirectory();
@@ -166,16 +165,35 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   }
 
   ThemeData _getTheme() {
+    // YENİ: TÜM TEMALARA GOOGLE FONTS NUNITO EKLENDİ
+    final baseTextTheme = GoogleFonts.nunitoTextTheme();
+    
     switch (themeIndex) {
-      case 0: return ThemeData.dark().copyWith(primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent));
-      case 1: return ThemeData.light().copyWith(primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent));
-      case 2: return ThemeData(primarySwatch: Colors.blue, primaryColor: Colors.blue[400], scaffoldBackgroundColor: Colors.blue[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: const AppBarTheme(backgroundColor: Colors.blue, foregroundColor: Colors.white));
-      case 3: return ThemeData(primarySwatch: Colors.teal, primaryColor: Colors.teal[400], scaffoldBackgroundColor: Colors.teal[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: const AppBarTheme(backgroundColor: Colors.teal, foregroundColor: Colors.white));
-      case 4: return ThemeData(primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: Colors.purple[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white));
-      case 5: return ThemeData(primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: Colors.orange[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white));
-      case 6: return ThemeData(primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.pink[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
-      case 7: return ThemeData(primarySwatch: Colors.cyan, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.amber[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.cyan), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
-      default: return ThemeData.dark();
+      case 0: return ThemeData.dark().copyWith(
+          textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme),
+          primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent));
+      case 1: return ThemeData.light().copyWith(
+          textTheme: baseTextTheme,
+          primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent));
+      case 2: return ThemeData(
+          textTheme: baseTextTheme,
+          primarySwatch: Colors.blue, primaryColor: Colors.blue[400], scaffoldBackgroundColor: Colors.blue[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: const AppBarTheme(backgroundColor: Colors.blue, foregroundColor: Colors.white));
+      case 3: return ThemeData(
+          textTheme: baseTextTheme,
+          primarySwatch: Colors.teal, primaryColor: Colors.teal[400], scaffoldBackgroundColor: Colors.teal[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: const AppBarTheme(backgroundColor: Colors.teal, foregroundColor: Colors.white));
+      case 4: return ThemeData(
+          textTheme: baseTextTheme,
+          primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: Colors.purple[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white));
+      case 5: return ThemeData(
+          textTheme: baseTextTheme,
+          primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: Colors.orange[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white));
+      case 6: return ThemeData(
+          textTheme: baseTextTheme,
+          primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.pink[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
+      case 7: return ThemeData(
+          textTheme: baseTextTheme,
+          primarySwatch: Colors.cyan, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.amber[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.cyan), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
+      default: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme));
     }
   }
 
@@ -246,10 +264,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.initState();
     _flipController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     _flipAnimation = Tween<double>(begin: 0, end: 1).animate(_flipController);
-    
-    // Uygulama açıldığında Bildirim İzinlerini İste
     NotificationService.requestPermission();
-    
     _loadData();
   }
 
@@ -359,9 +374,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         }
       });
 
-      // YENİ: Tekrar Havuzundaki Kelime Sayısına Göre Bildirimleri Zamanla
       NotificationService.scheduleDailyNotifications(toRepeatWords.length);
-
     } catch (e, stack) {
       AppLogger.logError("Veri Yükleme Hatası (_loadData): $e\n$stack");
     }
@@ -405,9 +418,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         await isar.wordModels.putAll(allToSave);
       });
 
-      // YENİ: Veriler güncellenince bildirim sayısını da güncelle
       NotificationService.scheduleDailyNotifications(toRepeatWords.length);
-
     } catch (e, stack) {
       AppLogger.logError("Veri Kaydetme Hatası (_saveData): $e\n$stack");
     }
@@ -886,7 +897,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: Text("🔥 Seviye: ${word.srsLevel}/5", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
               ),
             ),
-          Center(child: Text(word.word, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))),
+          
+          // YENİ: HERO ANİMASYONU ALTYAPISI (Karttan listeye geçerken kelime uçacak)
+          Center(
+            child: Hero(
+              tag: 'hero_word_${word.word}',
+              child: Material(
+                type: MaterialType.transparency,
+                child: Text(word.word, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ),
+          
           Positioned(right: 0, top: 0, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false))),
           Positioned(left: 0, top: 0, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), tooltip: 'Kelimeyi Düzenle', onPressed: () => _openEditScreen(word)))
         ],
