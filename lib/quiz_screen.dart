@@ -10,6 +10,7 @@ class QuizScreen extends StatefulWidget {
   final int questionCount;
   final Function(WordModel) onWordLearned;
   final Function(WordModel) onWordWrong;
+  final Function(int timeElapsed, int answered, int wrong) onQuizFinished; // İstatistik Kaydı İçin
 
   const QuizScreen({
     super.key,
@@ -18,6 +19,7 @@ class QuizScreen extends StatefulWidget {
     required this.questionCount,
     required this.onWordLearned,
     required this.onWordWrong,
+    required this.onQuizFinished,
   });
 
   @override
@@ -44,23 +46,20 @@ class _QuizScreenState extends State<QuizScreen> {
   int _secondsElapsed = 0;
   bool isQuizFinished = false;
   bool isAudioEnabled = true;
+  bool _isStatsSaved = false;
 
   @override
   void initState() {
     super.initState();
-    // Ayarlanan sayı kadar veya havuzdaki kelime kadar rastgele soru seçimi
     List<WordModel> pool = List.from(widget.words)..shuffle();
     quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
     totalQuestions = quizWords.length;
 
     if (totalQuestions > 0) {
-      _initTts();
       _startTimer();
       _generateQuestion();
     }
   }
-
-  void _initTts() async { await flutterTts.setLanguage("en-US"); }
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -83,37 +82,39 @@ class _QuizScreenState extends State<QuizScreen> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _speakWord(String text) async {
+  Future<void> _speakWord(String text, String libraryName) async {
     if (!isAudioEnabled) return;
-    String lang = detectLanguage(text);
+    String lang = getLanguageForWord(text, libraryName, isMeaning: false);
     await flutterTts.setLanguage(lang);
     await flutterTts.speak(text);
   }
 
-  Future<void> _speakFeedback(bool isCorrect, String questionWord) async {
+  // AWAIT OLMADAN ASENKRON ÇAĞRILACAK Kİ ARAYÜZÜ KİLİTLEMESİN
+  void _speakFeedback(bool isCorrect, WordModel word) {
     if (!isAudioEnabled) return;
-    String qLang = detectLanguage(questionWord);
+    String qLang = getLanguageForWord(word.word, word.libraryName, isMeaning: false);
+    
+    // İngilizce soru ise Türkçe cevap, Türkçe soru ise İngilizce cevap
     String targetLang = qLang == 'en-US' ? 'tr-TR' : 'en-US';
     
-    await flutterTts.setLanguage(targetLang);
-    if (isCorrect) {
-      await flutterTts.speak(targetLang == 'tr-TR' ? "Doğru" : "Correct");
-    } else {
-      await flutterTts.speak(targetLang == 'tr-TR' ? "Yanlış" : "Wrong");
-    }
+    flutterTts.setLanguage(targetLang).then((_) {
+      if (isCorrect) {
+        flutterTts.speak(targetLang == 'tr-TR' ? "Doğru" : "Correct");
+      } else {
+        flutterTts.speak(targetLang == 'tr-TR' ? "Yanlış" : "Wrong");
+      }
+    });
   }
 
-  Future<void> _speakCompletion() async {
+  void _speakCompletion() {
     if (!isAudioEnabled || quizWords.isEmpty) return;
-    String lang = detectLanguage(quizWords.first.word);
+    String lang = getLanguageForWord(quizWords.first.word, quizWords.first.libraryName, isMeaning: false);
     
-    // İngilizce bir kelime sorulduysa Türkçe Tebrikler, Türkçe sorulduysa İngilizce tebrik
+    // Çapraz Dil Mantığı: İngilizce sorular bittiğinde Türkçe tebrik.
     if (lang == 'en-US') {
-      await flutterTts.setLanguage('tr-TR');
-      await flutterTts.speak("Tebrikler");
+      flutterTts.setLanguage('tr-TR').then((_) => flutterTts.speak("Tebrikler"));
     } else {
-      await flutterTts.setLanguage('en-US');
-      await flutterTts.speak("Congratulations");
+      flutterTts.setLanguage('en-US').then((_) => flutterTts.speak("Congratulations"));
     }
   }
 
@@ -123,6 +124,10 @@ class _QuizScreenState extends State<QuizScreen> {
         isQuizFinished = true;
         _timer?.cancel();
       });
+      if (!_isStatsSaved) {
+        _isStatsSaved = true;
+        widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers);
+      }
       _speakCompletion();
       return;
     }
@@ -146,12 +151,13 @@ class _QuizScreenState extends State<QuizScreen> {
     options.shuffle();
     
     setState(() {});
-    _speakWord(currentWord.word);
+    _speakWord(currentWord.word, currentWord.libraryName);
   }
 
-  void _checkAnswer(String option) async {
+  void _checkAnswer(String option) {
     if (isAnsweredCorrectly || selectedWrongOptions.contains(option)) return;
     
+    // STATE GÜNCELLEMESİ (Anında renk değişir)
     setState(() {
       if (option == correctOption) {
         isAnsweredCorrectly = true;
@@ -161,20 +167,25 @@ class _QuizScreenState extends State<QuizScreen> {
           correctAnswers++;
           currentWord.correctCount++;
         }
-        
-        _speakFeedback(true, currentWord.word);
-        if (currentWord.correctCount >= widget.threshold) {
-           widget.onWordLearned(currentWord);
-        }
-        Future.delayed(const Duration(seconds: 1), _generateQuestion);
       } else {
         selectedWrongOptions.add(option);
         wrongAnswers++;
         currentWord.wrongCount++;
-        widget.onWordWrong(currentWord);
-        _speakFeedback(false, currentWord.word);
       }
     });
+
+    // SES VE BEKLEME İŞLEMLERİ (UI donmaz)
+    if (option == correctOption) {
+      _speakFeedback(true, currentWord);
+      if (currentWord.correctCount >= widget.threshold) {
+         widget.onWordLearned(currentWord);
+      }
+      // Bekleme süresi 600 milisaniyeye indirildi (Çok hızlı geçer)
+      Future.delayed(const Duration(milliseconds: 600), _generateQuestion);
+    } else {
+      widget.onWordWrong(currentWord);
+      _speakFeedback(false, currentWord);
+    }
   }
 
   void _resetQuiz() {
@@ -184,6 +195,7 @@ class _QuizScreenState extends State<QuizScreen> {
       answeredQuestions = 0;
       _secondsElapsed = 0;
       isQuizFinished = false;
+      _isStatsSaved = false;
       List<WordModel> pool = List.from(widget.words)..shuffle();
       quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
       totalQuestions = quizWords.length;
@@ -218,7 +230,6 @@ class _QuizScreenState extends State<QuizScreen> {
                 const SizedBox(height: 10),
                 const Text("Tebrikler!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
-                
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -244,7 +255,6 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   ),
                 ),
-                
                 const SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity,
@@ -312,7 +322,7 @@ class _QuizScreenState extends State<QuizScreen> {
             const SizedBox(height: 30),
             
             GestureDetector(
-              onTap: () => _speakWord(currentWord.word),
+              onTap: () => _speakWord(currentWord.word, currentWord.libraryName),
               child: Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
