@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  # v2 embedding uyumluluğu %100 kararlı olan en güncel paket sürümleri
+  # v2 embedding yapısını zorunlu kılan en kararlı eklenti sürümleri
   shared_preferences: ^2.3.2
   flutter_tts: ^4.2.1
   file_picker: ^8.1.4
