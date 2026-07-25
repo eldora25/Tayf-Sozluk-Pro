@@ -18,6 +18,7 @@ import 'settings_screen.dart';
 import 'statistics_screen.dart';
 import 'edit_word_screen.dart';
 import 'library_manager_screen.dart';
+import 'manage_list_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +33,7 @@ class TayfSozlukApp extends StatefulWidget {
 }
 
 class _TayfSozlukAppState extends State<TayfSozlukApp> {
-  bool isDarkMode = true;
+  int themeIndex = 0;
 
   @override
   void initState() {
@@ -42,13 +43,25 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
 
   void _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() => isDarkMode = prefs.getBool('isDarkMode') ?? true);
+    setState(() => themeIndex = prefs.getInt('themeIndex') ?? 0);
   }
 
-  void _toggleTheme(bool value) async {
+  void _toggleTheme(int value) async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() => isDarkMode = value);
-    prefs.setBool('isDarkMode', value);
+    setState(() => themeIndex = value);
+    prefs.setInt('themeIndex', value);
+  }
+
+  ThemeData _getTheme() {
+    switch (themeIndex) {
+      case 0: return ThemeData.dark().copyWith(primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent));
+      case 1: return ThemeData.light().copyWith(primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent));
+      case 2: return ThemeData(primarySwatch: Colors.blue, primaryColor: Colors.blue[400], scaffoldBackgroundColor: Colors.blue[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: const AppBarTheme(backgroundColor: Colors.blue, foregroundColor: Colors.white));
+      case 3: return ThemeData(primarySwatch: Colors.teal, primaryColor: Colors.teal[400], scaffoldBackgroundColor: Colors.teal[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: const AppBarTheme(backgroundColor: Colors.teal, foregroundColor: Colors.white));
+      case 4: return ThemeData(primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: Colors.purple[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white));
+      case 5: return ThemeData(primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: Colors.orange[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white));
+      default: return ThemeData.dark();
+    }
   }
 
   @override
@@ -56,9 +69,9 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
     return MaterialApp(
       title: 'Tayf Sözlük Pro',
       debugShowCheckedModeBanner: false,
-      theme: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+      theme: _getTheme(),
       home: HomeScreen(
-        isDarkMode: isDarkMode,
+        themeIndex: themeIndex,
         onThemeChanged: _toggleTheme,
       ),
     );
@@ -66,10 +79,10 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
 }
 
 class HomeScreen extends StatefulWidget {
-  final bool isDarkMode;
-  final ValueChanged<bool> onThemeChanged;
+  final int themeIndex;
+  final ValueChanged<int> onThemeChanged;
 
-  const HomeScreen({super.key, required this.isDarkMode, required this.onThemeChanged});
+  const HomeScreen({super.key, required this.themeIndex, required this.onThemeChanged});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -91,6 +104,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   String selectedLevel = 'Genel';
   int dailyGoal = 10;
   int quizThreshold = 10;
+  int quizQuestionCount = 10;
   int currentCardIndex = 0;
   bool isFlipped = false;
 
@@ -116,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       selectedLevel = prefs.getString('selectedLevel') ?? 'Genel';
       dailyGoal = prefs.getInt('dailyGoal') ?? 10;
       quizThreshold = prefs.getInt('quizThreshold') ?? 10;
+      quizQuestionCount = prefs.getInt('quizQuestionCount') ?? 10;
       currentCardIndex = prefs.getInt('currentCardIndex') ?? 0;
 
       allWords = _parseWordList(prefs.getStringList('allWords'));
@@ -140,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     prefs.setString('selectedLevel', selectedLevel);
     prefs.setInt('dailyGoal', dailyGoal);
     prefs.setInt('quizThreshold', quizThreshold);
+    prefs.setInt('quizQuestionCount', quizQuestionCount);
     prefs.setInt('currentCardIndex', currentCardIndex);
 
     prefs.setStringList('allWords', allWords.map((e) => e.toJson()).toList());
@@ -177,7 +193,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // --- AKILLI DİL SESLENDİRME ---
   Future<void> _speakWord(String text) async {
     String lang = detectLanguage(text);
     await flutterTts.setLanguage(lang);
@@ -235,23 +250,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _saveData();
   }
 
-  // --- GÜÇLENDİRİLMİŞ PARSER VE FİLTRELEME ---
   List<String> _cleanMeanings(List<dynamic> raw) {
     List<String> result = [];
     for (var item in raw) {
-      // Özel hex karakterlerini sil
       var str = item.toString().replaceAll('\x06', '');
-      // Boru |||, noktalı virgül, virgül ve enter ile ayır
       var parts = str.split(RegExp(r';|\|\|\||,|\n'));
       for (var p in parts) {
         var clean = p.trim();
-        // Sözlük ön eklerini (n., v., adj. vb.) sil
         clean = clean.replaceAll(RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*'), '');
-        clean = clean.replaceAll(RegExp(r'\s+'), ' '); // Fazla boşlukları tek yap
+        clean = clean.replaceAll(RegExp(r'\s+'), ' ');
         if (clean.isNotEmpty && clean.length < 60) {
           result.add(clean);
         } else if (clean.length >= 60 && clean.length < 150) {
-          result.add(clean); // Quizde ellipsis (taşma) ile idare edilecek
+          result.add(clean); 
         }
       }
     }
@@ -281,12 +292,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           newWords.add(WordModel(word: w, meanings: _cleanMeanings([m]), examples: [], level: 'Genel', libraryName: customLibraryName));
         }
       } else {
-        // CSV Tarafı: Çöpleri (#name vs) atlıyoruz.
         List<List<dynamic>> rows = const CsvToListConverter().convert(content);
         for (var row in rows) {
           if (row.isEmpty || row.length < 2) continue;
           String wordStr = row[0].toString().trim();
-          // Babylon ve Hatalı Satır Filtreleri
           if (wordStr.isEmpty || wordStr.startsWith('#') || wordStr.toLowerCase() == 'word' || wordStr.startsWith('00database')) continue;
 
           newWords.add(WordModel(
@@ -337,7 +346,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
-  // --- KÜTÜPHANE YÖNETİMİ METODLARI ---
   void _renameLibrary(String oldName, String newName) {
     setState(() {
       for (var w in allWords) { if (w.libraryName == oldName) w.libraryName = newName; }
@@ -516,8 +524,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("V.1.0.$buildNo", style: TextStyle(color: widget.isDarkMode ? Colors.purpleAccent : Colors.deepPurple, fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text("By: Tayfun YAMAK©", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: widget.isDarkMode ? Colors.purpleAccent : Colors.deepPurple)),
+                    Text("V.1.0.$buildNo", style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text("By: Tayfun YAMAK©", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).primaryColor)),
                   ],
                 ),
               ),
@@ -532,8 +540,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       height: 300,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? Colors.grey[800] : Colors.blue[50],
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).primaryColor, width: 2),
         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
       ),
       child: Stack(
@@ -562,8 +571,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       height: 300,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? Colors.grey[700] : Colors.green[50],
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.green, width: 2),
         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
       ),
       child: Stack(
@@ -608,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(color: Colors.deepPurple),
+            decoration: BoxDecoration(color: Theme.of(context).primaryColor),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -626,10 +636,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(
                 availableLibraries: availableLibraries,
-                onSave: (newWord) {
-                  setState(() => allWords.add(newWord));
-                  _saveData();
-                }
+                onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }
               )));
             }
           ),
@@ -639,7 +646,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(
-                words: allWords,
+                words: filteredWords, // SADECE AKTİF KÜTÜPHANENİN KELİMELERİ
                 onDelete: (wordToDelete) {
                   setState(() {
                     allWords.removeWhere((w) => w.word == wordToDelete.word);
@@ -652,19 +659,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           ListTile(
             leading: const Icon(Icons.settings),
-            title: const Text("Ayarlar & Kütüphane Seç"),
+            title: const Text("Ayarlar, Temalar, Seçimler"),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
                 currentGoal: dailyGoal,
                 currentThreshold: quizThreshold,
+                currentQuestionCount: quizQuestionCount,
+                currentThemeIndex: widget.themeIndex,
                 selectedLibrary: selectedLibrary,
                 selectedLevel: selectedLevel,
                 availableLibraries: availableLibraries,
-                onSaveSettings: (newGoal, newThreshold, newLib, newLevel) {
+                onSaveSettings: (newGoal, newThreshold, newQCount, newThemeIdx, newLib, newLevel) {
                   setState(() {
                     dailyGoal = newGoal;
                     quizThreshold = newThreshold;
+                    quizQuestionCount = newQCount;
+                    widget.onThemeChanged(newThemeIdx);
                     selectedLibrary = newLib;
                     selectedLevel = newLevel;
                     currentCardIndex = 0;
@@ -675,23 +686,59 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               )));
             }
           ),
-          // YENİ EKLENEN KÜTÜPHANE YÖNETİMİ MENÜSÜ
+          const Divider(),
+          // LİSTE YÖNETİMİ BUTONLARI (Altlarında Sayılarla Beraber)
+          ListTile(
+            leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+            title: const Text("Öğrenilen Kelimeler"),
+            subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
+                title: "Öğrenilen Kelimeler", words: learnedWords,
+                onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); },
+                onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }
+              )));
+            }
+          ),
+          ListTile(
+            leading: const Icon(Icons.repeat, color: Colors.orange),
+            title: const Text("Tekrarlanması Gerekenler"),
+            subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
+                title: "Tekrar Listesi", words: toRepeatWords,
+                onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); },
+                onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }
+              )));
+            }
+          ),
+          ListTile(
+            leading: const Icon(Icons.cancel, color: Colors.red),
+            title: const Text("Yanlış Kelimeler"),
+            subtitle: Text("${wrongWords.length} kelime", style: const TextStyle(fontSize: 12)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
+                title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true,
+                onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); },
+                onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }
+              )));
+            }
+          ),
+          const Divider(),
           ListTile(
             leading: const Icon(Icons.my_library_books),
             title: const Text("Kütüphane Yönetimi"),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(
-                allWords: allWords,
-                learnedWords: learnedWords,
-                wrongWords: wrongWords,
-                onRename: _renameLibrary,
-                onDelete: _deleteLibrary,
-                onExport: _exportLibrary,
+                allWords: allWords, learnedWords: learnedWords, wrongWords: wrongWords,
+                onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary,
               )));
             }
           ),
-          const Divider(),
           ListTile(
             leading: const Icon(Icons.quiz),
             title: const Text("Quiz"),
@@ -700,35 +747,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
                 words: filteredWords,
                 threshold: quizThreshold,
+                questionCount: quizQuestionCount,
                 onWordLearned: (w) => _markAsLearned(w),
                 onWordWrong: (w) => _markAsToRepeat(w),
               )));
             },
-          ),
-          ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text("İstatistikler"),
-            onTap: () {
-              Navigator.pop(context);
-              int totalWrong = 0;
-              for (var w in wrongWords) { totalWrong += w.wrongCount; }
-              Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(
-                totalLibraries: availableLibraries.length - 1, 
-                totalWords: allWords.length + learnedWords.length,
-                learnedWords: learnedWords.length,
-                wordsToRepeat: toRepeatWords.length,
-                totalWrongAnswers: totalWrong,
-              )));
-            },
-          ),
-          const Divider(),
-          ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
-          ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.dark_mode),
-            title: const Text("Karanlık Mod"),
-            trailing: Switch(value: widget.isDarkMode, onChanged: widget.onThemeChanged),
           ),
         ],
       ),
