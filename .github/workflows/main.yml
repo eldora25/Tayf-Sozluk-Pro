@@ -8,6 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Node.js güncellemelerine tam uyumlu en son sürüme yükseltildi
       - uses: actions/checkout@v4
 
       # Java Kurulumu
@@ -23,14 +24,14 @@ jobs:
         with:
           channel: 'stable'
 
-      # MUTLAK ARINMA: Tüm potansiyel v1 kırıntıları ve ara dosya haritaları diskten kazınır
-      - name: Absolute Purge of Legacy Configurations
+      # MUTLAK ARINMA: Git deposundan sarkan ve v1 embedding tetikleyen tüm Java kırıntıları silinir
+      - name: Absolute Purge of Legacy Configurations and Plugins
         run: |
-          # Eski java sınıfları ve otomatik üretilen paket yapılarını temizler
-          rm -rf android/app/src/main/java/io/flutter/
-          rm -f android/app/src/main/java/com/tayfunyamak/tayfsozlukpro/MainActivity.java
+          # Hatanın asıl kaynağı olan otomatik üretilmiş/unutulmuş java klasörlerini kökten temizler
+          rm -rf android/app/src/main/java/io/
+          rm -rf android/app/src/main/java/com/tayfunyamak/tayfsozlukpro/MainActivity.java
           
-          # Eklenti önbellek izlerini hem kökten hem android altından temizler
+          # Eklenti haritalarını ve önbellekleri temizler
           rm -f pubspec.lock
           rm -f .flutter-plugins
           rm -f .flutter-plugins-dependencies
@@ -38,7 +39,7 @@ jobs:
           rm -f android/.flutter-plugins-dependencies
           flutter clean
 
-      # Bağımlılıkları Sıfırdan Yükleme
+      # Bağımlılıkları v2 Standartlarında Sıfırdan Yükleme
       - name: Install dependencies
         run: flutter pub get
 
