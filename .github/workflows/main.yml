@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Node.js güncellemelerine tam uyumlu en son sürüme yükseltildi
+      # Node.js güncellemelerine tam uyumlu kararlı sürüm
       - uses: actions/checkout@v4
 
       # Java Kurulumu
@@ -24,14 +24,13 @@ jobs:
         with:
           channel: 'stable'
 
-      # MUTLAK ARINMA: Git deposundan sarkan ve v1 embedding tetikleyen tüm Java kırıntıları silinir
-      - name: Absolute Purge of Legacy Configurations and Plugins
+      # NİHAİ RADİKAL TEMİZLİK: Git'ten sarkan tüm legacy java bileşenleri diskten tamamen kazınır
+      - name: Hard Purge Legacy Directory Structure
         run: |
-          # Hatanın asıl kaynağı olan otomatik üretilmiş/unutulmuş java klasörlerini kökten temizler
-          rm -rf android/app/src/main/java/io/
-          rm -rf android/app/src/main/java/com/tayfunyamak/tayfsozlukpro/MainActivity.java
+          # Fiziksel olarak kırıntı bırakmamak için tüm java kaynak yollarını uçurur
+          rm -rf android/app/src/main/java/
           
-          # Eklenti haritalarını ve önbellekleri temizler
+          # Geçici dosya haritalarını sıfırlar
           rm -f pubspec.lock
           rm -f .flutter-plugins
           rm -f .flutter-plugins-dependencies
@@ -39,7 +38,7 @@ jobs:
           rm -f android/.flutter-plugins-dependencies
           flutter clean
 
-      # Bağımlılıkları v2 Standartlarında Sıfırdan Yükleme
+      # Bağımlılıkları v2 Formatında Sıfırdan Çekme
       - name: Install dependencies
         run: flutter pub get
 
@@ -50,7 +49,7 @@ jobs:
           APP_VERSION_NAME: "1.0.${{ github.run_number }}"
         run: flutter build apk --debug
 
-      # Çıktıyı GitHub Üzerine Yükleme
+      # Çıktıyı Güvenli Şekilde Yüklüyor
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
