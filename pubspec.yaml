@@ -12,11 +12,13 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.3.2
   flutter_tts: ^4.2.1
-  # KESİN ÇÖZÜM: V1 Embedding (Registrar) hatasını çözen güncel sürüm
   file_picker: ^8.1.4
   path_provider: ^2.1.5
   csv: ^6.0.0
   share_plus: ^10.0.0
+  # KESİN ÇÖZÜM: Yeni Nesil Isar Veritabanı
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
 
 dependency_overrides:
   flutter_plugin_android_lifecycle: 2.0.20
@@ -25,6 +27,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  # Isar veritabanı tablolarını derlemek için gerekli
+  build_runner: ^2.4.13
+  isar_generator: ^3.1.0
 
 flutter:
   uses-material-design: true
