@@ -10,7 +10,7 @@ class QuizScreen extends StatefulWidget {
   final int questionCount;
   final Function(WordModel) onWordLearned;
   final Function(WordModel) onWordWrong;
-  final Function(int timeElapsed, int answered, int wrong) onQuizFinished; // İstatistik Kaydı İçin
+  final Function(int timeElapsed, int answered, int wrong) onQuizFinished; 
 
   const QuizScreen({
     super.key,
@@ -82,39 +82,35 @@ class _QuizScreenState extends State<QuizScreen> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  // OPTİMİZASYON: Öncelikli dili kullanır, telefonu yormaz.
   Future<void> _speakWord(String text, String libraryName) async {
     if (!isAudioEnabled) return;
-    String lang = getLanguageForWord(text, libraryName, isMeaning: false);
+    String lang = getSourceLanguage(libraryName);
     await flutterTts.setLanguage(lang);
     await flutterTts.speak(text);
   }
 
-  // AWAIT OLMADAN ASENKRON ÇAĞRILACAK Kİ ARAYÜZÜ KİLİTLEMESİN
+  // OPTİMİZASYON: Geri bildirim dilini, kelimenin orijinal diliyle EŞLEŞTİRİR
+  // İngilizce ise İngilizce, Türkçe ise Türkçe geribildirim verir. Dil değiştirmekle zaman kaybetmez.
   void _speakFeedback(bool isCorrect, WordModel word) {
     if (!isAudioEnabled) return;
-    String qLang = getLanguageForWord(word.word, word.libraryName, isMeaning: false);
+    String lang = getSourceLanguage(word.libraryName);
     
-    // İngilizce soru ise Türkçe cevap, Türkçe soru ise İngilizce cevap
-    String targetLang = qLang == 'en-US' ? 'tr-TR' : 'en-US';
-    
-    flutterTts.setLanguage(targetLang).then((_) {
-      if (isCorrect) {
-        flutterTts.speak(targetLang == 'tr-TR' ? "Doğru" : "Correct");
-      } else {
-        flutterTts.speak(targetLang == 'tr-TR' ? "Yanlış" : "Wrong");
-      }
-    });
+    if (lang == 'tr-TR') {
+      flutterTts.speak(isCorrect ? "Doğru" : "Yanlış");
+    } else {
+      flutterTts.speak(isCorrect ? "Correct" : "Wrong");
+    }
   }
 
   void _speakCompletion() {
     if (!isAudioEnabled || quizWords.isEmpty) return;
-    String lang = getLanguageForWord(quizWords.first.word, quizWords.first.libraryName, isMeaning: false);
+    String lang = getSourceLanguage(quizWords.first.libraryName);
     
-    // Çapraz Dil Mantığı: İngilizce sorular bittiğinde Türkçe tebrik.
-    if (lang == 'en-US') {
-      flutterTts.setLanguage('tr-TR').then((_) => flutterTts.speak("Tebrikler"));
+    if (lang == 'tr-TR') {
+      flutterTts.speak("Tebrikler");
     } else {
-      flutterTts.setLanguage('en-US').then((_) => flutterTts.speak("Congratulations"));
+      flutterTts.speak("Congratulations");
     }
   }
 
@@ -157,12 +153,10 @@ class _QuizScreenState extends State<QuizScreen> {
   void _checkAnswer(String option) {
     if (isAnsweredCorrectly || selectedWrongOptions.contains(option)) return;
     
-    // STATE GÜNCELLEMESİ (Anında renk değişir)
     setState(() {
       if (option == correctOption) {
         isAnsweredCorrectly = true;
         answeredQuestions++;
-        
         if (selectedWrongOptions.isEmpty) {
           correctAnswers++;
           currentWord.correctCount++;
@@ -174,13 +168,12 @@ class _QuizScreenState extends State<QuizScreen> {
       }
     });
 
-    // SES VE BEKLEME İŞLEMLERİ (UI donmaz)
     if (option == correctOption) {
       _speakFeedback(true, currentWord);
       if (currentWord.correctCount >= widget.threshold) {
          widget.onWordLearned(currentWord);
       }
-      // Bekleme süresi 600 milisaniyeye indirildi (Çok hızlı geçer)
+      // Geçiş hızı 600 ms'ye düşürüldü.
       Future.delayed(const Duration(milliseconds: 600), _generateQuestion);
     } else {
       widget.onWordWrong(currentWord);
@@ -228,7 +221,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 const SizedBox(height: 10),
                 const Text("🎉", style: TextStyle(fontSize: 80)),
                 const SizedBox(height: 10),
-                const Text("Tebrikler!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                Text(getSourceLanguage(quizWords.first.libraryName) == 'tr-TR' ? "Tebrikler!" : "Congratulations!", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
                 Card(
                   elevation: 5,
