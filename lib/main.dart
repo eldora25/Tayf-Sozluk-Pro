@@ -5,11 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:file_picker/file_picker.dart';
-import 'models/word_model.dart';
-import 'screens/quiz_screen.dart';
-import 'screens/wrong_words_screen.dart';
-import 'screens/add_word_screen.dart';
-import 'screens/word_list_screen.dart';
+import 'package:csv/csv.dart';
+import 'models.dart';
+import 'quiz_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,14 +15,14 @@ void main() async {
 }
 
 class TayfSozlukApp extends StatefulWidget {
-  const TayfSozlukApp({Key? key}) : super(key: key);
+  const TayfSozlukApp({super.key});
 
   @override
   State<TayfSozlukApp> createState() => _TayfSozlukAppState();
 }
 
 class _TayfSozlukAppState extends State<TayfSozlukApp> {
-  bool _isDarkMode = true;
+  bool isDarkMode = true;
 
   @override
   void initState() {
@@ -32,15 +30,15 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
     _loadTheme();
   }
 
-  Future<void> _loadTheme() async {
+  void _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() { _isDarkMode = prefs.getBool('isDarkMode') ?? true; });
+    setState(() => isDarkMode = prefs.getBool('isDarkMode') ?? true);
   }
 
-  Future<void> _toggleTheme(bool value) async {
+  void _toggleTheme(bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() { _isDarkMode = value; });
-    await prefs.setBool('isDarkMode', value);
+    setState(() => isDarkMode = value);
+    prefs.setBool('isDarkMode', value);
   }
 
   @override
@@ -48,8 +46,11 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
     return MaterialApp(
       title: 'Tayf Sözlük Pro',
       debugShowCheckedModeBanner: false,
-      theme: _isDarkMode ? ThemeData.dark() : ThemeData.light(),
-      home: HomeScreen(isDarkMode: _isDarkMode, onThemeChanged: _toggleTheme),
+      theme: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+      home: HomeScreen(
+        isDarkMode: isDarkMode,
+        onThemeChanged: _toggleTheme,
+      ),
     );
   }
 }
@@ -57,209 +58,445 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
 class HomeScreen extends StatefulWidget {
   final bool isDarkMode;
   final ValueChanged<bool> onThemeChanged;
-  const HomeScreen({Key? key, required this.isDarkMode, required this.onThemeChanged}) : super(key: key);
+
+  const HomeScreen({super.key, required this.isDarkMode, required this.onThemeChanged});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  final FlutterTts _flutterTts = FlutterTts();
-  late AnimationController _flipAnimationController;
-  
-  String buildNo = "1"; 
-  List<WordModel> _allWords = [];
-  List<WordModel> _learnedWords = [];
-  List<WordModel> _reviewWords = [];
-  List<WrongWordModel> _wrongWords = [];
-  List<String> _libraries = ['test'];
-  String _selectedLibrary = 'test';
-  String _selectedLevel = 'Genel';
-  int _dailyGoal = 10;
-  int _dailyProgress = 0;
-  int _quizQuestionCount = 10;
-  int _masteryThreshold = 3;
-  int _currentCardIndex = 0;
-  bool _isCardFlipped = false;
-  bool _isLoading = true;
+  // GitHub Run Number'ı alıyoruz
+  static const String buildNo = String.fromEnvironment('BUILD_NUMBER', defaultValue: 'Dev');
+
+  final FlutterTts flutterTts = FlutterTts();
+  late AnimationController _flipController;
+  late Animation<double> _flipAnimation;
+
+  List<WordModel> allWords = [];
+  List<WordModel> learnedWords = [];
+  List<WordModel> toRepeatWords = [];
+  List<WordModel> wrongWords = []; // Quiz'de veya 'Tekrar' ile yanlış yapılanlar
+
+  String selectedLibrary = 'Varsayılan';
+  String selectedLevel = 'Genel';
+  int dailyGoal = 10;
+  int quizThreshold = 10;
+  int currentCardIndex = 0;
+  bool isFlipped = false;
 
   @override
   void initState() {
     super.initState();
-    _flipAnimationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
-    _loadAllData();
+    _flipController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _flipAnimation = Tween<double>(begin: 0, end: 1).animate(_flipController);
+    _loadData();
+    _initTts();
+  }
+
+  void _initTts() async {
+    await flutterTts.setLanguage("en-US");
+    await flutterTts.setSpeechRate(0.5);
   }
 
   @override
   void dispose() {
-    _flipAnimationController.dispose();
-    _flutterTts.stop();
+    _flipController.dispose();
+    flutterTts.stop();
     super.dispose();
   }
 
-  Future<void> _loadAllData() async {
-    setState(() => _isLoading = true);
+  // --- VERİ KAYIT & YÜKLEME ---
+  Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _selectedLibrary = prefs.getString('selectedLibrary') ?? 'test';
-      _selectedLevel = prefs.getString('selectedLevel') ?? 'Genel';
-      _dailyGoal = prefs.getInt('dailyGoal') ?? 10;
-      _dailyProgress = prefs.getInt('dailyProgress') ?? 0;
-      _quizQuestionCount = prefs.getInt('quizQuestionCount') ?? 10;
-      _masteryThreshold = prefs.getInt('masteryThreshold') ?? 3;
-      _currentCardIndex = prefs.getInt('currentCardIndex') ?? 0;
-      
-      String? wordsJson = prefs.getString('allWords');
-      if (wordsJson != null) _allWords = (json.decode(wordsJson) as List).map((e) => WordModel.fromMap(e)).toList();
-      String? learnedJson = prefs.getString('learnedWords');
-      if (learnedJson != null) _learnedWords = (json.decode(learnedJson) as List).map((e) => WordModel.fromMap(e)).toList();
-      String? reviewJson = prefs.getString('reviewWords');
-      if (reviewJson != null) _reviewWords = (json.decode(reviewJson) as List).map((e) => WordModel.fromMap(e)).toList();
-      String? wrongJson = prefs.getString('wrongWords');
-      if (wrongJson != null) _wrongWords = (json.decode(wrongJson) as List).map((e) => WrongWordModel.fromMap(e)).toList();
-      
-      _updateLibraryList();
-      _isLoading = false;
+      selectedLibrary = prefs.getString('selectedLibrary') ?? 'Varsayılan';
+      selectedLevel = prefs.getString('selectedLevel') ?? 'Genel';
+      dailyGoal = prefs.getInt('dailyGoal') ?? 10;
+      quizThreshold = prefs.getInt('quizThreshold') ?? 10;
+      currentCardIndex = prefs.getInt('currentCardIndex') ?? 0;
+
+      allWords = _parseWordList(prefs.getStringList('allWords'));
+      learnedWords = _parseWordList(prefs.getStringList('learnedWords'));
+      toRepeatWords = _parseWordList(prefs.getStringList('toRepeatWords'));
+      wrongWords = _parseWordList(prefs.getStringList('wrongWords'));
+
+      if (allWords.isEmpty) {
+        _createDefaultLibrary();
+      }
     });
-    if (_allWords.isEmpty) _initDefaultTestPackage();
   }
 
-  void _updateLibraryList() {
-    final extracted = _allWords.map((e) => e.libraryName).toSet().toList();
-    for (var lib in extracted) { if (!_libraries.contains(lib)) _libraries.add(lib); }
+  List<WordModel> _parseWordList(List<String>? list) {
+    if (list == null) return [];
+    return list.map((e) => WordModel.fromJson(e)).toList();
   }
 
-  void _initDefaultTestPackage() {
-    List<Map<String, dynamic>> defaultData = [
-      {"word": "word", "meanings": ["söz, sözcük", "lafız"], "examples": ["Words fail me."], "level": "Genel", "libraryName": "test"},
-      {"word": "book", "meanings": ["kitap", "ayırtmak"], "examples": ["I read a book."], "level": "Genel", "libraryName": "test"}
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('selectedLibrary', selectedLibrary);
+    prefs.setString('selectedLevel', selectedLevel);
+    prefs.setInt('dailyGoal', dailyGoal);
+    prefs.setInt('quizThreshold', quizThreshold);
+    prefs.setInt('currentCardIndex', currentCardIndex);
+
+    prefs.setStringList('allWords', allWords.map((e) => e.toJson()).toList());
+    prefs.setStringList('learnedWords', learnedWords.map((e) => e.toJson()).toList());
+    prefs.setStringList('toRepeatWords', toRepeatWords.map((e) => e.toJson()).toList());
+    prefs.setStringList('wrongWords', wrongWords.map((e) => e.toJson()).toList());
+  }
+
+  void _createDefaultLibrary() {
+    allWords = [
+      WordModel(word: 'Apple', meanings: ['Elma', 'Meyve'], examples: ['I ate an apple.'], libraryName: 'Varsayılan'),
+      WordModel(word: 'Book', meanings: ['Kitap', 'Ayırtmak'], examples: ['Read a book.', 'Book a flight.'], libraryName: 'Varsayılan'),
     ];
-    setState(() { _allWords = defaultData.map((e) => WordModel.fromMap(e)).toList(); _updateLibraryList(); });
-    _saveWords();
+    _saveData();
   }
 
-  Future<void> _saveWords() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('allWords', json.encode(_allWords.map((e) => e.toMap()).toList()));
+  // --- FİLTRELEME VE KART MANTIĞI ---
+  List<WordModel> get filteredWords {
+    return allWords.where((w) => w.libraryName == selectedLibrary && w.level == selectedLevel).toList();
   }
 
-  Future<void> _saveAppState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedLibrary', _selectedLibrary);
-    await prefs.setString('selectedLevel', _selectedLevel);
-    
-    // HATALAR BURADA DÜZELTİLDİ (putInt -> setInt)
-    await prefs.setInt('dailyGoal', _dailyGoal);
-    await prefs.setInt('dailyProgress', _dailyProgress);
-    await prefs.setInt('quizQuestionCount', _quizQuestionCount);
-    await prefs.setInt('masteryThreshold', _masteryThreshold);
-    await prefs.setInt('currentCardIndex', _currentCardIndex);
-    
-    await prefs.setString('learnedWords', json.encode(_learnedWords.map((e) => e.toMap()).toList()));
-    await prefs.setString('reviewWords', json.encode(_reviewWords.map((e) => e.toMap()).toList()));
-    await prefs.setString('wrongWords', json.encode(_wrongWords.map((e) => e.toMap()).toList()));
+  List<String> get availableLibraries {
+    return allWords.map((e) => e.libraryName).toSet().toList();
   }
 
-  Future<void> _speak(String text) async { await _flutterTts.setLanguage("en-US"); await _flutterTts.speak(text); }
-
-  void _toggleCard() {
-    var filtered = _getCurrentFilteredWords();
-    if (filtered.isEmpty) return;
-    if (_isCardFlipped) { _flipAnimationController.reverse(); } 
-    else { _flipAnimationController.forward(); if (_currentCardIndex < filtered.length) _speak(filtered[_currentCardIndex].word); }
-    setState(() { _isCardFlipped = !_isCardFlipped; });
-  }
-
-  List<WordModel> _getCurrentFilteredWords() { return _allWords.where((w) => w.libraryName == _selectedLibrary && w.level == _selectedLevel).toList(); }
-
-  void _onBiliyorumPressed(WordModel word) {
-    setState(() { _learnedWords.add(word); _allWords.removeWhere((w) => w.word == word.word); _dailyProgress++; _isCardFlipped = false; _flipAnimationController.reset(); });
-    _saveWords(); _saveAppState();
-  }
-
-  void _onTekrarPressed(WordModel word) {
+  void _nextCard() {
+    var list = filteredWords;
+    if (list.isEmpty) return;
     setState(() {
-      if (!_reviewWords.any((w) => w.word == word.word)) _reviewWords.add(word);
-      var idx = _wrongWords.indexWhere((w) => w.wordInfo.word == word.word);
-      if (idx == -1) { _wrongWords.add(WrongWordModel(wordInfo: word, wrongCount: 1)); } else { _wrongWords[idx].wrongCount++; }
-      _isCardFlipped = false; _flipAnimationController.reset();
-      var rem = _getCurrentFilteredWords();
-      if (rem.length > 1) _currentCardIndex = (_currentCardIndex + 1) % rem.length;
+      isFlipped = false;
+      _flipController.reset();
+      currentCardIndex = (currentCardIndex + 1) % list.length;
     });
-    _saveAppState();
+    _saveData();
   }
 
+  void _flipCard(WordModel word) {
+    if (isFlipped) {
+      _flipController.reverse();
+    } else {
+      _flipController.forward();
+      flutterTts.speak(word.word); // Arka yüz çevrilirken seslendir
+    }
+    setState(() => isFlipped = !isFlipped);
+  }
+
+  void _markAsLearned(WordModel word) {
+    setState(() {
+      learnedWords.add(word);
+      allWords.removeWhere((w) => w.word == word.word);
+      _nextCard();
+    });
+    _saveData();
+  }
+
+  void _markAsToRepeat(WordModel word) {
+    setState(() {
+      if (!toRepeatWords.any((w) => w.word == word.word)) toRepeatWords.add(word);
+      
+      // Yanlış kelimelere ekle veya sayısını artır
+      var existingWrong = wrongWords.where((w) => w.word == word.word).toList();
+      if (existingWrong.isNotEmpty) {
+        existingWrong.first.wrongCount++;
+      } else {
+        word.wrongCount = 1;
+        wrongWords.add(word);
+      }
+      _nextCard();
+    });
+    _saveData();
+  }
+
+  // --- İÇE AKTARMA (CSV, JSON) ---
   Future<void> _importFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom, 
+      allowedExtensions: ['csv', 'json', 'txt']
+    );
+
     if (result != null && result.files.single.path != null) {
       File file = File(result.files.single.path!);
       String fileName = result.files.single.name.split('.').first;
       String content = await file.readAsString(encoding: utf8);
-      var decoded = json.decode(content);
-      List<dynamic> wordsList = decoded is Map && decoded.containsKey('words') ? decoded['words'] : decoded;
-      for (var item in wordsList) {
-        _allWords.add(WordModel(word: item['word'] ?? '', meanings: List<String>.from(item['meanings'] ?? []), examples: List<String>.from(item['examples'] ?? []), level: item['level'] ?? 'Genel', libraryName: fileName));
+      String extension = result.files.single.extension ?? '';
+
+      // Kütüphane ismini kullanıcıya sor
+      String? customLibraryName = await _showInputDialog("Kütüphane Adı", fileName);
+      if (customLibraryName == null || customLibraryName.isEmpty) return;
+
+      List<WordModel> newWords = [];
+
+      try {
+        if (extension == 'json') {
+          var decoded = json.decode(content);
+          List list = decoded is Map ? decoded['words'] : decoded;
+          newWords = list.map((e) => WordModel(
+            word: e['word'] ?? '',
+            meanings: List<String>.from(e['meanings'] ?? []),
+            examples: List<String>.from(e['examples'] ?? []),
+            level: e['level'] ?? 'Genel',
+            libraryName: customLibraryName,
+          )).toList();
+        } else {
+          // CSV / TXT Parsing (Format: word, meaning1;meaning2, example1;example2, level)
+          List<List<dynamic>> rows = const CsvToListConverter().convert(content);
+          for (var row in rows) {
+            if (row.isEmpty) continue;
+            newWords.add(WordModel(
+              word: row[0].toString(),
+              meanings: row.length > 1 ? row[1].toString().split(';') : [''],
+              examples: row.length > 2 ? row[2].toString().split(';') : [],
+              level: row.length > 3 && row[3].toString().isNotEmpty ? row[3].toString() : 'Genel',
+              libraryName: customLibraryName,
+            ));
+          }
+        }
+
+        setState(() {
+          allWords.addAll(newWords);
+          selectedLibrary = customLibraryName;
+          currentCardIndex = 0;
+        });
+        _saveData();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${newWords.length} kelime aktarıldı.")));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dosya formatı hatalı: $e")));
       }
-      setState(() { if (!_libraries.contains(fileName)) _libraries.add(fileName); _selectedLibrary = fileName; _currentCardIndex = 0; });
-      _saveWords(); _saveAppState();
     }
   }
 
+  Future<String?> _showInputDialog(String title, String defaultValue) {
+    TextEditingController ctrl = TextEditingController(text: defaultValue);
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(controller: ctrl),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal")),
+          ElevatedButton(onPressed: () => Navigator.pop(context, ctrl.text), child: const Text("Kaydet")),
+        ],
+      ),
+    );
+  }
+
+  // --- UI OLUŞTURMA ---
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    var filteredList = _getCurrentFilteredWords();
-    WordModel? currentWord = filteredList.isNotEmpty && _currentCardIndex < filteredList.length ? filteredList[_currentCardIndex] : null;
+    var activeList = filteredWords;
+    WordModel? currentWord;
+    
+    if (activeList.isNotEmpty) {
+      if (currentCardIndex >= activeList.length) currentCardIndex = 0;
+      currentWord = activeList[currentCardIndex];
+    }
 
     return Scaffold(
-      appBar: AppBar(title: Text("Tayf Sözlük - $_selectedLibrary / $_selectedLevel", style: const TextStyle(fontSize: 14))),
+      appBar: AppBar(
+        title: Text("$selectedLibrary - $selectedLevel"),
+      ),
       drawer: _buildDrawer(),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: currentWord == null 
+        ? const Center(child: Text("Bu filtreye uygun kelime kalmadı."))
+        : Column(
+            children: [
+              const SizedBox(height: 20),
+              // İlerleme Çubuğu
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  children: [
+                    Text("Öğrenilen: ${learnedWords.length} / Hedef: $dailyGoal", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(value: learnedWords.length / dailyGoal),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              // Animasyonlu Kart
+              GestureDetector(
+                onTap: () => _flipCard(currentWord!),
+                child: AnimatedBuilder(
+                  animation: _flipAnimation,
+                  builder: (context, child) {
+                    final angle = _flipAnimation.value * pi;
+                    bool isFront = angle < (pi / 2);
+                    return Transform(
+                      transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle),
+                      alignment: Alignment.center,
+                      child: isFront 
+                          ? _buildCardFront(currentWord!)
+                          : Transform(
+                              transform: Matrix4.identity()..rotateX(pi),
+                              alignment: Alignment.center,
+                              child: _buildCardBack(currentWord!),
+                            ),
+                    );
+                  }
+                ),
+              ),
+              const Spacer(),
+              // Aksiyon Butonları
+              if (isFlipped)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                      icon: const Icon(Icons.repeat),
+                      label: const Text("Tekrar"),
+                      onPressed: () => _markAsToRepeat(currentWord!),
+                    ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                      icon: const Icon(Icons.check),
+                      label: const Text("Biliyorum"),
+                      onPressed: () => _markAsLearned(currentWord!),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 40),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildCardFront(WordModel word) {
+    return Container(
+      width: 300,
+      height: 300,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: widget.isDarkMode ? Colors.grey[800] : Colors.blue[50],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+      ),
+      child: Stack(
+        children: [
+          Center(child: Text(word.word, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))),
+          Positioned(
+            right: 0, top: 0,
+            child: IconButton(
+              icon: const Icon(Icons.volume_up, size: 30),
+              onPressed: () => flutterTts.speak(word.word),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardBack(WordModel word) {
+    return Container(
+      width: 300,
+      height: 300,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: widget.isDarkMode ? Colors.grey[700] : Colors.green[50],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+      ),
+      child: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Hedef: $_dailyProgress / $_dailyGoal", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            LinearProgressIndicator(value: _dailyGoal > 0 ? _dailyProgress / _dailyGoal : 0),
-            const SizedBox(height: 32),
-            Expanded(child: currentWord == null ? const Center(child: Text("Kelime kalmadı!")) : GestureDetector(onTap: _toggleCard, child: AnimatedBuilder(animation: _flipAnimationController, builder: (context, child) {
-              final angle = _flipAnimationController.value * pi;
-              return Transform(transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateY(angle), alignment: Alignment.center, child: angle < pi / 2 ? _buildCardFront(currentWord.word) : Transform(alignment: Alignment.center, transform: Matrix4.identity()..rotateY(pi), child: _buildCardBack(currentWord)));
-            }))),
-            const SizedBox(height: 24),
-            if (currentWord != null) Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-              ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () => _onBiliyorumPressed(currentWord), child: const Text("Biliyorum")),
-              ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent), onPressed: () => _onTekrarPressed(currentWord), child: const Text("Tekrar")),
-            ]),
-            const SizedBox(height: 16),
-            Text("By: Tayfun Yamak ©", style: const TextStyle(color: Colors.grey)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.volume_up), onPressed: () => flutterTts.speak(word.word)),
+              ],
+            ),
+            const Divider(),
+            const Text("Anlamlar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+            ...word.meanings.map((m) => Text("• $m")),
+            const SizedBox(height: 10),
+            if (word.examples.isNotEmpty) const Text("Örnekler:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+            ...word.examples.map((e) => Text("» $e", style: const TextStyle(fontStyle: FontStyle.italic))),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCardFront(String word) {
-    return Container(decoration: BoxDecoration(color: widget.isDarkMode ? Colors.grey[800] : Colors.purple[50], borderRadius: BorderRadius.circular(24)), alignment: Alignment.center, child: Text(word, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)));
-  }
-
-  Widget _buildCardBack(WordModel word) {
-    return Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: widget.isDarkMode ? Colors.grey[850] : Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.purple)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), const Divider(), ...word.meanings.map((m) => Text("• $m")), const SizedBox(height: 12), ...word.examples.map((e) => Text("» $e"))]));
-  }
-
   Widget _buildDrawer() {
-    return Drawer(child: ListView(children: [
-      const DrawerHeader(decoration: BoxDecoration(color: Colors.purple), child: Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 20))),
-      ListTile(leading: const Icon(Icons.add), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(libraries: _libraries, onWordAdded: (w) { setState(() { _allWords.add(w); _updateLibraryList(); }); _saveWords(); }))); }),
-      ListTile(leading: const Icon(Icons.list), title: const Text("Kelime Listesi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: _allWords, onWordDeleted: (w) { setState(() { _allWords.removeWhere((x) => x.word == w.word); }); _saveWords(); }))); }),
-      ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz"), onTap: () { Navigator.pop(context); _startQuiz(); }),
-      ListTile(leading: const Icon(Icons.file_upload), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
-      ListTile(leading: const Icon(Icons.error), title: const Text("Yanlış Kelimeler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WrongWordsScreen(wrongWords: _wrongWords))); }),
-    ]));
-  }
-
-  void _startQuiz() {
-    var quizList = _getCurrentFilteredWords();
-    if (quizList.length < 4) return;
-    Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(words: quizList, questionCount: _quizQuestionCount, threshold: _masteryThreshold, onWrongWord: (w) { setState(() { var idx = _wrongWords.indexWhere((x) => x.wordInfo.word == w.word); if (idx == -1) { _wrongWords.add(WrongWordModel(wordInfo: w, wrongCount: 1)); } else { _wrongWords[idx].wrongCount++; } }); _saveAppState(); }, onWordMastered: (w) { setState(() { _learnedWords.add(w); _allWords.removeWhere((x) => x.word == w.word); }); _saveWords(); _saveAppState(); })));
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(color: Colors.deepPurple),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                Text("Build: v1.0.$buildNo", style: const TextStyle(color: Colors.white70)),
+                const Text("Tayfun Yamak ©", style: TextStyle(color: Colors.white50, fontSize: 12)),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.library_books),
+            title: const Text("Kütüphane Seç"),
+            trailing: DropdownButton<String>(
+              value: availableLibraries.contains(selectedLibrary) ? selectedLibrary : null,
+              items: availableLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              onChanged: (v) { setState(() { selectedLibrary = v!; currentCardIndex=0; }); _saveData(); },
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.bar_chart),
+            title: const Text("Seviye Seç"),
+            trailing: DropdownButton<String>(
+              value: selectedLevel,
+              items: ['A1','A2','B1','B2','C1','C2','Genel'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              onChanged: (v) { setState(() { selectedLevel = v!; currentCardIndex=0; }); _saveData(); },
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.quiz),
+            title: const Text("Quiz"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
+                words: filteredWords,
+                threshold: quizThreshold,
+                onWordLearned: (w) => _markAsLearned(w),
+                onWordWrong: (w) => _markAsToRepeat(w),
+              )));
+            },
+          ),
+          ListTile(leading: const Icon(Icons.upload_file), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
+          ListTile(
+            leading: const Icon(Icons.warning_amber_rounded),
+            title: const Text("Yanlış Kelimeler"),
+            trailing: CircleAvatar(radius: 12, child: Text(wrongWords.length.toString(), style: const TextStyle(fontSize: 12))),
+            onTap: () {
+              // Hızlı bir liste görünümü
+              Navigator.push(context, MaterialPageRoute(builder: (context) => Scaffold(
+                appBar: AppBar(title: const Text("Yanlış Kelimeler")),
+                body: ListView.builder(
+                  itemCount: wrongWords.length,
+                  itemBuilder: (c, i) => ListTile(
+                    title: Text(wrongWords[i].word),
+                    subtitle: Text(wrongWords[i].meanings.join(', ')),
+                    trailing: Text("Yanlış: ${wrongWords[i].wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  ),
+                )
+              )));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.dark_mode),
+            title: const Text("Karanlık Mod"),
+            trailing: Switch(value: widget.isDarkMode, onChanged: widget.onThemeChanged),
+          ),
+        ],
+      ),
+    );
   }
 }
