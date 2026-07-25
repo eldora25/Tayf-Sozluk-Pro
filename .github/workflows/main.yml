@@ -25,9 +25,11 @@ jobs:
         run: |
           rm -rf android
           flutter create --platforms=android .
-          # GÜVENLİK DUVARI: share_plus ve yeni eklentilerin API 34+ isteme ihtimaline karşı SDK sürümlerini kilitliyoruz.
-          echo "flutter.compileSdkVersion=34" >> android/local.properties
-          echo "flutter.targetSdkVersion=34" >> android/local.properties
+          
+          # KESİN ÇÖZÜM: Flutter'ın otomatik ürettiği tüm Gradle dosyalarındaki varsayılan 
+          # SDK sürümlerini bulur ve share_plus'ın istediği API 34'e zorla kilitler.
+          find android -name "build.gradle*" -exec sed -i 's/flutter.compileSdkVersion/34/g' {} +
+          find android -name "build.gradle*" -exec sed -i 's/flutter.targetSdkVersion/34/g' {} +
 
       - name: Install dependencies
         run: flutter pub get
