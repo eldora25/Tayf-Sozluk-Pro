@@ -8,29 +8,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Node.js güncellemelerine tam uyumlu kararlı sürüm
+      # Node.js 24/26 entegrasyonu için tamamen güncellendi
       - uses: actions/checkout@v4
 
-      # Java Kurulumu
+      # Java Kurulumu (Modern v4)
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # Flutter Kurulumu
+      # Flutter Kurulumu (Modern v2)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # NİHAİ RADİKAL TEMİZLİK: Git'ten sarkan tüm legacy java bileşenleri diskten tamamen kazınır
-      - name: Hard Purge Legacy Directory Structure
+      # Sunucudaki tüm olası önbellek çakışmalarını işletim sistemi seviyesinde yok etme
+      - name: Hard Purge Directory Structure & Cache
         run: |
-          # Fiziksel olarak kırıntı bırakmamak için tüm java kaynak yollarını uçurur
           rm -rf android/app/src/main/java/
-          
-          # Geçici dosya haritalarını sıfırlar
           rm -f pubspec.lock
           rm -f .flutter-plugins
           rm -f .flutter-plugins-dependencies
@@ -38,7 +35,7 @@ jobs:
           rm -f android/.flutter-plugins-dependencies
           flutter clean
 
-      # Bağımlılıkları v2 Formatında Sıfırdan Çekme
+      # Bağımlılıkları v2 Standartlarında Yükleme
       - name: Install dependencies
         run: flutter pub get
 
@@ -49,7 +46,7 @@ jobs:
           APP_VERSION_NAME: "1.0.${{ github.run_number }}"
         run: flutter build apk --debug
 
-      # Çıktıyı Güvenli Şekilde Yüklüyor
+      # Çıktıyı GitHub Üzerine Yükleme (Modern v4)
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
