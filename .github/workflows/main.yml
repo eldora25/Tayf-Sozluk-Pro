@@ -26,10 +26,10 @@ jobs:
           rm -rf android
           flutter create --platforms=android .
           
-          # KESİN ÇÖZÜM: Flutter'ın otomatik ürettiği tüm Gradle dosyalarındaki varsayılan 
-          # SDK sürümlerini bulur ve share_plus'ın istediği API 34'e zorla kilitler.
-          find android -name "build.gradle*" -exec sed -i 's/flutter.compileSdkVersion/34/g' {} +
-          find android -name "build.gradle*" -exec sed -i 's/flutter.targetSdkVersion/34/g' {} +
+          # API 36 GÜNCELLEMESİ: flutter_tts ve shared_preferences eklentilerinin 
+          # zorunlu tuttuğu en güncel API 36 sürümüne projeyi kilitliyoruz.
+          find android -name "build.gradle*" -exec sed -i 's/flutter.compileSdkVersion/36/g' {} +
+          find android -name "build.gradle*" -exec sed -i 's/flutter.targetSdkVersion/36/g' {} +
 
       - name: Install dependencies
         run: flutter pub get
