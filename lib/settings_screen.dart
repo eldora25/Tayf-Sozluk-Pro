@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'packages.dart';
 
 class SettingsScreen extends StatefulWidget {
   final int currentGoal;
@@ -7,6 +8,7 @@ class SettingsScreen extends StatefulWidget {
   final String selectedLevel;
   final List<String> availableLibraries;
   final Function(int, int, String, String) onSaveSettings;
+  final Function(String, String, String) onAddPackage;
 
   const SettingsScreen({
     super.key, 
@@ -15,7 +17,8 @@ class SettingsScreen extends StatefulWidget {
     required this.selectedLibrary,
     required this.selectedLevel,
     required this.availableLibraries,
-    required this.onSaveSettings
+    required this.onSaveSettings,
+    required this.onAddPackage,
   });
 
   @override
@@ -44,7 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("Ayarlar")),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 80.0), // Butonu yukarı kaldırmak için alt boşluk
+        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 80.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -69,37 +72,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text("Günlük Öğrenme Hedefi: ${_goalValue.toInt()} Kelime", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             Slider(
               value: _goalValue,
-              min: 5,
-              max: 100,
-              divisions: 19,
+              min: 5, max: 100, divisions: 19,
               label: _goalValue.toInt().toString(),
               activeColor: Colors.deepPurple,
               onChanged: (val) => setState(() => _goalValue = val),
             ),
-            
             const SizedBox(height: 20),
-            
             Text("Quiz Ezber Eşiği (Doğru Sayısı): ${_thresholdValue.toInt()}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Text("Kelimenin 'Öğrenildi' sayılması için quiz'de üst üste kaç kez doğru bilinmesi gerektiğini belirler.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+            const Text("Kelimenin 'Öğrenildi' sayılması için gerekli doğru sayısı.", style: TextStyle(color: Colors.grey, fontSize: 12)),
             Slider(
               value: _thresholdValue,
-              min: 1,
-              max: 20,
-              divisions: 19,
+              min: 1, max: 20, divisions: 19,
               label: _thresholdValue.toInt().toString(),
               activeColor: Colors.orange,
               onChanged: (val) => setState(() => _thresholdValue = val),
             ),
             
+            const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider()),
+            
+            const Text("Hazır Paketler", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+            const SizedBox(height: 10),
+            ListTile(
+              tileColor: Colors.blue.withOpacity(0.1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              title: const Text("Test Paketi (İng-Tr)", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Örnek cümleli json paket"),
+              trailing: const Icon(Icons.download, color: Colors.blue),
+              onTap: () {
+                widget.onAddPackage("Test Paketi", "json", DefaultPackages.testPackageJson);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Test Paketi Kütüphaneye Eklendi!")));
+              },
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              tileColor: Colors.orange.withOpacity(0.1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              title: const Text("İngilizce Sözlük (A Harfi)", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Temel kelimeler txt paketi"),
+              trailing: const Icon(Icons.download, color: Colors.orange),
+              onTap: () {
+                widget.onAddPackage("İngilizce-A", "txt", DefaultPackages.englishTurkishTxt);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İngilizce-A Paketi Eklendi!")));
+              },
+            ),
+
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16), 
-                  backgroundColor: Colors.green, 
-                  foregroundColor: Colors.white,
-                  elevation: 5,
+                  padding: const EdgeInsets.all(16), backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 5,
                 ),
                 onPressed: () {
                   widget.onSaveSettings(_goalValue.toInt(), _thresholdValue.toInt(), _library, _level);
