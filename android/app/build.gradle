@@ -1,57 +1,31 @@
-plugins {
-    id "com.android.application"
-    id "org.jetbrains.kotlin.android"
-    id "dev.flutter.flutter-gradle-plugin"
-}
-
-def computeVersionName() {
-    return System.getenv("APP_VERSION_NAME") ?: "1.0.0"
-}
-
-def computeBuildNumber() {
-    return System.getenv("APP_BUILD_NUMBER") ?: "1"
-}
-
-android {
-    namespace "com.tayfunyamak.tayfsozlukpro"
-    compileSdk 34
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+buildscript {
+    ext.kotlin_version = '1.8.22'
+    repositories {
+        google()
+        mavenCentral()
     }
-
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
-
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
-
-    defaultConfig {
-        applicationId "com.tayfunyamak.tayfsozlukpro"
-        minSdkVersion 23
-        targetSdkVersion 34
-        versionCode computeBuildNumber().toInteger()
-        versionName computeVersionName()
-    }
-
-    buildTypes {
-        release {
-            signingConfig signingConfigs.debug
-        }
-    }
-
-    // TY-Sozluk-v1.0.{build_no}-debug.apk isimlendirmesi
-    applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            def buildNo = computeBuildNumber()
-            outputFileName = "TY-Sozluk-v1.0.${buildNo}-debug.apk"
-        }
+    dependencies {
+        // Derleyicinin V1 motorunu çağırmasını engelleyen modern Android Gradle eklentisi
+        classpath 'com.android.tools.build:gradle:8.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
-flutter {
-    source '../..'
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
 }
