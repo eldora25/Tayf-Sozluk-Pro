@@ -21,26 +21,30 @@ jobs:
         with:
           channel: 'stable'
 
-      # KÖKTEN ÇÖZÜM VE API 36 ZORLAMASI:
-      # Android klasörünü sıfırdan oluşturur ve yeni Kotlin DSL (.kts) dosyalarındaki 
-      # API sürümlerini file_picker eklentisinin istediği sürümlere günceller.
-      - name: Regenerate Android Project (Force V2 & API 36)
+      # KÖKTEN ÇÖZÜM: V1 Embedding hatasını önlemek için Android klasörü temizden üretilir.
+      - name: Regenerate Android Project (Force V2)
         run: |
           rm -rf android
           flutter create --platforms=android .
-          # Yeni .kts dosyalarındaki varsayılan SDK değerlerini bul ve değiştir:
-          sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle.kts
-          sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle.kts
-          sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle.kts
 
+      # Bağımlılıklar indirilir
       - name: Install dependencies
         run: flutter pub get
+
+      # DEV-OPS MÜDAHALESİ 1: Flutter'ın "Upgrading build.gradle.kts" adı altında
+      # ayarlarımızı sıfırlamasını engellemek için, versiyon diktelerini doğrudan 
+      # ana konfigürasyon dosyasına (local.properties) yazıyoruz.
+      - name: Enforce API 36 Requirements
+        run: |
+          echo "flutter.compileSdkVersion=36" >> android/local.properties
+          echo "flutter.targetSdkVersion=36" >> android/local.properties
+          echo "flutter.minSdkVersion=23" >> android/local.properties
 
       # Standart APK Derlemesi
       - name: Build Debug APK
         run: flutter build apk --debug
 
-      # DEV-OPS MÜDAHALESİ: Üretilen APK dosyasının adını dinamik build numarasıyla değiştiriyoruz.
+      # DEV-OPS MÜDAHALESİ 2: Üretilen APK dosyasının adını dinamik build numarasıyla değiştiriyoruz.
       - name: Rename APK Dynamically
         run: |
           mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/TY-Sozluk-v1.0.${{ github.run_number }}-debug.apk
