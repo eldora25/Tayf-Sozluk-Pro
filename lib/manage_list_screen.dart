@@ -6,6 +6,7 @@ class ManageListScreen extends StatefulWidget {
   final List<WordModel> words;
   final bool showWrongCount;
   final Function(WordModel) onDelete;
+  final Function(WordModel)? onLearned; // YENİ: Sağa kaydırarak öğrenildi işareti için
   final Function() onClearAll;
 
   const ManageListScreen({
@@ -14,6 +15,7 @@ class ManageListScreen extends StatefulWidget {
     required this.words,
     this.showWrongCount = false,
     required this.onDelete,
+    this.onLearned,
     required this.onClearAll,
   });
 
@@ -84,25 +86,64 @@ class _ManageListScreenState extends State<ManageListScreen> {
                   itemCount: filteredList.length,
                   itemBuilder: (context, index) {
                     final item = filteredList[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      child: ListTile(
-                        title: Text(item.word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
-                        subtitle: Text(item.meanings.join(', ')),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (widget.showWrongCount)
-                              Text("Yanlış: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
-                              tooltip: 'Listeden Çıkar',
-                              onPressed: () {
-                                widget.onDelete(item);
-                                setState(() {});
-                              },
+                    
+                    // YENİ: KAYDIRARAK İŞLEM (SWIPE TO ACTION)
+                    return Dismissible(
+                      key: Key('${item.word}_$index'),
+                      direction: widget.onLearned != null 
+                          ? DismissDirection.horizontal 
+                          : DismissDirection.endToStart,
+                      background: Container(
+                        color: Colors.green,
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
+                      ),
+                      secondaryBackground: Container(
+                        color: Colors.redAccent,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: const Icon(Icons.delete, color: Colors.white, size: 30),
+                      ),
+                      onDismissed: (direction) {
+                        setState(() {
+                          widget.words.remove(item);
+                        });
+                        if (direction == DismissDirection.endToStart) {
+                          widget.onDelete(item);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime silindi."), duration: Duration(seconds: 1)));
+                        } else if (direction == DismissDirection.startToEnd) {
+                          if (widget.onLearned != null) widget.onLearned!(item);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime öğrenildi! ✅"), backgroundColor: Colors.green, duration: Duration(seconds: 1)));
+                        }
+                      },
+                      child: Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        child: ListTile(
+                          // YENİ: HERO ANİMASYONU 
+                          title: Hero(
+                            tag: 'hero_word_${item.word}',
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: Text(item.word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
                             ),
-                          ],
+                          ),
+                          subtitle: Text(item.meanings.join(', ')),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (widget.showWrongCount)
+                                Text("Yanlış: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+                                tooltip: 'Listeden Çıkar',
+                                onPressed: () {
+                                  widget.onDelete(item);
+                                  setState(() {});
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
