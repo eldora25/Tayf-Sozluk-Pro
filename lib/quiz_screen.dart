@@ -2,6 +2,8 @@ import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+// YENİ: LOTTIE ANİMASYONU PAKETİ EKLENDİ
+import 'package:lottie/lottie.dart'; 
 import 'models.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -213,7 +215,17 @@ class _QuizScreenState extends State<QuizScreen> {
               children: [
                 const Text("Quiz Tamamlandı!", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
                 const SizedBox(height: 10),
-                const Text("🎉", style: TextStyle(fontSize: 80)),
+                
+                // YENİ: LOTTIE HAVAİ FİŞEK ANİMASYONU 
+                Lottie.network(
+                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', // Güvenli ve popüler bir kutlama animasyonu
+                  height: 180,
+                  repeat: true,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Text("🎉", style: TextStyle(fontSize: 80)); // İnternet yoksa Emojiye düşer
+                  },
+                ),
+                
                 const SizedBox(height: 10),
                 Text(getSourceLanguage(quizWords.first.libraryName) == 'tr-TR' ? "Tebrikler!" : "Congratulations!", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
@@ -272,7 +284,6 @@ class _QuizScreenState extends State<QuizScreen> {
     bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     Color borderColor = isDarkMode ? Theme.of(context).primaryColor : Colors.deepPurple;
 
-    // KESİN ÇÖZÜM: Ekran Taşmalarını (Overflow) Engelleyen Kaydırılabilir Liste
     return Scaffold(
       appBar: AppBar(
         title: const Text("Quiz Modu"),
@@ -312,7 +323,15 @@ class _QuizScreenState extends State<QuizScreen> {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-              child: Text(currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              
+              // YENİ: KARTIN ÖN YÜZÜNE HERO ANİMASYONU
+              child: Hero(
+                tag: 'hero_word_${currentWord.word}',
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Text(currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 20),
