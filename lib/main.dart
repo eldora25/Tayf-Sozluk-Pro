@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:file_picker/file_picker.dart';
@@ -232,7 +233,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _saveData();
   }
 
-  // Ortak ayrıştırma fonksiyonu (||| veya noktalı virgülleri ayıklar)
   List<String> _cleanMeanings(List<dynamic> raw) {
     List<String> result = [];
     for (var item in raw) {
@@ -316,7 +316,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
-  // Güvenli Dışa Aktarım (Share ile)
+  // Yeni method: Uygulama içine gömülü assets dosyalarını okur
+  Future<void> _loadPackageFromAssets(String assetPath, String extension, String customLibraryName) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName yükleniyor, lütfen bekleyin...")));
+      String content = await rootBundle.loadString(assetPath);
+      await _parseDataAndAdd(content, extension, customLibraryName);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName başarıyla eklendi!")));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Paket yüklenirken hata oluştu: $e")));
+    }
+  }
+
   Future<void> _exportFile() async {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sanal kütüphane dışa aktarılamaz!")));
@@ -331,7 +342,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     List<List<dynamic>> rows = [];
     for (var w in exportList) {
-      // Tekrar import edilebilmesi için çoklu anlamları ||| ile birleştiriyoruz
       rows.add([w.word, w.meanings.join('|||'), w.examples.join('|||'), w.level]);
     }
     String csvData = const ListToCsvConverter().convert(rows);
@@ -341,7 +351,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       final file = File('${dir.path}/$selectedLibrary.csv');
       await file.writeAsString(csvData);
       
-      // Dosyayı Share ile güvenle dışarı aktar
       await Share.shareXFiles([XFile(file.path)], text: '$selectedLibrary Kütüphanesi Yedeği');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
@@ -470,7 +479,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ],
                 ),
               const Spacer(),
-              // FOOTER (Yükseltildi ve Renklendirildi)
               Padding(
                 padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 50.0),
                 child: Row(
@@ -634,7 +642,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   });
                   _saveData();
                 },
-                onAddPackage: (name, ext, data) => _parseDataAndAdd(data, ext, name),
+                // _loadPackageFromAssets fonksiyonunu gönderiyoruz
+                onAddPackage: (assetPath, ext, name) => _loadPackageFromAssets(assetPath, ext, name),
               )));
             }
           ),
