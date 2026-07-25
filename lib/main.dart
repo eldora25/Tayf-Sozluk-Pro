@@ -92,8 +92,6 @@ List<String> encodeWordsList(List<Map<String, dynamic>> maps) {
   return maps.map((e) => json.encode(e)).toList();
 }
 
-// ---------------------------------------------------------------
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const TayfSozlukApp());
@@ -230,8 +228,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       viewedCardTimestamps = prefs.getStringList('viewedCardTimestamps') ?? [];
       wrongAnswerTimestamps = prefs.getStringList('wrongAnswerTimestamps') ?? [];
       
+      // KESİN ÇÖZÜM: 1970 Yılı / 20.000 Gün Sorunu Düzeltmesi
       firstUseTimestamp = prefs.getInt('firstUseTimestamp') ?? 0;
-      if (firstUseTimestamp == 0) {
+      // 1700000000000 yaklaşık olarak 2023 sonlarına denk gelir.
+      // Eğer sıfırsa veya rastgele çok eski bir rakamsa, bugünü temel al.
+      if (firstUseTimestamp < 1700000000000) {
         firstUseTimestamp = DateTime.now().millisecondsSinceEpoch;
         prefs.setInt('firstUseTimestamp', firstUseTimestamp);
       }
@@ -563,56 +564,70 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       drawer: _buildDrawer(),
       body: currentWord == null 
         ? const Center(child: Text("Bu filtreye uygun kelime kalmadı."))
-        : Column(
-            children: [
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  children: [
-                    Text("Öğrenilen: ${learnedWords.length} / Hedef: $dailyGoal", style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(value: dailyGoal > 0 ? (learnedWords.length / dailyGoal) : 0),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => _flipCard(currentWord!),
-                child: AnimatedBuilder(
-                  animation: _flipAnimation,
-                  builder: (context, child) {
-                    final angle = _flipAnimation.value * pi;
-                    bool isFront = angle < (pi / 2);
-                    return Transform(
-                      transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle),
-                      alignment: Alignment.center,
-                      child: isFront ? _buildCardFront(currentWord!) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!)),
-                    );
-                  }
-                ),
-              ),
-              const Spacer(),
-              if (isFlipped)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!)),
-                    ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!)),
-                  ],
-                ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 50.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("V.1.0.$buildNo", style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text("By: Tayfun YAMAK©", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).primaryColor)),
-                  ],
-                ),
-              ),
-            ],
+        // KESİN ÇÖZÜM: Ekran taşmalarını engelleyen Duyarlı (Responsive) Tasarım Yapısı
+        : SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Column(
+                              children: [
+                                Text("Öğrenilen: ${learnedWords.length} / Hedef: $dailyGoal", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 8),
+                                LinearProgressIndicator(value: dailyGoal > 0 ? (learnedWords.length / dailyGoal) : 0),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () => _flipCard(currentWord!),
+                            child: AnimatedBuilder(
+                              animation: _flipAnimation,
+                              builder: (context, child) {
+                                final angle = _flipAnimation.value * pi;
+                                bool isFront = angle < (pi / 2);
+                                return Transform(
+                                  transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle),
+                                  alignment: Alignment.center,
+                                  child: isFront ? _buildCardFront(currentWord!) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!)),
+                                );
+                              }
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          if (isFlipped)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!)),
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!)),
+                              ],
+                            ),
+                          const Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 20.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("V.1.0.$buildNo", style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
+                                Text("By: Tayfun YAMAK©", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).primaryColor)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
     );
   }
@@ -682,8 +697,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: filteredWords, onDelete: (wordToDelete) { setState(() { allWords.removeWhere((w) => w.word == wordToDelete.word); toRepeatWords.removeWhere((w) => w.word == wordToDelete.word); }); _saveData(); }))); }),
-            
-            // KESİN ÇÖZÜM: Referans Hatası Giderildi
             ListTile(
               leading: const Icon(Icons.settings), 
               title: const Text("Ayarlar, Temalar, Seçimler"), 
@@ -693,7 +706,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   currentGoal: dailyGoal, 
                   currentThreshold: quizThreshold, 
                   currentQuestionCount: quizQuestionCount, 
-                  currentThemeIndex: widget.themeIndex, 
+                  currentThemeIndex: themeIndex, 
                   selectedLibrary: selectedLibrary, 
                   selectedLevel: selectedLevel, 
                   availableLibraries: availableLibraries, 
@@ -702,7 +715,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       dailyGoal = newGoal; 
                       quizThreshold = newThreshold; 
                       quizQuestionCount = newQCount; 
-                      widget.onThemeChanged(newThemeIdx); 
+                      _toggleTheme(newThemeIdx); 
                       selectedLibrary = newLib; 
                       selectedLevel = newLevel; 
                       currentCardIndex = 0; 
@@ -713,7 +726,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ))); 
               }
             ),
-            
             const Divider(),
             ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi"), subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
