@@ -50,7 +50,7 @@ jobs:
           # SpeechToText jcenter() Hatası Çözümü
           find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
           
-          # YENİ VE KESİN ÇÖZÜM: SpeechToText Registrar (Syntax Hatasını Önleyen Sahte Arayüz Enjeksiyonu)
+          # KESİN ÇÖZÜM: Null Safety Uyumlu Sahte Registrar Enjeksiyonu
           python3 -c '
           import glob
           paths = glob.glob("/home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android/src/main/kotlin/com/csdcorp/speech_to_text/SpeechToTextPlugin.kt")
@@ -59,10 +59,9 @@ jobs:
               with open(path, "r") as f:
                   content = f.read()
               
-              # Hatalı içeri aktarmayı (import) sil
               content = content.replace("import io.flutter.plugin.common.PluginRegistry.Registrar", "")
               
-              # Dosyanın sonuna derleyiciyi tatmin edecek sahte (dummy) sınıfı ekle
+              # Nullable tip uyumsuzluğunu çözen doğru imza
               dummy_interface = "\ninterface Registrar {\n    fun activity(): android.app.Activity?\n    fun context(): android.content.Context?\n    fun messenger(): io.flutter.plugin.common.BinaryMessenger?\n    fun addRequestPermissionsResultListener(listener: Any?)\n}\n"
               
               with open(path, "w") as f:
