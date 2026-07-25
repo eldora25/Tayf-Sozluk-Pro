@@ -1,33 +1,208 @@
 {
-    "name": "Test Paketi",
-    "description": "Çoklu anlam ve çoklu örnek cümle içeren test kelime paketi",
-    "languagePair": "en → tr",
-    "level": "Genel",
-    "words": [
-        {
-            "word": "word",
-            "meanings": ["söz, sözcük, kelime", "lafız", "vaad, söz", "haber, malumat"],
-            "examples": ["Words fail me. Sözle tarif edemem.", "word for word kelimesi kelimesine", "word game kelime oyunu"]
-        },
-        {
-            "word": "book",
-            "meanings": ["kitap", "defter", "rezervasyon yapmak", "ayırmak"],
-            "examples": ["I read a good book. İyi bir kitap okudum.", "I booked a hotel room. Bir otel odası ayırttım."]
-        },
-        {
-            "word": "mean",
-            "meanings": ["anlamına gelmek", "kastetmek", "ortalama", "cimri"],
-            "examples": ["What do you mean? Ne demek istiyorsun?", "mean distance ortalama mesafe"]
-        },
-        {
-            "word": "light",
-            "meanings": ["ışık, aydınlık", "hafif", "açık renkli", "yakmak"],
-            "examples": ["The light is bright. Işık parlak.", "This bag is light. Bu çanta hafif.", "light blue açık mavi"]
-        },
-        {
-            "word": "run",
-            "meanings": ["koşmak", "işletmek, yönetmek", "çalışmak (makine)", "akmak (su)"],
-            "examples": ["He runs fast. Hızlı koşar.", "She runs a company. Bir şirket yönetiyor.", "run away kaçmak"]
-        }
-    ]
+  "name": "Karma Test Paketi (İng-Tr & Tr-İng)",
+  "description": "Çoklu anlamlara ve örnek cümlelere sahip 20 İngilizce ve 20 Türkçe eşsesli test kelimesi.",
+  "languagePair": "en-tr / tr-en",
+  "level": "Genel",
+  "words": [
+    {
+      "word": "account",
+      "meanings": ["hesap", "açıklama", "önem", "hesap vermek"],
+      "examples": ["I opened a bank account. (Bir banka hesabı açtım.)", "Take this into account. (Bunu hesaba kat.)"]
+    },
+    {
+      "word": "run",
+      "meanings": ["koşmak", "işletmek", "yönetmek", "çalışmak (makine)"],
+      "examples": ["He runs fast. (O hızlı koşar.)", "She runs a company. (O bir şirket yönetiyor.)"]
+    },
+    {
+      "word": "light",
+      "meanings": ["ışık", "aydınlık", "hafif", "yakmak"],
+      "examples": ["The light is bright. (Işık parlak.)", "This bag is light. (Bu çanta hafif.)"]
+    },
+    {
+      "word": "mean",
+      "meanings": ["anlamına gelmek", "kastetmek", "ortalama", "cimri"],
+      "examples": ["What do you mean? (Ne demek istiyorsun?)", "That was a mean trick. (Bu kaba/kötü bir numaraydı.)"]
+    },
+    {
+      "word": "point",
+      "meanings": ["nokta", "uç", "puan", "işaret etmek"],
+      "examples": ["What is your point? (Amacın/Demek istediğin ne?)", "He pointed at the sky. (Gökyüzünü işaret etti.)"]
+    },
+    {
+      "word": "right",
+      "meanings": ["sağ", "doğru", "hak", "haklı"],
+      "examples": ["Turn right at the corner. (Köşeden sağa dön.)", "You are absolutely right. (Kesinlikle haklısın.)"]
+    },
+    {
+      "word": "play",
+      "meanings": ["oynamak", "çalmak (enstrüman)", "oyun (tiyatro)", "rol yapmak"],
+      "examples": ["Children are playing. (Çocuklar oynuyor.)", "I watched a great play yesterday. (Dün harika bir tiyatro oyunu izledim.)"]
+    },
+    {
+      "word": "head",
+      "meanings": ["baş, kafa", "başkan", "yönelmek", "akıl"],
+      "examples": ["My head hurts. (Başım ağrıyor.)", "He is the head of the department. (O bölümün başkanıdır.)"]
+    },
+    {
+      "word": "spring",
+      "meanings": ["ilkbahar", "yay", "kaynak, pınar", "sıçramak"],
+      "examples": ["Flowers bloom in spring. (Çiçekler ilkbaharda açar.)", "The mattress has broken springs. (Yatağın yayları kırık.)"]
+    },
+    {
+      "word": "fall",
+      "meanings": ["düşmek", "sonbahar", "düşüş", "azalmak"],
+      "examples": ["Be careful not to fall. (Düşmemeye dikkat et.)", "Leaves turn brown in fall. (Yapraklar sonbaharda kahverengiye döner.)"]
+    },
+    {
+      "word": "fire",
+      "meanings": ["ateş, yangın", "kovmak (işten)", "ateşlemek (silah)", "heyecan"],
+      "examples": ["They sat around the fire. (Ateşin etrafında oturdular.)", "He was fired from his job. (İşinden kovuldu.)"]
+    },
+    {
+      "word": "face",
+      "meanings": ["yüz, surat", "yüzleşmek", "ön taraf", "karşılaşmak"],
+      "examples": ["Wash your face. (Yüzünü yıka.)", "We must face the truth. (Gerçekle yüzleşmeliyiz.)"]
+    },
+    {
+      "word": "cover",
+      "meanings": ["örtmek", "kapak", "kapsamak", "koruma"],
+      "examples": ["Cover the pot. (Tencerenin kapağını ört.)", "The book has a hard cover. (Kitabın sert bir kapağı var.)"]
+    },
+    {
+      "word": "cross",
+      "meanings": ["haç", "çarpı", "karşıya geçmek", "kızgın"],
+      "examples": ["Cross the street carefully. (Caddeden karşıya dikkatlice geç.)", "Don't be cross with me. (Bana kızma.)"]
+    },
+    {
+      "word": "match",
+      "meanings": ["kibrit", "maç, karşılaşma", "eşleşmek", "uymak"],
+      "examples": ["Do you have a match? (Kibritin var mı?)", "This tie matches your shirt. (Bu kravat gömleğine uyuyor.)"]
+    },
+    {
+      "word": "sound",
+      "meanings": ["ses", "sağlam, mantıklı", "gibi gelmek", "iskandil etmek"],
+      "examples": ["I heard a strange sound. (Garip bir ses duydum.)", "That sounds like a good idea. (Bu iyi bir fikir gibi geliyor/duyuluyor.)"]
+    },
+    {
+      "word": "charge",
+      "meanings": ["şarj etmek", "ücretlendirmek", "suçlamak", "saldırmak"],
+      "examples": ["Charge your phone. (Telefonunu şarj et.)", "He was charged with theft. (Hırsızlıkla suçlandı.)"]
+    },
+    {
+      "word": "board",
+      "meanings": ["yazı tahtası", "kurul, heyet", "binmek (gemi/uçak)", "pano"],
+      "examples": ["Write it on the board. (Bunu tahtaya yaz.)", "The board of directors met today. (Yönetim kurulu bugün toplandı.)"]
+    },
+    {
+      "word": "break",
+      "meanings": ["kırmak, kırılmak", "mola", "bozmak", "fırsat"],
+      "examples": ["Don't break the glass. (Bardağı kırma.)", "Let's take a short break. (Kısa bir mola verelim.)"]
+    },
+    {
+      "word": "record",
+      "meanings": ["kayıt, rekor", "kaydetmek", "plak", "sicil"],
+      "examples": ["He broke the world record. (Dünya rekorunu kırdı.)", "Please record this meeting. (Lütfen bu toplantıyı kaydedin.)"]
+    },
+    {
+      "word": "yüz",
+      "meanings": ["face", "hundred", "swim", "flay / skin"],
+      "examples": ["Yüzünü yıka. (Wash your face.)", "Yüz liraya aldım. (I bought it for a hundred liras.)", "Havuzda yüz. (Swim in the pool.)"]
+    },
+    {
+      "word": "at",
+      "meanings": ["horse", "throw", "toss", "discard"],
+      "examples": ["Siyah at çok hızlı. (The black horse is very fast.)", "Topu bana at. (Throw the ball to me.)"]
+    },
+    {
+      "word": "gül",
+      "meanings": ["rose", "laugh", "smile"],
+      "examples": ["Bana kırmızı bir gül verdi. (He gave me a red rose.)", "Bu fıkraya çok güldüm. (I laughed a lot at this joke.)"]
+    },
+    {
+      "word": "yaz",
+      "meanings": ["summer", "write"],
+      "examples": ["Yaz tatili yaklaşıyor. (Summer vacation is approaching.)", "Bana bir mektup yaz. (Write me a letter.)"]
+    },
+    {
+      "word": "kız",
+      "meanings": ["girl", "daughter", "get angry"],
+      "examples": ["Küçük kız oyun oynuyor. (The little girl is playing.)", "Lütfen bana kızma. (Please don't get angry with me.)"]
+    },
+    {
+      "word": "çay",
+      "meanings": ["tea", "stream", "creek"],
+      "examples": ["Bir bardak çay içer misin? (Would you like a glass of tea?)", "Çayın kenarında piknik yaptık. (We had a picnic by the stream.)"]
+    },
+    {
+      "word": "yat",
+      "meanings": ["yacht", "lie down", "go to bed"],
+      "examples": ["Limanda büyük bir yat var. (There is a big yacht in the harbor.)", "Çok yorgunum, hemen yat. (I'm very tired, go to bed immediately.)"]
+    },
+    {
+      "word": "kır",
+      "meanings": ["countryside", "gray (hair)", "break"],
+      "examples": ["Camı kim kırdı? (Who broke the glass?)", "Kırlarda koşmak harika. (Running in the countryside is great.)"]
+    },
+    {
+      "word": "bin",
+      "meanings": ["thousand", "get on", "ride"],
+      "examples": ["Arabaya bin. (Get in the car.)", "Tam bin lira ödedim. (I paid exactly a thousand liras.)"]
+    },
+    {
+      "word": "yol",
+      "meanings": ["road, way", "method", "pluck", "pull out"],
+      "examples": ["Bu yol çok uzun. (This road is very long.)", "Bahçedeki otları yol. (Pluck the weeds in the garden.)"]
+    },
+    {
+      "word": "bağ",
+      "meanings": ["tie, bond", "vineyard", "orchard"],
+      "examples": ["Aile bağları güçlüdür. (Family bonds are strong.)", "Bağdan üzüm topladık. (We picked grapes from the vineyard.)"]
+    },
+    {
+      "word": "dolu",
+      "meanings": ["full", "hail (weather)"],
+      "examples": ["Bardak tamamen dolu. (The glass is completely full.)", "Dün gece dolu yağdı. (It hailed last night.)"]
+    },
+    {
+      "word": "düş",
+      "meanings": ["dream", "fall", "drop"],
+      "examples": ["Güzel bir düş gördüm. (I had a beautiful dream.)", "Dikkat et, düşme. (Be careful not to fall.)"]
+    },
+    {
+      "word": "geç",
+      "meanings": ["late", "pass", "go through"],
+      "examples": ["Derse geç kaldım. (I was late for class.)", "Karşıdan karşıya geç. (Cross to the other side.)"]
+    },
+    {
+      "word": "iç",
+      "meanings": ["inside, interior", "drink"],
+      "examples": ["Evin içi çok sıcak. (The inside of the house is very hot.)", "Soğuk su iç. (Drink cold water.)"]
+    },
+    {
+      "word": "kan",
+      "meanings": ["blood", "be fooled", "believe (deception)"],
+      "examples": ["Parmağım kanıyor. (My finger is bleeding.)", "Onun yalanlarına kanma. (Don't be fooled by his lies.)"]
+    },
+    {
+      "word": "kaç",
+      "meanings": ["how many", "run away", "escape"],
+      "examples": ["Saat kaç? (What time is it?)", "Hırsız hızla kaçtı. (The thief ran away quickly.)"]
+    },
+    {
+      "word": "saç",
+      "meanings": ["hair", "sheet metal", "scatter"],
+      "examples": ["Saçları çok uzun. (Her hair is very long.)", "Yere tohum saç. (Scatter seeds on the ground.)"]
+    },
+    {
+      "word": "sağ",
+      "meanings": ["right (direction)", "alive", "safe"],
+      "examples": ["Sağdan dönün. (Turn right.)", "Kazadan sağ kurtuldu. (He survived the accident alive.)"]
+    },
+    {
+      "word": "yaş",
+      "meanings": ["age", "wet", "damp", "tear"],
+      "examples": ["Kaç yaşındasın? (How old are you?)", "Yerler hala yaş. (The floors are still wet.)", "Gözünden yaş geldi. (A tear fell from his eye.)"]
+    }
+  ]
 }
