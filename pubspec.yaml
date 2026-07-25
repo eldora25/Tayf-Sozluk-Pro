@@ -14,9 +14,8 @@ dependencies:
   flutter_tts: ^4.2.1
   file_picker: ^8.1.4
   path_provider: ^2.1.5
+  csv: ^6.0.0 # CSV okuma desteği için
 
-# KÖKTEN ÇÖZÜM: Arka planda API 36 dayatan kütüphaneyi 
-# API 34 ile uyumlu kararlı sürüme kilitliyoruz.
 dependency_overrides:
   flutter_plugin_android_lifecycle: 2.0.20
 
