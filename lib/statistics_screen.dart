@@ -3,8 +3,8 @@ import 'models.dart';
 
 class StatisticsScreen extends StatelessWidget {
   final List<WordModel> allWords;
-  final List<WordModel> learningWords; // YENİ
-  final List<WordModel> toRepeatWords; // YENİ
+  final List<WordModel> learningWords; 
+  final List<WordModel> toRepeatWords; 
   final List<WordModel> learnedWords;
   final List<WordModel> wrongWords;
   final List<String> availableLibraries;
@@ -19,6 +19,10 @@ class StatisticsScreen extends StatelessWidget {
   final List<String> viewedCardTimestamps;
   final List<String> wrongAnswerTimestamps;
   final int firstUseTimestamp;
+
+  // YENİ ROZET VERİLERİ
+  final int bestStreak;
+  final int tayfPoints;
 
   const StatisticsScreen({
     super.key,
@@ -37,6 +41,8 @@ class StatisticsScreen extends StatelessWidget {
     required this.viewedCardTimestamps,
     required this.wrongAnswerTimestamps,
     required this.firstUseTimestamp,
+    required this.bestStreak,
+    required this.tayfPoints,
   });
 
   String _formatTime(int seconds) {
@@ -115,6 +121,41 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
+  // --- YENİ: BAŞARILAR VE ROZETLER VİTRİNİ OLUŞTURUCUSU ---
+  Widget _buildBadgeGrid(List<int> milestones, int currentValue, IconData icon, Color earnedColor, String unit) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 0.9,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: milestones.length,
+      itemBuilder: (context, index) {
+        int target = milestones[index];
+        bool isEarned = currentValue >= target;
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: isEarned ? earnedColor.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: isEarned ? earnedColor : Colors.grey.withOpacity(0.3), width: 2),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(isEarned ? icon : Icons.lock, color: isEarned ? earnedColor : Colors.grey, size: 36),
+              const SizedBox(height: 8),
+              Text("$target\n$unit", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: isEarned ? earnedColor : Colors.grey)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + learningWords.length;
@@ -125,33 +166,63 @@ class StatisticsScreen extends StatelessWidget {
     if (daysUsed < 1) daysUsed = 1; 
     double wordsPerDay = learnedWords.length / daysUsed;
 
+    // İstediğin kilometre taşları listeleri
+    final List<int> streakMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300];
+    final List<int> wordMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 500, 600, 700, 1000, 1500, 2000, 2500, 3000, 5000, 7000, 10000];
+
     return DefaultTabController(
-      length: 4,
+      length: 5, // Sekme Sayısı 5'e Çıktı
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("İstatistikler"),
+          title: const Text("İstatistikler & Rozetler"),
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
+              Tab(text: "Başarılar", icon: Icon(Icons.emoji_events)), // YENİ ROZET SEKMESİ
               Tab(text: "Genel Özet", icon: Icon(Icons.pie_chart)),
               Tab(text: "Öğrenme Hızı", icon: Icon(Icons.speed)),
-              Tab(text: "Quiz İstatistikleri", icon: Icon(Icons.quiz)),
-              Tab(text: "Kütüphane Bazlı", icon: Icon(Icons.library_books)),
+              Tab(text: "Quiz", icon: Icon(Icons.quiz)),
+              Tab(text: "Kütüphaneler", icon: Icon(Icons.library_books)),
             ],
           ),
         ),
         body: TabBarView(
           children: [
+            // 1. BAŞARILAR VE ROZETLER (YENİ SEKME)
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                const Text("🔥 Ateşli Seri Rozetleri", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.deepOrange)),
+                const Text("Uygulamaya aralıksız girip aktivitene devam ettiğinde kazanılır.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const SizedBox(height: 16),
+                _buildBadgeGrid(streakMilestones, bestStreak, Icons.local_fire_department, Colors.deepOrange, "Gün"),
+                
+                const SizedBox(height: 40),
+                const Divider(),
+                const SizedBox(height: 20),
+                
+                const Text("🎓 Kelime Ustası Rozetleri", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+                const Text("Öğrenilen (Mezun) kelime havuzuna eklediğin kelime sayısına göre kazanılır.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const SizedBox(height: 16),
+                _buildBadgeGrid(wordMilestones, learnedWords.length, Icons.military_tech, Colors.blue, "Kelime"),
+                const SizedBox(height: 40),
+              ],
+            ),
+
+            // 2. GENEL ÖZET
+            ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildStatCard(context, "Mevcut Tayf Puan (TP)", tayfPoints.toString(), Icons.diamond, Colors.blue),
                 _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1).toString(), Icons.my_library_books, Colors.deepPurple),
-                _buildStatCard(context, "Toplam Kelime", totalSystemWords.toString(), Icons.format_list_bulleted, Colors.blue),
+                _buildStatCard(context, "Toplam Kelime", totalSystemWords.toString(), Icons.format_list_bulleted, Colors.cyan),
                 _buildStatCard(context, "Öğrenilen (Mezun)", learnedWords.length.toString(), Icons.check_circle, Colors.green),
-                _buildStatCard(context, "SRS Havuzunda", learningWords.length.toString(), Icons.access_time, Colors.orange), // YENİ
+                _buildStatCard(context, "SRS Havuzunda", learningWords.length.toString(), Icons.access_time, Colors.orange), 
                 _buildStatCard(context, "Toplam Yanlış", totalWrongCount.toString(), Icons.cancel, Colors.red),
               ],
             ),
+            
+            // 3. ÖĞRENME HIZI
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -178,6 +249,8 @@ class StatisticsScreen extends StatelessWidget {
                 _buildSpeedCard(context, "Yıllık (Son 365 Gün)", const Duration(days: 365), Colors.deepPurple),
               ],
             ),
+
+            // 4. QUİZ İSTATİSTİKLERİ
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -187,6 +260,8 @@ class StatisticsScreen extends StatelessWidget {
                 _buildStatCard(context, "Quiz Yanlışları", totalQuizWrong.toString(), Icons.error_outline, Colors.redAccent),
               ],
             ),
+            
+            // 5. KÜTÜPHANE BAZLI
             ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: availableLibraries.length,
