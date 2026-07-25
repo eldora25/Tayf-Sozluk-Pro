@@ -8,6 +8,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
 import 'models.dart';
 import 'quiz_screen.dart';
+import 'add_word_screen.dart';
+import 'word_list_screen.dart';
+import 'settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -439,6 +442,52 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
           ),
+         ListTile(
+  leading: const Icon(Icons.add_box),
+  title: const Text("Kelime Ekle"),
+  onTap: () {
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(
+      availableLibraries: availableLibraries,
+      onSave: (newWord) {
+        setState(() => allWords.add(newWord));
+        _saveData();
+      }
+    )));
+  }
+),
+ListTile(
+  leading: const Icon(Icons.list_alt),
+  title: const Text("Kelime Listesi"),
+  onTap: () {
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(
+      words: allWords,
+      onDelete: (wordToDelete) {
+        setState(() => allWords.removeWhere((w) => w.word == wordToDelete.word));
+        _saveData();
+      }
+    )));
+  }
+),
+ListTile(
+  leading: const Icon(Icons.settings),
+  title: const Text("Ayarlar"),
+  onTap: () {
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+      currentGoal: dailyGoal,
+      currentThreshold: quizThreshold,
+      onSaveSettings: (newGoal, newThreshold) {
+        setState(() {
+          dailyGoal = newGoal;
+          quizThreshold = newThreshold;
+        });
+        _saveData();
+      }
+    )));
+  }
+),
           ListTile(
             leading: const Icon(Icons.library_books),
             title: const Text("Kütüphane Seç"),
