@@ -43,7 +43,7 @@ android {
         }
     }
 
-    // Dinamik isim çıktısı: TY-Sozluk-v1.0.{build_no}-debug.apk
+    // APK çıktısının adını dinamik olarak değiştiren kod bloğu
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
             def buildNo = computeBuildNumber()
@@ -54,4 +54,9 @@ android {
 
 flutter {
     source '../..'
+}
+
+dependencies {
+    // Eklenti mimarisinin modern v2 embedding ile native entegrasyon bağlayıcıları
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
