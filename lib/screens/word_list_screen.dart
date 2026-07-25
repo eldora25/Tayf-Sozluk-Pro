@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
-import '../models/word_model.dart';
+import 'models.dart';
 
 class WordListScreen extends StatefulWidget {
   final List<WordModel> words;
-  final Function(WordModel) onWordDeleted;
+  final Function(WordModel) onDelete;
 
-  const WordListScreen({Key? key, required this.words, required this.onWordDeleted}) : super(key: key);
+  const WordListScreen({super.key, required this.words, required this.onDelete});
 
   @override
   State<WordListScreen> createState() => _WordListScreenState();
 }
 
 class _WordListScreenState extends State<WordListScreen> {
-  String _searchQuery = '';
+  String searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
-    final filteredList = widget.words.where((w) => w.word.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    var filteredList = widget.words.where((w) => 
+      w.word.toLowerCase().contains(searchQuery.toLowerCase()) ||
+      w.meanings.join(' ').toLowerCase().contains(searchQuery.toLowerCase())
+    ).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text("Kelime Listesi")),
@@ -25,8 +28,12 @@ class _WordListScreenState extends State<WordListScreen> {
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
-              decoration: const InputDecoration(labelText: "Kelime ara...", prefixIcon: Icon(Icons.search), border: OutlineInputBorder()),
-              onChanged: (v) => setState(() => _searchQuery = v),
+              decoration: const InputDecoration(
+                labelText: "Kelime veya Anlam Ara...",
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (val) => setState(() => searchQuery = val),
             ),
           ),
           Expanded(
@@ -37,22 +44,27 @@ class _WordListScreenState extends State<WordListScreen> {
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   child: ExpansionTile(
-                    title: Text(item.word, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
+                    title: Text(item.word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
                     subtitle: Text("${item.libraryName} / ${item.level}"),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.redAccent),
-                      onPressed: () { widget.onWordDeleted(item); setState(() {}); },
+                      onPressed: () {
+                        widget.onDelete(item);
+                        setState(() {});
+                      },
                     ),
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        width: double.infinity,
+                        color: Theme.of(context).primaryColor.withOpacity(0.05),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text("Anlamlar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
                             ...item.meanings.map((m) => Text("• $m")),
                             const SizedBox(height: 8),
-                            const Text("Örnekler:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                            if (item.examples.isNotEmpty) const Text("Örnekler:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
                             ...item.examples.map((e) => Text("» $e")),
                           ],
                         ),
