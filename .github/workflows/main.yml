@@ -33,7 +33,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # YENİ VE ÇOK KRİTİK: Isar veritabanı tablolarını otomatik oluşturur
+      # KESİN ÇÖZÜM: Isar Eklentisi Namespace (AGP 8.0+) Hatasını Otomatik Onarır
+      - name: Fix Isar Plugin Namespace
+        run: |
+          sed -i 's/group = "dev.isar.isar_flutter_libs"/group = "dev.isar.isar_flutter_libs"\nnamespace = "dev.isar.isar_flutter_libs"/g' ~/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android/build.gradle
+
+      # Isar veritabanı tablolarını otomatik oluşturur
       - name: Generate Isar Models
         run: dart run build_runner build --delete-conflicting-outputs
 
