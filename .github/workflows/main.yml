@@ -21,21 +21,24 @@ jobs:
         with:
           channel: 'stable'
 
-      # Otomatik üretilen java ara kayıt dosyalarını zorla temizler
+      # Otomatik üretilen geçici ara kayıt dosyalarını ve cache'i temizler
       - name: Codebase Purge
         run: |
           rm -rf android/app/src/main/java/
           flutter clean
 
-      运营 - name: Install dependencies
+      # Bağımlılıkları v2 standartlarında temiz olarak yükler
+      - name: Install dependencies
         run: flutter pub get
 
+      # Dinamik APK Derleme (Artan Build Numarası Şablonu)
       - name: Build Debug APK with Dynamic Name
         env:
           APP_BUILD_NUMBER: ${{ github.run_number }}
           APP_VERSION_NAME: "1.0.${{ github.run_number }}"
         run: flutter build apk --debug
 
+      # Çıktıyı GitHub Üzerine Artifact Olarak Yükler
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
