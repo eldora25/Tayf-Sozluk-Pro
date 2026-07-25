@@ -3,6 +3,8 @@ import 'models.dart';
 
 class LibraryManagerScreen extends StatefulWidget {
   final List<WordModel> allWords;
+  final List<WordModel> learningWords; // YENİ
+  final List<WordModel> toRepeatWords; // YENİ
   final List<WordModel> learnedWords;
   final List<WordModel> wrongWords;
   final Function(String, String) onRename;
@@ -12,6 +14,8 @@ class LibraryManagerScreen extends StatefulWidget {
   const LibraryManagerScreen({
     super.key,
     required this.allWords,
+    required this.learningWords,
+    required this.toRepeatWords,
     required this.learnedWords,
     required this.wrongWords,
     required this.onRename,
@@ -28,6 +32,8 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     Set<String> libs = {};
     libs.addAll(widget.allWords.map((e) => e.libraryName));
     libs.addAll(widget.learnedWords.map((e) => e.libraryName));
+    libs.addAll(widget.toRepeatWords.map((e) => e.libraryName));
+    libs.addAll(widget.learningWords.map((e) => e.libraryName));
     libs.remove('Tekrarlanması Gerekenler'); 
     return libs.toList();
   }
@@ -120,7 +126,10 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
               itemBuilder: (context, index) {
                 String libName = libs[index];
                 int total = widget.allWords.where((e) => e.libraryName == libName).length +
-                            widget.learnedWords.where((e) => e.libraryName == libName).length;
+                            widget.learnedWords.where((e) => e.libraryName == libName).length +
+                            widget.learningWords.where((e) => e.libraryName == libName).length +
+                            widget.toRepeatWords.where((e) => e.libraryName == libName).length;
+                            
                 int learned = widget.learnedWords.where((e) => e.libraryName == libName).length;
                 int wrong = widget.wrongWords.where((e) => e.libraryName == libName).fold(0, (a, b) => a + b.wrongCount);
                 
@@ -151,7 +160,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          // KESİN ÇÖZÜM: Taşmayı önleyen FittedBox yapısı
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
