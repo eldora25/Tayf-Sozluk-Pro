@@ -25,9 +25,10 @@ import 'library_manager_screen.dart';
 import 'manage_list_screen.dart';
 import 'logger_screen.dart';
 import 'notification_service.dart';
-
-// YENİ: OYUN EKRANI EKLENDİ
 import 'match_game_screen.dart';
+
+// YENİ: TELAFFUZ SINAVI (KONUŞMA PRATİĞİ) EKLENDİ
+import 'pronunciation_screen.dart';
 
 late Isar isar;
 
@@ -203,6 +204,11 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Tayf Sözlük Pro',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
+      
+      // YENİ: YUMUŞAK TEMA GEÇİŞİ (ANIMATED THEME) İÇİN 1 SANİYELİK SÜRE
+      themeAnimationDuration: const Duration(milliseconds: 1000),
+      themeAnimationCurve: Curves.easeInOut,
+
       home: HomeScreen(
         themeIndex: themeIndex,
         onThemeChanged: _toggleTheme,
@@ -1087,12 +1093,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             const Divider(),
             ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: toRepeatWords, wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
             
-            // YENİ OYUN MENÜSÜ EKLENDİ
             ListTile(
               leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(
+                  words: filteredWords,
+                  onGameFinished: (points) { 
+                    _recordActivity(points); 
+                    _saveData(); 
+                  },
+                )));
+              },
+            ),
+
+            // YENİ: TELAFFUZ SINAVI (KONUŞMA PRATİĞİ) MENÜSÜ
+            ListTile(
+              leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(
                   words: filteredWords,
                   onGameFinished: (points) { 
                     _recordActivity(points); 
