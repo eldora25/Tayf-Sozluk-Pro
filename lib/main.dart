@@ -24,6 +24,9 @@ import 'library_manager_screen.dart';
 import 'manage_list_screen.dart';
 import 'logger_screen.dart';
 
+// YENİ EKLENEN BİLDİRİM SERVİSİ
+import 'notification_service.dart';
+
 late Isar isar;
 
 int getNextReviewOffset(int level) {
@@ -112,6 +115,9 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // BİLDİRİM MOTORUNU BAŞLAT
+  await NotificationService.init();
 
   final dir = await getApplicationDocumentsDirectory();
   isar = await Isar.open(
@@ -229,7 +235,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<String> wrongAnswerTimestamps = [];
   int firstUseTimestamp = 0;
 
-  // --- YENİ OYUNLAŞTIRMA & SERİ DEĞİŞKENLERİ ---
   int currentStreak = 0;
   int bestStreak = 0;
   String lastActiveDateStr = "";
@@ -241,6 +246,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.initState();
     _flipController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     _flipAnimation = Tween<double>(begin: 0, end: 1).animate(_flipController);
+    
+    // Uygulama açıldığında Bildirim İzinlerini İste
+    NotificationService.requestPermission();
+    
     _loadData();
   }
 
@@ -272,7 +281,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         viewedCardTimestamps = prefs.getStringList('viewedCardTimestamps') ?? [];
         wrongAnswerTimestamps = prefs.getStringList('wrongAnswerTimestamps') ?? [];
         
-        // OYUNLAŞTIRMA YÜKLEMESİ
         currentStreak = prefs.getInt('currentStreak') ?? 0;
         bestStreak = prefs.getInt('bestStreak') ?? 0;
         lastActiveDateStr = prefs.getString('lastActiveDateStr') ?? "";
@@ -285,29 +293,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           prefs.setInt('firstUseTimestamp', firstUseTimestamp);
         }
 
-        // --- GÜNLÜK SERİ KONTROLÜ VE BUZ KALKANI MANTIĞI ---
         if (lastActiveDateStr.isNotEmpty) {
           DateTime now = DateTime.now();
           DateTime today = DateTime(now.year, now.month, now.day);
           DateTime lastActive = DateTime.parse(lastActiveDateStr);
           int diff = today.difference(lastActive).inDays;
 
-          if (diff > 1) { // 1 günden fazla girilmemişse (Seri tehlikede!)
+          if (diff > 1) { 
             if (diff == 2 && streakFreezes > 0) {
-              // Dün girmemiş ama kalkanı var!
               streakFreezes--;
-              // Kalkan seriyi korudu, lastActiveDate'i dün olarak ayarla ki bugün de devam etsin
               lastActiveDateStr = today.subtract(const Duration(days: 1)).toIso8601String();
               prefs.setInt('streakFreezes', streakFreezes);
               prefs.setString('lastActiveDateStr', lastActiveDateStr);
-              // Kullanıcıyı Bilgilendir
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("❄️ Buz Kalkanı Devrede! Serin Korundu!"), backgroundColor: Colors.blue)
                 );
               });
             } else {
-              // Kalkan yok veya 2 günden fazla girmedi, SERİ SIFIRLANIR
               currentStreak = 0;
               prefs.setInt('currentStreak', 0);
             }
@@ -355,6 +358,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           _createDefaultLibrary();
         }
       });
+
+      // YENİ: Tekrar Havuzundaki Kelime Sayısına Göre Bildirimleri Zamanla
+      NotificationService.scheduleDailyNotifications(toRepeatWords.length);
+
     } catch (e, stack) {
       AppLogger.logError("Veri Yükleme Hatası (_loadData): $e\n$stack");
     }
@@ -380,7 +387,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
       prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
 
-      // OYUNLAŞTIRMA KAYDI
       prefs.setInt('currentStreak', currentStreak);
       prefs.setInt('bestStreak', bestStreak);
       prefs.setString('lastActiveDateStr', lastActiveDateStr);
@@ -399,12 +405,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         await isar.wordModels.putAll(allToSave);
       });
 
+      // YENİ: Veriler güncellenince bildirim sayısını da güncelle
+      NotificationService.scheduleDailyNotifications(toRepeatWords.length);
+
     } catch (e, stack) {
       AppLogger.logError("Veri Kaydetme Hatası (_saveData): $e\n$stack");
     }
   }
 
-  // --- YENİ: AKTİVİTE VE SERİ GÜNCELLEYİCİ ---
   void _recordActivity(int pointsEarned) {
     DateTime now = DateTime.now();
     DateTime today = DateTime(now.year, now.month, now.day);
@@ -420,11 +428,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         int diff = today.difference(lastActive).inDays;
         
         if (diff == 1) {
-          // Ertesi gün tekrar geldi
           currentStreak++;
           lastActiveDateStr = today.toIso8601String();
         } else if (diff > 1) {
-          // Kalkanı yoktu ve gün atladı
           currentStreak = 1;
           lastActiveDateStr = today.toIso8601String();
         }
@@ -515,7 +521,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _markAsLearned(WordModel word) {
-    _recordActivity(1); // Öğrenme aktivitesi 1 TP kazandırır
+    _recordActivity(1); 
     setState(() {
       word.srsLevel++;
       if (word.srsLevel > 5) {
@@ -537,7 +543,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _markAsToRepeat(WordModel word) {
-    _recordActivity(0); // Aktivite sayılır (Seri devam eder) ama puan vermez
+    _recordActivity(0); 
     setState(() {
       word.srsLevel = 0; 
       word.nextReviewDate = 0;
@@ -763,7 +769,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
           ],
         ),
-        // YENİ: ATEŞ (STREAK) VE ELMAS (TAYF PUAN) GÖSTERGESİ
         actions: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -947,7 +952,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ],
               ),
             ),
-            // YENİ: BUZ KALKANI SATIN ALMA (MAĞAZA) BÖLÜMÜ
             ListTile(
               tileColor: Colors.blue.withOpacity(0.1),
               leading: const Icon(Icons.ac_unit, color: Colors.blue),
@@ -1002,13 +1006,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   onWordLearned: (w) => _markAsLearned(w),
                   onWordWrong: (w) => _markAsToRepeat(w),
                   onQuizFinished: (timeElapsed, answered, wrong) { 
-                    _recordActivity(answered); // Quiz çözünce çözülen soru kadar puan!
+                    _recordActivity(answered); 
                     setState(() { totalCompletedQuizzes++; totalQuizTimeSeconds += timeElapsed; totalQuizQuestions += answered; totalQuizWrong += wrong; completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }); _saveData(); 
                   },
                 )));
               },
             ),
-            ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), // ROZET EKRANI İÇİN VERİ GÖNDERİLDİ
+            ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
             const Divider(),
             ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
             ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
