@@ -41,13 +41,21 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # YENİ: SPEECH_TO_TEXT JCENTER() HATASINI VE ISAR UYUMSUZLUKLARINI DÜZELTEN KOMUTLAR
       - name: Fix Plugin Compatibilities (Isar & SpeechToText)
         run: |
           find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/android {/android {\n    namespace "dev.isar.isar_flutter_libs"/g' {} +
           find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/compileSdkVersion 30/compileSdkVersion 36/g' {} +
           find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/targetSdkVersion 30/targetSdkVersion 36/g' {} +
+          
+          # SpeechToText jcenter() Hatası Çözümü
           find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
+          
+          # YENİ: SpeechToText Registrar (V1 Embedding) Hatası Kesin Çözümü
+          STT_KT=$(find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android/src/main/kotlin/com/csdcorp/speech_to_text -name "SpeechToTextPlugin.kt" | head -n 1)
+          if [ -n "$STT_KT" ]; then
+            sed -i '/import io.flutter.plugin.common.PluginRegistry.Registrar/d' "$STT_KT"
+            sed -i '/fun registerWith(registrar:/,/}/d' "$STT_KT"
+          fi
 
       - name: Generate Isar Models
         run: dart run build_runner build --delete-conflicting-outputs
