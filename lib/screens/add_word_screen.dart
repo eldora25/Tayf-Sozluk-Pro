@@ -48,7 +48,8 @@ class _AddWordScreenState extends State<AddWordScreen> {
             ),
             const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              // HATA BURADA DÜZELTİLDİ
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text("Anlamlar", style: TextStyle(fontWeight: FontWeight.bold)),
                 IconButton(
@@ -63,7 +64,8 @@ class _AddWordScreenState extends State<AddWordScreen> {
             )),
             const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              // HATA BURADA DÜZELTİLDİ
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text("Örnek Cümleler", style: TextStyle(fontWeight: FontWeight.bold)),
                 IconButton(
