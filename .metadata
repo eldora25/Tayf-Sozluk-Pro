@@ -1,0 +1,15 @@
+version:
+  revision: "ef57423a32cc56e2e6c646702e8d89e021a221f5"
+  channel: "stable"
+
+project_type: app
+
+migration:
+  platforms:
+    - platform: root
+      create_revision: "ef57423a32cc56e2e6c646702e8d89e021a221f5"
+      base_revision: "ef57423a32cc56e2e6c646702e8d89e021a221f5"
+    - platform: android
+      create_revision: "ef57423a32cc56e2e6c646702e8d89e021a221f5"
+      base_revision: "ef57423a32cc56e2e6c646702e8d89e021a221f5"
+      android_embedding_version: 2
