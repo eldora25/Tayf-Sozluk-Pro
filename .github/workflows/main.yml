@@ -23,22 +23,22 @@ jobs:
         with:
           channel: 'stable'
 
-      # NİHAİ RADİKAL TEMİZLİK: Eski MainActivity.java ve tüm v1 eklenti izleri tamamen silinir
-      - name: Hard Purge Legacy Java Files & Cache
+      # MUTLAK ARINMA: Tüm potansiyel v1 kırıntıları ve ara dosya haritaları diskten kazınır
+      - name: Absolute Purge of Legacy Configurations
         run: |
-          # Projede kalmış olabilecek eski Java aktivite dosyasını zorla kaldırır (Çakışmayı önler)
+          # Eski java sınıfları ve otomatik üretilen paket yapılarını temizler
+          rm -rf android/app/src/main/java/io/flutter/
           rm -f android/app/src/main/java/com/tayfunyamak/tayfsozlukpro/MainActivity.java
           
-          # Tüm eklenti haritalarını ve önbellekleri temizler
+          # Eklenti önbellek izlerini hem kökten hem android altından temizler
           rm -f pubspec.lock
           rm -f .flutter-plugins
           rm -f .flutter-plugins-dependencies
           rm -f android/.flutter-plugins
           rm -f android/.flutter-plugins-dependencies
-          rm -rf android/app/src/main/java/io/flutter/plugins/
           flutter clean
 
-      # Bağımlılıkları Yeniden Yükleme
+      # Bağımlılıkları Sıfırdan Yükleme
       - name: Install dependencies
         run: flutter pub get
 
