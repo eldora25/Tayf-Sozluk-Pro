@@ -82,7 +82,6 @@ class _QuizScreenState extends State<QuizScreen> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // OPTİMİZASYON: Öncelikli dili kullanır, telefonu yormaz.
   Future<void> _speakWord(String text, String libraryName) async {
     if (!isAudioEnabled) return;
     String lang = getSourceLanguage(libraryName);
@@ -90,12 +89,9 @@ class _QuizScreenState extends State<QuizScreen> {
     await flutterTts.speak(text);
   }
 
-  // OPTİMİZASYON: Geri bildirim dilini, kelimenin orijinal diliyle EŞLEŞTİRİR
-  // İngilizce ise İngilizce, Türkçe ise Türkçe geribildirim verir. Dil değiştirmekle zaman kaybetmez.
   void _speakFeedback(bool isCorrect, WordModel word) {
     if (!isAudioEnabled) return;
     String lang = getSourceLanguage(word.libraryName);
-    
     if (lang == 'tr-TR') {
       flutterTts.speak(isCorrect ? "Doğru" : "Yanlış");
     } else {
@@ -106,7 +102,6 @@ class _QuizScreenState extends State<QuizScreen> {
   void _speakCompletion() {
     if (!isAudioEnabled || quizWords.isEmpty) return;
     String lang = getSourceLanguage(quizWords.first.libraryName);
-    
     if (lang == 'tr-TR') {
       flutterTts.speak("Tebrikler");
     } else {
@@ -173,7 +168,6 @@ class _QuizScreenState extends State<QuizScreen> {
       if (currentWord.correctCount >= widget.threshold) {
          widget.onWordLearned(currentWord);
       }
-      // Geçiş hızı 600 ms'ye düşürüldü.
       Future.delayed(const Duration(milliseconds: 600), _generateQuestion);
     } else {
       widget.onWordWrong(currentWord);
@@ -278,6 +272,7 @@ class _QuizScreenState extends State<QuizScreen> {
     bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     Color borderColor = isDarkMode ? Theme.of(context).primaryColor : Colors.deepPurple;
 
+    // KESİN ÇÖZÜM: Ekran Taşmalarını (Overflow) Engelleyen Kaydırılabilir Liste
     return Scaffold(
       appBar: AppBar(
         title: const Text("Quiz Modu"),
@@ -289,76 +284,69 @@ class _QuizScreenState extends State<QuizScreen> {
           )
         ],
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(children: [const Icon(Icons.check_circle, color: Colors.green), const SizedBox(width: 5), Text(correctAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
-                Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                Row(children: [Text(wrongAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(width: 5), const Icon(Icons.cancel, color: Colors.red)]),
-              ],
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(children: [const Icon(Icons.check_circle, color: Colors.green), const SizedBox(width: 5), Text(correctAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+              Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
+              Row(children: [Text(wrongAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(width: 5), const Icon(Icons.cancel, color: Colors.red)]),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text("Soru: ${answeredQuestions + 1} / $totalQuestions", textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 5),
+          LinearProgressIndicator(
+            value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0,
+            backgroundColor: Colors.grey[300],
+            color: Theme.of(context).primaryColor,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          const SizedBox(height: 20),
+          
+          GestureDetector(
+            onTap: () => _speakWord(currentWord.word, currentWord.libraryName),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+              child: Text(currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(height: 10),
-            Text("Soru: ${answeredQuestions + 1} / $totalQuestions", textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 5),
-            LinearProgressIndicator(
-              value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0,
-              backgroundColor: Colors.grey[300],
-              color: Theme.of(context).primaryColor,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            const SizedBox(height: 30),
+          ),
+          const SizedBox(height: 20),
+          
+          ...options.map((option) {
+            bool isCorrect = option == correctOption;
+            bool isWrongSelected = selectedWrongOptions.contains(option);
             
-            GestureDetector(
-              onTap: () => _speakWord(currentWord.word, currentWord.libraryName),
-              child: Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-                child: Text(currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 30),
+            Color cardColor = Theme.of(context).cardColor;
+            Widget? trailingIcon;
             
-            Expanded(
-              child: ListView(
-                children: options.map((option) {
-                  bool isCorrect = option == correctOption;
-                  bool isWrongSelected = selectedWrongOptions.contains(option);
-                  
-                  Color cardColor = Theme.of(context).cardColor;
-                  Widget? trailingIcon;
-                  
-                  if (isAnsweredCorrectly && isCorrect) {
-                    cardColor = Colors.green.withOpacity(0.3);
-                    trailingIcon = const Icon(Icons.check_circle, color: Colors.green);
-                  } else if (isWrongSelected) {
-                    cardColor = Colors.red.withOpacity(0.3);
-                    trailingIcon = const Icon(Icons.cancel, color: Colors.red);
-                  }
+            if (isAnsweredCorrectly && isCorrect) {
+              cardColor = Colors.green.withOpacity(0.3);
+              trailingIcon = const Icon(Icons.check_circle, color: Colors.green);
+            } else if (isWrongSelected) {
+              cardColor = Colors.red.withOpacity(0.3);
+              trailingIcon = const Icon(Icons.cancel, color: Colors.red);
+            }
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      border: Border.all(color: borderColor, width: 2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      title: Text(option, style: const TextStyle(fontSize: 16), maxLines: 3, overflow: TextOverflow.ellipsis),
-                      trailing: trailingIcon,
-                      onTap: () => _checkAnswer(option),
-                    ),
-                  );
-                }).toList(),
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: cardColor,
+                border: Border.all(color: borderColor, width: 2),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-          ],
-        ),
+              child: ListTile(
+                title: Text(option, style: const TextStyle(fontSize: 16), maxLines: 3, overflow: TextOverflow.ellipsis),
+                trailing: trailingIcon,
+                onTap: () => _checkAnswer(option),
+              ),
+            );
+          }).toList(),
+        ],
       ),
     );
   }
