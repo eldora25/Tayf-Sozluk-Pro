@@ -166,11 +166,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   List<String> get availableLibraries {
     var libs = allWords.map((e) => e.libraryName).toSet().toList();
-    // Öğrenilmiş veya tekrar listesindeki özgün kütüphaneleri de bul
     libs.addAll(learnedWords.map((e) => e.libraryName));
     libs.addAll(toRepeatWords.map((e) => e.libraryName));
     var uniqueLibs = libs.toSet().toList();
-    uniqueLibs.add('Tekrarlanması Gerekenler'); // Sanal kütüphanemiz
+    uniqueLibs.add('Tekrarlanması Gerekenler'); 
     return uniqueLibs;
   }
 
@@ -206,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         learnedWords.add(word);
       }
       allWords.removeWhere((w) => w.word == word.word);
-      toRepeatWords.removeWhere((w) => w.word == word.word); // Tekrardan da çıkar
+      toRepeatWords.removeWhere((w) => w.word == word.word);
       _nextCard();
     });
     _saveData();
@@ -285,6 +284,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
+  // DIŞA AKTAR - "Android Byte Hatasını" çözen %100 Güvenli Yöntem
   Future<void> _exportFile() async {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sanal kütüphane dışa aktarılamaz!")));
@@ -297,7 +297,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       return;
     }
 
-    // CSV formatı oluşturuluyor
     List<List<dynamic>> rows = [];
     for (var w in exportList) {
       rows.add([w.word, w.meanings.join(';'), w.examples.join(';'), w.level]);
@@ -305,17 +304,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     String csvData = const ListToCsvConverter().convert(rows);
 
     try {
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Dışa Aktar',
-        fileName: '$selectedLibrary.csv',
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
-      );
-
-      if (outputFile != null) {
-        File file = File(outputFile);
+      // Doğrudan kullanıcıya nereye kaydedeceğini soran, Android'in izin verdiği arayüz
+      String? directoryPath = await FilePicker.platform.getDirectoryPath(dialogTitle: "Dışa aktarılacak klasörü seçin");
+      
+      if (directoryPath != null) {
+        File file = File('$directoryPath/$selectedLibrary.csv');
         await file.writeAsString(csvData);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Dışa aktarma başarılı!")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Başarıyla kaydedildi: ${file.path}")));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
@@ -347,7 +342,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             allWords.removeWhere((w) => w.word == word.word);
             toRepeatWords.removeWhere((w) => w.word == word.word);
           } else if (action == EditAction.update || action == EditAction.move) {
-            // Mevcut olanı silip günceli ekle
             allWords.removeWhere((w) => w.word == word.word);
             toRepeatWords.removeWhere((w) => w.word == word.word);
             
@@ -448,7 +442,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                   ],
                 ),
-              const SizedBox(height: 40),
+              const Spacer(),
+              // FOOTER: Sürüm Numarası ve Yazar İmzası
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("V.1.0.$buildNo", style: const TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text("By: Tayfun YAMAK©", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
+                  ],
+                ),
+              ),
             ],
           ),
     );
@@ -474,7 +479,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               onPressed: () => flutterTts.speak(word.word),
             ),
           ),
-          // ÇARK İKONU (KELİME DÜZENLEME)
           Positioned(
             left: 0, top: 0,
             child: IconButton(
@@ -521,7 +525,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             right: 0, top: 0,
             child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => flutterTts.speak(word.word)),
           ),
-          // ÇARK İKONU (KELİME DÜZENLEME) - Arka yüzde de bulunsun
           Positioned(
             left: 0, top: 0,
             child: IconButton(
@@ -584,22 +587,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             }
           ),
           ListTile(
-            leading: const Icon(Icons.library_books),
-            title: const Text("Kütüphane Seç"),
-            trailing: DropdownButton<String>(
-              value: availableLibraries.contains(selectedLibrary) ? selectedLibrary : null,
-              items: availableLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-              onChanged: (v) { setState(() { selectedLibrary = v!; currentCardIndex=0; }); _saveData(); },
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.bar_chart),
-            title: const Text("Seviye Seç"),
-            trailing: DropdownButton<String>(
-              value: selectedLevel,
-              items: ['A1','A2','B1','B2','C1','C2','Genel'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-              onChanged: (v) { setState(() { selectedLevel = v!; currentCardIndex=0; }); _saveData(); },
-            ),
+            leading: const Icon(Icons.settings),
+            title: const Text("Ayarlar"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+                currentGoal: dailyGoal,
+                currentThreshold: quizThreshold,
+                selectedLibrary: selectedLibrary,
+                selectedLevel: selectedLevel,
+                availableLibraries: availableLibraries,
+                onSaveSettings: (newGoal, newThreshold, newLib, newLevel) {
+                  setState(() {
+                    dailyGoal = newGoal;
+                    quizThreshold = newThreshold;
+                    selectedLibrary = newLib;
+                    selectedLevel = newLevel;
+                    currentCardIndex = 0;
+                  });
+                  _saveData();
+                }
+              )));
+            }
           ),
           const Divider(),
           ListTile(
@@ -623,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               int totalWrong = 0;
               for (var w in wrongWords) { totalWrong += w.wrongCount; }
               Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(
-                totalLibraries: availableLibraries.length - 1, // Sanal kütüphaneyi düş
+                totalLibraries: availableLibraries.length - 1, 
                 totalWords: allWords.length + learnedWords.length,
                 learnedWords: learnedWords.length,
                 wordsToRepeat: toRepeatWords.length,
@@ -635,24 +644,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
           ListTile(leading: const Icon(Icons.upload), title: const Text("Dışa Aktar"), onTap: () { Navigator.pop(context); _exportFile(); }),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text("Ayarlar"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                currentGoal: dailyGoal,
-                currentThreshold: quizThreshold,
-                onSaveSettings: (newGoal, newThreshold) {
-                  setState(() {
-                    dailyGoal = newGoal;
-                    quizThreshold = newThreshold;
-                  });
-                  _saveData();
-                }
-              )));
-            }
-          ),
           ListTile(
             leading: const Icon(Icons.dark_mode),
             title: const Text("Karanlık Mod"),
