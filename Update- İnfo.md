@@ -16,3 +16,5 @@ Build #145: Commit a90dad3 çalışan 7 özellik ekleme denemesi:Kütüphane ism
 
 Build #152: Commit 1dc39d8 çalışan 8 özellik ekleme denemesi:(4. sekme olan "Öğrenme Hızı" arayüzü ve zaman hesaplama mantığı eklendi)
 (Zaman damgaları belleğe eklendi, eylemler loglanmaya başlandı ve Drawer SafeArea ile alttan sanal tuşlardan kurtarıldı)
+
+Build #156: Commit ea33aa3 çalışan 9 optimizasyon vb. (Dropdown menüsüne Pembe ve Rengarenk seçenekleri eklendi)
