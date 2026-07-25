@@ -147,11 +147,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('selectedLibrary', _selectedLibrary);
     await prefs.setString('selectedLevel', _selectedLevel);
-    await prefs.putInt('dailyGoal', _dailyGoal);
-    await prefs.putInt('dailyProgress', _dailyProgress);
-    await prefs.putInt('quizQuestionCount', _quizQuestionCount);
-    await prefs.putInt('masteryThreshold', _masteryThreshold);
-    await prefs.putInt('currentCardIndex', _currentCardIndex);
+    
+    // HATALAR BURADA DÜZELTİLDİ (putInt -> setInt)
+    await prefs.setInt('dailyGoal', _dailyGoal);
+    await prefs.setInt('dailyProgress', _dailyProgress);
+    await prefs.setInt('quizQuestionCount', _quizQuestionCount);
+    await prefs.setInt('masteryThreshold', _masteryThreshold);
+    await prefs.setInt('currentCardIndex', _currentCardIndex);
+    
     await prefs.setString('learnedWords', json.encode(_learnedWords.map((e) => e.toMap()).toList()));
     await prefs.setString('reviewWords', json.encode(_reviewWords.map((e) => e.toMap()).toList()));
     await prefs.setString('wrongWords', json.encode(_wrongWords.map((e) => e.toMap()).toList()));
