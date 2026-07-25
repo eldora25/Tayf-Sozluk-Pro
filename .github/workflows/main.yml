@@ -34,9 +34,10 @@ jobs:
         run: flutter pub get
 
       # KESİN ÇÖZÜM: Isar Eklentisi Namespace (AGP 8.0+) Hatasını Otomatik Onarır
+      # Eklentinin içindeki 'android {' bloğunu bulup doğrudan içine namespace ekler.
       - name: Fix Isar Plugin Namespace
         run: |
-          sed -i 's/group = "dev.isar.isar_flutter_libs"/group = "dev.isar.isar_flutter_libs"\nnamespace = "dev.isar.isar_flutter_libs"/g' ~/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android/build.gradle
+          find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/android {/android {\n    namespace "dev.isar.isar_flutter_libs"/g' {} +
 
       # Isar veritabanı tablolarını otomatik oluşturur
       - name: Generate Isar Models
