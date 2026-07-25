@@ -108,6 +108,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int currentCardIndex = 0;
   bool isFlipped = false;
 
+  // Global İstatistikler
+  int totalCompletedQuizzes = 0;
+  int totalQuizTimeSeconds = 0;
+  int totalQuizQuestions = 0;
+  int totalQuizWrong = 0;
+
   @override
   void initState() {
     super.initState();
@@ -132,6 +138,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       quizThreshold = prefs.getInt('quizThreshold') ?? 10;
       quizQuestionCount = prefs.getInt('quizQuestionCount') ?? 10;
       currentCardIndex = prefs.getInt('currentCardIndex') ?? 0;
+
+      totalCompletedQuizzes = prefs.getInt('totalCompletedQuizzes') ?? 0;
+      totalQuizTimeSeconds = prefs.getInt('totalQuizTimeSeconds') ?? 0;
+      totalQuizQuestions = prefs.getInt('totalQuizQuestions') ?? 0;
+      totalQuizWrong = prefs.getInt('totalQuizWrong') ?? 0;
 
       allWords = _parseWordList(prefs.getStringList('allWords'));
       learnedWords = _parseWordList(prefs.getStringList('learnedWords'));
@@ -158,6 +169,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     prefs.setInt('quizQuestionCount', quizQuestionCount);
     prefs.setInt('currentCardIndex', currentCardIndex);
 
+    prefs.setInt('totalCompletedQuizzes', totalCompletedQuizzes);
+    prefs.setInt('totalQuizTimeSeconds', totalQuizTimeSeconds);
+    prefs.setInt('totalQuizQuestions', totalQuizQuestions);
+    prefs.setInt('totalQuizWrong', totalQuizWrong);
+
     prefs.setStringList('allWords', allWords.map((e) => e.toJson()).toList());
     prefs.setStringList('learnedWords', learnedWords.map((e) => e.toJson()).toList());
     prefs.setStringList('toRepeatWords', toRepeatWords.map((e) => e.toJson()).toList());
@@ -166,8 +182,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _createDefaultLibrary() {
     allWords = [
-      WordModel(word: 'Apple', meanings: ['Elma', 'Meyve'], examples: ['I ate an apple.'], libraryName: 'Varsayılan'),
-      WordModel(word: 'Book', meanings: ['Kitap', 'Ayırtmak'], examples: ['Read a book.', 'Book a flight.'], libraryName: 'Varsayılan'),
+      WordModel(word: 'Apple', meanings: ['Elma', 'Meyve'], examples: ['I ate an apple.'], libraryName: 'Varsayılan (İng-Tr)'),
+      WordModel(word: 'Book', meanings: ['Kitap', 'Ayırtmak'], examples: ['Read a book.', 'Book a flight.'], libraryName: 'Varsayılan (İng-Tr)'),
     ];
     _saveData();
   }
@@ -193,8 +209,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  Future<void> _speakWord(String text) async {
-    String lang = detectLanguage(text);
+  Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
+    String text = isMeaning ? word.meanings.first : word.word;
+    String lang = getLanguageForWord(text, word.libraryName, isMeaning: isMeaning);
     await flutterTts.setLanguage(lang);
     await flutterTts.speak(text);
   }
@@ -215,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _flipController.reverse();
     } else {
       _flipController.forward();
-      _speakWord(word.word); 
+      _speakWord(word, isMeaning: true); // Arka yüzde anlamı okur
     }
     setState(() => isFlipped = !isFlipped);
   }
@@ -237,7 +254,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       if (!toRepeatWords.any((w) => w.word == word.word)) {
         toRepeatWords.add(word);
       }
-      
       var existingWrong = wrongWords.where((w) => w.word == word.word).toList();
       if (existingWrong.isNotEmpty) {
         existingWrong.first.wrongCount++;
@@ -276,20 +292,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         var decoded = json.decode(content);
         List list = decoded is Map ? decoded['words'] : decoded;
         newWords = list.map((e) => WordModel(
-          word: e['word'] ?? '',
-          meanings: _cleanMeanings(e['meanings'] ?? []),
-          examples: _cleanMeanings(e['examples'] ?? []),
-          level: e['level'] ?? 'Genel',
-          libraryName: customLibraryName,
+          word: e['word'] ?? '', meanings: _cleanMeanings(e['meanings'] ?? []), examples: _cleanMeanings(e['examples'] ?? []),
+          level: e['level'] ?? 'Genel', libraryName: customLibraryName,
         )).toList();
       } else if (extension == 'txt') {
         var lines = content.split('\n');
         for (var line in lines) {
           if (!line.contains(':')) continue;
           var parts = line.split(':');
-          var w = parts[0].trim();
-          var m = parts[1].trim();
-          newWords.add(WordModel(word: w, meanings: _cleanMeanings([m]), examples: [], level: 'Genel', libraryName: customLibraryName));
+          newWords.add(WordModel(word: parts[0].trim(), meanings: _cleanMeanings([parts[1].trim()]), examples: [], level: 'Genel', libraryName: customLibraryName));
         }
       } else {
         List<List<dynamic>> rows = const CsvToListConverter().convert(content);
@@ -299,11 +310,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           if (wordStr.isEmpty || wordStr.startsWith('#') || wordStr.toLowerCase() == 'word' || wordStr.startsWith('00database')) continue;
 
           newWords.add(WordModel(
-            word: wordStr,
-            meanings: _cleanMeanings([row[1]]),
-            examples: row.length > 2 ? _cleanMeanings([row[2]]) : [],
-            level: row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
-            libraryName: customLibraryName,
+            word: wordStr, meanings: _cleanMeanings([row[1]]), examples: row.length > 2 ? _cleanMeanings([row[2]]) : [],
+            level: row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel', libraryName: customLibraryName,
           ));
         }
       }
@@ -550,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Center(child: Text(word.word, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))),
           Positioned(
             right: 0, top: 0,
-            child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word.word)),
+            child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false)),
           ),
           Positioned(
             left: 0, top: 0,
@@ -597,7 +605,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           Positioned(
             right: 0, top: 0,
-            child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word.word)),
+            child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: true)),
           ),
           Positioned(
             left: 0, top: 0,
@@ -687,7 +695,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             }
           ),
           const Divider(),
-          // LİSTE YÖNETİMİ BUTONLARI (Altlarında Sayılarla Beraber)
+          // LİSTE YÖNETİMİ BUTONLARI
           ListTile(
             leading: const Icon(Icons.check_circle_outline, color: Colors.green),
             title: const Text("Öğrenilen Kelimeler"),
@@ -703,7 +711,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           ListTile(
             leading: const Icon(Icons.repeat, color: Colors.orange),
-            title: const Text("Tekrarlanması Gerekenler"),
+            title: const Text("Tekrar Listesi"),
             subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)),
             onTap: () {
               Navigator.pop(context);
@@ -748,11 +756,59 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 words: filteredWords,
                 threshold: quizThreshold,
                 questionCount: quizQuestionCount,
-                onWordLearned: (w) => _markAsLearned(w),
-                onWordWrong: (w) => _markAsToRepeat(w),
+                onWordLearned: (w) {
+                  setState(() {
+                    if (!learnedWords.any((existing) => existing.word == w.word)) learnedWords.add(w);
+                    allWords.removeWhere((existing) => existing.word == w.word);
+                    toRepeatWords.removeWhere((existing) => existing.word == w.word);
+                  });
+                  _saveData();
+                },
+                onWordWrong: (w) {
+                  setState(() {
+                    if (!toRepeatWords.any((existing) => existing.word == w.word)) toRepeatWords.add(w);
+                    var existingWrong = wrongWords.where((existing) => existing.word == w.word).toList();
+                    if (existingWrong.isNotEmpty) {
+                      existingWrong.first.wrongCount++;
+                    } else {
+                      w.wrongCount = 1;
+                      wrongWords.add(w);
+                    }
+                  });
+                  _saveData();
+                },
+                onQuizFinished: (timeElapsed, answered, wrong) {
+                  setState(() {
+                    totalCompletedQuizzes++;
+                    totalQuizTimeSeconds += timeElapsed;
+                    totalQuizQuestions += answered;
+                    totalQuizWrong += wrong;
+                  });
+                  _saveData();
+                },
               )));
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.analytics),
+            title: const Text("İstatistikler"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(
+                allWords: allWords,
+                learnedWords: learnedWords,
+                wrongWords: wrongWords,
+                availableLibraries: availableLibraries,
+                totalCompletedQuizzes: totalCompletedQuizzes,
+                totalQuizTimeSeconds: totalQuizTimeSeconds,
+                totalQuizQuestions: totalQuizQuestions,
+                totalQuizWrong: totalQuizWrong,
+              )));
+            },
+          ),
+          const Divider(),
+          ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
+          ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
         ],
       ),
     );
