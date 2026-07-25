@@ -17,6 +17,7 @@ import 'word_list_screen.dart';
 import 'settings_screen.dart';
 import 'statistics_screen.dart';
 import 'edit_word_screen.dart';
+import 'library_manager_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -99,12 +100,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _flipController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     _flipAnimation = Tween<double>(begin: 0, end: 1).animate(_flipController);
     _loadData();
-    _initTts();
-  }
-
-  void _initTts() async {
-    await flutterTts.setLanguage("en-US");
-    await flutterTts.setSpeechRate(0.5);
   }
 
   @override
@@ -182,6 +177,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
+  // --- AKILLI DİL SESLENDİRME ---
+  Future<void> _speakWord(String text) async {
+    String lang = detectLanguage(text);
+    await flutterTts.setLanguage(lang);
+    await flutterTts.speak(text);
+  }
+
   void _nextCard() {
     var list = filteredWords;
     if (list.isEmpty) return;
@@ -198,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _flipController.reverse();
     } else {
       _flipController.forward();
-      flutterTts.speak(word.word); 
+      _speakWord(word.word); 
     }
     setState(() => isFlipped = !isFlipped);
   }
@@ -233,12 +235,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _saveData();
   }
 
+  // --- GÜÇLENDİRİLMİŞ PARSER VE FİLTRELEME ---
   List<String> _cleanMeanings(List<dynamic> raw) {
     List<String> result = [];
     for (var item in raw) {
-      var str = item.toString();
-      var parts = str.split(RegExp(r';|\|\|\|'));
-      result.addAll(parts.map((e) => e.trim()).where((e) => e.isNotEmpty));
+      // Özel hex karakterlerini sil
+      var str = item.toString().replaceAll('\x06', '');
+      // Boru |||, noktalı virgül, virgül ve enter ile ayır
+      var parts = str.split(RegExp(r';|\|\|\||,|\n'));
+      for (var p in parts) {
+        var clean = p.trim();
+        // Sözlük ön eklerini (n., v., adj. vb.) sil
+        clean = clean.replaceAll(RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*'), '');
+        clean = clean.replaceAll(RegExp(r'\s+'), ' '); // Fazla boşlukları tek yap
+        if (clean.isNotEmpty && clean.length < 60) {
+          result.add(clean);
+        } else if (clean.length >= 60 && clean.length < 150) {
+          result.add(clean); // Quizde ellipsis (taşma) ile idare edilecek
+        }
+      }
     }
     return result.toSet().toList();
   }
@@ -263,21 +278,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           var parts = line.split(':');
           var w = parts[0].trim();
           var m = parts[1].trim();
-          newWords.add(WordModel(
-            word: w,
-            meanings: _cleanMeanings([m]),
-            examples: [],
-            level: 'Genel',
-            libraryName: customLibraryName,
-          ));
+          newWords.add(WordModel(word: w, meanings: _cleanMeanings([m]), examples: [], level: 'Genel', libraryName: customLibraryName));
         }
       } else {
+        // CSV Tarafı: Çöpleri (#name vs) atlıyoruz.
         List<List<dynamic>> rows = const CsvToListConverter().convert(content);
         for (var row in rows) {
-          if (row.isEmpty) continue;
+          if (row.isEmpty || row.length < 2) continue;
+          String wordStr = row[0].toString().trim();
+          // Babylon ve Hatalı Satır Filtreleri
+          if (wordStr.isEmpty || wordStr.startsWith('#') || wordStr.toLowerCase() == 'word' || wordStr.startsWith('00database')) continue;
+
           newWords.add(WordModel(
-            word: row[0].toString().trim(),
-            meanings: row.length > 1 ? _cleanMeanings([row[1]]) : [''],
+            word: wordStr,
+            meanings: _cleanMeanings([row[1]]),
             examples: row.length > 2 ? _cleanMeanings([row[2]]) : [],
             level: row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
             libraryName: customLibraryName,
@@ -297,11 +311,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _importFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom, 
-      allowedExtensions: ['csv', 'json', 'txt']
-    );
-
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
     if (result != null && result.files.single.path != null) {
       File file = File(result.files.single.path!);
       String fileName = result.files.single.name.split('.').first;
@@ -316,7 +326,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
-  // Yeni method: Uygulama içine gömülü assets dosyalarını okur
   Future<void> _loadPackageFromAssets(String assetPath, String extension, String customLibraryName) async {
     try {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName yükleniyor, lütfen bekleyin...")));
@@ -328,13 +337,37 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
-  Future<void> _exportFile() async {
-    if (selectedLibrary == 'Tekrarlanması Gerekenler') {
+  // --- KÜTÜPHANE YÖNETİMİ METODLARI ---
+  void _renameLibrary(String oldName, String newName) {
+    setState(() {
+      for (var w in allWords) { if (w.libraryName == oldName) w.libraryName = newName; }
+      for (var w in learnedWords) { if (w.libraryName == oldName) w.libraryName = newName; }
+      for (var w in toRepeatWords) { if (w.libraryName == oldName) w.libraryName = newName; }
+      for (var w in wrongWords) { if (w.libraryName == oldName) w.libraryName = newName; }
+      if (selectedLibrary == oldName) selectedLibrary = newName;
+    });
+    _saveData();
+  }
+
+  void _deleteLibrary(String libName) {
+    setState(() {
+      allWords.removeWhere((w) => w.libraryName == libName);
+      learnedWords.removeWhere((w) => w.libraryName == libName);
+      toRepeatWords.removeWhere((w) => w.libraryName == libName);
+      wrongWords.removeWhere((w) => w.libraryName == libName);
+      if (selectedLibrary == libName) selectedLibrary = 'Varsayılan';
+    });
+    _saveData();
+  }
+
+  Future<void> _exportLibrary(String libName) async {
+    if (libName == 'Tekrarlanması Gerekenler') {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sanal kütüphane dışa aktarılamaz!")));
       return;
     }
-
-    List<WordModel> exportList = allWords.where((w) => w.libraryName == selectedLibrary).toList();
+    List<WordModel> exportList = allWords.where((w) => w.libraryName == libName).toList()
+                               ..addAll(learnedWords.where((w) => w.libraryName == libName).toList());
+    
     if (exportList.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Aktarılacak kelime bulunamadı.")));
       return;
@@ -348,10 +381,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     try {
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/$selectedLibrary.csv');
+      final file = File('${dir.path}/$libName.csv');
       await file.writeAsString(csvData);
-      
-      await Share.shareXFiles([XFile(file.path)], text: '$selectedLibrary Kütüphanesi Yedeği');
+      await Share.shareXFiles([XFile(file.path)], text: '$libName Kütüphanesi Yedeği');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
     }
@@ -509,10 +541,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Center(child: Text(word.word, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))),
           Positioned(
             right: 0, top: 0,
-            child: IconButton(
-              icon: const Icon(Icons.volume_up, size: 30),
-              onPressed: () => flutterTts.speak(word.word),
-            ),
+            child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word.word)),
           ),
           Positioned(
             left: 0, top: 0,
@@ -558,7 +587,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           Positioned(
             right: 0, top: 0,
-            child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => flutterTts.speak(word.word)),
+            child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word.word)),
           ),
           Positioned(
             left: 0, top: 0,
@@ -642,8 +671,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   });
                   _saveData();
                 },
-                // _loadPackageFromAssets fonksiyonunu gönderiyoruz
                 onAddPackage: (assetPath, ext, name) => _loadPackageFromAssets(assetPath, ext, name),
+              )));
+            }
+          ),
+          // YENİ EKLENEN KÜTÜPHANE YÖNETİMİ MENÜSÜ
+          ListTile(
+            leading: const Icon(Icons.my_library_books),
+            title: const Text("Kütüphane Yönetimi"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(
+                allWords: allWords,
+                learnedWords: learnedWords,
+                wrongWords: wrongWords,
+                onRename: _renameLibrary,
+                onDelete: _deleteLibrary,
+                onExport: _exportLibrary,
               )));
             }
           ),
@@ -679,7 +723,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           const Divider(),
           ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
-          ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportFile(); }),
+          ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.dark_mode),
