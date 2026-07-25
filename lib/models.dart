@@ -47,9 +47,13 @@ class WordModel {
   int correctCount;
   int wrongCount;
 
-  // Hangi listede olduğunu (all, learned, toRepeat, wrong) belirler
+  // Hangi listede olduğunu (all, learning, toRepeat, learned, wrong) belirler
   @Index(type: IndexType.value)
   String listType; 
+
+  // YENİ: SRS (Aralıklı Tekrar) Sistemi Parametreleri
+  int srsLevel; 
+  int nextReviewDate;
 
   WordModel({
     this.word = '',
@@ -60,6 +64,8 @@ class WordModel {
     this.correctCount = 0,
     this.wrongCount = 0,
     this.listType = 'all',
+    this.srsLevel = 0,
+    this.nextReviewDate = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -68,6 +74,8 @@ class WordModel {
       'level': level, 'libraryName': libraryName,
       'correctCount': correctCount, 'wrongCount': wrongCount,
       'listType': listType,
+      'srsLevel': srsLevel,
+      'nextReviewDate': nextReviewDate,
     };
   }
 
@@ -81,6 +89,8 @@ class WordModel {
       correctCount: map['correctCount'] ?? 0,
       wrongCount: map['wrongCount'] ?? 0,
       listType: map['listType'] ?? 'all',
+      srsLevel: map['srsLevel'] ?? 0,
+      nextReviewDate: map['nextReviewDate'] ?? 0,
     );
   }
 
