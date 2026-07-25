@@ -1,34 +1,121 @@
 import 'package:flutter/material.dart';
+import 'models.dart';
 
 class StatisticsScreen extends StatelessWidget {
-  final int totalLibraries;
-  final int totalWords;
-  final int learnedWords;
-  final int wordsToRepeat;
-  final int totalWrongAnswers;
+  final List<WordModel> allWords;
+  final List<WordModel> learnedWords;
+  final List<WordModel> wrongWords;
+  final List<String> availableLibraries;
+  
+  // Global Quiz İstatistikleri
+  final int totalCompletedQuizzes;
+  final int totalQuizTimeSeconds;
+  final int totalQuizQuestions;
+  final int totalQuizWrong;
 
   const StatisticsScreen({
     super.key,
-    required this.totalLibraries,
-    required this.totalWords,
+    required this.allWords,
     required this.learnedWords,
-    required this.wordsToRepeat,
-    required this.totalWrongAnswers,
+    required this.wrongWords,
+    required this.availableLibraries,
+    required this.totalCompletedQuizzes,
+    required this.totalQuizTimeSeconds,
+    required this.totalQuizQuestions,
+    required this.totalQuizWrong,
   });
+
+  String _formatTime(int seconds) {
+    int d = seconds ~/ (24 * 3600);
+    int h = (seconds % (24 * 3600)) ~/ 3600;
+    int m = (seconds % 3600) ~/ 60;
+    int s = seconds % 60;
+    return '${d.toString().padLeft(2, '0')}:${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("İstatistikler")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
+    int totalSystemWords = allWords.length + learnedWords.length;
+    int totalWrongCount = wrongWords.fold(0, (a, b) => a + b.wrongCount);
+
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("İstatistikler"),
+          bottom: const TabBar(
+            isScrollable: true,
+            tabs: [
+              Tab(text: "Genel Özet", icon: Icon(Icons.pie_chart)),
+              Tab(text: "Quiz İstatistikleri", icon: Icon(Icons.quiz)),
+              Tab(text: "Kütüphane Bazlı", icon: Icon(Icons.library_books)),
+            ],
+          ),
+        ),
+        body: TabBarView(
           children: [
-            _buildStatCard(context, "Toplam Kütüphane", totalLibraries.toString(), Icons.library_books, Colors.deepPurple),
-            _buildStatCard(context, "Toplam Kelime", totalWords.toString(), Icons.format_list_bulleted, Colors.blue),
-            _buildStatCard(context, "Öğrenilen Kelime", learnedWords.toString(), Icons.check_circle, Colors.green),
-            _buildStatCard(context, "Tekrarlanacak Kelime", wordsToRepeat.toString(), Icons.repeat, Colors.orange),
-            _buildStatCard(context, "Toplam Yanlış Sayısı", totalWrongAnswers.toString(), Icons.cancel, Colors.red),
+            // 1. GENEL ÖZET
+            ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1).toString(), Icons.my_library_books, Colors.deepPurple),
+                _buildStatCard(context, "Toplam Kelime", totalSystemWords.toString(), Icons.format_list_bulleted, Colors.blue),
+                _buildStatCard(context, "Öğrenilen Kelime", learnedWords.length.toString(), Icons.check_circle, Colors.green),
+                _buildStatCard(context, "Toplam Yanlış", totalWrongCount.toString(), Icons.cancel, Colors.red),
+              ],
+            ),
+            
+            // 2. QUİZ İSTATİSTİKLERİ
+            ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildStatCard(context, "Tamamlanan Quiz", totalCompletedQuizzes.toString(), Icons.done_all, Colors.orange),
+                _buildStatCard(context, "Toplam Quiz Süresi", _formatTime(totalQuizTimeSeconds), Icons.timer, Colors.teal),
+                _buildStatCard(context, "Cevaplanan Soru", totalQuizQuestions.toString(), Icons.question_answer, Colors.blueAccent),
+                _buildStatCard(context, "Quiz Yanlışları", totalQuizWrong.toString(), Icons.error_outline, Colors.redAccent),
+              ],
+            ),
+            
+            // 3. KÜTÜPHANE BAZLI
+            ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: availableLibraries.length,
+              itemBuilder: (context, index) {
+                String libName = availableLibraries[index];
+                if (libName == 'Tekrarlanması Gerekenler') return const SizedBox.shrink();
+
+                int total = allWords.where((e) => e.libraryName == libName).length +
+                            learnedWords.where((e) => e.libraryName == libName).length;
+                int learned = learnedWords.where((e) => e.libraryName == libName).length;
+                int wrong = wrongWords.where((e) => e.libraryName == libName).fold(0, (a, b) => a + b.wrongCount);
+                double progress = total > 0 ? (learned / total) : 0;
+
+                return Card(
+                  elevation: 3,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(libName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Toplam: $total"),
+                            Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                            Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        LinearProgressIndicator(value: progress, color: Colors.green, backgroundColor: Colors.grey[300], minHeight: 6),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
