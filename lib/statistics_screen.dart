@@ -3,17 +3,17 @@ import 'models.dart';
 
 class StatisticsScreen extends StatelessWidget {
   final List<WordModel> allWords;
+  final List<WordModel> learningWords; // YENİ
+  final List<WordModel> toRepeatWords; // YENİ
   final List<WordModel> learnedWords;
   final List<WordModel> wrongWords;
   final List<String> availableLibraries;
   
-  // Global Quiz İstatistikleri
   final int totalCompletedQuizzes;
   final int totalQuizTimeSeconds;
   final int totalQuizQuestions;
   final int totalQuizWrong;
 
-  // Öğrenme Hızı Zaman Damgaları
   final List<String> learnedWordTimestamps;
   final List<String> completedQuizTimestamps;
   final List<String> viewedCardTimestamps;
@@ -23,6 +23,8 @@ class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({
     super.key,
     required this.allWords,
+    required this.learningWords,
+    required this.toRepeatWords,
     required this.learnedWords,
     required this.wrongWords,
     required this.availableLibraries,
@@ -115,7 +117,7 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int totalSystemWords = allWords.length + learnedWords.length;
+    int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + learningWords.length;
     int totalWrongCount = wrongWords.fold(0, (a, b) => a + b.wrongCount);
 
     DateTime firstUse = DateTime.fromMillisecondsSinceEpoch(firstUseTimestamp);
@@ -140,18 +142,16 @@ class StatisticsScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            // 1. GENEL ÖZET
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1).toString(), Icons.my_library_books, Colors.deepPurple),
                 _buildStatCard(context, "Toplam Kelime", totalSystemWords.toString(), Icons.format_list_bulleted, Colors.blue),
-                _buildStatCard(context, "Öğrenilen Kelime", learnedWords.length.toString(), Icons.check_circle, Colors.green),
+                _buildStatCard(context, "Öğrenilen (Mezun)", learnedWords.length.toString(), Icons.check_circle, Colors.green),
+                _buildStatCard(context, "SRS Havuzunda", learningWords.length.toString(), Icons.access_time, Colors.orange), // YENİ
                 _buildStatCard(context, "Toplam Yanlış", totalWrongCount.toString(), Icons.cancel, Colors.red),
               ],
             ),
-            
-            // 2. ÖĞRENME HIZI
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -178,8 +178,6 @@ class StatisticsScreen extends StatelessWidget {
                 _buildSpeedCard(context, "Yıllık (Son 365 Gün)", const Duration(days: 365), Colors.deepPurple),
               ],
             ),
-
-            // 3. QUİZ İSTATİSTİKLERİ
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -189,8 +187,6 @@ class StatisticsScreen extends StatelessWidget {
                 _buildStatCard(context, "Quiz Yanlışları", totalQuizWrong.toString(), Icons.error_outline, Colors.redAccent),
               ],
             ),
-            
-            // 4. KÜTÜPHANE BAZLI
             ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: availableLibraries.length,
@@ -199,7 +195,10 @@ class StatisticsScreen extends StatelessWidget {
                 if (libName == 'Tekrarlanması Gerekenler') return const SizedBox.shrink();
 
                 int total = allWords.where((e) => e.libraryName == libName).length +
-                            learnedWords.where((e) => e.libraryName == libName).length;
+                            learnedWords.where((e) => e.libraryName == libName).length +
+                            learningWords.where((e) => e.libraryName == libName).length +
+                            toRepeatWords.where((e) => e.libraryName == libName).length;
+                            
                 int learned = learnedWords.where((e) => e.libraryName == libName).length;
                 int wrong = wrongWords.where((e) => e.libraryName == libName).fold(0, (a, b) => a + b.wrongCount);
                 double progress = total > 0 ? (learned / total) : 0;
@@ -214,7 +213,6 @@ class StatisticsScreen extends StatelessWidget {
                       children: [
                         Text(libName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
-                        // KESİN ÇÖZÜM: Taşmayı önleyen FittedBox yapısı
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
