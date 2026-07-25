@@ -13,6 +13,13 @@ class StatisticsScreen extends StatelessWidget {
   final int totalQuizQuestions;
   final int totalQuizWrong;
 
+  // Öğrenme Hızı Zaman Damgaları
+  final List<String> learnedWordTimestamps;
+  final List<String> completedQuizTimestamps;
+  final List<String> viewedCardTimestamps;
+  final List<String> wrongAnswerTimestamps;
+  final int firstUseTimestamp;
+
   const StatisticsScreen({
     super.key,
     required this.allWords,
@@ -23,6 +30,11 @@ class StatisticsScreen extends StatelessWidget {
     required this.totalQuizTimeSeconds,
     required this.totalQuizQuestions,
     required this.totalQuizWrong,
+    required this.learnedWordTimestamps,
+    required this.completedQuizTimestamps,
+    required this.viewedCardTimestamps,
+    required this.wrongAnswerTimestamps,
+    required this.firstUseTimestamp,
   });
 
   String _formatTime(int seconds) {
@@ -33,13 +45,87 @@ class StatisticsScreen extends StatelessWidget {
     return '${d.toString().padLeft(2, '0')}:${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  int _countInPeriod(List<String> timestamps, Duration period) {
+    final now = DateTime.now();
+    return timestamps.where((ts) {
+      final date = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
+      return now.difference(date) <= period;
+    }).length;
+  }
+
+  Widget _buildSpeedCard(BuildContext context, String title, Duration period, Color color) {
+    int learned = _countInPeriod(learnedWordTimestamps, period);
+    int quizzes = _countInPeriod(completedQuizTimestamps, period);
+    int viewed = _countInPeriod(viewedCardTimestamps, period);
+    int wrongs = _countInPeriod(wrongAnswerTimestamps, period);
+
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.timeline, color: color),
+                const SizedBox(width: 8),
+                Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+              ],
+            ),
+            const Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Öğrenilen Kelime:"),
+                Text("$learned", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Tamamlanan Quiz:"),
+                Text("$quizzes", style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Bakılan Kart:"),
+                Text("$viewed", style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Yapılan Yanlış:"),
+                Text("$wrongs", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     int totalSystemWords = allWords.length + learnedWords.length;
     int totalWrongCount = wrongWords.fold(0, (a, b) => a + b.wrongCount);
 
+    // Ortalama Öğrenme Hızı Hesaplaması
+    DateTime firstUse = DateTime.fromMillisecondsSinceEpoch(firstUseTimestamp);
+    int daysUsed = DateTime.now().difference(firstUse).inDays;
+    if (daysUsed < 1) daysUsed = 1; // 0'a bölünmeyi engellemek için
+    double wordsPerDay = learnedWords.length / daysUsed;
+
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text("İstatistikler"),
@@ -47,6 +133,7 @@ class StatisticsScreen extends StatelessWidget {
             isScrollable: true,
             tabs: [
               Tab(text: "Genel Özet", icon: Icon(Icons.pie_chart)),
+              Tab(text: "Öğrenme Hızı", icon: Icon(Icons.speed)),
               Tab(text: "Quiz İstatistikleri", icon: Icon(Icons.quiz)),
               Tab(text: "Kütüphane Bazlı", icon: Icon(Icons.library_books)),
             ],
@@ -65,7 +152,35 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
             
-            // 2. QUİZ İSTATİSTİKLERİ
+            // 2. ÖĞRENME HIZI (YENİ SEKME)
+            ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Card(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const Text("Ortalama Öğrenme Hızınız", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Text("${wordsPerDay.toStringAsFixed(1)} Kelime / Gün", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                        const SizedBox(height: 4),
+                        Text("Uygulama Kullanımı: $daysUsed Gün", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ),
+                _buildSpeedCard(context, "Günlük (Son 24 Saat)", const Duration(days: 1), Colors.blue),
+                _buildSpeedCard(context, "Haftalık (Son 7 Gün)", const Duration(days: 7), Colors.orange),
+                _buildSpeedCard(context, "Aylık (Son 30 Gün)", const Duration(days: 30), Colors.teal),
+                _buildSpeedCard(context, "Yıllık (Son 365 Gün)", const Duration(days: 365), Colors.deepPurple),
+              ],
+            ),
+
+            // 3. QUİZ İSTATİSTİKLERİ
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -76,7 +191,7 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
             
-            // 3. KÜTÜPHANE BAZLI
+            // 4. KÜTÜPHANE BAZLI
             ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: availableLibraries.length,
