@@ -21,14 +21,13 @@ jobs:
         with:
           channel: 'stable'
 
-      # KÖKTEN ÇÖZÜM: Derleyiciye v2 embedding mimarisini sistem seviyesinde dikte eder
-      # ve otomatik üretilen tüm eski v1 eklenti kayıt önbelleklerini tamamen engeller.
+      # KÖKTEN ÇÖZÜM: Derleyicinin V1 motorunu çağırmasını sistem seviyesinde engeller
       - name: Force Global V2 Embedding Configuration
         run: |
           rm -rf android/app/src/main/java/
           flutter clean
           
-          # Projenin yerel konfigürasyonuna v2 embedding zorlamasını enjekte eder
+          # Android klasörü altına yerel özellikleri yazar
           mkdir -p android
           echo "flutter.v2Embedding=true" >> android/local.properties
           echo "flutter.embeddingVersion=2" >> android/local.properties
@@ -37,12 +36,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Dinamik APK Derleme (Artan Build Numarası Şablonu)
+      # Dinamik APK Derleme
       - name: Build Debug APK with Dynamic Name
         env:
           APP_BUILD_NUMBER: ${{ github.run_number }}
           APP_VERSION_NAME: "1.0.${{ github.run_number }}"
-        run: flutter build apk --debug
+        run: flutter build apk --debug --no-pub
 
       # Çıktıyı GitHub Üzerine Artifact Olarak Yükler
       - name: Upload Artifact
