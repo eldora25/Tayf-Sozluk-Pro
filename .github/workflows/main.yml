@@ -25,15 +25,16 @@ jobs:
         run: |
           rm -rf android
           flutter create --platforms=android .
+          # GÜVENLİK DUVARI: share_plus ve yeni eklentilerin API 34+ isteme ihtimaline karşı SDK sürümlerini kilitliyoruz.
+          echo "flutter.compileSdkVersion=34" >> android/local.properties
+          echo "flutter.targetSdkVersion=34" >> android/local.properties
 
       - name: Install dependencies
         run: flutter pub get
 
-      # KÖKTEN ÇÖZÜM: Build numarasını koda enjekte ediyoruz (--dart-define)
       - name: Build Debug APK
         run: flutter build apk --debug --dart-define=BUILD_NUMBER=${{ github.run_number }}
 
-      # APK'nın adını GitHub Run Number ile değiştiriyoruz
       - name: Rename APK Dynamically
         run: |
           mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/TY-Sozluk-v1.0.${{ github.run_number }}-debug.apk
