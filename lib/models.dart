@@ -1,5 +1,21 @@
 import 'dart:convert';
 
+// Akıllı Dil Algılama Algoritması
+String detectLanguage(String text) {
+  String lower = text.toLowerCase();
+  // Türkçe'ye özgü karakterler varsa kesin Türkçedir
+  if (RegExp(r'[çğıöşü]').hasMatch(lower)) return 'tr-TR';
+  // İngilizce'ye özgü harfler varsa kesin İngilizcedir
+  if (RegExp(r'[wqx]').hasMatch(lower)) return 'en-US';
+  
+  // Karakter yoksa yaygın kelimelerden tespit etmeye çalış
+  final trWords = ['bir', 've', 'için', 'ile', 'de', 'da', 'mi', 'mu', 'bu', 'şu', 'o', 'ne', 'gibi', 'kadar', 'olarak', 'olan', 'göre', 'kabul', 'etmek', 'yapmak', 'olmak'];
+  for (var w in trWords) {
+    if (RegExp(r'\b' + w + r'\b').hasMatch(lower)) return 'tr-TR';
+  }
+  return 'en-US'; // Varsayılan
+}
+
 class WordModel {
   String word;
   List<String> meanings;
