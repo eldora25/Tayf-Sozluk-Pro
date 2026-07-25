@@ -15,6 +15,11 @@ dependencies:
   file_picker: ^8.1.4
   path_provider: ^2.1.5
 
+# KÖKTEN ÇÖZÜM: Arka planda API 36 dayatan kütüphaneyi 
+# API 34 ile uyumlu kararlı sürüme kilitliyoruz.
+dependency_overrides:
+  flutter_plugin_android_lifecycle: 2.0.20
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
