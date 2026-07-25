@@ -60,6 +60,9 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       case 3: return ThemeData(primarySwatch: Colors.teal, primaryColor: Colors.teal[400], scaffoldBackgroundColor: Colors.teal[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: const AppBarTheme(backgroundColor: Colors.teal, foregroundColor: Colors.white));
       case 4: return ThemeData(primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: Colors.purple[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white));
       case 5: return ThemeData(primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: Colors.orange[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white));
+      // YENİ TEMALAR
+      case 6: return ThemeData(primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.pink[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
+      case 7: return ThemeData(primarySwatch: Colors.cyan, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.amber[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.cyan), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
       default: return ThemeData.dark();
     }
   }
@@ -114,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int totalQuizQuestions = 0;
   int totalQuizWrong = 0;
 
-  // Öğrenme Hızı Zaman Damgaları (Timestamps)
+  // Öğrenme Hızı Zaman Damgaları
   List<String> learnedWordTimestamps = [];
   List<String> completedQuizTimestamps = [];
   List<String> viewedCardTimestamps = [];
@@ -256,7 +259,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     } else {
       _flipController.forward();
       _speakWord(word, isMeaning: true); 
-      // Bakılan Kart Logu
       viewedCardTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     }
     setState(() => isFlipped = !isFlipped);
@@ -266,7 +268,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     setState(() {
       if (!learnedWords.any((w) => w.word == word.word)) {
         learnedWords.add(word);
-        // Öğrenilen Kelime Logu
         learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
       }
       allWords.removeWhere((w) => w.word == word.word);
@@ -288,7 +289,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         word.wrongCount = 1;
         wrongWords.add(word);
       }
-      // Yanlış / Tekrar Logu
       wrongAnswerTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
       _nextCard();
     });
@@ -651,7 +651,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildDrawer() {
     return Drawer(
-      // KESİN ÇÖZÜM: SafeArea eklendi, Drawer listesi sanal butonların altında kalmayacak.
       child: SafeArea(
         bottom: true,
         child: ListView(
