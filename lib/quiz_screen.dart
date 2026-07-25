@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // YENİ: HapticFeedback (Titreşim) için eklendi
 import 'package:flutter_tts/flutter_tts.dart';
-// YENİ: LOTTIE ANİMASYONU PAKETİ EKLENDİ
 import 'package:lottie/lottie.dart'; 
 import 'models.dart';
 
@@ -25,10 +25,11 @@ class QuizScreen extends StatefulWidget {
   });
 
   @override
+  // YENİ: Birden fazla animasyon motorunu çalıştırmak için TickerProviderStateMixin eklendi
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen> {
+class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   final FlutterTts flutterTts = FlutterTts();
   List<WordModel> quizWords = [];
   late WordModel currentWord;
@@ -50,9 +51,21 @@ class _QuizScreenState extends State<QuizScreen> {
   bool isAudioEnabled = true;
   bool _isStatsSaved = false;
 
+  // YENİ: ANİMASYON KONTROLCÜLERİ
+  late AnimationController _entranceController; // Şıkların süzülerek gelmesi için
+  late AnimationController _shakeController;    // Yanlış cevaptaki sarsıntı için
+  late AnimationController _scaleController;    // Doğru cevaptaki büyüme (pop-up) için
+  String? _lastWrongOption; // Hangi şıkkın sarsılacağını bilmek için
+
   @override
   void initState() {
     super.initState();
+    
+    // YENİ: Animasyon motorları başlatılıyor
+    _entranceController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+
     List<WordModel> pool = List.from(widget.words)..shuffle();
     quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
     totalQuestions = quizWords.length;
@@ -73,6 +86,9 @@ class _QuizScreenState extends State<QuizScreen> {
   void dispose() {
     _timer?.cancel();
     flutterTts.stop();
+    _entranceController.dispose();
+    _shakeController.dispose();
+    _scaleController.dispose();
     super.dispose();
   }
 
@@ -126,6 +142,7 @@ class _QuizScreenState extends State<QuizScreen> {
     }
     
     selectedWrongOptions.clear();
+    _lastWrongOption = null;
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
@@ -144,6 +161,10 @@ class _QuizScreenState extends State<QuizScreen> {
     options.shuffle();
     
     setState(() {});
+    
+    // YENİ: Yeni soru geldiğinde süzülme animasyonunu baştan başlatır
+    _entranceController.forward(from: 0.0);
+    
     _speakWord(currentWord.word, currentWord.libraryName);
   }
 
@@ -154,6 +175,11 @@ class _QuizScreenState extends State<QuizScreen> {
       if (option == correctOption) {
         isAnsweredCorrectly = true;
         answeredQuestions++;
+        
+        // YENİ: Doğru cevapta Cihaz Hafif Titrer ve Pop-up (Büyüme) Animasyonu başlar
+        HapticFeedback.mediumImpact();
+        _scaleController.forward(from: 0.0);
+        
         if (selectedWrongOptions.isEmpty) {
           correctAnswers++;
           currentWord.correctCount++;
@@ -162,6 +188,11 @@ class _QuizScreenState extends State<QuizScreen> {
         selectedWrongOptions.add(option);
         wrongAnswers++;
         currentWord.wrongCount++;
+        
+        // YENİ: Yanlış cevapta Cihaz Güçlü Titrer ve Sarsıntı Animasyonu başlar
+        HapticFeedback.heavyImpact();
+        _lastWrongOption = option;
+        _shakeController.forward(from: 0.0);
       }
     });
 
@@ -170,7 +201,8 @@ class _QuizScreenState extends State<QuizScreen> {
       if (currentWord.correctCount >= widget.threshold) {
          widget.onWordLearned(currentWord);
       }
-      Future.delayed(const Duration(milliseconds: 600), _generateQuestion);
+      // YENİ: Pop-up animasyonunun keyfini çıkarmak için bekleme süresi 1 saniyeye çıkarıldı
+      Future.delayed(const Duration(milliseconds: 1000), _generateQuestion);
     } else {
       widget.onWordWrong(currentWord);
       _speakFeedback(false, currentWord);
@@ -215,17 +247,14 @@ class _QuizScreenState extends State<QuizScreen> {
               children: [
                 const Text("Quiz Tamamlandı!", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
                 const SizedBox(height: 10),
-                
-                // YENİ: LOTTIE HAVAİ FİŞEK ANİMASYONU 
                 Lottie.network(
-                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', // Güvenli ve popüler bir kutlama animasyonu
+                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', 
                   height: 180,
                   repeat: true,
                   errorBuilder: (context, error, stackTrace) {
-                    return const Text("🎉", style: TextStyle(fontSize: 80)); // İnternet yoksa Emojiye düşer
+                    return const Text("🎉", style: TextStyle(fontSize: 80)); 
                   },
                 ),
-                
                 const SizedBox(height: 10),
                 Text(getSourceLanguage(quizWords.first.libraryName) == 'tr-TR' ? "Tebrikler!" : "Congratulations!", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
@@ -323,20 +352,14 @@ class _QuizScreenState extends State<QuizScreen> {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-              
-              // YENİ: KARTIN ÖN YÜZÜNE HERO ANİMASYONU
-              child: Hero(
-                tag: 'hero_word_${currentWord.word}',
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: Text(currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                ),
-              ),
+              child: Text(currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
             ),
           ),
           const SizedBox(height: 20),
           
-          ...options.map((option) {
+          // ŞIKLARIN OLUŞTURULMASI VE ANİMASYONLARI
+          ...List.generate(options.length, (index) {
+            String option = options[index];
             bool isCorrect = option == correctOption;
             bool isWrongSelected = selectedWrongOptions.contains(option);
             
@@ -351,7 +374,15 @@ class _QuizScreenState extends State<QuizScreen> {
               trailingIcon = const Icon(Icons.cancel, color: Colors.red);
             }
 
-            return Container(
+            // 1. SÜZÜLEREK GELME (STAGGERED FADE/SLIDE)
+            final Animation<double> entranceOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+              CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut)),
+            );
+            final Animation<Offset> entranceSlide = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+              CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut)),
+            );
+
+            Widget tile = Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
                 color: cardColor,
@@ -364,7 +395,48 @@ class _QuizScreenState extends State<QuizScreen> {
                 onTap: () => _checkAnswer(option),
               ),
             );
-          }).toList(),
+
+            // 2. SARSINTI (SHAKE) ANİMASYONU - Sadece son tıklanan yanlış şık sarsılır
+            if (isWrongSelected && option == _lastWrongOption) {
+              tile = AnimatedBuilder(
+                animation: _shakeController,
+                builder: (context, child) {
+                  // Sinüs dalgası ile sağa sola sarsıntı matematiği (3 kez gidip gelir, 10px kayar)
+                  final double shift = sin(_shakeController.value * pi * 6) * 10;
+                  return Transform.translate(
+                    offset: Offset(shift, 0),
+                    child: child,
+                  );
+                },
+                child: tile,
+              );
+            }
+
+            // 3. BÜYÜME (POP-UP) ANİMASYONU - Sadece doğru şıkta uygulanır
+            if (isAnsweredCorrectly && isCorrect) {
+              tile = AnimatedBuilder(
+                animation: _scaleController,
+                builder: (context, child) {
+                  // %8 oranında büyüyüp dikkat çeker
+                  final double scale = 1.0 + (_scaleController.value * 0.08); 
+                  return Transform.scale(
+                    scale: scale,
+                    child: child,
+                  );
+                },
+                child: tile,
+              );
+            }
+
+            // En dış katmanda süzülme animasyonu var
+            return FadeTransition(
+              opacity: entranceOpacity,
+              child: SlideTransition(
+                position: entranceSlide,
+                child: tile,
+              ),
+            );
+          }),
         ],
       ),
     );
