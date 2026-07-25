@@ -1,0 +1,33 @@
+{
+    "name": "Test Paketi",
+    "description": "Çoklu anlam ve çoklu örnek cümle içeren test kelime paketi",
+    "languagePair": "en → tr",
+    "level": "Genel",
+    "words": [
+        {
+            "word": "word",
+            "meanings": ["söz, sözcük, kelime", "lafız", "vaad, söz", "haber, malumat"],
+            "examples": ["Words fail me. Sözle tarif edemem.", "word for word kelimesi kelimesine", "word game kelime oyunu"]
+        },
+        {
+            "word": "book",
+            "meanings": ["kitap", "defter", "rezervasyon yapmak", "ayırmak"],
+            "examples": ["I read a good book. İyi bir kitap okudum.", "I booked a hotel room. Bir otel odası ayırttım."]
+        },
+        {
+            "word": "mean",
+            "meanings": ["anlamına gelmek", "kastetmek", "ortalama", "cimri"],
+            "examples": ["What do you mean? Ne demek istiyorsun?", "mean distance ortalama mesafe"]
+        },
+        {
+            "word": "light",
+            "meanings": ["ışık, aydınlık", "hafif", "açık renkli", "yakmak"],
+            "examples": ["The light is bright. Işık parlak.", "This bag is light. Bu çanta hafif.", "light blue açık mavi"]
+        },
+        {
+            "word": "run",
+            "meanings": ["koşmak", "işletmek, yönetmek", "çalışmak (makine)", "akmak (su)"],
+            "examples": ["He runs fast. Hızlı koşar.", "She runs a company. Bir şirket yönetiyor.", "run away kaçmak"]
+        }
+    ]
+}
