@@ -3,7 +3,7 @@ import 'dart:math';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle, ByteData;
-import 'package:flutter/foundation.dart'; // COMPUTE İÇİN
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:file_picker/file_picker.dart';
@@ -266,7 +266,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
     prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
 
-    // BÜYÜK LİSTELERİ ARKA PLANDA ENCODE ET (Donmayı önler)
     List<String> encodedAll = await compute(encodeWordsList, allWords.map((e) => e.toMap()).toList());
     List<String> encodedLearned = await compute(encodeWordsList, learnedWords.map((e) => e.toMap()).toList());
     List<String> encodedRepeat = await compute(encodeWordsList, toRepeatWords.map((e) => e.toMap()).toList());
@@ -307,7 +306,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // ÖĞRENME KARTI ÇAPRAZ SESLENDİRME
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     String text = isMeaning ? word.meanings.first : word.word;
     String lang = isMeaning ? getTargetLanguage(word.libraryName) : getSourceLanguage(word.libraryName);
@@ -329,10 +327,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _flipCard(WordModel word) {
     if (isFlipped) {
       _flipController.reverse();
-      _speakWord(word, isMeaning: false); // Ön Yüz (Kelime) Okunur
+      _speakWord(word, isMeaning: false); 
     } else {
       _flipController.forward();
-      _speakWord(word, isMeaning: true); // Arka Yüz (Anlam) Okunur
+      _speakWord(word, isMeaning: true); 
       viewedCardTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     }
     setState(() => isFlipped = !isFlipped);
@@ -369,7 +367,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _saveData();
   }
 
-  // --- İZOLE DOSYA YÜKLEYİCİ (FREEZE VE ÇÖKMEYİ ENGELLER) ---
   Future<void> _importFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
     if (result != null && result.files.single.path != null) {
@@ -391,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           'content': content, 'extension': extension, 'libraryName': customLibraryName,
         });
 
-        Navigator.pop(context); // Dialog Kapat
+        Navigator.pop(context); 
         if (parsedMaps.isNotEmpty && parsedMaps.first.containsKey('error')) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: ${parsedMaps.first['error']}")));
           return;
@@ -424,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         'content': content, 'extension': extension, 'libraryName': customLibraryName,
       });
 
-      Navigator.pop(context); // Dialog Kapat
+      Navigator.pop(context); 
       if (parsedMaps.isNotEmpty && parsedMaps.first.containsKey('error')) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: ${parsedMaps.first['error']}")));
         return;
@@ -685,7 +682,38 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: filteredWords, onDelete: (wordToDelete) { setState(() { allWords.removeWhere((w) => w.word == wordToDelete.word); toRepeatWords.removeWhere((w) => w.word == wordToDelete.word); }); _saveData(); }))); }),
-            ListTile(leading: const Icon(Icons.settings), title: const Text("Ayarlar, Temalar, Seçimler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, onSaveSettings: (newGoal, newThreshold, newQCount, newThemeIdx, newLib, newLevel) { setState(() { dailyGoal = newGoal; quizThreshold = newThreshold; quizQuestionCount = newQCount; _toggleTheme(newThemeIdx); selectedLibrary = newLib; selectedLevel = newLevel; currentCardIndex = 0; }); _saveData(); }, onAddPackage: (assetPath, ext, name) => _loadPackageFromAssets(assetPath, ext, name)))); }),
+            
+            // KESİN ÇÖZÜM: Referans Hatası Giderildi
+            ListTile(
+              leading: const Icon(Icons.settings), 
+              title: const Text("Ayarlar, Temalar, Seçimler"), 
+              onTap: () { 
+                Navigator.pop(context); 
+                Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+                  currentGoal: dailyGoal, 
+                  currentThreshold: quizThreshold, 
+                  currentQuestionCount: quizQuestionCount, 
+                  currentThemeIndex: widget.themeIndex, 
+                  selectedLibrary: selectedLibrary, 
+                  selectedLevel: selectedLevel, 
+                  availableLibraries: availableLibraries, 
+                  onSaveSettings: (newGoal, newThreshold, newQCount, newThemeIdx, newLib, newLevel) { 
+                    setState(() { 
+                      dailyGoal = newGoal; 
+                      quizThreshold = newThreshold; 
+                      quizQuestionCount = newQCount; 
+                      widget.onThemeChanged(newThemeIdx); 
+                      selectedLibrary = newLib; 
+                      selectedLevel = newLevel; 
+                      currentCardIndex = 0; 
+                    }); 
+                    _saveData(); 
+                  }, 
+                  onAddPackage: (assetPath, ext, name) => _loadPackageFromAssets(assetPath, ext, name)
+                ))); 
+              }
+            ),
+            
             const Divider(),
             ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi"), subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
