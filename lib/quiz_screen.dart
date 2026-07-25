@@ -40,19 +40,17 @@ class _QuizScreenState extends State<QuizScreen> {
   Timer? _timer;
   int _secondsElapsed = 0;
   bool isQuizFinished = false;
+  bool isAudioEnabled = true;
 
   @override
   void initState() {
     super.initState();
     totalQuestions = widget.words.length;
-    _initTts();
     if (totalQuestions > 0) {
       _startTimer();
       _generateQuestion();
     }
   }
-
-  void _initTts() async { await flutterTts.setLanguage("en-US"); }
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -63,6 +61,7 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    flutterTts.stop();
     super.dispose();
   }
 
@@ -72,6 +71,28 @@ class _QuizScreenState extends State<QuizScreen> {
     int s = seconds % 60;
     if (h > 0) return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  // --- TTS VE ÇAPRAZ DİL MANTIĞI ---
+  Future<void> _speakWord(String text) async {
+    if (!isAudioEnabled) return;
+    String lang = detectLanguage(text);
+    await flutterTts.setLanguage(lang);
+    await flutterTts.speak(text);
+  }
+
+  Future<void> _speakFeedback(bool isCorrect, String questionWord) async {
+    if (!isAudioEnabled) return;
+    String qLang = detectLanguage(questionWord);
+    // Eğer soru İngilizceyse, Doğru/Yanlış diye Türkçe söyle. Türkçeyse İngilizce söyle.
+    String targetLang = qLang == 'en-US' ? 'tr-TR' : 'en-US';
+    
+    await flutterTts.setLanguage(targetLang);
+    if (isCorrect) {
+      await flutterTts.speak(targetLang == 'tr-TR' ? "Doğru" : "Correct");
+    } else {
+      await flutterTts.speak(targetLang == 'tr-TR' ? "Yanlış" : "Wrong");
+    }
   }
 
   void _generateQuestion() {
@@ -85,13 +106,11 @@ class _QuizScreenState extends State<QuizScreen> {
     
     selectedWrongOptions.clear();
     isAnsweredCorrectly = false;
-    currentWord = widget.words[answeredQuestions]; // Sıradan soruyoruz
+    currentWord = widget.words[answeredQuestions];
     
-    // Doğru kelimenin çoklu anlamlarından RASTGELE sadece bir tanesini seç
     correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
     Set<String> wrongOptions = {};
     
-    // Çeldiricileri de diğer kelimelerin rastgele TEK bir anlamından seç
     while (wrongOptions.length < 3 && wrongOptions.length < widget.words.length - 1) {
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
       if (randomWord.word != currentWord.word && randomWord.meanings.isNotEmpty) {
@@ -102,36 +121,35 @@ class _QuizScreenState extends State<QuizScreen> {
     
     options = [correctOption, ...wrongOptions];
     options.shuffle();
+    
     setState(() {});
+    
+    // Yeni soru geldiğinde kelimeyi otomatik seslendir
+    _speakWord(currentWord.word);
   }
 
-  void _checkAnswer(String option) {
+  void _checkAnswer(String option) async {
     if (isAnsweredCorrectly || selectedWrongOptions.contains(option)) return;
     
     setState(() {
       if (option == correctOption) {
-        // DOĞRU CEVAP
         isAnsweredCorrectly = true;
         answeredQuestions++;
-        flutterTts.speak("Correct"); // Onay Sesi (veya kelimenin kendisi: currentWord.word)
         
-        // Eğer o soru için hiç yanlışa basılmadıysa doğru say
         if (selectedWrongOptions.isEmpty) {
           correctAnswers++;
           currentWord.correctCount++;
         }
         
-        // Eşik değeri ne olursa olsun, doğru bildiği için öğrenildi sayıp listeden çıkar.
+        _speakFeedback(true, currentWord.word);
         widget.onWordLearned(currentWord);
-        
         Future.delayed(const Duration(seconds: 1), _generateQuestion);
       } else {
-        // YANLIŞ CEVAP
         selectedWrongOptions.add(option);
         wrongAnswers++;
         currentWord.wrongCount++;
         widget.onWordWrong(currentWord);
-        flutterTts.speak("Wrong"); // Hata Sesi
+        _speakFeedback(false, currentWord.word);
       }
     });
   }
@@ -173,7 +191,6 @@ class _QuizScreenState extends State<QuizScreen> {
                 const SizedBox(height: 10),
                 const Text("Tebrikler!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
-                
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -199,7 +216,6 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   ),
                 ),
-                
                 const SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity,
@@ -231,7 +247,16 @@ class _QuizScreenState extends State<QuizScreen> {
     Color borderColor = isDarkMode ? Colors.purpleAccent : Colors.deepPurple;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Quiz Modu")),
+      appBar: AppBar(
+        title: const Text("Quiz Modu"),
+        actions: [
+          IconButton(
+            icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off),
+            tooltip: "Sesi Aç/Kapat",
+            onPressed: () => setState(() => isAudioEnabled = !isAudioEnabled),
+          )
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -257,42 +282,51 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
             const SizedBox(height: 30),
             
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-              child: Text(currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+            // KELİMEYE DOKUNUNCA SESLENDİRME İŞLEVİ
+            GestureDetector(
+              onTap: () => _speakWord(currentWord.word),
+              child: Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                child: Text(currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              ),
             ),
             const SizedBox(height: 30),
             
-            ...options.map((option) {
-              bool isCorrect = option == correctOption;
-              bool isWrongSelected = selectedWrongOptions.contains(option);
-              
-              Color cardColor = Theme.of(context).cardColor;
-              Widget? trailingIcon;
-              
-              if (isAnsweredCorrectly && isCorrect) {
-                cardColor = Colors.green.withOpacity(0.3);
-                trailingIcon = const Icon(Icons.check_circle, color: Colors.green);
-              } else if (isWrongSelected) {
-                cardColor = Colors.red.withOpacity(0.3);
-                trailingIcon = const Icon(Icons.cancel, color: Colors.red);
-              }
+            Expanded(
+              child: ListView(
+                children: options.map((option) {
+                  bool isCorrect = option == correctOption;
+                  bool isWrongSelected = selectedWrongOptions.contains(option);
+                  
+                  Color cardColor = Theme.of(context).cardColor;
+                  Widget? trailingIcon;
+                  
+                  if (isAnsweredCorrectly && isCorrect) {
+                    cardColor = Colors.green.withOpacity(0.3);
+                    trailingIcon = const Icon(Icons.check_circle, color: Colors.green);
+                  } else if (isWrongSelected) {
+                    cardColor = Colors.red.withOpacity(0.3);
+                    trailingIcon = const Icon(Icons.cancel, color: Colors.red);
+                  }
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  border: Border.all(color: borderColor, width: 2), // Kalın ve Zıt Çerçeve
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ListTile(
-                  title: Text(option, style: const TextStyle(fontSize: 18)),
-                  trailing: trailingIcon,
-                  onTap: () => _checkAnswer(option),
-                ),
-              );
-            }),
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      border: Border.all(color: borderColor, width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      // SEÇENEK METNİ KISALTILDI VE SINIRLANDIRILDI
+                      title: Text(option, style: const TextStyle(fontSize: 16), maxLines: 3, overflow: TextOverflow.ellipsis),
+                      trailing: trailingIcon,
+                      onTap: () => _checkAnswer(option),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           ],
         ),
       ),
