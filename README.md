@@ -14,3 +14,6 @@ Build #166: Commit dfbe9f2 çalısan 10 optimizasyon
                          ISAR
 **************************************************************************
 Build #186: Commit 7a99799 ISAR DATABASE GEÇİŞİ YAPILDI
+**************************************************************************
+Leitner Algoritması, öğrenmeyi kolaylaştıran ve bilginin uzun süre akılda kalmasını sağlayan aralıklı tekrar (SRS) yöntemi kuruldu
+**************************************************************************
