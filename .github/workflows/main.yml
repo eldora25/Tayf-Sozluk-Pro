@@ -21,26 +21,23 @@ jobs:
         with:
           channel: 'stable'
 
-      # Tertemiz, müdahalesiz Android projesi oluşturma (V2 Embedding garantisi)
       - name: Regenerate Android Project
         run: |
           rm -rf android
           flutter create --platforms=android .
 
-      # Bağımlılıklar indirilir (dependency_overrides kuralı burada devreye girer)
       - name: Install dependencies
         run: flutter pub get
 
-      # Standart APK Derlemesi
+      # KÖKTEN ÇÖZÜM: Build numarasını koda enjekte ediyoruz (--dart-define)
       - name: Build Debug APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --dart-define=BUILD_NUMBER=${{ github.run_number }}
 
-      # DEV-OPS MÜDAHALESİ: Üretilen APK dosyasının adını dinamik build numarasıyla değiştiriyoruz.
+      # APK'nın adını GitHub Run Number ile değiştiriyoruz
       - name: Rename APK Dynamically
         run: |
           mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/TY-Sozluk-v1.0.${{ github.run_number }}-debug.apk
 
-      # Çıktıyı GitHub Üzerine Yüklüyor
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
