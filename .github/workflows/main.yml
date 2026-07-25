@@ -16,19 +16,20 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      # En kararlı Flutter motorunu kurar
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: Clean project cache
-        run: flutter clean
+      # Otomatik üretilen java ara kayıt dosyalarını zorla temizler
+      - name: Codebase Purge
+        run: |
+          rm -rf android/app/src/main/java/
+          flutter clean
 
-      - name: Install dependencies
+      运营 - name: Install dependencies
         run: flutter pub get
 
-      # Dinamik APK Derleme (Artan Build Numarası Şablonu)
       - name: Build Debug APK with Dynamic Name
         env:
           APP_BUILD_NUMBER: ${{ github.run_number }}
