@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'packages.dart';
 
 class SettingsScreen extends StatefulWidget {
   final int currentGoal;
@@ -8,7 +7,7 @@ class SettingsScreen extends StatefulWidget {
   final String selectedLevel;
   final List<String> availableLibraries;
   final Function(int, int, String, String) onSaveSettings;
-  final Function(String, String, String) onAddPackage;
+  final Function(String, String, String) onAddPackage; // assetPath, extension, libraryName
 
   const SettingsScreen({
     super.key, 
@@ -90,38 +89,79 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider()),
             
-            const Text("Hazır Paketler", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+            const Text("Uygulama İçi Hazır Paketler", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+            const Text("Boyutu büyük paketlerin yüklenmesi birkaç saniye sürebilir, lütfen bekleyin.", style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 10),
+            
+            // 1. JSON Paketi
             ListTile(
               tileColor: Colors.blue.withOpacity(0.1),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              title: const Text("Test Paketi (İng-Tr)", style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text("Örnek cümleli json paket"),
+              title: const Text("Test Paketi", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Örnek cümleli (JSON)"),
               trailing: const Icon(Icons.download, color: Colors.blue),
               onTap: () {
-                widget.onAddPackage("Test Paketi", "json", DefaultPackages.testPackageJson);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Test Paketi Kütüphaneye Eklendi!")));
+                widget.onAddPackage("assets/test_paket.json", "json", "Test Paketi");
               },
             ),
             const SizedBox(height: 10),
+
+            // 2. Txt Paketi
             ListTile(
               tileColor: Colors.orange.withOpacity(0.1),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              title: const Text("İngilizce Sözlük (A Harfi)", style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text("Temel kelimeler txt paketi"),
+              title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Kısa Temel Kelimeler (TXT)"),
               trailing: const Icon(Icons.download, color: Colors.orange),
               onTap: () {
-                widget.onAddPackage("İngilizce-A", "txt", DefaultPackages.englishTurkishTxt);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İngilizce-A Paketi Eklendi!")));
+                widget.onAddPackage("assets/EN-TR_tayf.txt", "txt", "Tayf İng-Tr");
+              },
+            ),
+            const SizedBox(height: 10),
+
+            // 3. Babylon İng-Tr
+            ListTile(
+              tileColor: Colors.green.withOpacity(0.1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              title: const Text("Babylon İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Geniş Kapsamlı Sözlük (CSV)"),
+              trailing: const Icon(Icons.download, color: Colors.green),
+              onTap: () {
+                widget.onAddPackage("assets/Babylon_English_Turkish_donustu.csv", "csv", "Babylon İng-Tr");
+              },
+            ),
+            const SizedBox(height: 10),
+
+            // 4. Babylon Tr-İng
+            ListTile(
+              tileColor: Colors.red.withOpacity(0.1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              title: const Text("Babylon Türkçe-İngilizce", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Geniş Kapsamlı Sözlük (CSV)"),
+              trailing: const Icon(Icons.download, color: Colors.red),
+              onTap: () {
+                widget.onAddPackage("assets/Babylon_Turkish_English_donustu.csv", "csv", "Babylon Tr-İng");
               },
             ),
 
             const SizedBox(height: 40),
+             // 5. Free Txt Paketi
+            ListTile(
+              tileColor: Colors.deepPurple.withOpacity(0.1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Free Eng-TR (TXT)"),
+              trailing: const Icon(Icons.download, color: Colors.orange),
+              onTap: () {
+                widget.onAddPackage("assets/Free-KH.txt", "txt", "Free-KH İng-Tr");
+              },
+            ),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16), backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 5,
+                  padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, elevation: 5,
                 ),
                 onPressed: () {
                   widget.onSaveSettings(_goalValue.toInt(), _thresholdValue.toInt(), _library, _level);
