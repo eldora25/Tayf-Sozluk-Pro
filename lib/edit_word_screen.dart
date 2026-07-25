@@ -79,7 +79,6 @@ class _EditWordScreenState extends State<EditWordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Sanal kütüphaneleri filtrele (Kopyalama/Taşıma hedefi olamazlar)
     var realLibraries = widget.availableLibraries.where((lib) => lib != 'Tekrarlanması Gerekenler').toList();
 
     return Scaffold(
@@ -96,7 +95,8 @@ class _EditWordScreenState extends State<EditWordScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          // BUTONLARIN EKRANIN ALTINDA KALMAMASI İÇİN BOTTOM PADDING 120 YAPILDI
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
           children: [
             TextFormField(
               initialValue: _wordText,
@@ -110,10 +110,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text("Anlamlar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.green),
-                  onPressed: () => setState(() => _meaningControllers.add(TextEditingController())),
-                )
+                IconButton(icon: const Icon(Icons.add_circle, color: Colors.green), onPressed: () => setState(() => _meaningControllers.add(TextEditingController())))
               ],
             ),
             ..._meaningControllers.map((controller) => Padding(
@@ -131,10 +128,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text("Örnek Cümleler", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.orange),
-                  onPressed: () => setState(() => _exampleControllers.add(TextEditingController())),
-                )
+                IconButton(icon: const Icon(Icons.add_circle, color: Colors.orange), onPressed: () => setState(() => _exampleControllers.add(TextEditingController())))
               ],
             ),
             ..._exampleControllers.map((controller) => Padding(
@@ -167,7 +161,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
                     onPressed: () => _submitAction(EditAction.update),
                     child: const Text("GÜNCELLE"),
                   ),
@@ -179,7 +173,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
                     onPressed: () => _submitAction(EditAction.copy),
                     child: const Text("KOPYALA"),
                   ),
@@ -187,7 +181,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
                     onPressed: () => _submitAction(EditAction.move),
                     child: const Text("TAŞI"),
                   ),
