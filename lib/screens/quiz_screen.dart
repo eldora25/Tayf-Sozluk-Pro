@@ -142,7 +142,8 @@ class _QuizScreenState extends State<QuizScreen> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: btnColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purple.shade300)),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.between,
+                      // HATA BURADA DÜZELTİLDİ
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(option, style: const TextStyle(fontSize: 18, color: Colors.black87)),
                         if (suffixIcon != null) suffixIcon,
