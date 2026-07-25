@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:io';
+import 'dart:ui'; // PlatformDispatcher için eklendi
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle, ByteData;
 import 'package:flutter/foundation.dart';
@@ -20,14 +21,17 @@ import 'statistics_screen.dart';
 import 'edit_word_screen.dart';
 import 'library_manager_screen.dart';
 import 'manage_list_screen.dart';
+import 'logger_screen.dart'; // YENİ LOG EKRANI EKLENDİ
 
-// --- ARKA PLAN (ISOLATE) İŞLEMCİLERİ: EKRANIN DONMASINI ENGELLER ---
-List<Map<String, dynamic>> parseLibraryDataInBackground(Map<String, dynamic> params) {
+// --- OPTİMİZE EDİLMİŞ ARKA PLAN İŞLEMCİSİ (RAM TAŞMASINI ENGELLER) ---
+// Not: List<Map> yerine List<String> döndürüyoruz, bu sayede Isolate geçişinde
+// yüz binlerce obje oluşturulup hafıza patlatılmaz, sadece metinler aktarılır.
+List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
   String customLibraryName = params['libraryName'];
 
-  List<Map<String, dynamic>> parsedList = [];
+  List<String> parsedList = [];
 
   List<String> cleanMeanings(List<dynamic> raw) {
     List<String> result = [];
@@ -53,20 +57,20 @@ List<Map<String, dynamic>> parseLibraryDataInBackground(Map<String, dynamic> par
       var decoded = json.decode(content);
       List list = decoded is Map ? decoded['words'] : decoded;
       for (var e in list) {
-        parsedList.add({
+        parsedList.add(json.encode({
           'word': e['word'] ?? '', 'meanings': cleanMeanings(e['meanings'] ?? []), 'examples': cleanMeanings(e['examples'] ?? []),
           'level': e['level'] ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0,
-        });
+        }));
       }
     } else if (extension == 'txt') {
       var lines = content.split('\n');
       for (var line in lines) {
         if (!line.contains(':')) continue;
         var parts = line.split(':');
-        parsedList.add({
+        parsedList.add(json.encode({
           'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': <String>[],
           'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0,
-        });
+        }));
       }
     } else {
       List<List<dynamic>> rows = const CsvToListConverter().convert(content);
@@ -75,15 +79,15 @@ List<Map<String, dynamic>> parseLibraryDataInBackground(Map<String, dynamic> par
         String wordStr = row[0].toString().trim();
         if (wordStr.isEmpty || wordStr.startsWith('#') || wordStr.toLowerCase() == 'word' || wordStr.startsWith('00database')) continue;
 
-        parsedList.add({
+        parsedList.add(json.encode({
           'word': wordStr, 'meanings': cleanMeanings([row[1]]), 'examples': row.length > 2 ? cleanMeanings([row[2]]) : <String>[],
           'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
           'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0,
-        });
+        }));
       }
     }
-  } catch (e) {
-    parsedList.add({'error': e.toString()});
+  } catch (e, stacktrace) {
+    parsedList.add(json.encode({'error': "$e\n$stacktrace"}));
   }
   return parsedList;
 }
@@ -94,6 +98,18 @@ List<String> encodeWordsList(List<Map<String, dynamic>> maps) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // GLOBAL HATA YAKALAYICILAR - Crash anında log dosyasına yazar
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    AppLogger.logError("FLUTTER ERROR: ${details.exception}\n${details.stack}");
+  };
+  
+  PlatformDispatcher.instance.onError = (error, stack) {
+    AppLogger.logError("PLATFORM ERROR: $error\n$stack");
+    return true; // Hatayı yönettik sayılır
+  };
+
   runApp(const TayfSozlukApp());
 }
 
@@ -209,70 +225,78 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      selectedLibrary = prefs.getString('selectedLibrary') ?? 'Varsayılan';
-      selectedLevel = prefs.getString('selectedLevel') ?? 'Genel';
-      dailyGoal = prefs.getInt('dailyGoal') ?? 10;
-      quizThreshold = prefs.getInt('quizThreshold') ?? 10;
-      quizQuestionCount = prefs.getInt('quizQuestionCount') ?? 10;
-      currentCardIndex = prefs.getInt('currentCardIndex') ?? 0;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        selectedLibrary = prefs.getString('selectedLibrary') ?? 'Varsayılan';
+        selectedLevel = prefs.getString('selectedLevel') ?? 'Genel';
+        dailyGoal = prefs.getInt('dailyGoal') ?? 10;
+        quizThreshold = prefs.getInt('quizThreshold') ?? 10;
+        quizQuestionCount = prefs.getInt('quizQuestionCount') ?? 10;
+        currentCardIndex = prefs.getInt('currentCardIndex') ?? 0;
 
-      totalCompletedQuizzes = prefs.getInt('totalCompletedQuizzes') ?? 0;
-      totalQuizTimeSeconds = prefs.getInt('totalQuizTimeSeconds') ?? 0;
-      totalQuizQuestions = prefs.getInt('totalQuizQuestions') ?? 0;
-      totalQuizWrong = prefs.getInt('totalQuizWrong') ?? 0;
+        totalCompletedQuizzes = prefs.getInt('totalCompletedQuizzes') ?? 0;
+        totalQuizTimeSeconds = prefs.getInt('totalQuizTimeSeconds') ?? 0;
+        totalQuizQuestions = prefs.getInt('totalQuizQuestions') ?? 0;
+        totalQuizWrong = prefs.getInt('totalQuizWrong') ?? 0;
 
-      learnedWordTimestamps = prefs.getStringList('learnedWordTimestamps') ?? [];
-      completedQuizTimestamps = prefs.getStringList('completedQuizTimestamps') ?? [];
-      viewedCardTimestamps = prefs.getStringList('viewedCardTimestamps') ?? [];
-      wrongAnswerTimestamps = prefs.getStringList('wrongAnswerTimestamps') ?? [];
-      
-      firstUseTimestamp = prefs.getInt('firstUseTimestamp') ?? 0;
-      if (firstUseTimestamp < 1700000000000) {
-        firstUseTimestamp = DateTime.now().millisecondsSinceEpoch;
-        prefs.setInt('firstUseTimestamp', firstUseTimestamp);
-      }
+        learnedWordTimestamps = prefs.getStringList('learnedWordTimestamps') ?? [];
+        completedQuizTimestamps = prefs.getStringList('completedQuizTimestamps') ?? [];
+        viewedCardTimestamps = prefs.getStringList('viewedCardTimestamps') ?? [];
+        wrongAnswerTimestamps = prefs.getStringList('wrongAnswerTimestamps') ?? [];
+        
+        firstUseTimestamp = prefs.getInt('firstUseTimestamp') ?? 0;
+        if (firstUseTimestamp < 1700000000000) {
+          firstUseTimestamp = DateTime.now().millisecondsSinceEpoch;
+          prefs.setInt('firstUseTimestamp', firstUseTimestamp);
+        }
 
-      allWords = (prefs.getStringList('allWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
-      learnedWords = (prefs.getStringList('learnedWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
-      toRepeatWords = (prefs.getStringList('toRepeatWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
-      wrongWords = (prefs.getStringList('wrongWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
+        allWords = (prefs.getStringList('allWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
+        learnedWords = (prefs.getStringList('learnedWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
+        toRepeatWords = (prefs.getStringList('toRepeatWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
+        wrongWords = (prefs.getStringList('wrongWords') ?? []).map((e) => WordModel.fromJson(e)).toList();
 
-      if (allWords.isEmpty && learnedWords.isEmpty) {
-        _createDefaultLibrary();
-      }
-    });
+        if (allWords.isEmpty && learnedWords.isEmpty) {
+          _createDefaultLibrary();
+        }
+      });
+    } catch (e, stack) {
+      AppLogger.logError("Veri Yükleme Hatası (_loadData): $e\n$stack");
+    }
   }
 
   Future<void> _saveData() async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('selectedLibrary', selectedLibrary);
-    prefs.setString('selectedLevel', selectedLevel);
-    prefs.setInt('dailyGoal', dailyGoal);
-    prefs.setInt('quizThreshold', quizThreshold);
-    prefs.setInt('quizQuestionCount', quizQuestionCount);
-    prefs.setInt('currentCardIndex', currentCardIndex);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString('selectedLibrary', selectedLibrary);
+      prefs.setString('selectedLevel', selectedLevel);
+      prefs.setInt('dailyGoal', dailyGoal);
+      prefs.setInt('quizThreshold', quizThreshold);
+      prefs.setInt('quizQuestionCount', quizQuestionCount);
+      prefs.setInt('currentCardIndex', currentCardIndex);
 
-    prefs.setInt('totalCompletedQuizzes', totalCompletedQuizzes);
-    prefs.setInt('totalQuizTimeSeconds', totalQuizTimeSeconds);
-    prefs.setInt('totalQuizQuestions', totalQuizQuestions);
-    prefs.setInt('totalQuizWrong', totalQuizWrong);
+      prefs.setInt('totalCompletedQuizzes', totalCompletedQuizzes);
+      prefs.setInt('totalQuizTimeSeconds', totalQuizTimeSeconds);
+      prefs.setInt('totalQuizQuestions', totalQuizQuestions);
+      prefs.setInt('totalQuizWrong', totalQuizWrong);
 
-    prefs.setStringList('learnedWordTimestamps', learnedWordTimestamps);
-    prefs.setStringList('completedQuizTimestamps', completedQuizTimestamps);
-    prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
-    prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
+      prefs.setStringList('learnedWordTimestamps', learnedWordTimestamps);
+      prefs.setStringList('completedQuizTimestamps', completedQuizTimestamps);
+      prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
+      prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
 
-    List<String> encodedAll = await compute(encodeWordsList, allWords.map((e) => e.toMap()).toList());
-    List<String> encodedLearned = await compute(encodeWordsList, learnedWords.map((e) => e.toMap()).toList());
-    List<String> encodedRepeat = await compute(encodeWordsList, toRepeatWords.map((e) => e.toMap()).toList());
-    List<String> encodedWrong = await compute(encodeWordsList, wrongWords.map((e) => e.toMap()).toList());
+      List<String> encodedAll = await compute(encodeWordsList, allWords.map((e) => e.toMap()).toList());
+      List<String> encodedLearned = await compute(encodeWordsList, learnedWords.map((e) => e.toMap()).toList());
+      List<String> encodedRepeat = await compute(encodeWordsList, toRepeatWords.map((e) => e.toMap()).toList());
+      List<String> encodedWrong = await compute(encodeWordsList, wrongWords.map((e) => e.toMap()).toList());
 
-    prefs.setStringList('allWords', encodedAll);
-    prefs.setStringList('learnedWords', encodedLearned);
-    prefs.setStringList('toRepeatWords', encodedRepeat);
-    prefs.setStringList('wrongWords', encodedWrong);
+      prefs.setStringList('allWords', encodedAll);
+      prefs.setStringList('learnedWords', encodedLearned);
+      prefs.setStringList('toRepeatWords', encodedRepeat);
+      prefs.setStringList('wrongWords', encodedWrong);
+    } catch (e, stack) {
+      AppLogger.logError("Veri Kaydetme Hatası (_saveData): SharedPreferences limitine ulaşılmış olabilir.\n$e\n$stack");
+    }
   }
 
   void _createDefaultLibrary() {
@@ -366,33 +390,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _importFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
-    if (result != null && result.files.single.path != null) {
-      File file = File(result.files.single.path!);
-      String fileName = result.files.single.name.split('.').first;
-      String extension = result.files.single.extension ?? '';
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
+      if (result != null && result.files.single.path != null) {
+        File file = File(result.files.single.path!);
+        String fileName = result.files.single.name.split('.').first;
+        String extension = result.files.single.extension ?? '';
 
-      String? customLibraryName = await _showInputDialog("Kütüphane Adı", fileName);
-      if (customLibraryName == null || customLibraryName.isEmpty) return;
+        String? customLibraryName = await _showInputDialog("Kütüphane Adı", fileName);
+        if (customLibraryName == null || customLibraryName.isEmpty) return;
 
-      _showLoadingDialog("$customLibraryName içe aktarılıyor.\nLütfen bekleyin...");
+        _showLoadingDialog("$customLibraryName içe aktarılıyor.\nLütfen bekleyin...");
 
-      try {
         List<int> bytes = await file.readAsBytes();
         String content;
         try { content = utf8.decode(bytes); } catch (e) { content = latin1.decode(bytes); }
 
-        final List<Map<String, dynamic>> parsedMaps = await compute(parseLibraryDataInBackground, {
+        final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {
           'content': content, 'extension': extension, 'libraryName': customLibraryName,
         });
 
         Navigator.pop(context); 
-        if (parsedMaps.isNotEmpty && parsedMaps.first.containsKey('error')) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: ${parsedMaps.first['error']}")));
+        if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
+          String errMsg = json.decode(parsedJsons.first)['error'];
+          AppLogger.logError("Parse Error: $errMsg");
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $errMsg")));
           return;
         }
 
-        List<WordModel> newWords = parsedMaps.map((e) => WordModel.fromMap(e)).toList();
+        List<WordModel> newWords = parsedJsons.map((e) => WordModel.fromJson(e)).toList();
         setState(() {
           allWords.addAll(newWords);
           selectedLibrary = customLibraryName;
@@ -400,10 +426,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         });
         _saveData();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İçe aktarım başarılı! (${newWords.length} Kelime)")));
-      } catch (e) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İçe aktarım hatası: $e")));
       }
+    } catch (e, stack) {
+      AppLogger.logError("İçe Aktarım Hatası (_importFile): $e\n$stack");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İçe aktarım hatası: $e")));
     }
   }
 
@@ -415,17 +441,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       String content;
       try { content = utf8.decode(bytes); } catch (e) { content = latin1.decode(bytes); }
 
-      final List<Map<String, dynamic>> parsedMaps = await compute(parseLibraryDataInBackground, {
+      final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {
         'content': content, 'extension': extension, 'libraryName': customLibraryName,
       });
 
       Navigator.pop(context); 
-      if (parsedMaps.isNotEmpty && parsedMaps.first.containsKey('error')) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: ${parsedMaps.first['error']}")));
+      if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
+        String errMsg = json.decode(parsedJsons.first)['error'];
+        AppLogger.logError("Asset Parse Error: $errMsg");
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $errMsg")));
         return;
       }
 
-      List<WordModel> newWords = parsedMaps.map((e) => WordModel.fromMap(e)).toList();
+      List<WordModel> newWords = parsedJsons.map((e) => WordModel.fromJson(e)).toList();
       setState(() {
         allWords.addAll(newWords);
         selectedLibrary = customLibraryName;
@@ -433,8 +461,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       });
       _saveData(); 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName eklendi! (${newWords.length} Kelime)")));
-    } catch (e) {
+    } catch (e, stack) {
       Navigator.pop(context);
+      AppLogger.logError("Paket Yükleme Hatası (_loadPackageFromAssets): $e\n$stack");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Paket yüklenirken hata oluştu: $e")));
     }
   }
@@ -478,15 +507,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _exportLibrary(String libName) async {
-    if (libName == 'Tekrarlanması Gerekenler') {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sanal kütüphane dışa aktarılamaz!")));
-      return;
-    }
+    if (libName == 'Tekrarlanması Gerekenler') return;
     List<WordModel> exportList = allWords.where((w) => w.libraryName == libName).toList()..addAll(learnedWords.where((w) => w.libraryName == libName).toList());
-    if (exportList.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Aktarılacak kelime bulunamadı.")));
-      return;
-    }
+    if (exportList.isEmpty) return;
     
     List<List<dynamic>> rows = [];
     for (var w in exportList) {
@@ -499,7 +522,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       final file = File('${dir.path}/$libName.csv');
       await file.writeAsString(csvData);
       await Share.shareXFiles([XFile(file.path)], text: '$libName Kütüphanesi Yedeği');
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.logError("Dışa Aktarma Hatası (_exportLibrary): $e\n$stack");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
     }
   }
@@ -702,8 +726,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: filteredWords, onDelete: (wordToDelete) { setState(() { allWords.removeWhere((w) => w.word == wordToDelete.word); toRepeatWords.removeWhere((w) => w.word == wordToDelete.word); }); _saveData(); }))); }),
-            
-            // KESİN ÇÖZÜM: REFERANS HATASI GİDERİLDİ
             ListTile(
               leading: const Icon(Icons.settings), 
               title: const Text("Ayarlar, Temalar, Seçimler"), 
@@ -733,7 +755,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ))); 
               }
             ),
-            
             const Divider(),
             ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi"), subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
@@ -756,6 +777,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             const Divider(),
             ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
             ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
+            // YENİ EKLENEN LOG BUTONU
+            const Divider(),
+            ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
           ],
         ),
       ),
