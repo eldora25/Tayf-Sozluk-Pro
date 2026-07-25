@@ -22,15 +22,16 @@ jobs:
           channel: 'stable'
 
       # KÖKTEN ÇÖZÜM VE API 36 ZORLAMASI:
-      # Android klasörünü sıfırdan oluşturur ve file_picker'ın istediği API 36 sürümlerini enjekte eder.
+      # Android klasörünü sıfırdan oluşturur ve yeni Kotlin DSL (.kts) dosyalarındaki 
+      # API sürümlerini file_picker eklentisinin istediği sürümlere günceller.
       - name: Regenerate Android Project (Force V2 & API 36)
         run: |
           rm -rf android
           flutter create --platforms=android .
-          # Varsayılan SDK değerlerini bul ve eklentilerin istediği güncel sürümlerle değiştir:
-          sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
-          sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle
-          sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle
+          # Yeni .kts dosyalarındaki varsayılan SDK değerlerini bul ve değiştir:
+          sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle.kts
+          sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle.kts
+          sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle.kts
 
       - name: Install dependencies
         run: flutter pub get
