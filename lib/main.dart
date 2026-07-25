@@ -833,28 +833,70 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                           ),
                           const Spacer(),
-                          GestureDetector(
-                            onTap: () => _flipCard(currentWord!),
-                            child: AnimatedBuilder(
-                              animation: _flipAnimation,
-                              builder: (context, child) {
-                                final angle = _flipAnimation.value * pi;
-                                bool isFront = angle < (pi / 2);
-                                return Transform(
-                                  transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle),
-                                  alignment: Alignment.center,
-                                  child: isFront ? _buildCardFront(currentWord!) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!)),
-                                );
+                          
+                          // YENİ: KART İÇİN TINDER BENZERİ SAĞA/SOLA KAYDIRMA (SWIPE)
+                          Dismissible(
+                            key: ValueKey('${currentWord.word}_$currentCardIndex'),
+                            // Sadece kart çevrildiğinde kaydırmaya izin verilir (ezberlemeden geçilmesin diye)
+                            direction: isFlipped ? DismissDirection.horizontal : DismissDirection.none,
+                            background: Row( 
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                const SizedBox(width: 30),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.check_circle, color: Colors.green, size: 50),
+                                    Text("BİLİYORUM", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            secondaryBackground: Row( 
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.repeat, color: Colors.redAccent, size: 50),
+                                    Text("TEKRAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                                  ],
+                                ),
+                                const SizedBox(width: 30),
+                              ],
+                            ),
+                            onDismissed: (direction) {
+                              if (direction == DismissDirection.startToEnd) {
+                                _markAsLearned(currentWord);
+                              } else if (direction == DismissDirection.endToStart) {
+                                _markAsToRepeat(currentWord);
                               }
+                            },
+                            child: GestureDetector(
+                              onTap: () => _flipCard(currentWord),
+                              child: AnimatedBuilder(
+                                animation: _flipAnimation,
+                                builder: (context, child) {
+                                  final angle = _flipAnimation.value * pi;
+                                  bool isFront = angle < (pi / 2);
+                                  return Transform(
+                                    transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle),
+                                    alignment: Alignment.center,
+                                    child: isFront ? _buildCardFront(currentWord) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord)),
+                                  );
+                                }
+                              ),
                             ),
                           ),
+                          
                           const SizedBox(height: 30),
+                          // Eski butonları da alışkanlığı olanlar için tutuyoruz, ama artık kaydırabiliyorsun da!
                           if (isFlipped)
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!)),
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!)),
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord)),
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord)),
                               ],
                             ),
                           const Spacer(),
@@ -978,7 +1020,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             const Divider(),
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             
-            // YENİ: Kelime Listesi menüsünde onLearned eklendi!
             ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { 
               Navigator.pop(context); 
               Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(
@@ -1020,7 +1061,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             const Divider(),
             ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
             
-            // YENİ: Tekrar Listesi menüsünde onLearned eklendi!
             ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi"), subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { 
               Navigator.pop(context); 
               Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
@@ -1032,7 +1072,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ))); 
             }),
             
-            // YENİ: Yanlış Kelimeler menüsünde onLearned eklendi!
             ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { 
               Navigator.pop(context); 
               Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
