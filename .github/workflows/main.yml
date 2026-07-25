@@ -26,12 +26,16 @@ jobs:
           rm -rf android
           flutter create --platforms=android .
           
-          # API 36 ZORLAMASI: flutter_tts, shared_preferences ve güncel eklentiler için
+          # API 36 ZORLAMASI
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle.kts
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle.kts
 
       - name: Install dependencies
         run: flutter pub get
+
+      # YENİ VE ÇOK KRİTİK: Isar veritabanı tablolarını otomatik oluşturur
+      - name: Generate Isar Models
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build Debug APK
         run: flutter build apk --debug --dart-define=BUILD_NUMBER=${{ github.run_number }}
