@@ -228,10 +228,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       viewedCardTimestamps = prefs.getStringList('viewedCardTimestamps') ?? [];
       wrongAnswerTimestamps = prefs.getStringList('wrongAnswerTimestamps') ?? [];
       
-      // KESİN ÇÖZÜM: 1970 Yılı / 20.000 Gün Sorunu Düzeltmesi
       firstUseTimestamp = prefs.getInt('firstUseTimestamp') ?? 0;
-      // 1700000000000 yaklaşık olarak 2023 sonlarına denk gelir.
-      // Eğer sıfırsa veya rastgele çok eski bir rakamsa, bugünü temel al.
       if (firstUseTimestamp < 1700000000000) {
         firstUseTimestamp = DateTime.now().millisecondsSinceEpoch;
         prefs.setInt('firstUseTimestamp', firstUseTimestamp);
@@ -481,9 +478,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _exportLibrary(String libName) async {
-    if (libName == 'Tekrarlanması Gerekenler') return;
+    if (libName == 'Tekrarlanması Gerekenler') {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sanal kütüphane dışa aktarılamaz!")));
+      return;
+    }
     List<WordModel> exportList = allWords.where((w) => w.libraryName == libName).toList()..addAll(learnedWords.where((w) => w.libraryName == libName).toList());
-    if (exportList.isEmpty) return;
+    if (exportList.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Aktarılacak kelime bulunamadı.")));
+      return;
+    }
     
     List<List<dynamic>> rows = [];
     for (var w in exportList) {
@@ -527,8 +530,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           } else if (action == EditAction.update || action == EditAction.move) {
             allWords.removeWhere((w) => w.word == word.word);
             toRepeatWords.removeWhere((w) => w.word == word.word);
-            if (selectedLibrary == 'Tekrarlanması Gerekenler') toRepeatWords.add(updatedWord);
-            else allWords.add(updatedWord);
+            if (selectedLibrary == 'Tekrarlanması Gerekenler') {
+              toRepeatWords.add(updatedWord);
+            } else {
+              allWords.add(updatedWord);
+            }
           } else if (action == EditAction.copy) {
             allWords.add(updatedWord);
           }
@@ -564,7 +570,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       drawer: _buildDrawer(),
       body: currentWord == null 
         ? const Center(child: Text("Bu filtreye uygun kelime kalmadı."))
-        // KESİN ÇÖZÜM: Ekran taşmalarını engelleyen Duyarlı (Responsive) Tasarım Yapısı
         : SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -697,6 +702,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: filteredWords, onDelete: (wordToDelete) { setState(() { allWords.removeWhere((w) => w.word == wordToDelete.word); toRepeatWords.removeWhere((w) => w.word == wordToDelete.word); }); _saveData(); }))); }),
+            
+            // KESİN ÇÖZÜM: REFERANS HATASI GİDERİLDİ
             ListTile(
               leading: const Icon(Icons.settings), 
               title: const Text("Ayarlar, Temalar, Seçimler"), 
@@ -706,7 +713,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   currentGoal: dailyGoal, 
                   currentThreshold: quizThreshold, 
                   currentQuestionCount: quizQuestionCount, 
-                  currentThemeIndex: themeIndex, 
+                  currentThemeIndex: widget.themeIndex, 
                   selectedLibrary: selectedLibrary, 
                   selectedLevel: selectedLevel, 
                   availableLibraries: availableLibraries, 
@@ -715,7 +722,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       dailyGoal = newGoal; 
                       quizThreshold = newThreshold; 
                       quizQuestionCount = newQCount; 
-                      _toggleTheme(newThemeIdx); 
+                      widget.onThemeChanged(newThemeIdx); 
                       selectedLibrary = newLib; 
                       selectedLevel = newLevel; 
                       currentCardIndex = 0; 
@@ -726,6 +733,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ))); 
               }
             ),
+            
             const Divider(),
             ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi"), subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
