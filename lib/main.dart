@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:io';
-import 'dart:ui'; // PlatformDispatcher için eklendi
+import 'dart:ui'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle, ByteData;
 import 'package:flutter/foundation.dart';
@@ -21,11 +21,9 @@ import 'statistics_screen.dart';
 import 'edit_word_screen.dart';
 import 'library_manager_screen.dart';
 import 'manage_list_screen.dart';
-import 'logger_screen.dart'; // YENİ LOG EKRANI EKLENDİ
+import 'logger_screen.dart';
 
 // --- OPTİMİZE EDİLMİŞ ARKA PLAN İŞLEMCİSİ (RAM TAŞMASINI ENGELLER) ---
-// Not: List<Map> yerine List<String> döndürüyoruz, bu sayede Isolate geçişinde
-// yüz binlerce obje oluşturulup hafıza patlatılmaz, sadece metinler aktarılır.
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
@@ -33,15 +31,21 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 
   List<String> parsedList = [];
 
+  // BELLEK (RAM) DOSTU: RegExp objelerini döngünün DIŞINDA BİR KERE oluşturuyoruz.
+  // Bu, yüz binlerce obje oluşturulmasını engelleyerek OOM Crash (çökme) ihtimalini yok eder.
+  final RegExp splitRegExp = RegExp(r';|\|\|\||,|\n');
+  final RegExp prefixRegExp = RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*');
+  final RegExp spaceRegExp = RegExp(r'\s+');
+
   List<String> cleanMeanings(List<dynamic> raw) {
     List<String> result = [];
     for (var item in raw) {
       var str = item.toString().replaceAll('\x06', '');
-      var parts = str.split(RegExp(r';|\|\|\||,|\n'));
+      var parts = str.split(splitRegExp);
       for (var p in parts) {
         var clean = p.trim();
-        clean = clean.replaceAll(RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*'), '');
-        clean = clean.replaceAll(RegExp(r'\s+'), ' ');
+        clean = clean.replaceAll(prefixRegExp, '');
+        clean = clean.replaceAll(spaceRegExp, ' ');
         if (clean.isNotEmpty && clean.length < 60) {
           result.add(clean);
         } else if (clean.length >= 60 && clean.length < 150) {
@@ -92,10 +96,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   return parsedList;
 }
 
-List<String> encodeWordsList(List<Map<String, dynamic>> maps) {
-  return maps.map((e) => json.encode(e)).toList();
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -107,7 +107,7 @@ void main() async {
   
   PlatformDispatcher.instance.onError = (error, stack) {
     AppLogger.logError("PLATFORM ERROR: $error\n$stack");
-    return true; // Hatayı yönettik sayılır
+    return true; 
   };
 
   runApp(const TayfSozlukApp());
@@ -285,17 +285,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
       prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
 
-      List<String> encodedAll = await compute(encodeWordsList, allWords.map((e) => e.toMap()).toList());
-      List<String> encodedLearned = await compute(encodeWordsList, learnedWords.map((e) => e.toMap()).toList());
-      List<String> encodedRepeat = await compute(encodeWordsList, toRepeatWords.map((e) => e.toMap()).toList());
-      List<String> encodedWrong = await compute(encodeWordsList, wrongWords.map((e) => e.toMap()).toList());
+      // RAM OPTİMİZASYONU: compute (isolate) ile yüz binlerce obje kopyalamak
+      // cihazın hafızasını doldurup çökmesine (OOM) neden oluyordu.
+      // Bu işlem doğrudan senkron olarak listeye dönüştürüldü.
+      List<String> encodedAll = allWords.map((e) => e.toJson()).toList();
+      List<String> encodedLearned = learnedWords.map((e) => e.toJson()).toList();
+      List<String> encodedRepeat = toRepeatWords.map((e) => e.toJson()).toList();
+      List<String> encodedWrong = wrongWords.map((e) => e.toJson()).toList();
 
       prefs.setStringList('allWords', encodedAll);
       prefs.setStringList('learnedWords', encodedLearned);
       prefs.setStringList('toRepeatWords', encodedRepeat);
       prefs.setStringList('wrongWords', encodedWrong);
     } catch (e, stack) {
-      AppLogger.logError("Veri Kaydetme Hatası (_saveData): SharedPreferences limitine ulaşılmış olabilir.\n$e\n$stack");
+      AppLogger.logError("Veri Kaydetme Hatası (_saveData): Bellek limitine ulaşılmış olabilir.\n$e\n$stack");
     }
   }
 
@@ -777,7 +780,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             const Divider(),
             ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
             ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
-            // YENİ EKLENEN LOG BUTONU
             const Divider(),
             ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
           ],
