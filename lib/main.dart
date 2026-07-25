@@ -834,10 +834,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ),
                           const Spacer(),
                           
-                          // YENİ: KART İÇİN TINDER BENZERİ SAĞA/SOLA KAYDIRMA (SWIPE)
                           Dismissible(
-                            key: ValueKey('${currentWord.word}_$currentCardIndex'),
-                            // Sadece kart çevrildiğinde kaydırmaya izin verilir (ezberlemeden geçilmesin diye)
+                            key: ValueKey('${currentWord!.word}_$currentCardIndex'), // KESİN ÇÖZÜM: '!' eklendi
                             direction: isFlipped ? DismissDirection.horizontal : DismissDirection.none,
                             background: Row( 
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -867,13 +865,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                             onDismissed: (direction) {
                               if (direction == DismissDirection.startToEnd) {
-                                _markAsLearned(currentWord);
+                                _markAsLearned(currentWord!); // KESİN ÇÖZÜM: '!' eklendi
                               } else if (direction == DismissDirection.endToStart) {
-                                _markAsToRepeat(currentWord);
+                                _markAsToRepeat(currentWord!); // KESİN ÇÖZÜM: '!' eklendi
                               }
                             },
                             child: GestureDetector(
-                              onTap: () => _flipCard(currentWord),
+                              onTap: () => _flipCard(currentWord!), // KESİN ÇÖZÜM: '!' eklendi
                               child: AnimatedBuilder(
                                 animation: _flipAnimation,
                                 builder: (context, child) {
@@ -882,7 +880,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   return Transform(
                                     transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle),
                                     alignment: Alignment.center,
-                                    child: isFront ? _buildCardFront(currentWord) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord)),
+                                    child: isFront ? _buildCardFront(currentWord!) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!)), // KESİN ÇÖZÜM: '!' eklendi
                                   );
                                 }
                               ),
@@ -890,13 +888,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ),
                           
                           const SizedBox(height: 30),
-                          // Eski butonları da alışkanlığı olanlar için tutuyoruz, ama artık kaydırabiliyorsun da!
                           if (isFlipped)
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord)),
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord)),
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!)), // KESİN ÇÖZÜM: '!' eklendi
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!)), // KESİN ÇÖZÜM: '!' eklendi
                               ],
                             ),
                           const Spacer(),
