@@ -3,5 +3,5 @@ package com.tayfunyamak.tayfsozlukpro
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity: FlutterActivity() {
-    // Tamamen temiz v2 yapısı
+    // Saf V2 entegrasyonu, içi tamamen boş kalmalıdır.
 }
