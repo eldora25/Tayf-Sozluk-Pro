@@ -6,6 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+
 import 'models.dart';
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
@@ -229,6 +232,70 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _saveData();
   }
 
+  // Ortak ayrıştırma fonksiyonu (||| veya noktalı virgülleri ayıklar)
+  List<String> _cleanMeanings(List<dynamic> raw) {
+    List<String> result = [];
+    for (var item in raw) {
+      var str = item.toString();
+      var parts = str.split(RegExp(r';|\|\|\|'));
+      result.addAll(parts.map((e) => e.trim()).where((e) => e.isNotEmpty));
+    }
+    return result.toSet().toList();
+  }
+
+  Future<void> _parseDataAndAdd(String content, String extension, String customLibraryName) async {
+    List<WordModel> newWords = [];
+    try {
+      if (extension == 'json') {
+        var decoded = json.decode(content);
+        List list = decoded is Map ? decoded['words'] : decoded;
+        newWords = list.map((e) => WordModel(
+          word: e['word'] ?? '',
+          meanings: _cleanMeanings(e['meanings'] ?? []),
+          examples: _cleanMeanings(e['examples'] ?? []),
+          level: e['level'] ?? 'Genel',
+          libraryName: customLibraryName,
+        )).toList();
+      } else if (extension == 'txt') {
+        var lines = content.split('\n');
+        for (var line in lines) {
+          if (!line.contains(':')) continue;
+          var parts = line.split(':');
+          var w = parts[0].trim();
+          var m = parts[1].trim();
+          newWords.add(WordModel(
+            word: w,
+            meanings: _cleanMeanings([m]),
+            examples: [],
+            level: 'Genel',
+            libraryName: customLibraryName,
+          ));
+        }
+      } else {
+        List<List<dynamic>> rows = const CsvToListConverter().convert(content);
+        for (var row in rows) {
+          if (row.isEmpty) continue;
+          newWords.add(WordModel(
+            word: row[0].toString().trim(),
+            meanings: row.length > 1 ? _cleanMeanings([row[1]]) : [''],
+            examples: row.length > 2 ? _cleanMeanings([row[2]]) : [],
+            level: row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
+            libraryName: customLibraryName,
+          ));
+        }
+      }
+
+      setState(() {
+        allWords.addAll(newWords);
+        selectedLibrary = customLibraryName;
+        currentCardIndex = 0;
+      });
+      _saveData();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dosya formatı hatalı: $e")));
+    }
+  }
+
   Future<void> _importFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom, 
@@ -244,47 +311,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       String? customLibraryName = await _showInputDialog("Kütüphane Adı", fileName);
       if (customLibraryName == null || customLibraryName.isEmpty) return;
 
-      List<WordModel> newWords = [];
-
-      try {
-        if (extension == 'json') {
-          var decoded = json.decode(content);
-          List list = decoded is Map ? decoded['words'] : decoded;
-          newWords = list.map((e) => WordModel(
-            word: e['word'] ?? '',
-            meanings: List<String>.from(e['meanings'] ?? []),
-            examples: List<String>.from(e['examples'] ?? []),
-            level: e['level'] ?? 'Genel',
-            libraryName: customLibraryName,
-          )).toList();
-        } else {
-          List<List<dynamic>> rows = const CsvToListConverter().convert(content);
-          for (var row in rows) {
-            if (row.isEmpty) continue;
-            newWords.add(WordModel(
-              word: row[0].toString(),
-              meanings: row.length > 1 ? row[1].toString().split(';') : [''],
-              examples: row.length > 2 ? row[2].toString().split(';') : [],
-              level: row.length > 3 && row[3].toString().isNotEmpty ? row[3].toString() : 'Genel',
-              libraryName: customLibraryName,
-            ));
-          }
-        }
-
-        setState(() {
-          allWords.addAll(newWords);
-          selectedLibrary = customLibraryName;
-          currentCardIndex = 0;
-        });
-        _saveData();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${newWords.length} kelime aktarıldı.")));
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dosya formatı hatalı: $e")));
-      }
+      await _parseDataAndAdd(content, extension, customLibraryName);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İçe aktarım başarılı!")));
     }
   }
 
-  // DIŞA AKTAR - "Android Byte Hatasını" çözen %100 Güvenli Yöntem
+  // Güvenli Dışa Aktarım (Share ile)
   Future<void> _exportFile() async {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sanal kütüphane dışa aktarılamaz!")));
@@ -299,19 +331,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     List<List<dynamic>> rows = [];
     for (var w in exportList) {
-      rows.add([w.word, w.meanings.join(';'), w.examples.join(';'), w.level]);
+      // Tekrar import edilebilmesi için çoklu anlamları ||| ile birleştiriyoruz
+      rows.add([w.word, w.meanings.join('|||'), w.examples.join('|||'), w.level]);
     }
     String csvData = const ListToCsvConverter().convert(rows);
 
     try {
-      // Doğrudan kullanıcıya nereye kaydedeceğini soran, Android'in izin verdiği arayüz
-      String? directoryPath = await FilePicker.platform.getDirectoryPath(dialogTitle: "Dışa aktarılacak klasörü seçin");
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/$selectedLibrary.csv');
+      await file.writeAsString(csvData);
       
-      if (directoryPath != null) {
-        File file = File('$directoryPath/$selectedLibrary.csv');
-        await file.writeAsString(csvData);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Başarıyla kaydedildi: ${file.path}")));
-      }
+      // Dosyayı Share ile güvenle dışarı aktar
+      await Share.shareXFiles([XFile(file.path)], text: '$selectedLibrary Kütüphanesi Yedeği');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
     }
@@ -344,7 +375,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           } else if (action == EditAction.update || action == EditAction.move) {
             allWords.removeWhere((w) => w.word == word.word);
             toRepeatWords.removeWhere((w) => w.word == word.word);
-            
             if (selectedLibrary == 'Tekrarlanması Gerekenler') {
               toRepeatWords.add(updatedWord);
             } else {
@@ -353,10 +383,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           } else if (action == EditAction.copy) {
             allWords.add(updatedWord);
           }
-          
-          if (currentCardIndex >= filteredWords.length) {
-            currentCardIndex = 0;
-          }
+          if (currentCardIndex >= filteredWords.length) currentCardIndex = 0;
         });
         _saveData();
       },
@@ -397,7 +424,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   children: [
                     Text("Öğrenilen: ${learnedWords.length} / Hedef: $dailyGoal", style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    LinearProgressIndicator(value: learnedWords.length / dailyGoal),
+                    LinearProgressIndicator(value: dailyGoal > 0 ? (learnedWords.length / dailyGoal) : 0),
                   ],
                 ),
               ),
@@ -443,14 +470,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ],
                 ),
               const Spacer(),
-              // FOOTER: Sürüm Numarası ve Yazar İmzası
+              // FOOTER (Yükseltildi ve Renklendirildi)
               Padding(
-                padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 20.0),
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 50.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("V.1.0.$buildNo", style: const TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold)),
-                    const Text("By: Tayfun YAMAK©", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
+                    Text("V.1.0.$buildNo", style: TextStyle(color: widget.isDarkMode ? Colors.purpleAccent : Colors.deepPurple, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text("By: Tayfun YAMAK©", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: widget.isDarkMode ? Colors.purpleAccent : Colors.deepPurple)),
                   ],
                 ),
               ),
@@ -588,7 +615,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           ListTile(
             leading: const Icon(Icons.settings),
-            title: const Text("Ayarlar"),
+            title: const Text("Ayarlar & Kütüphane Seç"),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
@@ -606,7 +633,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     currentCardIndex = 0;
                   });
                   _saveData();
-                }
+                },
+                onAddPackage: (name, ext, data) => _parseDataAndAdd(data, ext, name),
               )));
             }
           ),
@@ -642,7 +670,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           const Divider(),
           ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
-          ListTile(leading: const Icon(Icons.upload), title: const Text("Dışa Aktar"), onTap: () { Navigator.pop(context); _exportFile(); }),
+          ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportFile(); }),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.dark_mode),
