@@ -23,9 +23,13 @@ jobs:
         with:
           channel: 'stable'
 
-      # NİHAİ RADİKAL TEMİZLİK: Eski eklenti izleri ve önbellekler tamamen kazınır
-      - name: Hard Purge Legacy Metadata & Cache
+      # NİHAİ RADİKAL TEMİZLİK: Eski MainActivity.java ve tüm v1 eklenti izleri tamamen silinir
+      - name: Hard Purge Legacy Java Files & Cache
         run: |
+          # Projede kalmış olabilecek eski Java aktivite dosyasını zorla kaldırır (Çakışmayı önler)
+          rm -f android/app/src/main/java/com/tayfunyamak/tayfsozlukpro/MainActivity.java
+          
+          # Tüm eklenti haritalarını ve önbellekleri temizler
           rm -f pubspec.lock
           rm -f .flutter-plugins
           rm -f .flutter-plugins-dependencies
@@ -38,7 +42,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Dinamik APK Derleme (v2 standardını zorunlu kılacak şekilde tetiklenir)
+      # Dinamik APK Derleme
       - name: Build Debug APK with Dynamic Name
         env:
           APP_BUILD_NUMBER: ${{ github.run_number }}
