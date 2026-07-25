@@ -70,6 +70,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 DropdownMenuItem(value: 3, child: Text("Pastel Yeşil (Dinlendirici)")),
                 DropdownMenuItem(value: 4, child: Text("Canlı Mor (Enerjik)")),
                 DropdownMenuItem(value: 5, child: Text("Sıcak Turuncu (Canlı)")),
+                DropdownMenuItem(value: 6, child: Text("Şeker Pembe (Tatlı)")), // YENİ TEMA 1
+                DropdownMenuItem(value: 7, child: Text("Rengarenk (Eğlenceli)")), // YENİ TEMA 2
               ],
               onChanged: (v) => setState(() => _themeIndex = v!),
             ),
