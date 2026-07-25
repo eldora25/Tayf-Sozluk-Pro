@@ -21,12 +21,16 @@ jobs:
         with:
           channel: 'stable'
 
-      # KÖKTEN ÇÖZÜM: Android klasörünü silip Flutter CLI ile en güncel, %100 uyumlu haliyle yeniden oluşturuyoruz.
-      # Böylece V1 Embedding hatası matematiksel olarak imkansız hale geliyor.
-      - name: Regenerate Android Project (Force V2)
+      # KÖKTEN ÇÖZÜM VE API 36 ZORLAMASI:
+      # Android klasörünü sıfırdan oluşturur ve file_picker'ın istediği API 36 sürümlerini enjekte eder.
+      - name: Regenerate Android Project (Force V2 & API 36)
         run: |
           rm -rf android
           flutter create --platforms=android .
+          # Varsayılan SDK değerlerini bul ve eklentilerin istediği güncel sürümlerle değiştir:
+          sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
+          sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle
+          sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle
 
       - name: Install dependencies
         run: flutter pub get
@@ -35,7 +39,7 @@ jobs:
       - name: Build Debug APK
         run: flutter build apk --debug
 
-      # DEV-OPS MÜDAHALESİ: Gradle ile uğraşmak yerine, üretilen APK dosyasının adını dinamik build numarasıyla değiştiriyoruz.
+      # DEV-OPS MÜDAHALESİ: Üretilen APK dosyasının adını dinamik build numarasıyla değiştiriyoruz.
       - name: Rename APK Dynamically
         run: |
           mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/TY-Sozluk-v1.0.${{ github.run_number }}-debug.apk
