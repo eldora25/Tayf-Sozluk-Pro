@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart'; // YENİ GRAFİK KÜTÜPHANESİ EKLENDİ
 import 'models.dart';
 
 class StatisticsScreen extends StatelessWidget {
@@ -20,7 +21,6 @@ class StatisticsScreen extends StatelessWidget {
   final List<String> wrongAnswerTimestamps;
   final int firstUseTimestamp;
 
-  // YENİ ROZET VERİLERİ
   final int bestStreak;
   final int tayfPoints;
 
@@ -61,6 +61,24 @@ class StatisticsScreen extends StatelessWidget {
     }).length;
   }
 
+  // YENİ: Son 7 günün öğrenilen kelime verilerini grafiğe (fl_chart) uyumlu hale getirir
+  List<FlSpot> _getChartData() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    Map<int, int> counts = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}; // 0=6 gün önce, 6=Bugün
+
+    for (var ts in learnedWordTimestamps) {
+      final date = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
+      final itemDate = DateTime(date.year, date.month, date.day);
+      final diff = today.difference(itemDate).inDays;
+      if (diff >= 0 && diff <= 6) {
+        counts[6 - diff] = (counts[6 - diff] ?? 0) + 1;
+      }
+    }
+
+    return counts.entries.map((e) => FlSpot(e.key.toDouble(), e.value.toDouble())).toList();
+  }
+
   Widget _buildSpeedCard(BuildContext context, String title, Duration period, Color color) {
     int learned = _countInPeriod(learnedWordTimestamps, period);
     int quizzes = _countInPeriod(completedQuizTimestamps, period);
@@ -84,54 +102,24 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
             const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Öğrenilen Kelime:"),
-                Text("$learned", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-              ],
-            ),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Öğrenilen Kelime:"), Text("$learned", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))]),
             const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Tamamlanan Quiz:"),
-                Text("$quizzes", style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Tamamlanan Quiz:"), Text("$quizzes", style: const TextStyle(fontWeight: FontWeight.bold))]),
             const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Bakılan Kart:"),
-                Text("$viewed", style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Bakılan Kart:"), Text("$viewed", style: const TextStyle(fontWeight: FontWeight.bold))]),
             const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Yapılan Yanlış:"),
-                Text("$wrongs", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-              ],
-            ),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Yapılan Yanlış:"), Text("$wrongs", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red))]),
           ],
         ),
       ),
     );
   }
 
-  // --- YENİ: BAŞARILAR VE ROZETLER VİTRİNİ OLUŞTURUCUSU ---
   Widget _buildBadgeGrid(List<int> milestones, int currentValue, IconData icon, Color earnedColor, String unit) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 0.9,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.9, crossAxisSpacing: 10, mainAxisSpacing: 10),
       itemCount: milestones.length,
       itemBuilder: (context, index) {
         int target = milestones[index];
@@ -166,21 +154,22 @@ class StatisticsScreen extends StatelessWidget {
     if (daysUsed < 1) daysUsed = 1; 
     double wordsPerDay = learnedWords.length / daysUsed;
 
-    // İstediğin kilometre taşları listeleri
     final List<int> streakMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300];
     final List<int> wordMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 500, 600, 700, 1000, 1500, 2000, 2500, 3000, 5000, 7000, 10000];
+    
+    final chartData = _getChartData();
 
     return DefaultTabController(
-      length: 5, // Sekme Sayısı 5'e Çıktı
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: const Text("İstatistikler & Rozetler"),
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
-              Tab(text: "Başarılar", icon: Icon(Icons.emoji_events)), // YENİ ROZET SEKMESİ
+              Tab(text: "Başarılar", icon: Icon(Icons.emoji_events)),
               Tab(text: "Genel Özet", icon: Icon(Icons.pie_chart)),
-              Tab(text: "Öğrenme Hızı", icon: Icon(Icons.speed)),
+              Tab(text: "Öğrenme Eğrisi", icon: Icon(Icons.show_chart)), // Grafikli Yeni Sekme
               Tab(text: "Quiz", icon: Icon(Icons.quiz)),
               Tab(text: "Kütüphaneler", icon: Icon(Icons.library_books)),
             ],
@@ -188,7 +177,7 @@ class StatisticsScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            // 1. BAŞARILAR VE ROZETLER (YENİ SEKME)
+            // 1. BAŞARILAR VE ROZETLER
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -196,11 +185,9 @@ class StatisticsScreen extends StatelessWidget {
                 const Text("Uygulamaya aralıksız girip aktivitene devam ettiğinde kazanılır.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                 const SizedBox(height: 16),
                 _buildBadgeGrid(streakMilestones, bestStreak, Icons.local_fire_department, Colors.deepOrange, "Gün"),
-                
                 const SizedBox(height: 40),
                 const Divider(),
                 const SizedBox(height: 20),
-                
                 const Text("🎓 Kelime Ustası Rozetleri", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
                 const Text("Öğrenilen (Mezun) kelime havuzuna eklediğin kelime sayısına göre kazanılır.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                 const SizedBox(height: 16),
@@ -222,14 +209,56 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
             
-            // 3. ÖĞRENME HIZI
+            // 3. ÖĞRENME HIZI VE EĞRİSİ (YENİ FL_CHART)
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Haftalık Öğrenme Eğrisi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          height: 200,
+                          child: LineChart(
+                            LineChartData(
+                              gridData: const FlGridData(show: false),
+                              titlesData: const FlTitlesData(
+                                leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 22)),
+                              ),
+                              borderData: FlBorderData(show: false),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: chartData,
+                                  isCurved: true,
+                                  color: Theme.of(context).primaryColor,
+                                  barWidth: 4,
+                                  isStrokeCapRound: true,
+                                  belowBarData: BarAreaData(
+                                    show: true,
+                                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
                   color: Theme.of(context).primaryColor.withOpacity(0.1),
                   elevation: 0,
-                  margin: const EdgeInsets.only(bottom: 20),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -245,8 +274,6 @@ class StatisticsScreen extends StatelessWidget {
                 ),
                 _buildSpeedCard(context, "Günlük (Son 24 Saat)", const Duration(days: 1), Colors.blue),
                 _buildSpeedCard(context, "Haftalık (Son 7 Gün)", const Duration(days: 7), Colors.orange),
-                _buildSpeedCard(context, "Aylık (Son 30 Gün)", const Duration(days: 30), Colors.teal),
-                _buildSpeedCard(context, "Yıllık (Son 365 Gün)", const Duration(days: 365), Colors.deepPurple),
               ],
             ),
 
