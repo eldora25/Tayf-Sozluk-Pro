@@ -26,9 +26,9 @@ jobs:
           rm -rf android
           flutter create --platforms=android .
           
-          # KESİN ÇÖZÜM: Yeni nesil Kotlin Gradle dosyasındaki SDK değişkenlerini tam adıyla bulup 36'ya sabitliyoruz.
-          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle.kts
-          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/g' android/app/build.gradle.kts
+          # API 36 ZORLAMASI: flutter_tts, shared_preferences ve güncel eklentiler için
+          sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle.kts
+          sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle.kts
 
       - name: Install dependencies
         run: flutter pub get
