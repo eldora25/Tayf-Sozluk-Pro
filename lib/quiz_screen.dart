@@ -7,6 +7,7 @@ import 'models.dart';
 class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
   final int threshold;
+  final int questionCount;
   final Function(WordModel) onWordLearned;
   final Function(WordModel) onWordWrong;
 
@@ -14,6 +15,7 @@ class QuizScreen extends StatefulWidget {
     super.key,
     required this.words,
     required this.threshold,
+    required this.questionCount,
     required this.onWordLearned,
     required this.onWordWrong,
   });
@@ -24,6 +26,7 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   final FlutterTts flutterTts = FlutterTts();
+  List<WordModel> quizWords = [];
   late WordModel currentWord;
   List<String> options = [];
   Set<String> selectedWrongOptions = {};
@@ -45,12 +48,19 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    totalQuestions = widget.words.length;
+    // Ayarlanan sayı kadar veya havuzdaki kelime kadar rastgele soru seçimi
+    List<WordModel> pool = List.from(widget.words)..shuffle();
+    quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
+    totalQuestions = quizWords.length;
+
     if (totalQuestions > 0) {
+      _initTts();
       _startTimer();
       _generateQuestion();
     }
   }
+
+  void _initTts() async { await flutterTts.setLanguage("en-US"); }
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -73,7 +83,6 @@ class _QuizScreenState extends State<QuizScreen> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // --- TTS VE ÇAPRAZ DİL MANTIĞI ---
   Future<void> _speakWord(String text) async {
     if (!isAudioEnabled) return;
     String lang = detectLanguage(text);
@@ -84,7 +93,6 @@ class _QuizScreenState extends State<QuizScreen> {
   Future<void> _speakFeedback(bool isCorrect, String questionWord) async {
     if (!isAudioEnabled) return;
     String qLang = detectLanguage(questionWord);
-    // Eğer soru İngilizceyse, Doğru/Yanlış diye Türkçe söyle. Türkçeyse İngilizce söyle.
     String targetLang = qLang == 'en-US' ? 'tr-TR' : 'en-US';
     
     await flutterTts.setLanguage(targetLang);
@@ -95,18 +103,33 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
+  Future<void> _speakCompletion() async {
+    if (!isAudioEnabled || quizWords.isEmpty) return;
+    String lang = detectLanguage(quizWords.first.word);
+    
+    // İngilizce bir kelime sorulduysa Türkçe Tebrikler, Türkçe sorulduysa İngilizce tebrik
+    if (lang == 'en-US') {
+      await flutterTts.setLanguage('tr-TR');
+      await flutterTts.speak("Tebrikler");
+    } else {
+      await flutterTts.setLanguage('en-US');
+      await flutterTts.speak("Congratulations");
+    }
+  }
+
   void _generateQuestion() {
     if (answeredQuestions >= totalQuestions) {
       setState(() {
         isQuizFinished = true;
         _timer?.cancel();
       });
+      _speakCompletion();
       return;
     }
     
     selectedWrongOptions.clear();
     isAnsweredCorrectly = false;
-    currentWord = widget.words[answeredQuestions];
+    currentWord = quizWords[answeredQuestions];
     
     correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
     Set<String> wrongOptions = {};
@@ -123,8 +146,6 @@ class _QuizScreenState extends State<QuizScreen> {
     options.shuffle();
     
     setState(() {});
-    
-    // Yeni soru geldiğinde kelimeyi otomatik seslendir
     _speakWord(currentWord.word);
   }
 
@@ -142,7 +163,9 @@ class _QuizScreenState extends State<QuizScreen> {
         }
         
         _speakFeedback(true, currentWord.word);
-        widget.onWordLearned(currentWord);
+        if (currentWord.correctCount >= widget.threshold) {
+           widget.onWordLearned(currentWord);
+        }
         Future.delayed(const Duration(seconds: 1), _generateQuestion);
       } else {
         selectedWrongOptions.add(option);
@@ -161,9 +184,13 @@ class _QuizScreenState extends State<QuizScreen> {
       answeredQuestions = 0;
       _secondsElapsed = 0;
       isQuizFinished = false;
-      widget.words.shuffle();
-      _startTimer();
-      _generateQuestion();
+      List<WordModel> pool = List.from(widget.words)..shuffle();
+      quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
+      totalQuestions = quizWords.length;
+      if (totalQuestions > 0) {
+        _startTimer();
+        _generateQuestion();
+      }
     });
   }
 
@@ -172,7 +199,7 @@ class _QuizScreenState extends State<QuizScreen> {
     if (widget.words.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text("Quiz")),
-        body: const Center(child: Text("Tebrikler! Bu kütüphanedeki tüm kelimeleri öğrendiniz.")),
+        body: const Center(child: Text("Bu kütüphanede yeterli kelime yok.")),
       );
     }
 
@@ -191,6 +218,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 const SizedBox(height: 10),
                 const Text("Tebrikler!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
+                
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -216,6 +244,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   ),
                 ),
+                
                 const SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity,
@@ -244,7 +273,7 @@ class _QuizScreenState extends State<QuizScreen> {
     }
 
     bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    Color borderColor = isDarkMode ? Colors.purpleAccent : Colors.deepPurple;
+    Color borderColor = isDarkMode ? Theme.of(context).primaryColor : Colors.deepPurple;
 
     return Scaffold(
       appBar: AppBar(
@@ -276,13 +305,12 @@ class _QuizScreenState extends State<QuizScreen> {
             LinearProgressIndicator(
               value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0,
               backgroundColor: Colors.grey[300],
-              color: Colors.deepPurple,
+              color: Theme.of(context).primaryColor,
               minHeight: 8,
               borderRadius: BorderRadius.circular(10),
             ),
             const SizedBox(height: 30),
             
-            // KELİMEYE DOKUNUNCA SESLENDİRME İŞLEVİ
             GestureDetector(
               onTap: () => _speakWord(currentWord.word),
               child: Container(
@@ -318,7 +346,6 @@ class _QuizScreenState extends State<QuizScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: ListTile(
-                      // SEÇENEK METNİ KISALTILDI VE SINIRLANDIRILDI
                       title: Text(option, style: const TextStyle(fontSize: 16), maxLines: 3, overflow: TextOverflow.ellipsis),
                       trailing: trailingIcon,
                       onTap: () => _checkAnswer(option),
