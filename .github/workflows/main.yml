@@ -50,12 +50,24 @@ jobs:
           # SpeechToText jcenter() Hatası Çözümü
           find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
           
-          # YENİ: SpeechToText Registrar (V1 Embedding) Hatası Kesin Çözümü
-          STT_KT=$(find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android/src/main/kotlin/com/csdcorp/speech_to_text -name "SpeechToTextPlugin.kt" | head -n 1)
-          if [ -n "$STT_KT" ]; then
-            sed -i '/import io.flutter.plugin.common.PluginRegistry.Registrar/d' "$STT_KT"
-            sed -i '/fun registerWith(registrar:/,/}/d' "$STT_KT"
-          fi
+          # YENİ VE KESİN ÇÖZÜM: SpeechToText Registrar (Syntax Hatasını Önleyen Sahte Arayüz Enjeksiyonu)
+          python3 -c '
+          import glob
+          paths = glob.glob("/home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android/src/main/kotlin/com/csdcorp/speech_to_text/SpeechToTextPlugin.kt")
+          if paths:
+              path = paths[0]
+              with open(path, "r") as f:
+                  content = f.read()
+              
+              # Hatalı içeri aktarmayı (import) sil
+              content = content.replace("import io.flutter.plugin.common.PluginRegistry.Registrar", "")
+              
+              # Dosyanın sonuna derleyiciyi tatmin edecek sahte (dummy) sınıfı ekle
+              dummy_interface = "\ninterface Registrar {\n    fun activity(): android.app.Activity?\n    fun context(): android.content.Context?\n    fun messenger(): io.flutter.plugin.common.BinaryMessenger?\n    fun addRequestPermissionsResultListener(listener: Any?)\n}\n"
+              
+              with open(path, "w") as f:
+                  f.write(content + dummy_interface)
+          '
 
       - name: Generate Isar Models
         run: dart run build_runner build --delete-conflicting-outputs
