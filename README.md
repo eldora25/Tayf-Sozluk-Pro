@@ -7,3 +7,10 @@ Build #145: Commit a90dad3 çalışan 7 temalar
 Build #152: Commit 1dc39d8 çalışan 8 istatistikler
 Build #156: Commit ea33aa3 çalışan 9 optimizasyon
 Build #166: Commit dfbe9f2 çalısan 10 optimizasyon
+
+**************************************************************************
+                     MODERNİZASYON
+**************************************************************************
+                         ISAR
+**************************************************************************
+Build #186: Commit 7a99799 ISAR DATABASE GEÇİŞİ YAPILDI
