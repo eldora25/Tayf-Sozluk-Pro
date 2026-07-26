@@ -50,7 +50,13 @@ jobs:
           # SpeechToText jcenter() Hatası Çözümü
           find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
           
-          # KESİN ÇÖZÜM: Non-null bekleyen tiplerden soru işareti (?) kaldırıldı
+          # YENİ VE KESİN ÇÖZÜM: SpeechToText eklentisini API 36'ya zorlama (AAR Metadata hatası için)
+          find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/compileSdkVersion 33/compileSdkVersion 36/g' {} +
+          find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/targetSdkVersion 33/targetSdkVersion 36/g' {} +
+          find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/compileSdk 33/compileSdk 36/g' {} +
+          find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/targetSdk 33/targetSdk 36/g' {} +
+          
+          # SpeechToText Registrar (Syntax Hatasını Önleyen Sahte Arayüz Enjeksiyonu)
           python3 -c '
           import glob
           paths = glob.glob("/home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android/src/main/kotlin/com/csdcorp/speech_to_text/SpeechToTextPlugin.kt")
@@ -61,7 +67,6 @@ jobs:
               
               content = content.replace("import io.flutter.plugin.common.PluginRegistry.Registrar", "")
               
-              # Context ve BinaryMessenger artık Kotlinin beklediği gibi non-null
               dummy_interface = "\ninterface Registrar {\n    fun activity(): android.app.Activity?\n    fun context(): android.content.Context\n    fun messenger(): io.flutter.plugin.common.BinaryMessenger\n    fun addRequestPermissionsResultListener(listener: Any?)\n}\n"
               
               with open(path, "w") as f:
