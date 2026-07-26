@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart'; // YENİ GRAFİK KÜTÜPHANESİ EKLENDİ
+import 'package:fl_chart/fl_chart.dart'; 
 import 'models.dart';
 
 class StatisticsScreen extends StatelessWidget {
@@ -61,11 +61,10 @@ class StatisticsScreen extends StatelessWidget {
     }).length;
   }
 
-  // YENİ: Son 7 günün öğrenilen kelime verilerini grafiğe (fl_chart) uyumlu hale getirir
   List<FlSpot> _getChartData() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    Map<int, int> counts = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}; // 0=6 gün önce, 6=Bugün
+    Map<int, int> counts = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}; 
 
     for (var ts in learnedWordTimestamps) {
       final date = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
@@ -169,7 +168,7 @@ class StatisticsScreen extends StatelessWidget {
             tabs: [
               Tab(text: "Başarılar", icon: Icon(Icons.emoji_events)),
               Tab(text: "Genel Özet", icon: Icon(Icons.pie_chart)),
-              Tab(text: "Öğrenme Eğrisi", icon: Icon(Icons.show_chart)), // Grafikli Yeni Sekme
+              Tab(text: "Öğrenme Eğrisi", icon: Icon(Icons.show_chart)), 
               Tab(text: "Quiz", icon: Icon(Icons.quiz)),
               Tab(text: "Kütüphaneler", icon: Icon(Icons.library_books)),
             ],
@@ -209,7 +208,7 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
             
-            // 3. ÖĞRENME HIZI VE EĞRİSİ (YENİ FL_CHART)
+            // 3. ÖĞRENME HIZI VE EĞRİSİ (Aylık ve Yıllık Kartlar Eklendi)
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -272,8 +271,12 @@ class StatisticsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
                 _buildSpeedCard(context, "Günlük (Son 24 Saat)", const Duration(days: 1), Colors.blue),
                 _buildSpeedCard(context, "Haftalık (Son 7 Gün)", const Duration(days: 7), Colors.orange),
+                _buildSpeedCard(context, "Aylık (Son 30 Gün)", const Duration(days: 30), Colors.purple),
+                _buildSpeedCard(context, "Yıllık (Son 365 Gün)", const Duration(days: 365), Colors.redAccent),
+                const SizedBox(height: 80), // Rahat kaydırma için alt boşluk
               ],
             ),
 
