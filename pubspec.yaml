@@ -45,3 +45,4 @@ flutter:
     - assets/Babylon_English_Turkish_donustu.csv
     - assets/Babylon_Turkish_English_donustu.csv
     - assets/Free-KH.txt
+    - assets/tayf_wordnet_optimized.json
