@@ -50,7 +50,7 @@ jobs:
           # SpeechToText jcenter() Hatası Çözümü
           find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
           
-          # YENİ VE KESİN ÇÖZÜM: SpeechToText eklentisini API 36'ya zorlama (AAR Metadata hatası için)
+          # SpeechToText eklentisini API 36'ya zorlama (AAR Metadata hatası için)
           find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/compileSdkVersion 33/compileSdkVersion 36/g' {} +
           find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/targetSdkVersion 33/targetSdkVersion 36/g' {} +
           find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/compileSdk 33/compileSdk 36/g' {} +
@@ -67,6 +67,7 @@ jobs:
               
               content = content.replace("import io.flutter.plugin.common.PluginRegistry.Registrar", "")
               
+              # Context ve BinaryMessenger artık Kotlinin beklediği gibi non-null
               dummy_interface = "\ninterface Registrar {\n    fun activity(): android.app.Activity?\n    fun context(): android.content.Context\n    fun messenger(): io.flutter.plugin.common.BinaryMessenger\n    fun addRequestPermissionsResultListener(listener: Any?)\n}\n"
               
               with open(path, "w") as f:
@@ -88,3 +89,33 @@ jobs:
         with:
           name: Dynamic-Debug-APK
           path: build/app/outputs/flutter-apk/TY-Sozluk-v1.0.*-debug.apk
+
+      # YENİ: BAŞARILI DERLEMEDEN SONRA KAYNAK KODLARIN DİNAMİK İSİMLE YEDEKLENMESİ
+      - name: Backup Source Files with Build & Commit Info
+        if: success()
+        run: |
+          # Commit hash'inin ilk 7 hanesini ve Build numarasını al
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          BUILD_NO=${{ github.run_number }}
+          BACKUP_DIR="backup_source_${BUILD_NO}_${SHORT_SHA}"
+          
+          mkdir -p "$BACKUP_DIR"
+          
+          # .git, build, .dart_tool gibi devasa boyutlu/otomatik üretilen klasörleri hariç tutarak tüm dosyaları bul
+          find . -type f -not -path '*/\.git/*' -not -path '*/build/*' -not -path '*/\.dart_tool/*' -not -path "*/$BACKUP_DIR/*" | while read file; do
+            dir=$(dirname "$file")
+            filename=$(basename "$file")
+            
+            # Yedek klasörünün içinde orijinal klasör hiyerarşisini oluştur
+            mkdir -p "$BACKUP_DIR/$dir"
+            
+            # Dosyayı belirtilen formata göre kopyala (örn: main.dart.224-aaaaaaa)
+            cp "$file" "$BACKUP_DIR/$dir/$filename.$BUILD_NO-$SHORT_SHA"
+          done
+          
+      - name: Upload Source Code Backup
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Source-Backup-Build-${{ github.run_number }}
+          path: backup_source_${{ github.run_number }}_*/
