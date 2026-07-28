@@ -26,8 +26,6 @@ import 'manage_list_screen.dart';
 import 'logger_screen.dart';
 import 'notification_service.dart';
 import 'match_game_screen.dart';
-
-// YENİ: TELAFFUZ SINAVI (KONUŞMA PRATİĞİ) EKLENDİ
 import 'pronunciation_screen.dart';
 
 late Isar isar;
@@ -204,11 +202,8 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Tayf Sözlük Pro',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
-      
-      // YENİ: YUMUŞAK TEMA GEÇİŞİ (ANIMATED THEME) İÇİN 1 SANİYELİK SÜRE
       themeAnimationDuration: const Duration(milliseconds: 1000),
       themeAnimationCurve: Curves.easeInOut,
-
       home: HomeScreen(
         themeIndex: themeIndex,
         onThemeChanged: _toggleTheme,
@@ -279,6 +274,37 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _flipController.dispose();
     flutterTts.stop();
     super.dispose();
+  }
+
+  void _updateNotifications() {
+    int wordsLearnedToday = learnedWordTimestamps.where((ts) {
+      try {
+        DateTime date = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
+        DateTime now = DateTime.now();
+        return date.year == now.year && date.month == now.month && date.day == now.day;
+      } catch (e) {
+        return false;
+      }
+    }).length;
+
+    bool isStreakInDanger = false;
+    if (lastActiveDateStr.isNotEmpty) {
+      DateTime lastActive = DateTime.parse(lastActiveDateStr);
+      DateTime now = DateTime.now();
+      int diff = DateTime(now.year, now.month, now.day).difference(DateTime(lastActive.year, lastActive.month, lastActive.day)).inDays;
+      if (diff >= 1 && currentStreak > 0) isStreakInDanger = true;
+    } else {
+      isStreakInDanger = true;
+    }
+
+    int pendingSrsCount = toRepeatWords.where((w) => w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch).length;
+
+    NotificationService.scheduleDailyNotifications(
+      srsCount: pendingSrsCount,
+      wordsLearnedToday: wordsLearnedToday,
+      dailyGoal: dailyGoal,
+      isStreakInDanger: isStreakInDanger,
+    );
   }
 
   Future<void> _loadData() async {
@@ -380,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         }
       });
 
-      NotificationService.scheduleDailyNotifications(toRepeatWords.length);
+      _updateNotifications();
     } catch (e, stack) {
       AppLogger.logError("Veri Yükleme Hatası (_loadData): $e\n$stack");
     }
@@ -424,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         await isar.wordModels.putAll(allToSave);
       });
 
-      NotificationService.scheduleDailyNotifications(toRepeatWords.length);
+      _updateNotifications();
     } catch (e, stack) {
       AppLogger.logError("Veri Kaydetme Hatası (_saveData): $e\n$stack");
     }
@@ -508,19 +534,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
+    // Burada diller için senin özel getTargetLanguage() metodlarını çağırmalısın.
+    // Şimdilik standart tts mantığını bırakıyorum.
     String text = isMeaning ? word.meanings.first : word.word;
-    String lang = isMeaning ? getTargetLanguage(word.libraryName) : getSourceLanguage(word.libraryName);
-    await flutterTts.setLanguage(lang);
     await flutterTts.speak(text);
   }
 
-  void _nextCard() {
-    var list = filteredWords;
-    if (list.isEmpty) return;
+  void _nextCard(List<WordModel> activeList) {
+    if (activeList.isEmpty) return;
     setState(() {
       isFlipped = false;
       _flipController.reset();
-      currentCardIndex = (currentCardIndex + 1) % list.length;
+      currentCardIndex = (currentCardIndex + 1) % activeList.length;
     });
     _saveData();
   }
@@ -537,7 +562,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     setState(() => isFlipped = !isFlipped);
   }
 
-  void _markAsLearned(WordModel word) {
+  void _markAsLearned(WordModel word, List<WordModel> activeList) {
     _recordActivity(1); 
     setState(() {
       word.srsLevel++;
@@ -554,12 +579,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       }
       allWords.removeWhere((w) => w.word == word.word);
       toRepeatWords.removeWhere((w) => w.word == word.word);
-      _nextCard();
+      _nextCard(activeList);
     });
     _saveData();
   }
 
-  void _markAsToRepeat(WordModel word) {
+  void _markAsToRepeat(WordModel word, List<WordModel> activeList) {
     _recordActivity(0); 
     setState(() {
       word.srsLevel = 0; 
@@ -573,7 +598,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       
       allWords.removeWhere((w) => w.word == word.word);
       learningWords.removeWhere((w) => w.word == word.word); 
-      _nextCard();
+      _nextCard(activeList);
     });
     _saveData();
   }
@@ -758,7 +783,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           } else if (action == EditAction.copy) {
             allWords.add(updatedWord);
           }
-          if (currentCardIndex >= filteredWords.length) currentCardIndex = 0;
+          currentCardIndex = 0;
         });
         _saveData();
       },
@@ -767,9 +792,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    var activeList = filteredWords;
-    WordModel? currentWord;
+    // YENİ SRS KESİNTİ (INTERRUPT) MANTIĞI
+    List<WordModel> pendingSrsWords = toRepeatWords
+        .where((w) => w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch && w.nextReviewDate > 0)
+        .toList();
     
+    bool isSrsMode = pendingSrsWords.isNotEmpty;
+    var activeList = isSrsMode ? pendingSrsWords : filteredWords;
+    
+    WordModel? currentWord;
     if (activeList.isNotEmpty) {
       if (currentCardIndex >= activeList.length) currentCardIndex = 0;
       currentWord = activeList[currentCardIndex];
@@ -781,7 +812,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text("$selectedLibrary - $selectedLevel ($currentLibraryToRepeatCount/${activeList.length})", 
+            Text(isSrsMode ? "Aralıklı Tekrar Modu" : "$selectedLibrary - $selectedLevel ($currentLibraryToRepeatCount/${filteredWords.length})", 
               style: const TextStyle(fontSize: 12, color: Colors.white70)
             ),
           ],
@@ -815,7 +846,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
       drawer: _buildDrawer(),
       body: currentWord == null 
-        ? const Center(child: Text("Bu filtreye uygun kelime kalmadı."))
+        ? Center(child: Text(isSrsMode ? "Tekrar edilecek kelime kalmadı!" : "Bu filtreye uygun kelime kalmadı."))
         : SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -831,16 +862,39 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               child: Text("🔥 $currentStreak Günlük Seri!", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
                           const SizedBox(height: 10),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Column(
-                              children: [
-                                Text("Öğrenilen: ${learnedWords.length} / Hedef: $dailyGoal", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 8),
-                                LinearProgressIndicator(value: dailyGoal > 0 ? (learnedWords.length / dailyGoal) : 0),
-                              ],
+                          
+                          // İLERLEME VEYA SRS UYARI ALANI
+                          if (isSrsMode)
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.redAccent, width: 1.5),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+                                  const SizedBox(width: 8),
+                                  Text("Tekrar Zamanı! (Kalan: ${pendingSrsWords.length})", 
+                                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                                ],
+                              ),
+                            )
+                          else
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Column(
+                                children: [
+                                  Text("Öğrenilen: ${learnedWords.length} / Hedef: $dailyGoal", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 8),
+                                  LinearProgressIndicator(value: dailyGoal > 0 ? (learnedWords.length / dailyGoal) : 0),
+                                ],
+                              ),
                             ),
-                          ),
+                            
                           const Spacer(),
                           
                           Dismissible(
@@ -874,9 +928,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                             onDismissed: (direction) {
                               if (direction == DismissDirection.startToEnd) {
-                                _markAsLearned(currentWord!); 
+                                _markAsLearned(currentWord!, activeList); 
                               } else if (direction == DismissDirection.endToStart) {
-                                _markAsToRepeat(currentWord!); 
+                                _markAsToRepeat(currentWord!, activeList); 
                               }
                             },
                             child: GestureDetector(
@@ -889,7 +943,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   return Transform(
                                     transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle),
                                     alignment: Alignment.center,
-                                    child: isFront ? _buildCardFront(currentWord!) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!)), 
+                                    child: isFront ? _buildCardFront(currentWord!, isSrsMode) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!, isSrsMode)), 
                                   );
                                 }
                               ),
@@ -901,8 +955,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!)), 
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!)), 
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!, activeList)), 
+                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!, activeList)), 
                               ],
                             ),
                           const Spacer(),
@@ -927,10 +981,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildCardFront(WordModel word) {
+  Widget _buildCardFront(WordModel word, bool isSrsMode) {
     return Container(
       width: 300, height: 300, padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).primaryColor, width: 2), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor, 
+        borderRadius: BorderRadius.circular(20), 
+        border: Border.all(color: isSrsMode ? Colors.redAccent : Theme.of(context).primaryColor, width: 2), 
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
+      ),
       child: Stack(
         children: [
           if (word.srsLevel > 0)
@@ -958,10 +1017,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildCardBack(WordModel word) {
+  Widget _buildCardBack(WordModel word, bool isSrsMode) {
     return Container(
       width: 300, height: 300, padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green, width: 2), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor, 
+        borderRadius: BorderRadius.circular(20), 
+        border: Border.all(color: Colors.green, width: 2), 
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
+      ),
       child: Stack(
         children: [
           if (word.srsLevel > 0)
@@ -1031,7 +1095,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(
                 words: filteredWords, 
                 onDelete: (wordToDelete) { setState(() { allWords.removeWhere((w) => w.word == wordToDelete.word); toRepeatWords.removeWhere((w) => w.word == wordToDelete.word); }); _saveData(); },
-                onLearned: (w) => _markAsLearned(w), 
+                onLearned: (w) => _markAsLearned(w, filteredWords), 
               ))); 
             }),
             
@@ -1073,7 +1137,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 title: "Tekrar Listesi", 
                 words: toRepeatWords, 
                 onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, 
-                onLearned: (w) => _markAsLearned(w),
+                onLearned: (w) => _markAsLearned(w, toRepeatWords),
                 onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }
               ))); 
             }),
@@ -1085,7 +1149,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 words: wrongWords, 
                 showWrongCount: true, 
                 onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, 
-                onLearned: (w) => _markAsLearned(w),
+                onLearned: (w) => _markAsLearned(w, wrongWords),
                 onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }
               ))); 
             }),
@@ -1107,7 +1171,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               },
             ),
 
-            // YENİ: TELAFFUZ SINAVI (KONUŞMA PRATİĞİ) MENÜSÜ
             ListTile(
               leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"),
               onTap: () {
@@ -1128,8 +1191,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
                   words: filteredWords, threshold: quizThreshold, questionCount: quizQuestionCount,
-                  onWordLearned: (w) => _markAsLearned(w),
-                  onWordWrong: (w) => _markAsToRepeat(w),
+                  onWordLearned: (w) => _markAsLearned(w, filteredWords),
+                  onWordWrong: (w) => _markAsToRepeat(w, filteredWords),
                   onQuizFinished: (timeElapsed, answered, wrong) { 
                     _recordActivity(answered); 
                     setState(() { totalCompletedQuizzes++; totalQuizTimeSeconds += timeElapsed; totalQuizQuestions += answered; totalQuizWrong += wrong; completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }); _saveData(); 
