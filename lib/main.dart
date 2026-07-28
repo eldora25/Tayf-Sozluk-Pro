@@ -30,7 +30,6 @@ import 'pronunciation_screen.dart';
 
 late Isar isar;
 
-// YENİ SRS GÜN ARALIKLARI (1-2-4-9-14)
 int getNextReviewOffset(int level) {
   const int oneDay = 24 * 60 * 60 * 1000;
   switch (level) {
@@ -534,7 +533,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // YENİ: ONARILMIŞ DİNAMİK TTS FONKSİYONU
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? word.meanings.first : word.word;
@@ -559,7 +557,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       await flutterTts.setSpeechRate(0.5);
       await flutterTts.speak(text);
     } catch (e) {
-      AppLogger.logError("TTS Hatası: $e");
+      debugPrint("TTS Hatası: $e");
     }
   }
 
