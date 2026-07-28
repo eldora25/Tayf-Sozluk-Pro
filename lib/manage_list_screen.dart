@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'models.dart'; // HATA BURADAN KAYNAKLANIYORDU, DOĞRU MODEL IMPORT EDİLDİ
+import 'models.dart';
 
 class ManageListScreen extends StatefulWidget {
   final String title;
@@ -55,7 +55,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
     switch (level) {
       case 1: return "1. Gün";
       case 2: return "2. Gün";
-      case 3: return "5. Gün";
+      case 3: return "4. Gün"; // Güncellendi
       case 4: return "9. Gün";
       case 5: return "14. Gün";
       default: return "Beklemede";
