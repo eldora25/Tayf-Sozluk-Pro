@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'models.dart';
+import '../models/word_model.dart';
 
 class AddWordScreen extends StatefulWidget {
   final List<String> availableLibraries;
