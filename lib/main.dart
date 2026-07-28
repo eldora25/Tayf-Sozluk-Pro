@@ -36,7 +36,7 @@ int getNextReviewOffset(int level) {
   switch (level) {
     case 1: return 1 * oneDay;
     case 2: return 2 * oneDay;
-    case 3: return 4 * oneDay; // 5 yerine 4 gün olarak güncellendi
+    case 3: return 4 * oneDay; 
     case 4: return 9 * oneDay;
     case 5: return 14 * oneDay;
     default: return 0;
@@ -563,12 +563,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     setState(() => isFlipped = !isFlipped);
   }
 
-  // YENİ SRS GÜNCELLEMESİ: Doğru bilinen kelimenin seviye atlaması
   void _markAsLearned(WordModel word, List<WordModel> activeList) {
     _recordActivity(1); 
     setState(() {
-      // Eğer kelime yeni öğreniliyorsa (nextReviewDate = 0 ise) doğrudan SRS Seviyesi 1 olur.
-      // Eğer halihazırda SRS havuzundaysa (süresi geldiyse) seviyesi bir artar.
       if (word.nextReviewDate == 0) {
         word.srsLevel = 1;
       } else {
@@ -593,12 +590,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _saveData();
   }
 
-  // YENİ SRS GÜNCELLEMESİ: Yanlış bilinen kelimenin direkt SRS Seviye 1'e dönmesi
   void _markAsToRepeat(WordModel word, List<WordModel> activeList) {
     _recordActivity(0); 
     setState(() {
-      word.srsLevel = 1; // Hata durumunda SRS Seviyesi direkt 1'e düşer
-      word.nextReviewDate = 0; // O gün içinde acilen tekrar sorulması için sıfırlanır
+      word.srsLevel = 1; 
+      word.nextReviewDate = 0; 
       word.listType = 'toRepeat';
 
       if (!toRepeatWords.any((w) => w.word == word.word)) toRepeatWords.add(word);
@@ -1228,13 +1224,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
 
             ListTile(
+              // HATA BURADA DÜZELTİLDİ: onWordLearned ve onWordWrong isimleri QuizScreen'in beklediği gibi güncellendi
               leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
                   words: filteredWords, threshold: quizThreshold, questionCount: quizQuestionCount,
-                  onWordLearned: (w) => _markAsLearned(w, filteredWords),
-                  onWordWrong: (w) => _markAsToRepeat(w, filteredWords),
+                  onWordMastered: (w) => _markAsLearned(w, filteredWords), // GÜNCELLENDİ
+                  onWrongWord: (w) => _markAsToRepeat(w, filteredWords), // GÜNCELLENDİ
                   onQuizFinished: (timeElapsed, answered, wrong) { 
                     _recordActivity(answered); 
                     setState(() { totalCompletedQuizzes++; totalQuizTimeSeconds += timeElapsed; totalQuizQuestions += answered; totalQuizWrong += wrong; completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }); _saveData(); 
