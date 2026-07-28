@@ -204,11 +204,8 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Tayf Sözlük Pro',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
-      
-      // YUMUŞAK TEMA GEÇİŞİ (Fade efekti korundu)
       themeAnimationDuration: const Duration(milliseconds: 1000),
       themeAnimationCurve: Curves.easeInOut,
-      
       home: HomeScreen(
         themeIndex: themeIndex,
         onThemeChanged: _toggleTheme,
@@ -545,7 +542,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // YENİDEN ONARILAN, GÜVENLİ VE DİNAMİK TTS FONKSİYONU
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? word.meanings.first : word.word;
@@ -1275,7 +1271,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
             const Divider(),
 
-            // YENİ EKLENEN REHBER / ÖZELLİKLER SEKMESİ
             ListTile(
               leading: const Icon(Icons.info_outline, color: Colors.indigo), 
               title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), 
