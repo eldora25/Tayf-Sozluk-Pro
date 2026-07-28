@@ -25,7 +25,7 @@ class QuizScreen extends StatefulWidget {
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen> {
+class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   final FlutterTts flutterTts = FlutterTts(); 
   int _currentIndex = 0;
   int _correctAnswers = 0;
@@ -33,28 +33,40 @@ class _QuizScreenState extends State<QuizScreen> {
   late WordModel _currentWord;
   late List<String> _options;
   
-  // O anki soruda seçilen YANLIŞ şıkları tutacağımız liste
   Set<String> _selectedWrongOptions = {};
+  bool _isCorrectlyAnswered = false; 
+  late DateTime _startTime; 
   
-  bool _isCorrectlyAnswered = false; // Soru doğru bilindiğinde diğer şıklara tıklanmasını engeller
-  late DateTime _startTime; // Quiz süresini tutmak için başlangıç zamanı
+  late AnimationController _shakeController;
+  late AnimationController _entranceController;
 
   @override
   void initState() {
     super.initState();
-    _startTime = DateTime.now(); // Quiz başladı
+    _startTime = DateTime.now();
+    
+    _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _entranceController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+
     _generateQuestion();
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    _entranceController.dispose();
+    flutterTts.stop();
+    super.dispose();
   }
 
   void _generateQuestion() {
     _isCorrectlyAnswered = false;
-    _selectedWrongOptions.clear(); // Yeni soruya geçildiğinde yanlışlar listesini temizle
+    _selectedWrongOptions.clear(); 
     _currentWord = widget.words[Random().nextInt(widget.words.length)];
     
     String correctMeaning = _currentWord.meanings.first;
     Set<String> wrongOptions = {};
     
-    // Yanlış şıkları rastgele diğer kelimelerden seç
     while (wrongOptions.length < 3) {
       var randomWord = widget.words[Random().nextInt(widget.words.length)];
       if (randomWord.word != _currentWord.word) {
@@ -64,14 +76,26 @@ class _QuizScreenState extends State<QuizScreen> {
     
     _options = [correctMeaning, ...wrongOptions];
     _options.shuffle();
+
+    _entranceController.forward(from: 0.0);
+    _speakCurrentWord();
+  }
+
+  Future<void> _speakCurrentWord() async {
+    try {
+      await flutterTts.setLanguage("en-US");
+      await flutterTts.setSpeechRate(0.5);
+      await flutterTts.speak(_currentWord.word);
+    } catch (e) {
+      debugPrint("TTS Okuma Hatası: $e");
+    }
   }
 
   void _handleOptionTap(String option) async {
-    if (_isCorrectlyAnswered) return; // Zaten doğru bilindiyse bekleme süresinde tıklamaları engelle
-    if (_selectedWrongOptions.contains(option)) return; // Daha önce basılan yanlış şıkka tekrar basılmasını engelle
+    if (_isCorrectlyAnswered) return; 
+    if (_selectedWrongOptions.contains(option)) return; 
 
     if (option == _currentWord.meanings.first) {
-      // DOĞRU CEVAP
       setState(() {
         _isCorrectlyAnswered = true;
         _correctAnswers++;
@@ -84,7 +108,6 @@ class _QuizScreenState extends State<QuizScreen> {
       await flutterTts.setLanguage("en-US"); 
       await flutterTts.speak("Correct"); 
 
-      // Doğru bilindikten sonra 1 saniye bekleyip diğer soruya geç
       Future.delayed(const Duration(seconds: 1), () {
         if (_currentIndex < widget.questionCount - 1) {
           setState(() { _currentIndex++; _generateQuestion(); });
@@ -93,35 +116,32 @@ class _QuizScreenState extends State<QuizScreen> {
         }
       });
     } else {
-      // YANLIŞ CEVAP
       setState(() {
-        _selectedWrongOptions.add(option); // Şıkkı kırmızı yapmak için listeye ekle
+        _selectedWrongOptions.add(option); 
         _wrongAnswers++;
-        widget.onWrongWord(_currentWord); // Kelimenin yanlış sayısını veritabanında artırıp SRS seviyesini düşür
+        widget.onWrongWord(_currentWord); 
       });
+
+      _shakeController.forward(from: 0.0);
 
       await flutterTts.setLanguage("en-US");
       await flutterTts.speak("Wrong"); 
-      
-      // NOT: Burada bilerek diğer soruya geçmiyoruz (Future.delayed yok). 
-      // Kullanıcı doğruyu bulana kadar süre işlemeye ve o soruda kalmaya devam edecek.
     }
   }
 
   void _finishQuiz() {
-    // Süreyi saniye cinsinden hesapla
     int timeElapsed = DateTime.now().difference(_startTime).inSeconds;
     widget.onQuizFinished(timeElapsed, _correctAnswers, _wrongAnswers);
-    _showFinishedDialog();
+    _showFinishedDialog(timeElapsed);
   }
 
-  void _showFinishedDialog() {
+  void _showFinishedDialog(int timeElapsed) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text("Quiz Tamamlandı! 🎉"),
-        content: Text("Doğru: $_correctAnswers\nYanlış: $_wrongAnswers"),
+        content: Text("Doğru: $_correctAnswers\nYanlış: $_wrongAnswers\nSüre: $timeElapsed sn"),
         actions: [
           TextButton(onPressed: () { Navigator.pop(context); Navigator.pop(context); }, child: const Text("Kapat"))
         ],
@@ -145,47 +165,96 @@ class _QuizScreenState extends State<QuizScreen> {
               ],
             ),
             const SizedBox(height: 40),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(16)),
-              child: Text(_currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue)),
+            
+            GestureDetector(
+              onTap: _speakCurrentWord,
+              child: AnimatedBuilder(
+                animation: _entranceController,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, 50 * (1 - _entranceController.value)),
+                    child: Opacity(
+                      opacity: _entranceController.value,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(16)),
+                        child: Text(_currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue)),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 30),
-            ..._options.map((option) {
+            
+            ..._options.asMap().entries.map((entry) {
+              int index = entry.key;
+              String option = entry.value;
+              
               bool isCorrect = option == _currentWord.meanings.first;
-              bool isWrongTapped = _selectedWrongOptions.contains(option); // Bu şıkka daha önce yanlış olarak basıldı mı?
+              bool isWrongTapped = _selectedWrongOptions.contains(option); 
               
               Color btnColor = Colors.purple.shade100;
               Widget? suffixIcon;
+              double scaleValue = 1.0; 
 
-              // Eğer doğru cevap bulunduysa ve bu şık doğru olansa yeşil yap
               if (_isCorrectlyAnswered && isCorrect) {
                 btnColor = Colors.green.shade200;
                 suffixIcon = const Icon(Icons.check, color: Colors.green);
-              } 
-              // Eğer bu şıkka daha önce basıldıysa ve yanlışsa kırmızı yap
-              else if (isWrongTapped) {
+                scaleValue = 1.05; 
+              } else if (isWrongTapped) {
                 btnColor = Colors.red.shade200;
                 suffixIcon = const Icon(Icons.close, color: Colors.red);
               }
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: InkWell(
-                  onTap: () => _handleOptionTap(option),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: btnColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purple.shade300)),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(option, style: const TextStyle(fontSize: 18, color: Colors.black87)),
-                        if (suffixIcon != null) suffixIcon,
-                      ],
+              final curve = CurvedAnimation(
+                parent: _entranceController,
+                curve: Interval(index * 0.15, 1.0, curve: Curves.easeOutBack),
+              );
+
+              return AnimatedBuilder(
+                animation: Listenable.merge([_entranceController, _shakeController]),
+                builder: (context, child) {
+                  double shakeOffset = 0;
+                  if (isWrongTapped && _shakeController.isAnimating) {
+                    shakeOffset = sin(_shakeController.value * pi * 4) * 8; 
+                  }
+
+                  return Transform.translate(
+                    offset: Offset(shakeOffset, 50 * (1 - curve.value)),
+                    child: Opacity(
+                      opacity: curve.value.clamp(0.0, 1.0),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: InkWell(
+                          onTap: () => _handleOptionTap(option),
+                          child: AnimatedScale(
+                            scale: scaleValue,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOutCubic,
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: btnColor, 
+                                borderRadius: BorderRadius.circular(12), 
+                                border: Border.all(color: Colors.purple.shade300),
+                                boxShadow: scaleValue > 1.0 ? [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)] : [],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(option, style: const TextStyle(fontSize: 18, color: Colors.black87)),
+                                  if (suffixIcon != null) suffixIcon,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               );
             }).toList(),
           ],
