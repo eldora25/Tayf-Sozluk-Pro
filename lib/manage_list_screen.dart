@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/word_model.dart';
+import 'models.dart'; // HATA BURADAN KAYNAKLANIYORDU, DOĞRU MODEL IMPORT EDİLDİ
 
 class ManageListScreen extends StatefulWidget {
   final String title;
