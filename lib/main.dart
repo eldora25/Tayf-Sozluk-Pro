@@ -30,12 +30,13 @@ import 'pronunciation_screen.dart';
 
 late Isar isar;
 
+// YENİ SRS GÜN ARALIKLARI (1-2-4-9-14)
 int getNextReviewOffset(int level) {
   const int oneDay = 24 * 60 * 60 * 1000;
   switch (level) {
     case 1: return 1 * oneDay;
     case 2: return 2 * oneDay;
-    case 3: return 5 * oneDay;
+    case 3: return 4 * oneDay; // 5 yerine 4 gün olarak güncellendi
     case 4: return 9 * oneDay;
     case 5: return 14 * oneDay;
     default: return 0;
@@ -562,10 +563,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     setState(() => isFlipped = !isFlipped);
   }
 
+  // YENİ SRS GÜNCELLEMESİ: Doğru bilinen kelimenin seviye atlaması
   void _markAsLearned(WordModel word, List<WordModel> activeList) {
     _recordActivity(1); 
     setState(() {
-      word.srsLevel++;
+      // Eğer kelime yeni öğreniliyorsa (nextReviewDate = 0 ise) doğrudan SRS Seviyesi 1 olur.
+      // Eğer halihazırda SRS havuzundaysa (süresi geldiyse) seviyesi bir artar.
+      if (word.nextReviewDate == 0) {
+        word.srsLevel = 1;
+      } else {
+        word.srsLevel++;
+      }
+      
       if (word.srsLevel > 5) {
         word.listType = 'learned';
         if (!learnedWords.any((w) => w.word == word.word)) {
@@ -584,11 +593,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _saveData();
   }
 
+  // YENİ SRS GÜNCELLEMESİ: Yanlış bilinen kelimenin direkt SRS Seviye 1'e dönmesi
   void _markAsToRepeat(WordModel word, List<WordModel> activeList) {
     _recordActivity(0); 
     setState(() {
-      word.srsLevel = 0; 
-      word.nextReviewDate = 0;
+      word.srsLevel = 1; // Hata durumunda SRS Seviyesi direkt 1'e düşer
+      word.nextReviewDate = 0; // O gün içinde acilen tekrar sorulması için sıfırlanır
       word.listType = 'toRepeat';
 
       if (!toRepeatWords.any((w) => w.word == word.word)) toRepeatWords.add(word);
@@ -1156,7 +1166,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ))); 
               }
             ),
-            
+
             ListTile(
               leading: const Icon(Icons.schedule, color: Colors.blue),
               title: const Text("SRS Havuzu"),
