@@ -534,11 +534,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
+  // YENİ: ONARILMIŞ DİNAMİK TTS FONKSİYONU
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
-    String text = isMeaning ? word.meanings.first : word.word;
-    String lang = isMeaning ? 'tr-TR' : 'en-US'; 
-    await flutterTts.setLanguage(lang);
-    await flutterTts.speak(text);
+    try {
+      String text = isMeaning ? word.meanings.first : word.word;
+      String lang = 'en-US'; 
+      String libName = word.libraryName.toLowerCase();
+      
+      if (isMeaning) {
+        lang = 'tr-TR';
+      } else {
+        if (libName.contains('alm') || libName.contains('german') || libName.contains('deu')) {
+          lang = 'de-DE';
+        } else if (libName.contains('fra') || libName.contains('fre')) {
+          lang = 'fr-FR';
+        } else if (libName.contains('isp') || libName.contains('spa')) {
+          lang = 'es-ES';
+        } else if (libName.contains('rus')) {
+          lang = 'ru-RU';
+        }
+      }
+
+      await flutterTts.setLanguage(lang);
+      await flutterTts.setSpeechRate(0.5);
+      await flutterTts.speak(text);
+    } catch (e) {
+      AppLogger.logError("TTS Hatası: $e");
+    }
   }
 
   void _nextCard(List<WordModel> activeList) {
@@ -1224,14 +1246,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
 
             ListTile(
-              // HATA BURADA DÜZELTİLDİ: onWordLearned ve onWordWrong isimleri QuizScreen'in beklediği gibi güncellendi
               leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
                   words: filteredWords, threshold: quizThreshold, questionCount: quizQuestionCount,
-                  onWordMastered: (w) => _markAsLearned(w, filteredWords), // GÜNCELLENDİ
-                  onWrongWord: (w) => _markAsToRepeat(w, filteredWords), // GÜNCELLENDİ
+                  onWordMastered: (w) => _markAsLearned(w, filteredWords), 
+                  onWrongWord: (w) => _markAsToRepeat(w, filteredWords), 
                   onQuizFinished: (timeElapsed, answered, wrong) { 
                     _recordActivity(answered); 
                     setState(() { totalCompletedQuizzes++; totalQuizTimeSeconds += timeElapsed; totalQuizQuestions += answered; totalQuizWrong += wrong; completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }); _saveData(); 
