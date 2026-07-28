@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../models/word_model.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
+  final FlutterTts flutterTts = FlutterTts(); // YENİ: TTS eklendi
   int _currentIndex = 0;
   int _correctAnswers = 0;
   int _wrongAnswers = 0;
@@ -56,29 +58,41 @@ class _QuizScreenState extends State<QuizScreen> {
     _options.shuffle();
   }
 
-  void _handleOptionTap(String option) {
+  void _handleOptionTap(String option) async {
     if (_isAnswered) return;
     setState(() {
       _selectedOption = option;
       _isAnswered = true;
-      if (option == _currentWord.meanings.first) {
+    });
+
+    if (option == _currentWord.meanings.first) {
+      await flutterTts.setLanguage("en-US"); 
+      await flutterTts.speak("Correct"); // Doğru seslendirmesi
+      
+      setState(() {
         _correctAnswers++;
         _currentWord.quizCorrectCount++;
         if (_currentWord.quizCorrectCount >= widget.threshold) {
           widget.onWordMastered(_currentWord);
         }
-        Future.delayed(const Duration(seconds: 1), () {
-          if (_currentIndex < widget.questionCount - 1) {
-            setState(() { _currentIndex++; _generateQuestion(); });
-          } else {
-            _showFinishedDialog();
-          }
-        });
-      } else {
+      });
+
+      Future.delayed(const Duration(seconds: 1), () {
+        if (_currentIndex < widget.questionCount - 1) {
+          setState(() { _currentIndex++; _generateQuestion(); });
+        } else {
+          _showFinishedDialog();
+        }
+      });
+    } else {
+      await flutterTts.setLanguage("en-US");
+      await flutterTts.speak("Wrong"); // Yanlış seslendirmesi
+      
+      setState(() {
         _wrongAnswers++;
         widget.onWrongWord(_currentWord);
-      }
-    });
+      });
+    }
   }
 
   void _showFinishedDialog() {
@@ -142,7 +156,6 @@ class _QuizScreenState extends State<QuizScreen> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: btnColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purple.shade300)),
                     child: Row(
-                      // HATA BURADA DÜZELTİLDİ
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(option, style: const TextStyle(fontSize: 18, color: Colors.black87)),
