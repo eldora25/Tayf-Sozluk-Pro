@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'models.dart';
+import '../models/word_model.dart';
 
 class ManageListScreen extends StatefulWidget {
   final String title;
   final List<WordModel> words;
   final bool showWrongCount;
+  final bool showSrsLevel; // YENİ: SRS Havuzu gün gösterimi için
   final Function(WordModel) onDelete;
-  final Function(WordModel)? onLearned; // YENİ: Sağa kaydırarak öğrenildi işareti için
+  final Function(WordModel)? onLearned; 
   final Function() onClearAll;
 
   const ManageListScreen({
@@ -14,6 +15,7 @@ class ManageListScreen extends StatefulWidget {
     required this.title,
     required this.words,
     this.showWrongCount = false,
+    this.showSrsLevel = false,
     required this.onDelete,
     this.onLearned,
     required this.onClearAll,
@@ -46,6 +48,18 @@ class _ManageListScreenState extends State<ManageListScreen> {
         ],
       ),
     );
+  }
+
+  // YENİ: SRS seviyesine göre gün metni oluşturucu
+  String _getSrsDayText(int level) {
+    switch (level) {
+      case 1: return "1. Gün";
+      case 2: return "2. Gün";
+      case 3: return "5. Gün";
+      case 4: return "9. Gün";
+      case 5: return "14. Gün";
+      default: return "Beklemede";
+    }
   }
 
   @override
@@ -87,7 +101,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
                   itemBuilder: (context, index) {
                     final item = filteredList[index];
                     
-                    // YENİ: KAYDIRARAK İŞLEM (SWIPE TO ACTION)
                     return Dismissible(
                       key: Key('${item.word}_$index'),
                       direction: widget.onLearned != null 
@@ -120,7 +133,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
                       child: Card(
                         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         child: ListTile(
-                          // YENİ: HERO ANİMASYONU 
                           title: Hero(
                             tag: 'hero_word_${item.word}',
                             child: Material(
@@ -132,8 +144,19 @@ class _ManageListScreenState extends State<ManageListScreen> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              // Yanlış sayısı gösterimi
                               if (widget.showWrongCount)
                                 Text("Yanlış: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                              
+                              // YENİ: SRS Gün Tekrarı Gösterimi
+                              if (widget.showSrsLevel && item.srsLevel > 0)
+                                Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                                  child: Text("${_getSrsDayText(item.srsLevel)} Tekrarı", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
+                                ),
+
                               IconButton(
                                 icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
                                 tooltip: 'Listeden Çıkar',
