@@ -24,7 +24,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
   @override
   void initState() {
     super.initState();
-    // Mevcut kütüphanelerin kopyasını alıyoruz ki üzerine ekleme yapabilelim
     _currentLibraries = List.from(widget.availableLibraries);
     if (!_currentLibraries.contains('+ Yeni Kütüphane Oluştur')) {
       _currentLibraries.add('+ Yeni Kütüphane Oluştur');
@@ -39,7 +38,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
     super.dispose();
   }
 
-  // Yeni Kütüphane Ekleme Dialogu
   Future<void> _showNewLibraryDialog() async {
     TextEditingController newLibCtrl = TextEditingController();
     String? newLibName = await showDialog<String>(
@@ -68,14 +66,15 @@ class _AddWordScreenState extends State<AddWordScreen> {
     if (newLibName != null && newLibName.isNotEmpty) {
       setState(() {
         if (!_currentLibraries.contains(newLibName)) {
-          _currentLibraries.insert(_currentLibraries.length - 1, newLibName); // En sona (Ekle'den önceye) koy
+          _currentLibraries.insert(_currentLibraries.length - 1, newLibName);
         }
-        _library = newLibName; // Yeni ekleneni hemen seçili yap
+        _library = newLibName;
       });
     } else {
-      // İptal edilirse veya boşsa ilk kütüphaneye geri dön
       setState(() {
-        _library = _currentLibraries.first;
+        if (!_currentLibraries.contains(_library)) {
+          _library = _currentLibraries.first;
+        }
       });
     }
   }
@@ -96,7 +95,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
             ),
             const SizedBox(height: 20),
             
-            // Çoklu Anlam Alanı
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -118,7 +116,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
             
             const SizedBox(height: 10),
             
-            // Çoklu Örnek Cümle Alanı
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -146,12 +143,10 @@ class _AddWordScreenState extends State<AddWordScreen> {
             ),
             
             const SizedBox(height: 20),
-            // Kütüphane seçimi veya yeni kütüphane oluşturma
             DropdownButtonFormField<String>(
               value: _library,
               decoration: const InputDecoration(labelText: "Kütüphane", border: OutlineInputBorder()),
               items: _currentLibraries.map((e) {
-                // "+ Yeni Kütüphane" yazısını renklendirip ikon koyalım ki dikkat çeksin
                 if (e == '+ Yeni Kütüphane Oluştur') {
                   return DropdownMenuItem(
                     value: e, 
