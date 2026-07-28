@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // HapticFeedback için gerekli
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:lottie/lottie.dart'; // Havai fişek animasyonu için
 import 'models.dart'; 
 
 class QuizScreen extends StatefulWidget {
@@ -37,6 +39,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   bool _isCorrectlyAnswered = false; 
   late DateTime _startTime; 
   
+  // PREMIUM ANİMASYON KONTROLCÜLERİ
   late AnimationController _shakeController;
   late AnimationController _entranceController;
 
@@ -44,11 +47,18 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _startTime = DateTime.now();
+    _initTTS();
     
     _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _entranceController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
 
     _generateQuestion();
+  }
+
+  Future<void> _initTTS() async {
+    await flutterTts.setVolume(1.0);
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setPitch(1.0);
   }
 
   @override
@@ -84,7 +94,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   Future<void> _speakCurrentWord() async {
     try {
       await flutterTts.setLanguage("en-US");
-      await flutterTts.setSpeechRate(0.5);
       await flutterTts.speak(_currentWord.word);
     } catch (e) {
       debugPrint("TTS Okuma Hatası: $e");
@@ -96,6 +105,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (_selectedWrongOptions.contains(option)) return; 
 
     if (option == _currentWord.meanings.first) {
+      // DOĞRU CEVAP EFEKTLERİ
+      HapticFeedback.lightImpact(); // Hafif titreşim
       setState(() {
         _isCorrectlyAnswered = true;
         _correctAnswers++;
@@ -116,13 +127,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         }
       });
     } else {
+      // YANLIŞ CEVAP EFEKTLERİ
+      HapticFeedback.heavyImpact(); // Sert titreşim
       setState(() {
         _selectedWrongOptions.add(option); 
         _wrongAnswers++;
         widget.onWrongWord(_currentWord); 
       });
 
-      _shakeController.forward(from: 0.0);
+      _shakeController.forward(from: 0.0); // Butonu Sars
 
       await flutterTts.setLanguage("en-US");
       await flutterTts.speak("Wrong"); 
@@ -140,10 +153,30 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("Quiz Tamamlandı! 🎉"),
-        content: Text("Doğru: $_correctAnswers\nYanlış: $_wrongAnswers\nSüre: $timeElapsed sn"),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Havai Fişek Animasyonu (Eğer Lottie assetin yoksa bunu Icon ile değiştirebilirsin)
+            SizedBox(
+              height: 150,
+              child: Lottie.asset('assets/fireworks.json', repeat: false, errorBuilder: (context, error, stack) => const Icon(Icons.emoji_events, size: 100, color: Colors.amber)),
+            ),
+            const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Text("Doğru: $_correctAnswers", style: const TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text("Yanlış: $_wrongAnswers", style: const TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text("Süre: $timeElapsed sn", style: const TextStyle(color: Colors.blue, fontSize: 16)),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () { Navigator.pop(context); Navigator.pop(context); }, child: const Text("Kapat"))
+          Center(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+              onPressed: () { Navigator.pop(context); Navigator.pop(context); }, 
+              child: const Text("Kapat")
+            ),
+          )
         ],
       ),
     );
@@ -160,8 +193,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Text("✓ Doğru: $_correctAnswers", style: const TextStyle(color: Colors.green, fontSize: 16)),
-                Text("✗ Yanlış: $_wrongAnswers", style: const TextStyle(color: Colors.red, fontSize: 16)),
+                Text("✓ Doğru: $_correctAnswers", style: const TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.bold)),
+                Text("✗ Yanlış: $_wrongAnswers", style: const TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 40),
@@ -178,7 +211,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(16)),
+                        decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
                         child: Text(_currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue)),
                       ),
                     ),
@@ -202,12 +235,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               if (_isCorrectlyAnswered && isCorrect) {
                 btnColor = Colors.green.shade200;
                 suffixIcon = const Icon(Icons.check, color: Colors.green);
-                scaleValue = 1.05; 
+                scaleValue = 1.05; // Doğruda büyüme (Pop-up) efekti
               } else if (isWrongTapped) {
                 btnColor = Colors.red.shade200;
                 suffixIcon = const Icon(Icons.close, color: Colors.red);
               }
 
+              // Şıkların aşağıdan sırayla uçuşarak gelmesi (Staggered Fade-in)
               final curve = CurvedAnimation(
                 parent: _entranceController,
                 curve: Interval(index * 0.15, 1.0, curve: Curves.easeOutBack),
@@ -218,7 +252,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 builder: (context, child) {
                   double shakeOffset = 0;
                   if (isWrongTapped && _shakeController.isAnimating) {
-                    shakeOffset = sin(_shakeController.value * pi * 4) * 8; 
+                    shakeOffset = sin(_shakeController.value * pi * 4) * 8; // Sarsıntı efekti
                   }
 
                   return Transform.translate(
@@ -238,13 +272,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                               decoration: BoxDecoration(
                                 color: btnColor, 
                                 borderRadius: BorderRadius.circular(12), 
-                                border: Border.all(color: Colors.purple.shade300),
-                                boxShadow: scaleValue > 1.0 ? [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)] : [],
+                                border: Border.all(color: Colors.purple.shade300, width: 1.5),
+                                boxShadow: scaleValue > 1.0 ? [BoxShadow(color: Colors.green.withOpacity(0.5), blurRadius: 12, spreadRadius: 3)] : [],
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(option, style: const TextStyle(fontSize: 18, color: Colors.black87)),
+                                  Expanded(child: Text(option, style: const TextStyle(fontSize: 18, color: Colors.black87))),
                                   if (suffixIcon != null) suffixIcon,
                                 ],
                               ),
