@@ -534,9 +534,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
-    // Burada diller için senin özel getTargetLanguage() metodlarını çağırmalısın.
-    // Şimdilik standart tts mantığını bırakıyorum.
     String text = isMeaning ? word.meanings.first : word.word;
+    String lang = isMeaning ? 'tr-TR' : 'en-US'; 
+    await flutterTts.setLanguage(lang);
     await flutterTts.speak(text);
   }
 
@@ -792,7 +792,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    // YENİ SRS KESİNTİ (INTERRUPT) MANTIĞI
     List<WordModel> pendingSrsWords = toRepeatWords
         .where((w) => w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch && w.nextReviewDate > 0)
         .toList();
@@ -863,7 +862,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                           const SizedBox(height: 10),
                           
-                          // İLERLEME VEYA SRS UYARI ALANI
                           if (isSrsMode)
                             Container(
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1142,17 +1140,51 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ))); 
             }),
             
-            ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { 
-              Navigator.pop(context); 
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
-                title: "Yanlış Kelimeler", 
-                words: wrongWords, 
-                showWrongCount: true, 
-                onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, 
-                onLearned: (w) => _markAsLearned(w, wrongWords),
-                onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }
-              ))); 
-            }),
+            ListTile(
+              leading: const Icon(Icons.cancel, color: Colors.red), 
+              title: const Text("Yanlış Kelimeler"), 
+              subtitle: Text("${wrongWords.length} kelime", style: const TextStyle(fontSize: 12)), 
+              onTap: () { 
+                Navigator.pop(context); 
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
+                  title: "Yanlış Kelimeler", 
+                  words: wrongWords, 
+                  showWrongCount: true, 
+                  onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, 
+                  onLearned: (w) => _markAsLearned(w, wrongWords),
+                  onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }
+                ))); 
+              }
+            ),
+            
+            ListTile(
+              leading: const Icon(Icons.schedule, color: Colors.blue),
+              title: const Text("SRS Havuzu"),
+              subtitle: Text("${[...learningWords, ...toRepeatWords.where((w) => w.srsLevel > 0)].length} kelime beklemede", style: const TextStyle(fontSize: 12)),
+              onTap: () {
+                Navigator.pop(context);
+                List<WordModel> srsPool = [...learningWords, ...toRepeatWords.where((w) => w.srsLevel > 0)];
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
+                  title: "SRS Havuzu",
+                  words: srsPool,
+                  showSrsLevel: true,
+                  onDelete: (w) {
+                    setState(() {
+                      learningWords.remove(w);
+                      toRepeatWords.remove(w);
+                    });
+                    _saveData();
+                  },
+                  onClearAll: () {
+                    setState(() {
+                      learningWords.clear();
+                      toRepeatWords.removeWhere((w) => w.srsLevel > 0);
+                    });
+                    _saveData();
+                  }
+                )));
+              }
+            ),
             
             const Divider(),
             ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: toRepeatWords, wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
