@@ -27,9 +27,11 @@ import 'logger_screen.dart';
 import 'notification_service.dart';
 import 'match_game_screen.dart';
 import 'pronunciation_screen.dart';
+import 'info_screen.dart'; // YENİ EKLENEN REHBER EKRANI
 
 late Isar isar;
 
+// YENİ SRS GÜN ARALIKLARI (1-2-4-9-14)
 int getNextReviewOffset(int level) {
   const int oneDay = 24 * 60 * 60 * 1000;
   switch (level) {
@@ -202,8 +204,11 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Tayf Sözlük Pro',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
+      
+      // YUMUŞAK TEMA GEÇİŞİ (Fade efekti korundu)
       themeAnimationDuration: const Duration(milliseconds: 1000),
       themeAnimationCurve: Curves.easeInOut,
+      
       home: HomeScreen(
         themeIndex: themeIndex,
         onThemeChanged: _toggleTheme,
@@ -266,7 +271,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _flipController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     _flipAnimation = Tween<double>(begin: 0, end: 1).animate(_flipController);
     NotificationService.requestPermission();
+    _initMainTTS();
     _loadData();
+  }
+
+  Future<void> _initMainTTS() async {
+    await flutterTts.setVolume(1.0);
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setPitch(1.0);
   }
 
   @override
@@ -533,6 +545,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
+  // YENİDEN ONARILAN, GÜVENLİ VE DİNAMİK TTS FONKSİYONU
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? word.meanings.first : word.word;
@@ -554,6 +567,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       }
 
       await flutterTts.setLanguage(lang);
+      await flutterTts.setVolume(1.0);
       await flutterTts.setSpeechRate(0.5);
       await flutterTts.speak(text);
     } catch (e) {
@@ -1260,10 +1274,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
             const Divider(),
+
+            // YENİ EKLENEN REHBER / ÖZELLİKLER SEKMESİ
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: Colors.indigo), 
+              title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), 
+              onTap: () { 
+                Navigator.pop(context); 
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); 
+              }
+            ),
+
+            ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
+            const Divider(),
             ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
             ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
-            const Divider(),
-            ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
           ],
         ),
       ),
