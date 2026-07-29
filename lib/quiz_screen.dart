@@ -63,8 +63,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
 
-    _initTTS();
-
     List<WordModel> pool = List.from(widget.words)..shuffle();
     quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
     totalQuestions = quizWords.length;
@@ -72,16 +70,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (totalQuestions > 0) {
       _startTimer();
       _generateQuestion();
-    }
-  }
-
-  Future<void> _initTTS() async {
-    try {
-      await flutterTts.setVolume(1.0);
-      await flutterTts.setSpeechRate(0.5);
-      await flutterTts.setPitch(1.0);
-    } catch (e) {
-      debugPrint("TTS Init Hatası: $e");
     }
   }
 
