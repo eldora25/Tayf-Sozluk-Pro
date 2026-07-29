@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'models.dart';
+import 'main.dart'; // TTS dillerini akıllıca çekmek için
 
 class WordNetSearchScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -18,9 +19,11 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
   List<WordModel> filteredWords = [];
   List<WordModel> baseWords = [];
   
+  // Arayüz Ayarları (Klasik Browser Seçenekleri)
   double _fontSizeBase = 14.0; 
   List<String> searchHistory = [];
   bool showGloss = true;
+  bool wrapLines = true;
   String currentViewMode = "Overview"; 
 
   @override
@@ -40,10 +43,11 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
       }
 
       filteredWords = baseWords.where((w) {
-        if (w.word.toLowerCase() == query) return true;
+        String cleanWord = w.word.contains('[ID:') ? "WordNet Kaydı" : w.word;
+        if (cleanWord.toLowerCase() == query) return true;
         if (w.meanings.any((m) => m.toLowerCase().contains(query))) return true;
         return false;
-      }).take(200).toList();
+      }).take(200).toList(); // Performans için limitle
     });
   }
 
@@ -76,14 +80,20 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
         antonyms.add(m.replaceAll("ZIT ANLAMLI: ", "").trim());
       }
     }
-    return {"definition": definition, "synonyms": synonyms, "antonyms": antonyms};
+    return {
+      "definition": definition,
+      "synonyms": synonyms,
+      "antonyms": antonyms,
+    };
   }
 
-  Widget _buildClassicSenseRow(int index, String mainWord, Map<String, dynamic> parsedData) {
+  Widget _buildClassicSenseRow(int index, String rawWord, Map<String, dynamic> parsedData) {
     List<String> syns = List<String>.from(parsedData["synonyms"]);
     String def = parsedData["definition"];
     
-    List<String> allWords = [if (mainWord != "WordNet Terimi") mainWord, ...syns];
+    String mainWord = rawWord.contains('[ID:') ? "WordNet Kaydı" : rawWord;
+    
+    List<String> allWords = [if (mainWord != "WordNet Kaydı") mainWord, ...syns];
     if (allWords.isEmpty) allWords.add("Term");
 
     List<TextSpan> spans = [];
@@ -119,6 +129,8 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
         children: [
           Expanded(
             child: RichText(
+              softWrap: wrapLines,
+              overflow: wrapLines ? TextOverflow.clip : TextOverflow.ellipsis,
               text: TextSpan(
                 style: TextStyle(fontSize: _fontSizeBase, fontFamily: 'Georgia', height: 1.5),
                 children: spans,
@@ -148,7 +160,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("WordNet Browser", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        title: const Text("WordNet 2.1 Browser", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(icon: const Icon(Icons.text_decrease), tooltip: 'Yazıyı Küçült', onPressed: () { if (_fontSizeBase > 10.0) setState(() => _fontSizeBase -= 2.0); }),
           IconButton(icon: const Icon(Icons.text_increase), tooltip: 'Yazıyı Büyüt', onPressed: () { if (_fontSizeBase < 24.0) setState(() => _fontSizeBase += 2.0); }),
@@ -157,64 +169,129 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 1. Üst Menü Simülasyonu
           Container(
-            color: Theme.of(context).cardColor,
-            padding: const EdgeInsets.all(12),
-            child: Column(
+            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        onSubmitted: _performSearch,
-                        style: TextStyle(fontSize: _fontSizeBase),
-                        decoration: InputDecoration(
-                          hintText: "Search Word...",
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: query.isNotEmpty ? IconButton(icon: const Icon(Icons.clear), onPressed: _clearSearch) : null,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                        ),
-                      ),
+                PopupMenuButton<String>(
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Text("History", style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                  itemBuilder: (context) => searchHistory.isEmpty 
+                    ? [const PopupMenuItem(value: "", child: Text("No history"))]
+                    : searchHistory.map((h) => PopupMenuItem(value: h, child: Text(h))).toList(),
+                  onSelected: (val) {
+                    if (val.isNotEmpty) {
+                      _searchController.text = val;
+                      _performSearch(val);
+                    }
+                  },
+                ),
+                PopupMenuButton<String>(
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Text("Options", style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                  itemBuilder: (context) => [
+                    CheckedPopupMenuItem(
+                      checked: showGloss,
+                      value: "gloss",
+                      child: const Text("Show descriptive gloss"),
+                    ),
+                    CheckedPopupMenuItem(
+                      checked: wrapLines,
+                      value: "wrap",
+                      child: const Text("Wrap lines"),
                     ),
                   ],
+                  onSelected: (val) {
+                    setState(() {
+                      if (val == "gloss") showGloss = !showGloss;
+                      if (val == "wrap") wrapLines = !wrapLines;
+                    });
+                  },
                 ),
-                const SizedBox(height: 8),
-                if (query.isNotEmpty)
-                  Row(
-                    children: [
-                      Text("Searches for $query: ", style: TextStyle(fontSize: _fontSizeBase - 2, fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 8),
-                      DropdownButton<String>(
-                        value: currentViewMode,
-                        underline: const SizedBox(),
-                        style: TextStyle(fontSize: _fontSizeBase - 2, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold),
-                        items: const [
-                          DropdownMenuItem(value: "Overview", child: Text("Overview")),
-                          DropdownMenuItem(value: "Synonyms", child: Text("Synonyms")),
-                          DropdownMenuItem(value: "Antonyms", child: Text("Antonyms")),
-                        ],
-                        onChanged: (val) => setState(() => currentViewMode = val!),
-                      ),
-                    ],
-                  ),
               ],
             ),
           ),
           
+          // 2. Arama Çubuğu
+          Container(
+            color: Theme.of(context).cardColor,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                const Text("Search Word: ", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: Container(
+                    height: 36,
+                    decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(4)),
+                    child: TextField(
+                      controller: _searchController,
+                      onSubmitted: _performSearch,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.only(bottom: 10, left: 8),
+                        border: InputBorder.none,
+                        isDense: true,
+                        suffixIcon: query.isNotEmpty ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: _clearSearch) : null,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // 3. Alt Menü
+          if (query.isNotEmpty)
+            Container(
+              color: Theme.of(context).cardColor,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Row(
+                children: [
+                  Text("Searches for $query: ", style: const TextStyle(fontSize: 12)),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<String>(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3))),
+                      child: Row(
+                        children: [
+                          Text(currentViewMode, style: TextStyle(fontSize: 12, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+                          Icon(Icons.arrow_drop_down, size: 16, color: Theme.of(context).primaryColor),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: "Overview", child: Text("Overview", style: TextStyle(fontSize: 12))),
+                      const PopupMenuItem(value: "Synonyms", child: Text("Synonyms, ordered by frequency", style: TextStyle(fontSize: 12))),
+                      const PopupMenuItem(value: "Antonyms", child: Text("Antonyms", style: TextStyle(fontSize: 12))),
+                    ],
+                    onSelected: (val) => setState(() => currentViewMode = val),
+                  ),
+                  const Spacer(),
+                  Text("Senses: ${filteredWords.length}", style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+            
           const Divider(height: 1, thickness: 1),
 
+          // 4. WordNet Okuma Ekranı (Klasik Çıktı)
           Expanded(
             child: Container(
               margin: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+                borderRadius: BorderRadius.circular(4),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
               ),
               child: filteredWords.isEmpty
-                  ? Center(child: Text(query.isEmpty ? "Enter a word to search." : "No senses found for '$query'.", style: TextStyle(fontSize: _fontSizeBase, color: Colors.grey)))
+                  ? Center(child: Text(query.isEmpty ? "Welcome to WordNet Browser.\nEnter a word to search." : "No senses found for '$query'.", style: const TextStyle(color: Colors.grey, fontSize: 14)))
                   : ListView(
                       padding: const EdgeInsets.all(16.0),
                       children: [
@@ -231,11 +308,20 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildClassicSenseRow(index, w.word, parsedData),
-                              if (currentViewMode == "Antonyms")
+                              
+                              if (currentViewMode == "Synonyms" || currentViewMode == "Overview")
+                                ...parsedData["synonyms"].map<Widget>((syn) => Padding(
+                                  padding: const EdgeInsets.only(left: 32.0, bottom: 4.0),
+                                  child: Text("=> $syn", style: TextStyle(fontSize: _fontSizeBase - 1)),
+                                )).toList(),
+
+                              if (currentViewMode == "Antonyms" || currentViewMode == "Overview")
                                 ...parsedData["antonyms"].map<Widget>((ant) => Padding(
-                                  padding: const EdgeInsets.only(left: 32.0, bottom: 8.0),
+                                  padding: const EdgeInsets.only(left: 32.0, bottom: 4.0),
                                   child: Text("=> Antonym: $ant", style: TextStyle(fontSize: _fontSizeBase - 1, color: Colors.redAccent, fontStyle: FontStyle.italic)),
                                 )).toList(),
+                              
+                              if (index < filteredWords.length - 1) const SizedBox(height: 12),
                             ],
                           );
                         }),
@@ -243,6 +329,15 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
                     ),
             ),
           ),
+          
+          // Alt Bar
+          Container(
+            height: 24,
+            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            alignment: Alignment.centerLeft,
+            child: Text(query.isNotEmpty ? "$currentViewMode of '$query'" : "Ready", style: const TextStyle(fontSize: 11)),
+          )
         ],
       ),
     );
