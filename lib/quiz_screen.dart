@@ -58,7 +58,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    
     _entranceController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
@@ -89,18 +88,22 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  String _formatTime(int seconds) {
-    int h = seconds ~/ 3600;
-    int m = (seconds % 3600) ~/ 60;
-    int s = seconds % 60;
-    if (h > 0) return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  // YENİ: Zaman formatı dd:hh:mm:ss olarak güncellendi (Madde 4)
+  String _formatTime(int totalSeconds) {
+    int d = totalSeconds ~/ (24 * 3600);
+    int h = (totalSeconds % (24 * 3600)) ~/ 3600;
+    int m = (totalSeconds % 3600) ~/ 60;
+    int s = totalSeconds % 60;
+    
+    String days = d > 0 ? '${d.toString().padLeft(2, '0')}:' : '';
+    return '$days${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
       await globalTts.stop();
+      await Future.delayed(const Duration(milliseconds: 150)); // YENİ: Gecikmesiz ve kalıntısız TTS 
       String cleanText = text.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                              .replaceAll('ANLAM:', '')
                              .replaceAll('EŞ ANLAMLI:', '')
@@ -114,29 +117,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     }
   }
 
-  // GECİKMEYİ (LAG) ÖNLEMEK İÇİN BİLDİRİM DİLİ DOĞRUDAN SORUNUN DİLİ (KAYNAK) OLARAK AYARLANDI
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
-    
     String lang = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String text = "";
-    
-    if (lang == 'en-US') {
-      text = isCorrect ? "Correct" : "Wrong";
-    } else if (lang == 'tr-TR') {
-      text = isCorrect ? "Doğru" : "Yanlış";
-    } else if (lang == 'de-DE') {
-      text = isCorrect ? "Richtig" : "Falsch";
-    } else if (lang == 'es-ES') {
-      text = isCorrect ? "Correcto" : "Incorrecto";
-    } else if (lang == 'fr-FR') {
-      text = isCorrect ? "Vrai" : "Faux";
-    } else if (lang == 'ru-RU') {
-      text = isCorrect ? "Правильно" : "Неправильно";
-    } else {
-      text = isCorrect ? "Correct" : "Wrong";
-    }
-    
+    if (lang == 'en-US') text = isCorrect ? "Correct" : "Wrong";
+    else if (lang == 'tr-TR') text = isCorrect ? "Doğru" : "Yanlış";
+    else text = isCorrect ? "Correct" : "Wrong";
     _speakText(text, lang);
   }
 
@@ -163,7 +150,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _questionSubtext = "";
     String targetPrefix = "";
 
-    // WordNet Kütüphanesi İçin Dinamik Soru Üretici
     if (isWordNet) {
         List<String> defs = currentWord.meanings.where((m) => m.startsWith("ANLAM: ")).toList();
         List<String> syns = currentWord.meanings.where((m) => m.startsWith("EŞ ANLAMLI: ")).toList();
@@ -199,7 +185,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     Set<String> wrongOptions = {};
     int loopCounter = 0;
     
-    // Çeldiriciler sadece TEK BİR kısa kelimeden/anlamdan oluşur (Ekran kalabalığını bitiren döngü)
     while (wrongOptions.length < 3 && loopCounter < 150) {
       loopCounter++;
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
@@ -211,9 +196,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           var matchingMeanings = randomWord.meanings.where((m) => m.startsWith(targetPrefix)).toList();
           if (matchingMeanings.isNotEmpty) {
             randomMeaning = matchingMeanings[random.nextInt(matchingMeanings.length)].substring(targetPrefix.length).trim();
-          } else {
-            continue; 
-          }
+          } else { continue; }
         } else {
           randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
           if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
@@ -229,7 +212,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     options = [correctOption, ...wrongOptions];
     options.shuffle();
-    
     setState(() {});
     
     _entranceController.forward(from: 0.0); 
@@ -244,30 +226,20 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (option == correctOption) {
         isAnsweredCorrectly = true;
         answeredQuestions++;
-        
         HapticFeedback.mediumImpact(); 
         _scaleController.forward(from: 0.0); 
-        
-        if (selectedWrongOptions.isEmpty) {
-          correctAnswers++;
-          currentWord.correctCount++;
-        }
+        if (selectedWrongOptions.isEmpty) { correctAnswers++; currentWord.correctCount++; }
       } else {
         selectedWrongOptions.add(option);
-        wrongAnswers++;
-        currentWord.wrongCount++;
-        
+        wrongAnswers++; currentWord.wrongCount++;
         HapticFeedback.heavyImpact(); 
-        _lastWrongOption = option;
-        _shakeController.forward(from: 0.0); 
+        _lastWrongOption = option; _shakeController.forward(from: 0.0); 
       }
     });
 
     if (option == correctOption) {
       _speakFeedback(true);
-      if (currentWord.correctCount >= widget.threshold) {
-         widget.onWordMastered(currentWord);
-      }
+      if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
       Future.delayed(const Duration(milliseconds: 1500), _generateQuestion);
     } else {
       widget.onWrongWord(currentWord);
@@ -277,30 +249,18 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _resetQuiz() {
     setState(() {
-      correctAnswers = 0;
-      wrongAnswers = 0;
-      answeredQuestions = 0;
-      _secondsElapsed = 0;
-      isQuizFinished = false;
-      _isStatsSaved = false;
+      correctAnswers = 0; wrongAnswers = 0; answeredQuestions = 0; _secondsElapsed = 0;
+      isQuizFinished = false; _isStatsSaved = false;
       List<WordModel> pool = List.from(widget.words)..shuffle();
       quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
       totalQuestions = quizWords.length;
-      if (totalQuestions > 0) {
-        _startTimer();
-        _generateQuestion();
-      }
+      if (totalQuestions > 0) { _startTimer(); _generateQuestion(); }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.words.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text("Quiz")),
-        body: const Center(child: Text("Bu kütüphanede yeterli kelime yok.")),
-      );
-    }
+    if (widget.words.isEmpty) return Scaffold(appBar: AppBar(title: const Text("Quiz")), body: const Center(child: Text("Bu kütüphanede yeterli kelime yok.")));
 
     if (isQuizFinished) {
       return Scaffold(
@@ -313,60 +273,29 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               children: [
                 const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
                 const SizedBox(height: 10),
-                Lottie.network(
-                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', 
-                  height: 180,
-                  repeat: true,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber),
-                ),
+                Lottie.network('https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', height: 180, repeat: true, errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber)),
                 const SizedBox(height: 10),
                 const Text("Congratulations!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
                 Card(
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       children: [
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Text("Doğru Sayısı:", style: TextStyle(fontSize: 20)),
-                          Text("$correctAnswers", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green)),
-                        ]),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Doğru Sayısı:", style: TextStyle(fontSize: 20)), Text("$correctAnswers", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green))]),
                         const Divider(height: 30),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Text("Yanlış Sayısı:", style: TextStyle(fontSize: 20)),
-                          Text("$wrongAnswers", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red)),
-                        ]),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Yanlış Sayısı:", style: TextStyle(fontSize: 20)), Text("$wrongAnswers", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red))]),
                         const Divider(height: 30),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Text("Geçen Süre:", style: TextStyle(fontSize: 20)),
-                          Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue)),
-                        ]),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Geçen Süre:", style: TextStyle(fontSize: 20)), Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue))]),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text("YENİ QUİZ BAŞLAT", style: TextStyle(fontSize: 18)),
-                    onPressed: _resetQuiz,
-                  ),
-                ),
+                SizedBox(width: double.infinity, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white), icon: const Icon(Icons.refresh), label: const Text("YENİ QUİZ BAŞLAT", style: TextStyle(fontSize: 18)), onPressed: _resetQuiz)),
                 const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    style: TextButton.styleFrom(padding: const EdgeInsets.all(16)),
-                    icon: const Icon(Icons.home),
-                    label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18)),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                )
+                SizedBox(width: double.infinity, child: TextButton.icon(style: TextButton.styleFrom(padding: const EdgeInsets.all(16)), icon: const Icon(Icons.home), label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18)), onPressed: () => Navigator.pop(context)))
               ],
             ),
           ),
@@ -374,20 +303,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       );
     }
 
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    Color borderColor = isDarkMode ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.5);
+    Color borderColor = Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.5);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Quiz Modu"),
-        actions: [
-          IconButton(
-            icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off),
-            tooltip: "Sesi Aç/Kapat",
-            onPressed: () => setState(() => isAudioEnabled = !isAudioEnabled),
-          )
-        ],
-      ),
+      appBar: AppBar(title: const Text("Quiz Modu"), actions: [IconButton(icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), onPressed: () => setState(() => isAudioEnabled = !isAudioEnabled))]),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
@@ -402,13 +321,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           const SizedBox(height: 10),
           Text("Soru: ${answeredQuestions + 1} / $totalQuestions", textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 5),
-          LinearProgressIndicator(
-            value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0,
-            backgroundColor: Colors.grey[300],
-            color: Theme.of(context).primaryColor,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(10),
-          ),
+          LinearProgressIndicator(value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0, backgroundColor: Colors.grey[300], color: Theme.of(context).primaryColor, minHeight: 8, borderRadius: BorderRadius.circular(10)),
           const SizedBox(height: 20),
           
           GestureDetector(
@@ -424,31 +337,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   child: Opacity(
                     opacity: _entranceController.value,
                     child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.08), 
-                        borderRadius: BorderRadius.circular(16), 
-                        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]
-                      ),
+                      width: double.infinity, padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
                       child: Column(
                         children: [
-                          Text(
-                            currentWord.word == "WordNet Terimi" ? "WordNet Kaydı" : currentWord.word, 
-                            textAlign: TextAlign.center, 
-                            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)
-                          ),
-                          // WordNet İçin Alt Bilgi (İngilizce Anlamı mı Soruluyor Eş Anlamlısı mı?)
+                          Text(currentWord.word == "WordNet Terimi" ? "WordNet Kaydı" : currentWord.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                           if (_questionSubtext.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                _questionSubtext, 
-                                textAlign: TextAlign.center, 
-                                style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.7))
-                              ),
-                            ),
+                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.7)))),
                         ],
                       ),
                     ),
@@ -468,66 +363,19 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             Widget? trailingIcon;
             double scaleValue = 1.0;
             
-            if (isAnsweredCorrectly && isCorrect) {
-              cardColor = Colors.green.withOpacity(0.3);
-              trailingIcon = const Icon(Icons.check_circle, color: Colors.green);
-              scaleValue = 1.05; 
-            } else if (isWrongSelected) {
-              cardColor = Colors.red.withOpacity(0.3);
-              trailingIcon = const Icon(Icons.cancel, color: Colors.red);
-            }
-
-            final Animation<double> entranceOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-              CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut)),
-            );
-            final Animation<Offset> entranceSlide = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
-              CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut)),
-            );
+            if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.3); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); scaleValue = 1.05; } 
+            else if (isWrongSelected) { cardColor = Colors.red.withOpacity(0.3); trailingIcon = const Icon(Icons.cancel, color: Colors.red); }
 
             Widget tile = Container(
               margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: cardColor,
-                border: Border.all(color: borderColor, width: 2),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: scaleValue > 1.0 ? [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)] : [],
-              ),
-              child: ListTile(
-                title: Text(option, style: const TextStyle(fontSize: 16), maxLines: 3, overflow: TextOverflow.ellipsis),
-                trailing: trailingIcon,
-                onTap: () => _checkAnswer(option),
-              ),
+              decoration: BoxDecoration(color: cardColor, border: Border.all(color: borderColor, width: 2), borderRadius: BorderRadius.circular(12), boxShadow: scaleValue > 1.0 ? [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)] : []),
+              child: ListTile(title: Text(option, style: const TextStyle(fontSize: 16), maxLines: 3, overflow: TextOverflow.ellipsis), trailing: trailingIcon, onTap: () => _checkAnswer(option)),
             );
 
-            if (isWrongSelected && option == _lastWrongOption) {
-              tile = AnimatedBuilder(
-                animation: _shakeController,
-                builder: (context, child) {
-                  final double shift = sin(_shakeController.value * pi * 6) * 10;
-                  return Transform.translate(offset: Offset(shift, 0), child: child);
-                },
-                child: tile,
-              );
-            }
+            if (isWrongSelected && option == _lastWrongOption) tile = AnimatedBuilder(animation: _shakeController, builder: (c, ch) => Transform.translate(offset: Offset(sin(_shakeController.value * pi * 6) * 10, 0), child: ch), child: tile);
+            if (isAnsweredCorrectly && isCorrect) tile = AnimatedBuilder(animation: _scaleController, builder: (c, ch) => Transform.scale(scale: 1.0 + (_scaleController.value * 0.05), child: ch), child: tile);
 
-            if (isAnsweredCorrectly && isCorrect) {
-              tile = AnimatedBuilder(
-                animation: _scaleController,
-                builder: (context, child) {
-                  final double scale = 1.0 + (_scaleController.value * 0.05); 
-                  return Transform.scale(scale: scale, child: child);
-                },
-                child: tile,
-              );
-            }
-
-            return FadeTransition(
-              opacity: entranceOpacity,
-              child: SlideTransition(
-                position: entranceSlide,
-                child: tile,
-              ),
-            );
+            return FadeTransition(opacity: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), child: SlideTransition(position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), child: tile));
           }),
         ],
       ),
