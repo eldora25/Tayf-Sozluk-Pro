@@ -1,4 +1,3 @@
-import 'wordnet_search_screen.dart'; // YENİ EKLENEN
 import 'dart:convert';
 import 'dart:math';
 import 'dart:io';
@@ -29,6 +28,7 @@ import 'notification_service.dart';
 import 'match_game_screen.dart';
 import 'pronunciation_screen.dart';
 import 'info_screen.dart'; 
+import 'wordnet_search_screen.dart'; 
 
 late Isar isar;
 
@@ -79,7 +79,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       
       for (var e in list) {
-        // YENİ: WordNet JSON Formatı Tespiti
         if (e is Map && e.containsKey('definition')) {
           List<String> combinedMeanings = [];
           if (e['definition'] != null && e['definition'].toString().isNotEmpty) {
@@ -102,7 +101,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
             'srsLevel': 0, 'nextReviewDate': 0
           }));
         } else if (e is Map) {
-          // Standart Format
           parsedList.add(json.encode({
             'word': e['word'] ?? '', 'meanings': cleanMeanings(e['meanings'] ?? []), 'examples': cleanMeanings(e['examples'] ?? []),
             'level': e['level'] ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
@@ -299,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _initMainTTS() async {
-    await flutterTts.awaitSpeakCompletion(true); // TTS Stabilite Güvencesi
+    await flutterTts.awaitSpeakCompletion(true); 
     await flutterTts.setVolume(1.0);
     await flutterTts.setSpeechRate(0.5);
     await flutterTts.setPitch(1.0);
@@ -575,9 +573,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       String lang = 'en-US'; 
       String libName = word.libraryName.toLowerCase();
       
-      if (isMeaning) {
+      if (word.level == 'WordNet' || libName.contains('wordnet') || libName.contains('eng-eng')) {
+        lang = 'en-US';
+      } 
+      else if (isMeaning) {
         lang = 'tr-TR';
-      } else {
+      } 
+      else {
         if (libName.contains('alm') || libName.contains('german') || libName.contains('deu')) {
           lang = 'de-DE';
         } else if (libName.contains('fra') || libName.contains('fre')) {
@@ -1149,8 +1151,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               onTap: () { Navigator.pop(context); _buyFreeze(); },
             ),
             const Divider(),
-            
-            // YENİ: WORDNET MENÜSÜ BURAYA EKLENDİ (Kelime Ekle'nin hemen üstüne)
+
             ListTile(
               leading: const Icon(Icons.language, color: Colors.indigo), 
               title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), 
@@ -1161,8 +1162,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               }
             ),
             
-            ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
-            const Divider(),
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             
             ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { 
