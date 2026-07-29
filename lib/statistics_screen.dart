@@ -6,6 +6,7 @@ class StatisticsScreen extends StatelessWidget {
   final List<WordModel> allWords;
   final List<WordModel> learningWords; 
   final List<WordModel> toRepeatWords; 
+  final List<WordModel> toSRSRepeatWords; // YENİ: SRS Tekrar Havuzu Eklendi
   final List<WordModel> learnedWords;
   final List<WordModel> wrongWords;
   final List<String> availableLibraries;
@@ -29,6 +30,7 @@ class StatisticsScreen extends StatelessWidget {
     required this.allWords,
     required this.learningWords,
     required this.toRepeatWords,
+    required this.toSRSRepeatWords,
     required this.learnedWords,
     required this.wrongWords,
     required this.availableLibraries,
@@ -45,7 +47,6 @@ class StatisticsScreen extends StatelessWidget {
     required this.tayfPoints,
   });
 
-  // MADDE 4: Zaman gösterimi kesin olarak dd:hh:mm:ss formatına dönüştürüldü
   String _formatTime(int seconds) {
     int d = seconds ~/ (24 * 3600);
     int h = (seconds % (24 * 3600)) ~/ 3600;
@@ -146,7 +147,8 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + learningWords.length;
+    // YENİ: Toplam kelime hesabına toSRSRepeatWords eklendi
+    int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + toSRSRepeatWords.length + learningWords.length;
     int totalWrongCount = wrongWords.fold(0, (a, b) => a + b.wrongCount);
 
     DateTime firstUse = DateTime.fromMillisecondsSinceEpoch(firstUseTimestamp);
@@ -202,7 +204,7 @@ class StatisticsScreen extends StatelessWidget {
                 _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1).toString(), Icons.my_library_books, Colors.deepPurple),
                 _buildStatCard(context, "Toplam Kelime", totalSystemWords.toString(), Icons.format_list_bulleted, Colors.cyan),
                 _buildStatCard(context, "Öğrenilen (Mezun)", learnedWords.length.toString(), Icons.check_circle, Colors.green),
-                _buildStatCard(context, "SRS Havuzunda", learningWords.length.toString(), Icons.access_time, Colors.orange), 
+                _buildStatCard(context, "Eğitimde (SRS)", (learningWords.length + toSRSRepeatWords.length).toString(), Icons.access_time, Colors.orange), 
                 _buildStatCard(context, "Toplam Yanlış", totalWrongCount.toString(), Icons.cancel, Colors.red),
               ],
             ),
@@ -295,10 +297,12 @@ class StatisticsScreen extends StatelessWidget {
                 String libName = availableLibraries[index];
                 if (libName == 'Tekrarlanması Gerekenler') return const SizedBox.shrink();
 
+                // YENİ: Kütüphane toplam kelime hesabına toSRSRepeatWords eklendi
                 int total = allWords.where((e) => e.libraryName == libName).length +
                             learnedWords.where((e) => e.libraryName == libName).length +
                             learningWords.where((e) => e.libraryName == libName).length +
-                            toRepeatWords.where((e) => e.libraryName == libName).length;
+                            toRepeatWords.where((e) => e.libraryName == libName).length +
+                            toSRSRepeatWords.where((e) => e.libraryName == libName).length;
                             
                 int learned = learnedWords.where((e) => e.libraryName == libName).length;
                 int wrong = wrongWords.where((e) => e.libraryName == libName).fold(0, (a, b) => a + b.wrongCount);
