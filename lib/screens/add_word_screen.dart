@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/word_model.dart';
+import '../models.dart';
 
 class AddWordScreen extends StatefulWidget {
   final List<String> availableLibraries;
@@ -138,7 +138,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
             DropdownButtonFormField<String>(
               value: _level,
               decoration: const InputDecoration(labelText: "Seviye", border: OutlineInputBorder()),
-              items: ['A1','A2','B1','B2','C1','C2','Genel'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              items: ['A1','A2','B1','B2','C1','C2','Genel','WordNet'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
               onChanged: (v) => setState(() => _level = v!),
             ),
             
