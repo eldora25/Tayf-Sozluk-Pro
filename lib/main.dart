@@ -27,11 +27,10 @@ import 'logger_screen.dart';
 import 'notification_service.dart';
 import 'match_game_screen.dart';
 import 'pronunciation_screen.dart';
-import 'info_screen.dart'; // YENİ EKLENEN REHBER EKRANI
+import 'info_screen.dart'; 
 
 late Isar isar;
 
-// YENİ SRS GÜN ARALIKLARI (1-2-4-9-14)
 int getNextReviewOffset(int level) {
   const int oneDay = 24 * 60 * 60 * 1000;
   switch (level) {
@@ -76,13 +75,39 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   try {
     if (extension == 'json') {
       var decoded = json.decode(content);
-      List list = decoded is Map ? decoded['words'] : decoded;
+      List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
+      
       for (var e in list) {
-        parsedList.add(json.encode({
-          'word': e['word'] ?? '', 'meanings': cleanMeanings(e['meanings'] ?? []), 'examples': cleanMeanings(e['examples'] ?? []),
-          'level': e['level'] ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-          'srsLevel': 0, 'nextReviewDate': 0
-        }));
+        // YENİ: WordNet JSON Formatı Tespiti
+        if (e is Map && e.containsKey('definition')) {
+          List<String> combinedMeanings = [];
+          if (e['definition'] != null && e['definition'].toString().isNotEmpty) {
+            combinedMeanings.add(e['definition'].toString());
+          }
+          if (e['synonyms'] != null && e['synonyms'] is List) {
+            for (var syn in e['synonyms']) { combinedMeanings.add("Synonym: $syn"); }
+          }
+          if (e['antonyms'] != null && e['antonyms'] is List) {
+            for (var ant in e['antonyms']) { combinedMeanings.add("Antonym: $ant"); }
+          }
+
+          parsedList.add(json.encode({
+            'word': e['word'] ?? '', 
+            'meanings': combinedMeanings, 
+            'examples': cleanMeanings(e['examples'] ?? []),
+            'level': 'WordNet', 
+            'libraryName': customLibraryName, 
+            'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+            'srsLevel': 0, 'nextReviewDate': 0
+          }));
+        } else if (e is Map) {
+          // Standart Format
+          parsedList.add(json.encode({
+            'word': e['word'] ?? '', 'meanings': cleanMeanings(e['meanings'] ?? []), 'examples': cleanMeanings(e['examples'] ?? []),
+            'level': e['level'] ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+            'srsLevel': 0, 'nextReviewDate': 0
+          }));
+        }
       }
     } else if (extension == 'txt') {
       var lines = content.split('\n');
@@ -273,6 +298,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _initMainTTS() async {
+    await flutterTts.awaitSpeakCompletion(true); // TTS Stabilite Güvencesi
     await flutterTts.setVolume(1.0);
     await flutterTts.setSpeechRate(0.5);
     await flutterTts.setPitch(1.0);
