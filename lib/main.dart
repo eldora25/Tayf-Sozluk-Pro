@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// TÜM İMPORTLAR DOĞRUDAN 'LIB' İÇİNE BAKACAK ŞEKİLDE DÜZENLENDİ
 import 'models.dart';
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
@@ -164,11 +165,11 @@ void main() async {
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    AppLogger.logError("FLUTTER ERROR: ${details.exception}\n${details.stack}");
+    debugPrint("FLUTTER ERROR: ${details.exception}\n${details.stack}");
   };
   
   PlatformDispatcher.instance.onError = (error, stack) {
-    AppLogger.logError("PLATFORM ERROR: $error\n$stack");
+    debugPrint("PLATFORM ERROR: $error\n$stack");
     return true; 
   };
 
@@ -446,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
       _updateNotifications();
     } catch (e, stack) {
-      AppLogger.logError("Veri Yükleme Hatası (_loadData): $e\n$stack");
+      debugPrint("Veri Yükleme Hatası (_loadData): $e\n$stack");
     }
   }
 
@@ -490,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
       _updateNotifications();
     } catch (e, stack) {
-      AppLogger.logError("Veri Kaydetme Hatası (_saveData): $e\n$stack");
+      debugPrint("Veri Kaydetme Hatası (_saveData): $e\n$stack");
     }
   }
 
@@ -679,7 +680,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         Navigator.pop(context); 
         if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
           String errMsg = json.decode(parsedJsons.first)['error'];
-          AppLogger.logError("Parse Error: $errMsg");
+          debugPrint("Parse Error: $errMsg");
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $errMsg")));
           return;
         }
@@ -694,7 +695,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İçe aktarım başarılı! (${newWords.length} Kelime)")));
       }
     } catch (e, stack) {
-      AppLogger.logError("İçe Aktarım Hatası (_importFile): $e\n$stack");
+      debugPrint("İçe Aktarım Hatası (_importFile): $e\n$stack");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İçe aktarım hatası: $e")));
     }
   }
@@ -714,7 +715,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       Navigator.pop(context); 
       if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
         String errMsg = json.decode(parsedJsons.first)['error'];
-        AppLogger.logError("Asset Parse Error: $errMsg");
+        debugPrint("Asset Parse Error: $errMsg");
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $errMsg")));
         return;
       }
@@ -729,7 +730,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName eklendi! (${newWords.length} Kelime)")));
     } catch (e, stack) {
       Navigator.pop(context);
-      AppLogger.logError("Paket Yükleme Hatası (_loadPackageFromAssets): $e\n$stack");
+      debugPrint("Paket Yükleme Hatası (_loadPackageFromAssets): $e\n$stack");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Paket yüklenirken hata oluştu: $e")));
     }
   }
@@ -794,7 +795,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       await file.writeAsString(csvData);
       await Share.shareXFiles([XFile(file.path)], text: '$libName Kütüphanesi Yedeği');
     } catch (e, stack) {
-      AppLogger.logError("Dışa Aktarma Hatası (_exportLibrary): $e\n$stack");
+      debugPrint("Dışa Aktarma Hatası (_exportLibrary): $e\n$stack");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
     }
   }
@@ -1288,9 +1289,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   words: filteredWords, threshold: quizThreshold, questionCount: quizQuestionCount,
                   onWordMastered: (w) => _markAsLearned(w, filteredWords), 
                   onWrongWord: (w) => _markAsToRepeat(w, filteredWords), 
-                  onQuizFinished: (timeElapsed, answered, wrong) { 
+                  onQuizFinished: (int timeElapsed, int answered, int wrong) { 
                     _recordActivity(answered); 
-                    setState(() { totalCompletedQuizzes++; totalQuizTimeSeconds += timeElapsed; totalQuizQuestions += answered; totalQuizWrong += wrong; completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }); _saveData(); 
+                    setState(() { 
+                      totalCompletedQuizzes++; 
+                      totalQuizTimeSeconds += timeElapsed; 
+                      totalQuizQuestions += answered; 
+                      totalQuizWrong += wrong; 
+                      completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
+                    }); 
+                    _saveData(); 
                   },
                 )));
               },
