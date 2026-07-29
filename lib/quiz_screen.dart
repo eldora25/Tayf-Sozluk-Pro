@@ -50,7 +50,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   bool isAudioEnabled = true;
   bool _isStatsSaved = false;
 
-  // PREMIUM ANİMASYON KONTROLCÜLERİ
   late AnimationController _entranceController; 
   late AnimationController _shakeController;    
   late AnimationController _scaleController;    
@@ -77,10 +76,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _initTTS() async {
-    await flutterTts.awaitSpeakCompletion(true);
-    await flutterTts.setVolume(1.0);
-    await flutterTts.setSpeechRate(0.5);
-    await flutterTts.setPitch(1.0);
+    try {
+      await flutterTts.setVolume(1.0);
+      await flutterTts.setSpeechRate(0.5);
+      await flutterTts.setPitch(1.0);
+    } catch (e) {
+      debugPrint("TTS Init Hatası: $e");
+    }
   }
 
   void _startTimer() {
@@ -157,7 +159,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     setState(() {});
     
-    _entranceController.forward(from: 0.0); // Süzülme Animasyonunu Başlat
+    _entranceController.forward(from: 0.0); 
     _speakWord(currentWord.word, "en-US");
   }
 
@@ -169,8 +171,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         isAnsweredCorrectly = true;
         answeredQuestions++;
         
-        HapticFeedback.mediumImpact(); // Parlama Titreşimi
-        _scaleController.forward(from: 0.0); // Büyüme (Pop-up) Animasyonu
+        HapticFeedback.mediumImpact(); 
+        _scaleController.forward(from: 0.0); 
         
         if (selectedWrongOptions.isEmpty) {
           correctAnswers++;
@@ -181,9 +183,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         wrongAnswers++;
         currentWord.wrongCount++;
         
-        HapticFeedback.heavyImpact(); // Sarsıntı Titreşimi
+        HapticFeedback.heavyImpact(); 
         _lastWrongOption = option;
-        _shakeController.forward(from: 0.0); // Titreme (Shake) Animasyonu
+        _shakeController.forward(from: 0.0); 
       }
     });
 
@@ -238,7 +240,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
                 const SizedBox(height: 10),
                 Lottie.network(
-                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', // HAVAİ FİŞEKLER
+                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', 
                   height: 180,
                   repeat: true,
                   errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber),
@@ -315,7 +317,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // ÜST BİLGİ VE SAYAÇ ALANI
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
