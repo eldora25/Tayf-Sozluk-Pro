@@ -88,7 +88,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // MADDE 4: ZAMAN FORMATI DÜZELTİLDİ
+  // ZAMAN FORMATI DÜZELTİLDİ: dd:hh:mm:ss
   String _formatTime(int totalSeconds) {
     int d = totalSeconds ~/ (24 * 3600);
     int h = (totalSeconds % (24 * 3600)) ~/ 3600;
@@ -103,8 +103,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (!isAudioEnabled) return;
     try {
       await globalTts.stop();
-      await Future.delayed(const Duration(milliseconds: 250)); // MADDE 3: TTS Ses kırıntıları silinme tamponu
-      String cleanText = text.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
+      await Future.delayed(const Duration(milliseconds: 250)); // TTS Artık temizliği
+      String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
+                             .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                              .replaceAll('ANLAM:', '')
                              .replaceAll('EŞ ANLAMLI:', '')
                              .replaceAll('ZIT ANLAMLI:', '');
@@ -215,7 +216,14 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     setState(() {});
     
     _entranceController.forward(from: 0.0); 
-    String readWord = currentWord.word == "WordNet Terimi" ? currentWord.meanings.first : currentWord.word;
+    
+    // Görüntülenen kelimeyi ayarla (ID varsa gizle)
+    String displayWord = currentWord.word;
+    if (displayWord.contains('[ID:')) {
+      displayWord = "WordNet Kaydı";
+    }
+    
+    String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
     _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
@@ -304,6 +312,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     }
 
     Color borderColor = Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.5);
+    
+    String displayWord = currentWord.word;
+    if (displayWord.contains('[ID:')) {
+      displayWord = "WordNet Kaydı";
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text("Quiz Modu"), actions: [IconButton(icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), onPressed: () => setState(() => isAudioEnabled = !isAudioEnabled))]),
@@ -326,7 +339,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           
           GestureDetector(
             onTap: () {
-              String readWord = currentWord.word == "WordNet Terimi" ? currentWord.meanings.first : currentWord.word;
+              String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
               _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
             },
             child: AnimatedBuilder(
@@ -341,7 +354,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                       decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
                       child: Column(
                         children: [
-                          Text(currentWord.word == "WordNet Terimi" ? "WordNet Kaydı" : currentWord.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                          Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                           if (_questionSubtext.isNotEmpty)
                             Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.7)))),
                         ],
