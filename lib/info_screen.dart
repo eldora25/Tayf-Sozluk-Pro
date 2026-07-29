@@ -16,14 +16,24 @@ class InfoScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         children: [
           // 1. ESKİ ŞIK GİRİŞ VE UYGULAMA ÖZELLİKLERİ
-          Center(
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.indigo.shade400, Colors.deepPurple.shade600],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 5))],
+            ),
             child: Column(
-              children: [
-                Icon(Icons.menu_book_rounded, size: 64, color: primary),
-                const SizedBox(height: 8),
-                Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primary)),
-                const SizedBox(height: 4),
-                const Text("Akıllı Kelime Öğrenme & Aralıklı Tekrar Sistemi", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+              children: const [
+                Icon(Icons.menu_book_rounded, size: 64, color: Colors.white),
+                SizedBox(height: 12),
+                Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2)),
+                SizedBox(height: 6),
+                Text("Akıllı Kelime Öğrenme & Aralıklı Tekrar Sistemi", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontStyle: FontStyle.italic, fontSize: 14)),
               ],
             ),
           ),
@@ -48,18 +58,22 @@ class InfoScreen extends StatelessWidget {
             icon: Icons.quiz,
             color: Colors.deepPurpleAccent,
             title: "Dinamik Quiz Modu",
-            description: "Kelimeleri ezberlemek için eşleştirme oyunları, telaffuz sınavları ve akıllı çeldiricilerle donatılmış, zamana karşı yarışılan çoktan seçmeli quiz modlarını kullanabilirsiniz.",
+            description: "Kelimeleri ezberlemek için %40 zorlu kelimeler, %60 yeni kelimelerle harmanlanmış, zamana karşı yarışılan çoktan seçmeli zeki quiz modlarını kullanabilirsiniz.",
           ),
           
           const SizedBox(height: 32),
           const Divider(thickness: 2),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
           // 2. İÇE AKTARMA (IMPORT) FORMAT REHBERİ
           Row(
             children: [
-              const Icon(Icons.download_for_offline, color: Colors.green, size: 28),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.download_for_offline, color: Colors.green, size: 28),
+              ),
+              const SizedBox(width: 12),
               const Expanded(
                 child: Text(
                   "İçe Aktarma (Import) Format Rehberi",
@@ -68,12 +82,12 @@ class InfoScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           const Text(
             "Uygulamaya kendi kelime listelerinizi (TXT, CSV veya JSON) hatasız, kayıpsız ve en verimli şekilde aktarabilmek için dosyalarınızı aşağıdaki ideal formatlara göre düzenlemeniz önerilir.",
-            style: TextStyle(fontSize: 14),
+            style: TextStyle(fontSize: 14, height: 1.5),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // TXT Formatı Kılavuzu
           _buildFormatCard(
@@ -128,13 +142,12 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
     );
   }
 
-  // Özellikleri gösteren standart kart yapısı (İlk versiyonun aynısı)
   Widget _buildFeatureCard(BuildContext context, {required IconData icon, required Color color, required String title, required String description}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: isDark ? Colors.grey.shade900 : Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -142,8 +155,9 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
-              backgroundColor: color.withOpacity(0.2),
-              child: Icon(icon, color: color),
+              radius: 24,
+              backgroundColor: color.withOpacity(0.15),
+              child: Icon(icon, color: color, size: 26),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -151,7 +165,7 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(description, style: TextStyle(fontSize: 13, color: isDark ? Colors.grey.shade400 : Colors.grey.shade700, height: 1.4)),
                 ],
               ),
@@ -162,7 +176,6 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
     );
   }
 
-  // İçe Aktarma formatlarını gösteren özel kod görünümlü kart yapısı
   Widget _buildFormatCard(BuildContext context, {required String title, required String extension, required Color color, required String explanation, required String exampleCode}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
@@ -170,16 +183,16 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: color.withOpacity(0.5), width: 1),
+        side: BorderSide(color: color.withOpacity(0.3), width: 1.5),
       ),
       child: ExpansionTile(
         initiallyExpanded: extension == ".txt", 
         leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
           child: Text(extension, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
         ),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
@@ -187,22 +200,23 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(explanation, style: const TextStyle(fontSize: 13, height: 1.4)),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 const Text("Örnek Dosya İçeriği:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.black : Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade400, width: 1),
+                    color: isDark ? Colors.black87 : Colors.blueGrey.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
                   ),
                   child: SelectableText(
                     exampleCode,
                     style: TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 13,
-                      color: isDark ? Colors.greenAccent : Colors.black87,
+                      color: isDark ? Colors.greenAccent.shade200 : Colors.indigo.shade900,
+                      height: 1.5
                     ),
                   ),
                 ),
