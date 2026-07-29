@@ -1,10 +1,11 @@
 import 'dart:math';
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:lottie/lottie.dart'; 
 import 'models.dart';
-import 'main.dart'; // YENİ: Global TTS servisini kullanmak için eklendi
 
 class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -29,6 +30,7 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
+  final FlutterTts flutterTts = FlutterTts();
   List<WordModel> quizWords = [];
   late WordModel currentWord;
   List<String> options = [];
@@ -81,7 +83,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _timer?.cancel();
-    globalTts.stop(); // Hata önlemek için globalTts durdurulur
+    flutterTts.stop();
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
@@ -96,13 +98,22 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // YENİ: KİLİTLENMEYİ ÖNLEYEN VE GLOBAL MOTORU KULLANAN GÜVENLİ FONKSİYON
+  // --- KENDİNİ ONARAN TTS SİSTEMİ EKLENDİ ---
   Future<void> _speakWord(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await globalTts.setLanguage(languageCode);
-      await globalTts.setSpeechRate(0.5);
-      await globalTts.speak(text);
+      if (Platform.isAndroid) {
+        await flutterTts.setEngine("com.google.android.tts");
+      }
+      
+      var isAvailable = await flutterTts.isLanguageAvailable(languageCode);
+      if (isAvailable) {
+        await flutterTts.setLanguage(languageCode);
+      } else {
+        await flutterTts.setLanguage("en-US");
+      }
+
+      await flutterTts.speak(text);
     } catch (e) {
       debugPrint("TTS Error: $e");
     }
