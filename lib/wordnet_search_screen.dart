@@ -18,7 +18,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
   List<WordModel> filteredWords = [];
   List<WordModel> baseWords = [];
   
-  // Arayüz Ayarları
   double _fontSizeBase = 14.0; 
   List<String> searchHistory = [];
   bool showGloss = true;
@@ -98,7 +97,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
       spans.add(TextSpan(
         text: w,
         style: TextStyle(
-          // Aranan kelime WordNet klasiğindeki gibi kırmızı (veya temanın vurgu renginde) olur
           color: isMatch ? Colors.redAccent : baseTextColor,
           fontWeight: isMatch ? FontWeight.bold : FontWeight.normal,
         ),
@@ -130,7 +128,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
           InkWell(
             onTap: () async {
               await _tts.stop();
-              await Future.delayed(const Duration(milliseconds: 150));
+              await Future.delayed(const Duration(milliseconds: 250));
               String textToSpeak = def.isNotEmpty ? def : allWords.first;
               _tts.setLanguage("en-US");
               _tts.speak(textToSpeak);
@@ -159,7 +157,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Arama Kutusu ve Klasik Dropdown Menüler
           Container(
             color: Theme.of(context).cardColor,
             padding: const EdgeInsets.all(12),
@@ -208,7 +205,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
           
           const Divider(height: 1, thickness: 1),
 
-          // Klasik Oku(ma) Ekranı
           Expanded(
             child: Container(
               margin: const EdgeInsets.all(8.0),
