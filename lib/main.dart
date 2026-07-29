@@ -14,7 +14,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// İMPORTLAR DOSYA AĞACINIZA GÖRE DÜZELTİLDİ
 import 'models.dart';
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
@@ -572,17 +571,36 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // GÜVENLİ VE STABİL TTS (BUILD 227 MANTIĞI)
+  // --- KİLİTLENMEYİ ÖNLEYEN VE DİL KODLARINI DİREKT (en-US vs.) KULLANAN GÜVENLİ TTS FONKSİYONU ---
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? word.meanings.first : word.word;
-      String lang = isMeaning ? getTargetLanguage(word.libraryName) : getSourceLanguage(word.libraryName);
+      String lang = 'en-US'; 
+      String libName = word.libraryName.toLowerCase();
       
-      if (word.level == 'WordNet' || word.libraryName.toLowerCase().contains('wordnet')) {
+      // Hatanın kök çözümü: İnsan okumasına yönelik 'İngilizce' gibi kelimeler yerine 
+      // doğrudan BCP-47 dil kodları (en-US, tr-TR) atandı. TTS motoru artık çökmeyecek!
+      if (word.level == 'WordNet' || libName.contains('wordnet') || libName.contains('eng-eng')) {
         lang = 'en-US';
+      } else if (isMeaning) {
+        lang = 'tr-TR';
+      } else {
+        if (libName.contains('alm') || libName.contains('german') || libName.contains('deu')) {
+          lang = 'de-DE';
+        } else if (libName.contains('fra') || libName.contains('fre')) {
+          lang = 'fr-FR';
+        } else if (libName.contains('isp') || libName.contains('spa')) {
+          lang = 'es-ES';
+        } else if (libName.contains('rus')) {
+          lang = 'ru-RU';
+        }
       }
 
       await flutterTts.setLanguage(lang);
+      await flutterTts.setVolume(1.0);
+      await flutterTts.setSpeechRate(0.5);
+      await flutterTts.setPitch(1.0);
+      
       await flutterTts.speak(text);
     } catch (e) {
       debugPrint("TTS Hatası: $e");
