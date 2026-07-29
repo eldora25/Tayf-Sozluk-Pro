@@ -97,10 +97,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  // --- KİLİTLENMEYİ ÖNLEYEN VE DİREKT UYGULANAN TTS ÇAĞRISI ---
   Future<void> _speakWord(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
       await flutterTts.setLanguage(languageCode);
+      await flutterTts.setVolume(1.0);
+      await flutterTts.setSpeechRate(0.5);
+      await flutterTts.setPitch(1.0);
+      
       await flutterTts.speak(text);
     } catch (e) {
       debugPrint("TTS Error: $e");
