@@ -14,20 +14,23 @@ class DemoScreen extends StatefulWidget {
 
 class _DemoScreenState extends State<DemoScreen> {
 
-  // MADDE 6: GERÇEK SİSTEM BİLDİRİMİ TETİKLEYİCİSİ
   void _triggerRealNotification() {
     NotificationService.showInstantTestNotification();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Gerçek sistem bildirimi tetiklendi! Cihazınızın üst çubuğunu kontrol edin."), backgroundColor: Colors.green)
+      const SnackBar(content: Text("Gerçek sistem bildirimi tetiklendi!"), backgroundColor: Colors.green)
     );
   }
 
-  Future<void> _injectDemoSrsWords() async {
+  // YENİ: 5 SEVİYE ÇERÇEVELERİ GÖREBİLMEK İÇİN KELİME ENJEKTÖRÜ
+  Future<void> _injectFiveLevelDemoWords() async {
     int pastTime = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
     
     List<WordModel> demoWords = [
-      WordModel(word: 'Premium', meanings: ['Kaliteli', 'Üst Düzey'], examples: ['This app has premium features.'], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'İleri')..srsLevel = 2..nextReviewDate = pastTime..wrongCount = 1,
-      WordModel(word: 'Flawless', meanings: ['Kusursuz', 'Eksiksiz'], examples: ['The code is flawless.'], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Orta')..srsLevel = 4..nextReviewDate = pastTime,
+      WordModel(word: 'Level 1 Word', meanings: ['Seviye 1 Gümüş/Mavi Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 1..nextReviewDate = pastTime,
+      WordModel(word: 'Level 2 Word', meanings: ['Seviye 2 Yeşil Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 2..nextReviewDate = pastTime,
+      WordModel(word: 'Level 3 Word', meanings: ['Seviye 3 Sarı Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 3..nextReviewDate = pastTime,
+      WordModel(word: 'Level 4 Word', meanings: ['Seviye 4 Turuncu Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 4..nextReviewDate = pastTime,
+      WordModel(word: 'Level 5 Word', meanings: ['Seviye 5 Kırmızı Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 5..nextReviewDate = pastTime,
     ];
 
     await isar.writeTxn(() async {
@@ -36,30 +39,25 @@ class _DemoScreenState extends State<DemoScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Demo SRS Kelimeleri sisteme eklendi!"), backgroundColor: Colors.green)
+        const SnackBar(content: Text("5 farklı SRS seviyesine ait demo kelimeler eklendi! Ana ekranda görebilirsiniz."), backgroundColor: Colors.green)
       );
     }
   }
 
   Future<void> _timeTravelForward() async {
     List<WordModel> learningWords = await isar.wordModels.filter().listTypeEqualTo('learning').findAll();
-    
     if (learningWords.isEmpty) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Havuzda ileri sarılacak kelime yok."), backgroundColor: Colors.orange));
       return;
     }
 
     int twoDaysMs = 2 * 24 * 60 * 60 * 1000;
-    
     for (var w in learningWords) {
       w.nextReviewDate = w.nextReviewDate - twoDaysMs;
       if (w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch) w.listType = 'toRepeat';
     }
 
-    await isar.writeTxn(() async {
-      await isar.wordModels.putAll(learningWords);
-    });
-
+    await isar.writeTxn(() async { await isar.wordModels.putAll(learningWords); });
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Zaman 2 gün ileri sarıldı!"), backgroundColor: Colors.blueAccent));
   }
 
@@ -87,7 +85,7 @@ class _DemoScreenState extends State<DemoScreen> {
                   const SizedBox(height: 10),
                   const Text("Gerçek Cihaz Bildirimi Testi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  const Text("Bu butona basıldığında Android/iOS sistemine 'gerçek' bir bildirim sinyali gönderilir. Uygulama kapalıyken bile çalışıp çalışmadığını test etmek için hemen butona basıp uygulamayı aşağı atabilirsiniz.", textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
+                  const Text("Bu butona basıldığında Android/iOS sistemine 'gerçek' bir bildirim sinyali gönderilir.", textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
@@ -107,11 +105,18 @@ class _DemoScreenState extends State<DemoScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  const Icon(Icons.playlist_add_circle, size: 48, color: Colors.green),
+                  const Icon(Icons.filter_frames, size: 48, color: Colors.green),
                   const SizedBox(height: 10),
-                  const Text("Örnek SRS Verisi Yükle", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("5 Seviye Çerçeve Testi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  const Text("Ana ekrandaki Premium Animasyonlu Çerçeveleri görmek için 1'den 5'e kadar seviyelendirilmiş kelimeler ekler.", textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.add), label: const Text("Demo Kelimeleri Ekle"), onPressed: _injectDemoSrsWords)
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), 
+                    icon: const Icon(Icons.add), 
+                    label: const Text("5 Seviye Çerçeve Demosu Yükle"), 
+                    onPressed: _injectFiveLevelDemoWords
+                  )
                 ],
               ),
             ),
