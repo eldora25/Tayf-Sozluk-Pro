@@ -228,7 +228,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Tayf Sözlük Pro',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
-      themeAnimationDuration: const Duration(milliseconds: 1000),
+      themeAnimationDuration: const Duration(milliseconds: 1000), // Tema Geçişi
       themeAnimationCurve: Curves.easeInOut,
       home: HomeScreen(
         themeIndex: themeIndex,
@@ -1151,7 +1151,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               onTap: () { Navigator.pop(context); _buyFreeze(); },
             ),
             const Divider(),
-
+            
             ListTile(
               leading: const Icon(Icons.language, color: Colors.indigo), 
               title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), 
@@ -1161,7 +1161,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 Navigator.push(context, MaterialPageRoute(builder: (context) => WordNetSearchScreen(words: allWords))); 
               }
             ),
-            
+
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             
             ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { 
