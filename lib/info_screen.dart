@@ -5,116 +5,211 @@ class InfoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
+    Color primary = Theme.of(context).primaryColor;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Özellikler & Rehber"),
+        title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          _buildHeader(),
-          const SizedBox(height: 20),
-          _buildFeatureCard(
-            icon: Icons.psychology,
-            color: Colors.blue,
-            title: "Aralıklı Tekrar Sistemi (SRS)",
-            description: "Beyninizin unutma eğrisini kırıyoruz! Öğrendiğiniz kelimeler 1, 2, 4, 9 ve 14. günlerde akıllı algoritmamızla karşınıza çıkar. 14. günü başarıyla geçen kelimeler 'Mezun' olur ve kalıcı hafızanıza yerleşir. Hata yaparsanız kelime 1. güne geri döner.",
-          ),
-          _buildFeatureCard(
-            icon: Icons.local_fire_department,
-            color: Colors.orange,
-            title: "Günlük Seri (Streak) ve Buz Kalkanı",
-            description: "Her gün uygulamaya girerek ateşinizi (serinizi) koruyun. Günlük hedeflerinizi tamamlayarak Tayf Puanı (TP) kazanın. Eğer bir gün giremeyecek olursanız, kazandığınız puanlarla 'Buz Kalkanı' (❄️) satın alarak serinizin yanmasını engelleyebilirsiniz.",
-          ),
-          _buildFeatureCard(
-            icon: Icons.gamepad,
-            color: Colors.purple,
-            title: "Oyunlaştırılmış Quiz Modu",
-            description: "Sıradan testleri unutun! Doğru cevaplarda butonlar parlar ve büyür, yanlış cevaplarda telefonunuz titrer ve şıklar sağa sola sarsılır. Quizi başarıyla bitirdiğinizde sizi havai fişekler karşılar.",
-          ),
-          _buildFeatureCard(
-            icon: Icons.library_books,
-            color: Colors.green,
-            title: "Çoklu Anlam ve Sınırsız Kütüphane",
-            description: "Bir kelimenin birden fazla anlamını ve örnek cümlesini ekleyebilirsiniz. İster kendi kütüphanenizi oluşturun, ister CSV/JSON formatındaki hazır listeleri saniyeler içinde içe aktarın.",
-          ),
-          _buildFeatureCard(
-            icon: Icons.notifications_active,
-            color: Colors.redAccent,
-            title: "Akıllı Bildirimler",
-            description: "Sizi asla gereksiz yere rahatsız etmeyiz. Sadece seriniz tehlikedeyse, SRS tekrar kelimelerinizin süresi gelmişse veya günlük hedefinize henüz ulaşmadıysanız size kibar hatırlatmalar yaparız.",
-          ),
-          const SizedBox(height: 30),
-          const Center(
-            child: Text(
-              "Tayfun Yamak © 2026\nTayf Sözlük Pro V1.0",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+          // 1. GİRİŞ VE UYGULAMA ÖZELLİKLERİ
+          Center(
+            child: Column(
+              children: [
+                Icon(Icons.menu_book_rounded, size: 64, color: primary),
+                const SizedBox(height: 8),
+                Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primary)),
+                const SizedBox(height: 4),
+                const Text("Akıllı Kelime Öğrenme & Aralıklı Tekrar Sistemi (SRS)", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
+          const SizedBox(height: 24),
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.deepPurple, width: 2),
-      ),
-      child: Column(
-        children: const [
-          Icon(Icons.school, size: 60, color: Colors.deepPurple),
-          SizedBox(height: 10),
-          Text(
-            "Tayf Sözlük Pro'ya Hoş Geldiniz!",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          _buildFeatureCard(
+            context,
+            icon: Icons.schedule,
+            color: Colors.blue,
+            title: "Aralıklı Tekrar Sistemi (SRS)",
+            description: "Öğrendiğiniz kelimeler hafıza eğrinize göre (1, 2, 4, 9, 14 gün) aralıklarla karşınıza çıkar. 'Biliyorum' dediğiniz kelimelerin seviyesi artar, 'Tekrar' dediğiniz kelimeler başa döner.",
           ),
-          SizedBox(height: 10),
-          Text(
-            "Bu uygulama, dil öğrenme sürecinizi bilimsel metotlar ve modern arayüz tasarımıyla en üst seviyeye çıkarmak için tasarlandı.",
-            textAlign: TextAlign.center,
+          _buildFeatureCard(
+            context,
+            icon: Icons.language,
+            color: Colors.indigo,
+            title: "WordNet 2.1 Entegrasyonu",
+            description: "Dünyanın en gelişmiş İngilizce sözlük ağı olan WordNet entegredir. Kelimelerin eş anlamlılarını (Synonym) ve zıt anlamlılarını (Antonym) otomatik olarak gruplar ve okur.",
+          ),
+          _buildFeatureCard(
+            context,
+            icon: Icons.quiz,
+            color: Colors.orange,
+            title: "Dinamik Quiz & Oyunlar",
+            description: "Kelimeleri ezberlemek için eşleştirme oyunları, telaffuz (mikrofon) sınavları ve akıllı çeldiricilerle donatılmış çoktan seçmeli quiz modlarını kullanabilirsiniz.",
+          ),
+          
+          const SizedBox(height: 32),
+          const Divider(thickness: 2),
+          const SizedBox(height: 16),
+
+          // 2. İÇE AKTARMA (IMPORT) FORMAT REHBERİ
+          Row(
+            children: [
+              const Icon(Icons.download_for_offline, color: Colors.green, size: 28),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  "İçe Aktarma (Import) Format Rehberi",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "Uygulamaya kendi kelime listelerinizi (TXT, CSV veya JSON) hatasız, kayıpsız ve en verimli şekilde aktarabilmek için dosyalarınızı aşağıdaki ideal formatlara göre düzenlemeniz önerilir.",
             style: TextStyle(fontSize: 14),
           ),
+          const SizedBox(height: 16),
+
+          // TXT Formatı Kılavuzu
+          _buildFormatCard(
+            context,
+            title: "1. TXT Formatı (Önerilen Basit Format)",
+            extension: ".txt",
+            color: Colors.blueGrey,
+            explanation: "Kelime ile anlamı ayırmak için İki Nokta ( : ), birden fazla anlamı birbirinden ayırmak için Noktalı Virgül ( ; ) kullanmalısınız.",
+            exampleCode: """elma : meyve ; kırmızı veya yeşil renkli tatlı meyve
+araba : taşıt ; motorlu araç
+book : kitap ; ayırtmak ; rezervasyon yapmak""",
+          ),
+
+          // CSV Formatı Kılavuzu
+          _buildFormatCard(
+            context,
+            title: "2. CSV Formatı (Excel Tarzı Gelişmiş Format)",
+            extension: ".csv",
+            color: Colors.teal,
+            explanation: "Sütunlar virgül ( , ) ile ayrılır. Sırasıyla: Kelime, Anlamlar, Örnekler, Seviye. Bir hücrenin içinde birden fazla anlam veya örnek varsa bunları Üç Boru ( ||| ) ile ayırabilirsiniz.",
+            exampleCode: """Word,Meaning,Example,Level
+apple,elma ||| meyve,I ate an apple.,Başlangıç
+abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İleri""",
+          ),
+
+          // JSON Formatı Kılavuzu
+          _buildFormatCard(
+            context,
+            title: "3. JSON Formatı (Programcı Formatı)",
+            extension: ".json",
+            color: Colors.deepPurple,
+            explanation: "Dosyanız bir liste (array) içinde JSON objelerinden oluşmalıdır. 'word' kelimeyi, 'meanings' anlamları (dizi olarak), 'examples' örnekleri belirtir.",
+            exampleCode: """[
+  {
+    "word": "resilient",
+    "meanings": ["dirençli", "çabuk iyileşen"],
+    "examples": ["She is a resilient person."],
+    "level": "İleri"
+  },
+  {
+    "word": "apple",
+    "meanings": ["elma"],
+    "examples": [],
+    "level": "Başlangıç"
+  }
+]""",
+          ),
+
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  Widget _buildFeatureCard({required IconData icon, required Color color, required String title, required String description}) {
+  // Özellikleri gösteren standart kart yapısı
+  Widget _buildFeatureCard(BuildContext context, {required IconData icon, required Color color, required String title, required String description}) {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 4,
-      shadowColor: color.withOpacity(0.4),
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey.shade900 : Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: color.withOpacity(0.2), shape: BoxShape.circle),
-              child: Icon(icon, color: color, size: 30),
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.2),
+              child: Icon(icon, color: color),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-                  const SizedBox(height: 8),
-                  Text(description, style: const TextStyle(fontSize: 14, height: 1.4)),
+                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(description, style: TextStyle(fontSize: 13, color: isDark ? Colors.grey.shade400 : Colors.grey.shade700, height: 1.4)),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // İçe Aktarma formatlarını gösteren özel kod görünümlü kart yapısı
+  Widget _buildFormatCard(BuildContext context, {required String title, required String extension, required Color color, required String explanation, required String exampleCode}) {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: color.withOpacity(0.5), width: 1),
+      ),
+      child: ExpansionTile(
+        initiallyExpanded: extension == ".txt", // Kullanıcıların en çok kullandığı TXT ilk başta açık gelsin
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+          child: Text(extension, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+        ),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(explanation, style: const TextStyle(fontSize: 13, height: 1.4)),
+                const SizedBox(height: 12),
+                const Text("Örnek Dosya İçeriği:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.black : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade400, width: 1),
+                  ),
+                  child: SelectableText(
+                    exampleCode,
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      color: isDark ? Colors.greenAccent : Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        ],
       ),
     );
   }
