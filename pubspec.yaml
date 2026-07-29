@@ -40,6 +40,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+  - assets/
     - assets/test_paket.json
     - assets/EN-TR_tayf.txt
     - assets/Babylon_English_Turkish_donustu.csv
