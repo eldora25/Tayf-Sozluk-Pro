@@ -32,6 +32,7 @@ import 'wordnet_search_screen.dart';
 
 late Isar isar;
 
+// Kilitlenmeyi önleyen tekil ve doğal TTS motorumuz
 final FlutterTts globalTts = FlutterTts();
 
 String getSmartSourceLanguage(String libraryName, String wordText) {
@@ -123,6 +124,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   }
 
   try {
+    // 1. JSON FORMATI (WORDNET vb.)
     if (extension == 'json') {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
@@ -130,8 +132,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       for (var e in list) {
         if (e is Map) {
           String actualWord = e['word']?.toString() ?? '';
-          
-          // YENİ: LMF/JSON formatındaki ID'lerin (örn: 00001740-a) Tespiti
           bool isId = RegExp(r'^[0-9]{8}-[a-zA-Z]$').hasMatch(actualWord);
           
           List<dynamic> synsList = e['synonyms'] is List ? e['synonyms'] : [];
@@ -139,9 +139,9 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           
           if (isId || actualWord.isEmpty || actualWord == 'null') {
             if (synsList.isNotEmpty) {
-              actualWord = synsList[0].toString(); // Eş anlamlısı varsa ID yerine onu kelime yap
+              actualWord = synsList[0].toString();
             } else {
-              actualWord = "WordNet Terimi"; // Hiç kelime yoksa boş kalmasını engelle
+              actualWord = "WordNet Terimi"; 
             }
           }
 
@@ -158,7 +158,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
             combinedMeanings.add("ZIT ANLAMLI: ${ant.toString().trim()}");
           }
 
-          // YENİ: Artık hiçbir kelime (continue) edilip çöpe atılmaz. 160 bin kelime de kaydedilir.
           parsedList.add(json.encode({
             'word': actualWord, 
             'meanings': combinedMeanings, 
@@ -170,22 +169,49 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           }));
         }
       }
-    } else {
-      List<List<dynamic>> rows = const CsvToListConverter().convert(content);
-      bool isCsv = rows.any((r) => r.length > 1);
+    } 
+    // 2. CSV VE TXT FORMATI (Free-KH ve EN-TR_tayf vb.)
+    else {
+      List<String> lines = content.split('\n');
+      bool isColonFormat = false;
 
-      if (!isCsv && content.contains(':')) {
-        var lines = content.split('\n');
+      // Akıllı Format Tanıma: Dosyanın hangi tür olduğunu (CSV mi yoksa Kelime:Anlam mı) tespit et.
+      for (String line in lines) {
+        if (line.trim().isEmpty || line.startsWith('#') || line.startsWith('00database')) continue;
+        int colonIdx = line.indexOf(':');
+        int commaIdx = line.indexOf(',');
+        
+        // Eğer iki nokta (:) varsa ve virgülden (,) önce geliyorsa veya hiç virgül yoksa bu EN-TR_tayf formatıdır.
+        if (colonIdx != -1 && (commaIdx == -1 || colonIdx < commaIdx)) {
+          isColonFormat = true;
+        }
+        break; // İlk geçerli satırda formata karar verir.
+      }
+
+      if (isColonFormat) {
+        // EN-TR_tayf (word: meaning1; meaning2) İşleyicisi
         for (var line in lines) {
           if (!line.contains(':')) continue;
-          var parts = line.split(':');
+          
+          int firstColon = line.indexOf(':');
+          String wordStr = line.substring(0, firstColon).trim();
+          String meaningStr = line.substring(firstColon + 1).trim();
+
+          List<String> rawMeanings = meaningStr.split(RegExp(r'[;,]'));
+
           parsedList.add(json.encode({
-            'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': <String>[],
-            'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+            'word': wordStr, 
+            'meanings': cleanMeanings(rawMeanings), 
+            'examples': <String>[],
+            'level': 'Genel', 
+            'libraryName': customLibraryName, 
+            'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
             'srsLevel': 0, 'nextReviewDate': 0
           }));
         }
       } else {
+        // Free-KH.txt (Word,Meaning,Example,Level) Standart CSV İşleyicisi
+        List<List<dynamic>> rows = const CsvToListConverter().convert(content);
         for (var row in rows) {
           if (row.isEmpty || row.length < 2) continue;
           String wordStr = row[0].toString().trim();
