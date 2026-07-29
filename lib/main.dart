@@ -118,12 +118,10 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   }
 
   try {
-    // 1. WORDNET KİLİDİ (Yalnızca WordNet kelimesi geçenler kilitlenir)
     if (lowerName.contains('wordnet')) {
       parsedList.add(json.encode({'error': "Yazılımcı üzerinde halen çalışıyor"}));
       return parsedList;
     } 
-    // 2. TEST PAKETİ VEYA DİĞER JSON DOSYALARI (Kusursuz İçe Aktarım)
     else if (extension == 'json') {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
@@ -151,14 +149,12 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         }
       }
     }
-    // 3. BABYLON (ZIRHLI SATIR-SATIR CSV AYRIŞTIRICI - 200.000 Kelimeyi Yutmaz!)
     else if (lowerName.contains('babylon')) {
       List<String> lines = content.split('\n');
       for (String line in lines) {
         line = line.trim();
         if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) continue;
         
-        // Klasik Boru (|) veya Tab (\t) Formatı ise
         if ((line.contains('|') || line.contains('\t')) && !line.contains(',')) {
           String separator = line.contains('|') ? '|' : '\t';
           var parts = line.split(separator);
@@ -171,7 +167,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           continue;
         }
 
-        // CSV Formatı ise (Kapatılmamış tırnakların tüm dosyayı bozmasını engellemek için Try-Catch)
         try {
             List<List<dynamic>> parsedLine = const CsvToListConverter().convert(line + '\n');
             if (parsedLine.isEmpty || parsedLine[0].isEmpty) continue;
@@ -199,12 +194,10 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
               'level': lvl, 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0
             }));
         } catch(e) {
-            // Hatalı veya kapatılmamış tırnağa sahip tek bir satır es geçilir, geri kalan 199.999 kelime kurtarılır!
             continue;
         }
       }
     }
-    // 4. ÖZEL AYRIŞTIRICI: EN-TR_TAYF (Sadece ":" ve ";" dikkate alınır, virgüller es geçilir)
     else if (lowerName.contains('en-tr_tayf')) {
       var lines = content.split('\n');
       for (var line in lines) {
@@ -221,7 +214,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         }));
       }
     } 
-    // 5. ÖZEL AYRIŞTIRICI: FREEDICT / FREE-KH VEYA GENEL CSV
     else if (extension == 'csv' || lowerName.contains('freedict') || lowerName.contains('free-kh')) {
       List<String> lines = content.split('\n');
       for (String line in lines) {
@@ -241,10 +233,9 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
             'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
             'srsLevel': 0, 'nextReviewDate': 0
           }));
-        } catch(e) { continue; } // Kırık CSV satırlarını es geç
+        } catch(e) { continue; } 
       }
     }
-    // 6. GENEL AYRIŞTIRICI (Dışarıdan yüklenen düz TXT'ler)
     else {
       var lines = content.split('\n');
       for (var line in lines) {
@@ -502,18 +493,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       List<WordModel> fromIsar = await isar.wordModels.where().findAll();
 
-      if (fromIsar.isEmpty && prefs.containsKey('allWords')) {
-        List<WordModel> oldAll = (prefs.getStringList('allWords') ?? []).map((e) => WordModel.fromJson(e)..listType='all').toList();
-        List<WordModel> oldLearned = (prefs.getStringList('learnedWords') ?? []).map((e) => WordModel.fromJson(e)..listType='learned').toList();
-        List<WordModel> oldRepeat = (prefs.getStringList('toRepeatWords') ?? []).map((e) => WordModel.fromJson(e)..listType='toRepeat').toList();
-        
-        List<WordModel> allToSave = [...oldAll, ...oldLearned, ...oldRepeat];
-        await isar.writeTxn(() async { await isar.wordModels.putAll(allToSave); });
-        
-        prefs.remove('allWords'); prefs.remove('learnedWords'); prefs.remove('toRepeatWords'); prefs.remove('wrongWords');
-        fromIsar = allToSave;
-      }
-
       setState(() {
         allWords = fromIsar.where((w) => w.listType == 'all').toList();
         learningWords = fromIsar.where((w) => w.listType == 'learning').toList();
@@ -639,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   List<WordModel> get filteredWords {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') {
-      return toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel).toList();
+      return toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel || w.level == 'WordNet').toList();
     }
     return allWords.where((w) => 
       w.libraryName == selectedLibrary && 
@@ -708,7 +687,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() => isFlipped = !isFlipped);
   }
 
-  void _markAsLearned(WordModel word, List<WordModel> activeList) {
+  // YENİ: Quiz Mantığı İçin "isFromQuiz" Filtresi (Arka Plan Kart Dönüşünü ve SRS Kirletmesini Önler)
+  void _markAsLearned(WordModel word, List<WordModel> activeList, {bool isFromQuiz = false}) {
     _recordActivity(1); 
     setState(() {
       if (word.nextReviewDate == 0) word.srsLevel = 1; else word.srsLevel++;
@@ -725,26 +705,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
       allWords.removeWhere((w) => w.word == word.word);
       toRepeatWords.removeWhere((w) => w.word == word.word);
-      _nextCard(activeList);
+      
+      // Sadece ana ekrandaysak sıradaki karta geç
+      if (!isFromQuiz) {
+        _nextCard(activeList);
+      }
     });
     _saveData();
   }
 
-  void _markAsToRepeat(WordModel word, List<WordModel> activeList) {
+  // YENİ: Yanlış Bilme Koruması ve Arka Plan Filtresi
+  void _markAsToRepeat(WordModel word, List<WordModel> activeList, {bool isFromQuiz = false}) {
     _recordActivity(0); 
     setState(() {
-      word.srsLevel = 1; 
-      word.nextReviewDate = 0; 
-      word.listType = 'toRepeat';
-
-      if (!toRepeatWords.any((w) => w.word == word.word)) toRepeatWords.add(word);
       word.wrongCount++;
       if (!wrongWords.any((w) => w.word == word.word)) wrongWords.add(word);
       wrongAnswerTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
+
+      if (isFromQuiz && word.listType == 'all') {
+        // Yeni bir kelime Quiz'de yanlış bilinirse zorla SRS havuzuna SOKMA! Sadece istatistik artar.
+      } else {
+        word.srsLevel = 1; 
+        word.nextReviewDate = 0; 
+        word.listType = 'toRepeat';
+
+        if (!toRepeatWords.any((w) => w.word == word.word)) toRepeatWords.add(word);
+        allWords.removeWhere((w) => w.word == word.word);
+        learningWords.removeWhere((w) => w.word == word.word); 
+        learnedWords.removeWhere((w) => w.word == word.word); 
+      }
       
-      allWords.removeWhere((w) => w.word == word.word);
-      learningWords.removeWhere((w) => w.word == word.word); 
-      _nextCard(activeList);
+      // Sadece ana ekrandaysak sıradaki karta geç
+      if (!isFromQuiz) {
+        _nextCard(activeList);
+      }
     });
     _saveData();
   }
@@ -792,11 +786,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _loadPackageFromAssets(String assetPath, String extension, String customLibraryName) async {
     if (availableLibraries.contains(customLibraryName)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName zaten yüklü!"), backgroundColor: Colors.orange));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName zaten yüklü! Aynı paketi iki defa yükleyemezsiniz."), backgroundColor: Colors.orange));
       return;
     }
 
-    showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName yükleniyor.\n\nBüyük sözlükler 10-15 saniye sürebilir..."))])));
+    showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName yükleniyor.\n\nBüyük sözlükler biraz zaman alabilir, lütfen bekleyin..."))])));
     try {
       ByteData data = await rootBundle.load(assetPath);
       List<int> bytes = data.buffer.asUint8List();
@@ -1285,7 +1279,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: toRepeatWords, wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
             ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: filteredWords, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: filteredWords, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
-            ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(words: filteredWords, threshold: quizThreshold, questionCount: quizQuestionCount, onWordMastered: (w) => _markAsLearned(w, filteredWords), onWrongWord: (w) => _markAsToRepeat(w, filteredWords), onQuizFinished: (int timeElapsed, int answered, int wrong) { _recordActivity(answered); setState(() { totalCompletedQuizzes++; totalQuizTimeSeconds += timeElapsed; totalQuizQuestions += answered; totalQuizWrong += wrong; completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }); _saveData(); }))); }),
+            
+            // YENİ: Quiz Filtresi Eklendi (Arka Planda Kart Dönmesi Engellendi)
+            ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
+              Navigator.pop(context); 
+              Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
+                words: filteredWords, 
+                threshold: quizThreshold, 
+                questionCount: quizQuestionCount, 
+                onWordMastered: (w) => _markAsLearned(w, filteredWords, isFromQuiz: true), 
+                onWrongWord: (w) => _markAsToRepeat(w, filteredWords, isFromQuiz: true), 
+                onQuizFinished: (int timeElapsed, int answered, int wrong) { 
+                  _recordActivity(answered); 
+                  setState(() { 
+                    totalCompletedQuizzes++; 
+                    totalQuizTimeSeconds += timeElapsed; 
+                    totalQuizQuestions += answered; 
+                    totalQuizWrong += wrong; 
+                    completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
+                  }); 
+                  _saveData(); 
+                }
+              ))); 
+            }),
+            
             ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
             const Divider(),
             ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) { _loadData(); }); }),
