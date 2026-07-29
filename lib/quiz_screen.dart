@@ -212,13 +212,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           }
         } else {
           randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
-          // Eger tesadüfen Wordnet kelimesi secildiyse onu da temizle
           if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
           if (randomMeaning.startsWith("EŞ ANLAMLI: ")) randomMeaning = randomMeaning.substring(12).trim();
           if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
         }
         
-        // Seçilen yanlış şık doğru kelimenin hiçbir anlamına benzememeli
         if (!currentWord.meanings.any((m) => m.contains(randomMeaning)) && randomMeaning != correctOption) {
           wrongOptions.add(randomMeaning);
         }
@@ -433,7 +431,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                             textAlign: TextAlign.center, 
                             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)
                           ),
-                          // YENİ: Soru Türü İpucu Ekranı (Anlamı mı soruyor Eş Anlamlısı mı?)
                           if (_questionSubtext.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 8.0),
