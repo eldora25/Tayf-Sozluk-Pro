@@ -32,6 +32,36 @@ import 'wordnet_search_screen.dart';
 
 late Isar isar;
 
+// YENİ: Kilitlenmeyi önleyen tekil ve doğal TTS motorumuz
+final FlutterTts globalTts = FlutterTts();
+
+// YENİ: Kütüphane adından ve kelime içeriğinden Akıllı Kaynak Dili Algılama
+String getSourceLanguage(String libraryName, String wordText) {
+  String name = libraryName.toLowerCase();
+  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'tr-TR';
+  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('wordnet') || name.contains('eng-eng')) return 'en-US';
+  if (name.contains('alm') || name.contains('deu')) return 'de-DE';
+  if (name.contains('fra') || name.contains('fre')) return 'fr-FR';
+  if (name.contains('isp') || name.contains('spa')) return 'es-ES';
+  if (name.contains('rus')) return 'ru-RU';
+  
+  // İsimde bulamazsa içeriğe bakar (Türkçe karakter tespiti)
+  if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
+  return 'en-US'; // Varsayılan
+}
+
+// YENİ: Kütüphane adından ve anlam içeriğinden Akıllı Hedef Dili Algılama
+String getTargetLanguage(String libraryName, String meaningText) {
+  String name = libraryName.toLowerCase();
+  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'en-US';
+  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'tr-TR';
+  if (name.contains('wordnet') || name.contains('eng-eng')) return 'en-US'; 
+  
+  // İsimde bulamazsa içeriğe bakar
+  if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
+  return 'en-US'; // Varsayılan
+}
+
 int getNextReviewOffset(int level) {
   const int oneDay = 24 * 60 * 60 * 1000;
   switch (level) {
@@ -263,7 +293,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   static const String buildNo = String.fromEnvironment('BUILD_NUMBER', defaultValue: 'Dev');
 
-  final FlutterTts flutterTts = FlutterTts();
   late AnimationController _flipController;
   late Animation<double> _flipAnimation;
 
@@ -310,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _flipController.dispose();
-    flutterTts.stop();
+    globalTts.stop();
     super.dispose();
   }
 
@@ -571,46 +600,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // YENİ GÜÇLENDİRİLMİŞ, KİLİTLENMEYEN, KENDİNİ ONARAN TTS FONKSİYONU
+  // YENİ: Doğal cihaz sesi (Samsung vb.) ile çalışan ve anında okuyan akıllı fonksiyon
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
       if (text.isEmpty) return;
 
-      String lang = 'en-US'; 
-      String libName = word.libraryName.toLowerCase();
+      // Akıllı algılama fonksiyonları kullanılıyor
+      String lang = isMeaning ? getTargetLanguage(word.libraryName, text) : getSourceLanguage(word.libraryName, text);
       
-      if (word.level == 'WordNet' || libName.contains('wordnet') || libName.contains('eng-eng')) {
+      if (word.level == 'WordNet' || word.libraryName.toLowerCase().contains('wordnet')) {
         lang = 'en-US';
-      } else if (isMeaning) {
-        lang = 'tr-TR';
-      } else {
-        if (libName.contains('alm') || libName.contains('german') || libName.contains('deu')) {
-          lang = 'de-DE';
-        } else if (libName.contains('fra') || libName.contains('fre')) {
-          lang = 'fr-FR';
-        } else if (libName.contains('isp') || libName.contains('spa')) {
-          lang = 'es-ES';
-        } else if (libName.contains('rus')) {
-          lang = 'ru-RU';
-        }
       }
 
-      // Android cihazlarda cihazın sessiz kalmasını önlemek için Google motorunu zorla
-      if (Platform.isAndroid) {
-        await flutterTts.setEngine("com.google.android.tts");
-      }
-
-      // Dil paketi var mı kontrol et, yoksa İngilizceye düş (çökmesini engeller)
-      var isAvailable = await flutterTts.isLanguageAvailable(lang);
-      if (isAvailable) {
-        await flutterTts.setLanguage(lang);
-      } else {
-        debugPrint("Dil paketi bulunamadı: $lang, en-US kullanılıyor.");
-        await flutterTts.setLanguage("en-US");
-      }
-      
-      await flutterTts.speak(text);
+      await globalTts.setLanguage(lang);
+      await globalTts.setSpeechRate(0.45); // Doğal sesi bozmayan ideal hız
+      await globalTts.speak(text); // Beklemeden anında oku
     } catch (e) {
       debugPrint("TTS Hatası: $e");
     }
@@ -618,13 +623,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _nextCard(List<WordModel> activeList) {
     if (activeList.isEmpty) return;
-    flutterTts.stop();
+    globalTts.stop();
     setState(() {
       isFlipped = false;
       _flipController.reset();
       currentCardIndex = (currentCardIndex + 1) % activeList.length;
     });
     _saveData();
+    // Kart yeni kelimeye geçer geçmez anında ön yüzü okusun (Build 227 mantığı)
+    if (activeList.isNotEmpty) {
+      _speakWord(activeList[currentCardIndex], isMeaning: false);
+    }
   }
 
   void _flipCard(WordModel word) {
