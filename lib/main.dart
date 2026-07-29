@@ -14,7 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// TÜM İMPORTLAR DOĞRUDAN 'LIB' İÇİNE BAKACAK ŞEKİLDE DÜZENLENDİ
+// İMPORTLAR DOSYA AĞACINIZA GÖRE DÜZELTİLDİ
 import 'models.dart';
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
@@ -572,6 +572,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
+  // GÜVENLİ VE STABİL TTS (BUILD 227 MANTIĞI)
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? word.meanings.first : word.word;
