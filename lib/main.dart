@@ -15,20 +15,20 @@ import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'models.dart';
-import 'screens/quiz_screen.dart';
-import 'screens/add_word_screen.dart';
-import 'screens/word_list_screen.dart';
-import 'screens/settings_screen.dart';
-import 'screens/statistics_screen.dart';
-import 'screens/edit_word_screen.dart';
-import 'screens/library_manager_screen.dart';
-import 'screens/manage_list_screen.dart';
-import 'screens/logger_screen.dart';
+import 'quiz_screen.dart';
+import 'add_word_screen.dart';
+import 'word_list_screen.dart';
+import 'settings_screen.dart';
+import 'statistics_screen.dart';
+import 'edit_word_screen.dart';
+import 'library_manager_screen.dart';
+import 'manage_list_screen.dart';
+import 'logger_screen.dart';
 import 'notification_service.dart';
-import 'screens/match_game_screen.dart';
-import 'screens/pronunciation_screen.dart';
-import 'screens/info_screen.dart'; 
-import 'screens/wordnet_search_screen.dart'; 
+import 'match_game_screen.dart';
+import 'pronunciation_screen.dart';
+import 'info_screen.dart'; 
+import 'wordnet_search_screen.dart'; 
 
 late Isar isar;
 
@@ -571,7 +571,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // GÜVENLİ VE HATASIZ TTS (Build 227 Standartlarında)
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? word.meanings.first : word.word;
