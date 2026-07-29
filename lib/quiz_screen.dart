@@ -114,6 +114,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     }
   }
 
+  // GECİKMEYİ (LAG) ÖNLEMEK İÇİN BİLDİRİM DİLİ DOĞRUDAN SORUNUN DİLİ (KAYNAK) OLARAK AYARLANDI
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
     
@@ -162,7 +163,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _questionSubtext = "";
     String targetPrefix = "";
 
-    // WordNet Kütüphanesi İçin Akıllı Quiz Soru Üretici
+    // WordNet Kütüphanesi İçin Dinamik Soru Üretici
     if (isWordNet) {
         List<String> defs = currentWord.meanings.where((m) => m.startsWith("ANLAM: ")).toList();
         List<String> syns = currentWord.meanings.where((m) => m.startsWith("EŞ ANLAMLI: ")).toList();
@@ -198,6 +199,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     Set<String> wrongOptions = {};
     int loopCounter = 0;
     
+    // Çeldiriciler sadece TEK BİR kısa kelimeden/anlamdan oluşur (Ekran kalabalığını bitiren döngü)
     while (wrongOptions.length < 3 && loopCounter < 150) {
       loopCounter++;
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
@@ -437,6 +439,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                             textAlign: TextAlign.center, 
                             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)
                           ),
+                          // WordNet İçin Alt Bilgi (İngilizce Anlamı mı Soruluyor Eş Anlamlısı mı?)
                           if (_questionSubtext.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 8.0),
