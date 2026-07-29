@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'models.dart';
-import 'main.dart'; 
 
 class WordNetSearchScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -11,194 +11,241 @@ class WordNetSearchScreen extends StatefulWidget {
 }
 
 class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final FlutterTts _tts = FlutterTts();
+  
   String query = "";
   List<WordModel> filteredWords = [];
   List<WordModel> baseWords = [];
   
-  double _fontSizeBase = 14.0; // Yazı tipi büyüklüğünü ayarlamak için temel değer
+  // Arayüz Ayarları
+  double _fontSizeBase = 14.0; 
+  List<String> searchHistory = [];
+  bool showGloss = true;
+  String currentViewMode = "Overview"; 
 
   @override
   void initState() {
     super.initState();
-    // Sadece WordNet etiketli veya kütüphane adında wordnet geçen kelimeleri yükle
     baseWords = widget.words.where((w) => w.level == 'WordNet' || w.libraryName.toLowerCase().contains('wordnet')).toList();
-    filteredWords = baseWords.take(150).toList();
   }
 
-  void updateSearch(String val) {
+  void _performSearch(String val) {
+    if (val.trim().isEmpty) return;
+    
     setState(() {
-      query = val.toLowerCase();
-      if (query.isEmpty) {
-        filteredWords = baseWords.take(150).toList();
-      } else {
-        filteredWords = baseWords.where((w) {
-          if (w.word.toLowerCase().contains(query)) return true;
-          if (w.meanings.any((m) => m.toLowerCase().contains(query))) return true;
-          return false;
-        }).take(150).toList(); // Performans için arama sonuçlarını sınırla
+      query = val.trim().toLowerCase();
+      if (!searchHistory.contains(query)) {
+        searchHistory.insert(0, query);
+        if (searchHistory.length > 15) searchHistory.removeLast();
       }
+
+      filteredWords = baseWords.where((w) {
+        if (w.word.toLowerCase() == query) return true;
+        if (w.meanings.any((m) => m.toLowerCase().contains(query))) return true;
+        return false;
+      }).take(200).toList();
+    });
+  }
+
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+      query = "";
+      filteredWords.clear();
     });
   }
 
   @override
   void dispose() {
-    globalTts.stop(); // Ekrandan çıkarken sesi durdur
+    _tts.stop();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  Map<String, dynamic> _parseMeanings(List<String> rawMeanings) {
+    String definition = "";
+    List<String> synonyms = [];
+    List<String> antonyms = [];
+
+    for (var m in rawMeanings) {
+      if (m.startsWith("ANLAM: ")) {
+        definition = m.replaceAll("ANLAM: ", "").trim();
+      } else if (m.startsWith("EŞ ANLAMLI: ")) {
+        synonyms.add(m.replaceAll("EŞ ANLAMLI: ", "").trim());
+      } else if (m.startsWith("ZIT ANLAMLI: ")) {
+        antonyms.add(m.replaceAll("ZIT ANLAMLI: ", "").trim());
+      }
+    }
+    return {"definition": definition, "synonyms": synonyms, "antonyms": antonyms};
+  }
+
+  Widget _buildClassicSenseRow(int index, String mainWord, Map<String, dynamic> parsedData) {
+    List<String> syns = List<String>.from(parsedData["synonyms"]);
+    String def = parsedData["definition"];
+    
+    List<String> allWords = [if (mainWord != "WordNet Terimi") mainWord, ...syns];
+    if (allWords.isEmpty) allWords.add("Term");
+
+    List<TextSpan> spans = [];
+    Color baseTextColor = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87;
+    
+    spans.add(TextSpan(text: "${index + 1}. ", style: TextStyle(color: baseTextColor, fontWeight: FontWeight.normal)));
+
+    for (int i = 0; i < allWords.length; i++) {
+      String w = allWords[i];
+      bool isMatch = query.isNotEmpty && w.toLowerCase().contains(query);
+      spans.add(TextSpan(
+        text: w,
+        style: TextStyle(
+          // Aranan kelime WordNet klasiğindeki gibi kırmızı (veya temanın vurgu renginde) olur
+          color: isMatch ? Colors.redAccent : baseTextColor,
+          fontWeight: isMatch ? FontWeight.bold : FontWeight.normal,
+        ),
+      ));
+      if (i < allWords.length - 1) {
+        spans.add(TextSpan(text: ", ", style: TextStyle(color: baseTextColor)));
+      }
+    }
+
+    if (showGloss && def.isNotEmpty) {
+      spans.add(TextSpan(text: " -- (", style: TextStyle(color: baseTextColor.withOpacity(0.6))));
+      spans.add(TextSpan(text: def, style: TextStyle(color: baseTextColor.withOpacity(0.9))));
+      spans.add(TextSpan(text: ")", style: TextStyle(color: baseTextColor.withOpacity(0.6))));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(fontSize: _fontSizeBase, fontFamily: 'Georgia', height: 1.5),
+                children: spans,
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: () async {
+              await _tts.stop();
+              await Future.delayed(const Duration(milliseconds: 150));
+              String textToSpeak = def.isNotEmpty ? def : allWords.first;
+              _tts.setLanguage("en-US");
+              _tts.speak(textToSpeak);
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12.0),
+              child: Icon(Icons.volume_up, size: _fontSizeBase + 4, color: Theme.of(context).primaryColor),
+            ),
+          )
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("WordNet Browser", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text("${baseWords.length} Kayıt", style: const TextStyle(fontSize: 12, color: Colors.white70)),
-          ],
-        ),
+        title: const Text("WordNet Browser", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         actions: [
-          // Yazı Küçültme Butonu
-          IconButton(
-            icon: const Icon(Icons.zoom_out),
-            tooltip: 'Yazıyı Küçült',
-            onPressed: () {
-              if (_fontSizeBase > 10.0) setState(() => _fontSizeBase -= 2.0);
-            },
-          ),
-          // Yazı Büyütme Butonu
-          IconButton(
-            icon: const Icon(Icons.zoom_in),
-            tooltip: 'Yazıyı Büyüt',
-            onPressed: () {
-              if (_fontSizeBase < 24.0) setState(() => _fontSizeBase += 2.0);
-            },
-          ),
+          IconButton(icon: const Icon(Icons.text_decrease), tooltip: 'Yazıyı Küçült', onPressed: () { if (_fontSizeBase > 10.0) setState(() => _fontSizeBase -= 2.0); }),
+          IconButton(icon: const Icon(Icons.text_increase), tooltip: 'Yazıyı Büyüt', onPressed: () { if (_fontSizeBase < 24.0) setState(() => _fontSizeBase += 2.0); }),
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              onChanged: updateSearch,
-              style: TextStyle(fontSize: _fontSizeBase),
-              decoration: InputDecoration(
-                labelText: "Kelime, Anlam, Eş/Zıt Anlam Ara...",
-                labelStyle: TextStyle(color: Theme.of(context).primaryColor, fontSize: _fontSizeBase),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+          // Arama Kutusu ve Klasik Dropdown Menüler
+          Container(
+            color: Theme.of(context).cardColor,
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onSubmitted: _performSearch,
+                        style: TextStyle(fontSize: _fontSizeBase),
+                        decoration: InputDecoration(
+                          hintText: "Search Word...",
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: query.isNotEmpty ? IconButton(icon: const Icon(Icons.clear), onPressed: _clearSearch) : null,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                prefixIcon: Icon(Icons.search, color: Theme.of(context).primaryColor),
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-              ),
+                const SizedBox(height: 8),
+                if (query.isNotEmpty)
+                  Row(
+                    children: [
+                      Text("Searches for $query: ", style: TextStyle(fontSize: _fontSizeBase - 2, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 8),
+                      DropdownButton<String>(
+                        value: currentViewMode,
+                        underline: const SizedBox(),
+                        style: TextStyle(fontSize: _fontSizeBase - 2, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold),
+                        items: const [
+                          DropdownMenuItem(value: "Overview", child: Text("Overview")),
+                          DropdownMenuItem(value: "Synonyms", child: Text("Synonyms")),
+                          DropdownMenuItem(value: "Antonyms", child: Text("Antonyms")),
+                        ],
+                        onChanged: (val) => setState(() => currentViewMode = val!),
+                      ),
+                    ],
+                  ),
+              ],
             ),
           ),
+          
+          const Divider(height: 1, thickness: 1),
+
+          // Klasik Oku(ma) Ekranı
           Expanded(
-            child: filteredWords.isEmpty 
-              ? Center(child: Text("Kayıt bulunamadı.", style: TextStyle(fontSize: _fontSizeBase)))
-              : ListView.builder(
-                  itemCount: filteredWords.length,
-                  itemBuilder: (context, index) {
-                    var word = filteredWords[index];
-                    
-                    // ID Gizleme ve Formatlama
-                    String displayWord = word.word == "WordNet Terimi" ? "Kayıt (WordNet)" : word.word;
-                    
-                    String subtitleText = "";
-                    var definitionList = word.meanings.where((m) => m.startsWith("ANLAM: ")).toList();
-                    if (definitionList.isNotEmpty) {
-                      subtitleText = definitionList.first.replaceAll('ANLAM: ', '');
-                    } else if (word.meanings.isNotEmpty) {
-                      subtitleText = word.meanings.first;
-                    }
+            child: Container(
+              margin: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+              ),
+              child: filteredWords.isEmpty
+                  ? Center(child: Text(query.isEmpty ? "Enter a word to search." : "No senses found for '$query'.", style: TextStyle(fontSize: _fontSizeBase, color: Colors.grey)))
+                  : ListView(
+                      padding: const EdgeInsets.all(16.0),
+                      children: [
+                        Text("The word '$query' has ${filteredWords.length} senses", style: TextStyle(fontWeight: FontWeight.bold, fontSize: _fontSizeBase, color: Theme.of(context).primaryColor)),
+                        const SizedBox(height: 16),
+                        ...List.generate(filteredWords.length, (index) {
+                          WordModel w = filteredWords[index];
+                          var parsedData = _parseMeanings(w.meanings);
+                          
+                          if (currentViewMode == "Synonyms" && parsedData["synonyms"].isEmpty) return const SizedBox.shrink();
+                          if (currentViewMode == "Antonyms" && parsedData["antonyms"].isEmpty) return const SizedBox.shrink();
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      elevation: 4,
-                      shadowColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      color: Theme.of(context).cardColor,
-                      child: ExpansionTile(
-                        iconColor: Theme.of(context).primaryColor,
-                        collapsedIconColor: Theme.of(context).primaryColor.withOpacity(0.5),
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.language, color: Theme.of(context).primaryColor, size: 24),
-                        ),
-                        title: Text(
-                          displayWord, 
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: _fontSizeBase + 2, color: isDark ? Colors.white : Colors.black87)
-                        ),
-                        subtitle: Text(
-                          subtitleText, 
-                          maxLines: 1, 
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: _fontSizeBase - 2, color: isDark ? Colors.white54 : Colors.black54)
-                        ),
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: isDark ? Colors.black12 : Colors.grey.shade50,
-                              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16))
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Column(
-                              children: word.meanings.map((m) {
-                                Color textColor = isDark ? Colors.white70 : Colors.black87;
-                                IconData iconData = Icons.label;
-                                
-                                // Etikete göre dinamik renkler ve ikonlar
-                                if (m.startsWith("ANLAM:")) {
-                                  textColor = isDark ? Colors.blue.shade300 : Colors.blue.shade800;
-                                  iconData = Icons.menu_book;
-                                } else if (m.startsWith("EŞ ANLAMLI:")) {
-                                  textColor = isDark ? Colors.green.shade300 : Colors.green.shade700;
-                                  iconData = Icons.merge_type;
-                                } else if (m.startsWith("ZIT ANLAMLI:")) {
-                                  textColor = isDark ? Colors.red.shade300 : Colors.red.shade700;
-                                  iconData = Icons.call_split;
-                                }
-                                
-                                String cleanText = m.replaceAll(RegExp(r'ANLAM: |EŞ ANLAMLI: |ZIT ANLAMLI: '), '');
-
-                                return ListTile(
-                                  leading: Icon(iconData, color: textColor, size: _fontSizeBase + 4),
-                                  title: Text(
-                                    m, 
-                                    style: TextStyle(color: textColor, fontWeight: FontWeight.w500, fontSize: _fontSizeBase)
-                                  ),
-                                  trailing: IconButton(
-                                    icon: Icon(Icons.volume_up, size: _fontSizeBase + 4, color: isDark ? Colors.grey.shade400 : Colors.grey),
-                                    onPressed: () async {
-                                      await globalTts.stop();
-                                      String lang = getSmartTargetLanguage(word.libraryName, cleanText);
-                                      if (word.level == 'WordNet' || word.libraryName.toLowerCase().contains('wordnet')) {
-                                        lang = 'en-US';
-                                      }
-                                      globalTts.setLanguage(lang);
-                                      globalTts.speak(cleanText);
-                                    },
-                                  ),
-                                );
-                              }).toList()
-                            ),
-                          )
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildClassicSenseRow(index, w.word, parsedData),
+                              if (currentViewMode == "Antonyms")
+                                ...parsedData["antonyms"].map<Widget>((ant) => Padding(
+                                  padding: const EdgeInsets.only(left: 32.0, bottom: 8.0),
+                                  child: Text("=> Antonym: $ant", style: TextStyle(fontSize: _fontSizeBase - 1, color: Colors.redAccent, fontStyle: FontStyle.italic)),
+                                )).toList(),
+                            ],
+                          );
+                        }),
+                      ],
+                    ),
+            ),
           ),
         ],
       ),
