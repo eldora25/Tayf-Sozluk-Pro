@@ -29,10 +29,10 @@ import 'match_game_screen.dart';
 import 'pronunciation_screen.dart';
 import 'info_screen.dart'; 
 import 'wordnet_search_screen.dart'; 
+import 'demo_screen.dart'; // YENİ: Demo Ekranı import edildi
 
 late Isar isar;
 
-// Kilitlenmeyi önleyen tekil ve doğal TTS motorumuz
 final FlutterTts globalTts = FlutterTts();
 
 String getSmartSourceLanguage(String libraryName, String wordText) {
@@ -124,7 +124,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   }
 
   try {
-    // 1. JSON FORMATI (WORDNET vb.)
     if (extension == 'json') {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
@@ -169,49 +168,35 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           }));
         }
       }
-    } 
-    // 2. CSV VE TXT FORMATI (Free-KH ve EN-TR_tayf vb.)
-    else {
-      List<String> lines = content.split('\n');
-      bool isColonFormat = false;
+    } else {
+      List<List<dynamic>> rows = const CsvToListConverter().convert(content);
+      bool isCsv = rows.any((r) => r.length > 1);
 
-      // Akıllı Format Tanıma: Dosyanın hangi tür olduğunu (CSV mi yoksa Kelime:Anlam mı) tespit et.
-      for (String line in lines) {
-        if (line.trim().isEmpty || line.startsWith('#') || line.startsWith('00database')) continue;
-        int colonIdx = line.indexOf(':');
-        int commaIdx = line.indexOf(',');
-        
-        // Eğer iki nokta (:) varsa ve virgülden (,) önce geliyorsa veya hiç virgül yoksa bu EN-TR_tayf formatıdır.
-        if (colonIdx != -1 && (commaIdx == -1 || colonIdx < commaIdx)) {
-          isColonFormat = true;
-        }
-        break; // İlk geçerli satırda formata karar verir.
-      }
-
-      if (isColonFormat) {
-        // EN-TR_tayf (word: meaning1; meaning2) İşleyicisi
+      if (!isCsv && content.contains(':')) {
+        var lines = content.split('\n');
         for (var line in lines) {
-          if (!line.contains(':')) continue;
+          if (line.trim().isEmpty || line.startsWith('#') || line.startsWith('00database')) continue;
           
-          int firstColon = line.indexOf(':');
-          String wordStr = line.substring(0, firstColon).trim();
-          String meaningStr = line.substring(firstColon + 1).trim();
+          int colonIdx = line.indexOf(':');
+          int commaIdx = line.indexOf(',');
+          
+          if (colonIdx != -1 && (commaIdx == -1 || colonIdx < commaIdx)) {
+            String wordStr = line.substring(0, colonIdx).trim();
+            String meaningStr = line.substring(colonIdx + 1).trim();
+            List<String> rawMeanings = meaningStr.split(RegExp(r'[;,]'));
 
-          List<String> rawMeanings = meaningStr.split(RegExp(r'[;,]'));
-
-          parsedList.add(json.encode({
-            'word': wordStr, 
-            'meanings': cleanMeanings(rawMeanings), 
-            'examples': <String>[],
-            'level': 'Genel', 
-            'libraryName': customLibraryName, 
-            'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-            'srsLevel': 0, 'nextReviewDate': 0
-          }));
+            parsedList.add(json.encode({
+              'word': wordStr, 
+              'meanings': cleanMeanings(rawMeanings), 
+              'examples': <String>[],
+              'level': 'Genel', 
+              'libraryName': customLibraryName, 
+              'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+              'srsLevel': 0, 'nextReviewDate': 0
+            }));
+          }
         }
       } else {
-        // Free-KH.txt (Word,Meaning,Example,Level) Standart CSV İşleyicisi
-        List<List<dynamic>> rows = const CsvToListConverter().convert(content);
         for (var row in rows) {
           if (row.isEmpty || row.length < 2) continue;
           String wordStr = row[0].toString().trim();
@@ -1415,17 +1400,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
             const Divider(),
 
+            // YENİ: SİSTEM & SRS DEMO EKRANI GİRİŞİ
             ListTile(
-              leading: const Icon(Icons.info_outline, color: Colors.indigo), 
-              title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), 
-              onTap: () { 
-                Navigator.pop(context); 
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); 
+              leading: const Icon(Icons.science, color: Colors.purple),
+              title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
+              subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) {
+                  _loadData(); // Demo dönüşünde yeni SRS verilerini ana ekranda göstermek için listeyi tazele
+                });
               }
             ),
 
             ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
             const Divider(),
+            ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
             ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
             ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
           ],
