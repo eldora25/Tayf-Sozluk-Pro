@@ -128,7 +128,7 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
     );
   }
 
-  // Özellikleri gösteren standart kart yapısı (Kullanıcının özlediği ilk versiyon)
+  // Özellikleri gösteren standart kart yapısı (İlk versiyonun aynısı)
   Widget _buildFeatureCard(BuildContext context, {required IconData icon, required Color color, required String title, required String description}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
