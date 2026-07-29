@@ -32,10 +32,8 @@ import 'wordnet_search_screen.dart';
 
 late Isar isar;
 
-// Kilitlenmeyi önleyen tekil ve doğal TTS motorumuz
 final FlutterTts globalTts = FlutterTts();
 
-// Akıllı Kaynak Dili Algılama
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase();
   
@@ -62,7 +60,6 @@ String getSmartSourceLanguage(String libraryName, String wordText) {
   return 'en-US'; 
 }
 
-// Akıllı Hedef Dili Algılama
 String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase();
   
@@ -104,8 +101,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String customLibraryName = params['libraryName'];
 
   List<String> parsedList = [];
-  
-  // YENİ: Anlamlar "|||" veya satır atlamayla tertemiz ayrılır.
   final RegExp splitRegExp = RegExp(r'\|\|\||\n');
   final RegExp prefixRegExp = RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*');
   final RegExp spaceRegExp = RegExp(r'\s+');
@@ -119,7 +114,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         var clean = p.trim();
         clean = clean.replaceAll(prefixRegExp, '');
         clean = clean.replaceAll(spaceRegExp, ' ');
-        // YENİ: Uzunluk kısıtlaması (length < 300) KALDIRILDI. Uzun anlamlar da kaybolmayacak.
         if (clean.isNotEmpty) {
           result.add(clean);
         }
@@ -134,30 +128,37 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       
       for (var e in list) {
-        if (e is Map && (e.containsKey('definition') || e.containsKey('synonyms'))) {
+        if (e is Map) {
           String actualWord = e['word']?.toString() ?? '';
           
-          if (RegExp(r'^[0-9]{8}-[a-z]$').hasMatch(actualWord) || actualWord.isEmpty || actualWord == 'null') {
-            if (e['synonyms'] != null && e['synonyms'] is List && e['synonyms'].isNotEmpty) {
-              actualWord = e['synonyms'][0].toString(); 
+          // YENİ: LMF/JSON formatındaki ID'lerin (örn: 00001740-a) Tespiti
+          bool isId = RegExp(r'^[0-9]{8}-[a-zA-Z]$').hasMatch(actualWord);
+          
+          List<dynamic> synsList = e['synonyms'] is List ? e['synonyms'] : [];
+          List<dynamic> antsList = e['antonyms'] is List ? e['antonyms'] : [];
+          
+          if (isId || actualWord.isEmpty || actualWord == 'null') {
+            if (synsList.isNotEmpty) {
+              actualWord = synsList[0].toString(); // Eş anlamlısı varsa ID yerine onu kelime yap
             } else {
-              continue; 
+              actualWord = "WordNet Terimi"; // Hiç kelime yoksa boş kalmasını engelle
             }
           }
 
           List<String> combinedMeanings = [];
-          if (e['definition'] != null && e['definition'].toString().isNotEmpty) {
-            combinedMeanings.add("ANLAM: " + e['definition'].toString());
+          if (e['definition'] != null && e['definition'].toString().trim().isNotEmpty) {
+            combinedMeanings.add("ANLAM: " + e['definition'].toString().trim());
           }
-          if (e['synonyms'] != null && e['synonyms'] is List) {
-            for (var syn in e['synonyms']) { 
-              if (syn.toString() != actualWord) combinedMeanings.add("EŞ ANLAMLI: $syn"); 
+          for (var syn in synsList) {
+            if (syn.toString().trim() != actualWord.trim()) {
+              combinedMeanings.add("EŞ ANLAMLI: ${syn.toString().trim()}");
             }
           }
-          if (e['antonyms'] != null && e['antonyms'] is List) {
-            for (var ant in e['antonyms']) { combinedMeanings.add("ZIT ANLAMLI: $ant"); }
+          for (var ant in antsList) {
+            combinedMeanings.add("ZIT ANLAMLI: ${ant.toString().trim()}");
           }
 
+          // YENİ: Artık hiçbir kelime (continue) edilip çöpe atılmaz. 160 bin kelime de kaydedilir.
           parsedList.add(json.encode({
             'word': actualWord, 
             'meanings': combinedMeanings, 
@@ -167,23 +168,13 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
             'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
             'srsLevel': 0, 'nextReviewDate': 0
           }));
-        } else if (e is Map) {
-          parsedList.add(json.encode({
-            'word': e['word'] ?? '', 'meanings': cleanMeanings(e['meanings'] ?? []), 'examples': cleanMeanings(e['examples'] ?? []),
-            'level': e['level'] ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-            'srsLevel': 0, 'nextReviewDate': 0
-          }));
         }
       }
     } else {
-      // YENİ: Hem .csv hem de .txt uzantılı dosyalar, veri kaybını önlemek için Profesyonel CSV Ayrıştırıcısı ile okunur.
-      // Bu sayede "a,b,c" gibi tırnak içindeki virgüller metni bozmaz ve 30.000 kelimenin tamamı kurtulur.
       List<List<dynamic>> rows = const CsvToListConverter().convert(content);
-      
       bool isCsv = rows.any((r) => r.length > 1);
 
       if (!isCsv && content.contains(':')) {
-        // Eski tarz (word:meaning) metin dosyası formatı
         var lines = content.split('\n');
         for (var line in lines) {
           if (!line.contains(':')) continue;
@@ -195,7 +186,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           }));
         }
       } else {
-        // Free-KH.txt gibi CSV standartlarındaki profesyonel sözlükler
         for (var row in rows) {
           if (row.isEmpty || row.length < 2) continue;
           String wordStr = row[0].toString().trim();
@@ -1114,6 +1104,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildCardFront(WordModel word, bool isSrsMode) {
+    String displayWord = word.word == "WordNet Terimi" ? "Kayıt (WordNet)" : word.word;
     return Container(
       width: 300, height: 300, padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1138,7 +1129,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               tag: 'hero_word_${word.word}',
               child: Material(
                 type: MaterialType.transparency,
-                child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold)),
+                child: Text(displayWord, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold)),
               ),
             ),
           ),
@@ -1150,6 +1141,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildCardBack(WordModel word, bool isSrsMode) {
+    String displayWord = word.word == "WordNet Terimi" ? "Kayıt (WordNet)" : word.word;
     return Container(
       width: 300, height: 300, padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1175,10 +1167,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+                  Center(child: Text(displayWord, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
                   const Divider(),
-                  const Text("Anlamlar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
-                  ...word.meanings.map((m) => Text("• $m")),
+                  const Text("Detaylar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                  ...word.meanings.map((m) {
+                    Color textColor = Colors.black87;
+                    if (Theme.of(context).brightness == Brightness.dark) textColor = Colors.white70;
+                    if (m.startsWith("ANLAM:")) textColor = Colors.blueAccent;
+                    if (m.startsWith("EŞ ANLAMLI:")) textColor = Colors.green;
+                    if (m.startsWith("ZIT ANLAMLI:")) textColor = Colors.redAccent;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Text("• $m", style: TextStyle(color: textColor)),
+                    );
+                  }),
                   const SizedBox(height: 10),
                   if (word.examples.isNotEmpty) const Text("Örnekler:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
                   ...word.examples.map((e) => Text("» $e", style: const TextStyle(fontStyle: FontStyle.italic))),
