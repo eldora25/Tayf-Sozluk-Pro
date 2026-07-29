@@ -53,6 +53,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   late AnimationController _shakeController;    
   late AnimationController _scaleController;    
   String? _lastWrongOption; 
+  String _questionSubtext = ""; 
 
   @override
   void initState() {
@@ -154,23 +155,71 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
-    // Doğru Şık: Çoklu anlamlardan rastgele sadece 1 tanesi alınır.
-    correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
+    bool isWordNet = currentWord.level == 'WordNet' || currentWord.libraryName.toLowerCase().contains('wordnet');
+    _questionSubtext = "";
+    String targetPrefix = "";
+
+    // YENİ: Sorunun türü WordNet'e uygun olarak Dinamik seçilir
+    if (isWordNet) {
+        List<String> defs = currentWord.meanings.where((m) => m.startsWith("ANLAM: ")).toList();
+        List<String> syns = currentWord.meanings.where((m) => m.startsWith("EŞ ANLAMLI: ")).toList();
+        List<String> ants = currentWord.meanings.where((m) => m.startsWith("ZIT ANLAMLI: ")).toList();
+
+        List<String> availableTypes = [];
+        if (defs.isNotEmpty) availableTypes.add("ANLAM");
+        if (syns.isNotEmpty) availableTypes.add("EŞ");
+        if (ants.isNotEmpty) availableTypes.add("ZIT");
+
+        if (availableTypes.isEmpty) {
+            correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
+        } else {
+            String chosenType = availableTypes[random.nextInt(availableTypes.length)];
+            if (chosenType == "ANLAM") {
+                _questionSubtext = "(İngilizce Anlamı Hangisidir?)";
+                targetPrefix = "ANLAM: ";
+                correctOption = defs[random.nextInt(defs.length)].substring(7).trim();
+            } else if (chosenType == "EŞ") {
+                _questionSubtext = "(Eş Anlamlısı Hangisidir?)";
+                targetPrefix = "EŞ ANLAMLI: ";
+                correctOption = syns[random.nextInt(syns.length)].substring(12).trim();
+            } else if (chosenType == "ZIT") {
+                _questionSubtext = "(Zıt Anlamlısı Hangisidir?)";
+                targetPrefix = "ZIT ANLAMLI: ";
+                correctOption = ants[random.nextInt(ants.length)].substring(13).trim();
+            }
+        }
+    } else {
+        correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
+    }
+
     Set<String> wrongOptions = {};
+    int loopCounter = 0;
     
-    // Yanlış Şıklar (Çeldiriciler):
-    while (wrongOptions.length < 3 && wrongOptions.length < widget.words.length - 1) {
+    // YENİ: Çeldiriciler sadece TEK BİR kısa kelimeden/anlamdan oluşur 
+    while (wrongOptions.length < 3 && loopCounter < 100) {
+      loopCounter++;
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
       
-      // 1. Kesinlikle başka kelime olacak
-      // 2. Anlamı boş olmayacak
       if (randomWord.word != currentWord.word && randomWord.meanings.isNotEmpty) {
+        String randomMeaning = "";
         
-        // Çoklu anlamlardan SADECE BİR TANESİ rastgele seçilir
-        String randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
+        if (isWordNet && targetPrefix.isNotEmpty) {
+          var matchingMeanings = randomWord.meanings.where((m) => m.startsWith(targetPrefix)).toList();
+          if (matchingMeanings.isNotEmpty) {
+            randomMeaning = matchingMeanings[random.nextInt(matchingMeanings.length)].substring(targetPrefix.length).trim();
+          } else {
+            continue; 
+          }
+        } else {
+          randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
+          // Eger tesadüfen Wordnet kelimesi secildiyse onu da temizle
+          if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
+          if (randomMeaning.startsWith("EŞ ANLAMLI: ")) randomMeaning = randomMeaning.substring(12).trim();
+          if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
+        }
         
-        // Seçilen bu yanlış anlam, tesadüfen doğru kelimenin anlamlarından biriyle aynı olmasın
-        if (!currentWord.meanings.contains(randomMeaning)) {
+        // Seçilen yanlış şık doğru kelimenin hiçbir anlamına benzememeli
+        if (!currentWord.meanings.any((m) => m.contains(randomMeaning)) && randomMeaning != correctOption) {
           wrongOptions.add(randomMeaning);
         }
       }
@@ -377,10 +426,24 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                         border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
                         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]
                       ),
-                      child: Text(
-                        currentWord.word, 
-                        textAlign: TextAlign.center, 
-                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)
+                      child: Column(
+                        children: [
+                          Text(
+                            currentWord.word, 
+                            textAlign: TextAlign.center, 
+                            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)
+                          ),
+                          // YENİ: Soru Türü İpucu Ekranı (Anlamı mı soruyor Eş Anlamlısı mı?)
+                          if (_questionSubtext.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                _questionSubtext, 
+                                textAlign: TextAlign.center, 
+                                style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.7))
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
