@@ -70,8 +70,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 DropdownMenuItem(value: 3, child: Text("Pastel Yeşil (Dinlendirici)")),
                 DropdownMenuItem(value: 4, child: Text("Canlı Mor (Enerjik)")),
                 DropdownMenuItem(value: 5, child: Text("Sıcak Turuncu (Canlı)")),
-                DropdownMenuItem(value: 6, child: Text("Şeker Pembe (Tatlı)")), // YENİ TEMA 1
-                DropdownMenuItem(value: 7, child: Text("Rengarenk (Eğlenceli)")), // YENİ TEMA 2
+                DropdownMenuItem(value: 6, child: Text("Şeker Pembe (Tatlı)")), 
+                DropdownMenuItem(value: 7, child: Text("Rengarenk (Eğlenceli)")), 
               ],
               onChanged: (v) => setState(() => _themeIndex = v!),
             ),
@@ -125,15 +125,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Text("Boyutu büyük paketlerin yüklenmesi birkaç saniye sürebilir, lütfen bekleyin.", style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 10),
             
+            // YENİ EKLENEN WORDNET KÜTÜPHANESİ
             ListTile(
-              tileColor: Colors.blue.withOpacity(0.1),
+              tileColor: Colors.indigo.withOpacity(0.1),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              title: const Text("Test Paketi", style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text("Örnek cümleli (JSON)"),
-              trailing: const Icon(Icons.download, color: Colors.blue),
-              onTap: () { widget.onAddPackage("assets/test_paket.json", "json", "Test Paketi"); },
+              title: const Text("WordNet İngilizce", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Kapsamlı İng-İng Sözlük (JSON)"),
+              trailing: const Icon(Icons.download, color: Colors.indigo),
+              onTap: () { widget.onAddPackage("assets/tayf_wordnet_optimized.json", "json", "WordNet"); },
             ),
             const SizedBox(height: 10),
+
             ListTile(
               tileColor: Colors.orange.withOpacity(0.1),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -159,15 +161,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: const Text("Geniş Kapsamlı Sözlük (CSV)"),
               trailing: const Icon(Icons.download, color: Colors.red),
               onTap: () { widget.onAddPackage("assets/Babylon_Turkish_English_donustu.csv", "csv", "Babylon Tr-İng"); },
-            ),
-            const SizedBox(height: 10),
-            ListTile(
-              tileColor: Colors.purple.withOpacity(0.1),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              title: const Text("FreeDict İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text("Geniş Kapsamlı Sözlük (Free-KH)"),
-              trailing: const Icon(Icons.download, color: Colors.purple),
-              onTap: () { widget.onAddPackage("assets/Free-KH.txt", "csv", "Free-KH İng-Tr"); },
             ),
 
             const SizedBox(height: 40),
