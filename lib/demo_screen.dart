@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'models.dart';
 import 'main.dart'; 
-import 'notification_service.dart'; // Gerçek bildirimi tetiklemek için eklendi
+import 'notification_service.dart';
 
 class DemoScreen extends StatefulWidget {
   const DemoScreen({super.key});
@@ -14,7 +14,7 @@ class DemoScreen extends StatefulWidget {
 
 class _DemoScreenState extends State<DemoScreen> {
 
-  // GERÇEK ANDROID/IOS BİLDİRİMİ GÖNDERME
+  // MADDE 6: GERÇEK SİSTEM BİLDİRİMİ TETİKLEYİCİSİ
   void _triggerRealNotification() {
     NotificationService.showInstantTestNotification();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -77,7 +77,6 @@ class _DemoScreenState extends State<DemoScreen> {
           const Text("Uygulamanın mekanizmalarını ve izinlerini test etme alanı.", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic), textAlign: TextAlign.center),
           const SizedBox(height: 16),
 
-          // GERÇEK BİLDİRİM TESTİ
           Card(
             elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
