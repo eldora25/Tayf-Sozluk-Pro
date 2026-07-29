@@ -101,7 +101,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (!isAudioEnabled) return;
     try {
       await globalTts.stop();
-      String cleanText = text.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ');
+      String cleanText = text.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
+                             .replaceAll('ANLAM:', '')
+                             .replaceAll('EŞ ANLAMLI:', '')
+                             .replaceAll('ZIT ANLAMLI:', '');
       
       globalTts.setLanguage(languageCode);
       globalTts.setSpeechRate(0.45);
@@ -159,7 +162,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _questionSubtext = "";
     String targetPrefix = "";
 
-    // YENİ: Sorunun türü WordNet'e uygun olarak Dinamik seçilir
+    // WordNet Kütüphanesi İçin Akıllı Quiz Soru Üretici
     if (isWordNet) {
         List<String> defs = currentWord.meanings.where((m) => m.startsWith("ANLAM: ")).toList();
         List<String> syns = currentWord.meanings.where((m) => m.startsWith("EŞ ANLAMLI: ")).toList();
@@ -171,7 +174,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         if (ants.isNotEmpty) availableTypes.add("ZIT");
 
         if (availableTypes.isEmpty) {
-            correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
+            correctOption = currentWord.meanings.isNotEmpty ? currentWord.meanings[random.nextInt(currentWord.meanings.length)] : "";
         } else {
             String chosenType = availableTypes[random.nextInt(availableTypes.length)];
             if (chosenType == "ANLAM") {
@@ -189,14 +192,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             }
         }
     } else {
-        correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
+        correctOption = currentWord.meanings.isNotEmpty ? currentWord.meanings[random.nextInt(currentWord.meanings.length)] : "";
     }
 
     Set<String> wrongOptions = {};
     int loopCounter = 0;
     
-    // YENİ: Çeldiriciler sadece TEK BİR kısa kelimeden/anlamdan oluşur 
-    while (wrongOptions.length < 3 && loopCounter < 100) {
+    while (wrongOptions.length < 3 && loopCounter < 150) {
       loopCounter++;
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
       
@@ -217,7 +219,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
         }
         
-        if (!currentWord.meanings.any((m) => m.contains(randomMeaning)) && randomMeaning != correctOption) {
+        if (!currentWord.meanings.any((m) => m.contains(randomMeaning)) && randomMeaning != correctOption && randomMeaning.isNotEmpty) {
           wrongOptions.add(randomMeaning);
         }
       }
@@ -229,7 +231,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     setState(() {});
     
     _entranceController.forward(from: 0.0); 
-    _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word));
+    String readWord = currentWord.word == "WordNet Terimi" ? currentWord.meanings.first : currentWord.word;
+    _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
   void _checkAnswer(String option) {
@@ -407,7 +410,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           const SizedBox(height: 20),
           
           GestureDetector(
-            onTap: () => _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word)),
+            onTap: () {
+              String readWord = currentWord.word == "WordNet Terimi" ? currentWord.meanings.first : currentWord.word;
+              _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
+            },
             child: AnimatedBuilder(
               animation: _entranceController,
               builder: (context, child) {
@@ -427,7 +433,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                       child: Column(
                         children: [
                           Text(
-                            currentWord.word, 
+                            currentWord.word == "WordNet Terimi" ? "WordNet Kaydı" : currentWord.word, 
                             textAlign: TextAlign.center, 
                             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)
                           ),
