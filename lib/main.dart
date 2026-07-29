@@ -31,8 +31,6 @@ import 'info_screen.dart';
 import 'wordnet_search_screen.dart'; 
 
 late Isar isar;
-// YENİ VE KESİN ÇÖZÜM: Tüm ekranların kullanacağı, asla kilitlenmeyen TEK (Global) TTS motoru
-final FlutterTts globalTts = FlutterTts();
 
 int getNextReviewOffset(int level) {
   const int oneDay = 24 * 60 * 60 * 1000;
@@ -265,6 +263,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   static const String buildNo = String.fromEnvironment('BUILD_NUMBER', defaultValue: 'Dev');
 
+  final FlutterTts flutterTts = FlutterTts();
   late AnimationController _flipController;
   late Animation<double> _flipAnimation;
 
@@ -311,6 +310,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _flipController.dispose();
+    flutterTts.stop();
     super.dispose();
   }
 
@@ -571,10 +571,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // GLOBAL TTS KULLANILARAK HATASIZ OKUMA (MULTI-INSTANCE DEADLOCK ÇÖZÜLDÜ)
+  // YENİ GÜÇLENDİRİLMİŞ, KİLİTLENMEYEN, KENDİNİ ONARAN TTS FONKSİYONU
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
-      String text = isMeaning ? word.meanings.first : word.word;
+      String text = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
+      if (text.isEmpty) return;
+
       String lang = 'en-US'; 
       String libName = word.libraryName.toLowerCase();
       
@@ -594,9 +596,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         }
       }
 
-      await globalTts.setLanguage(lang);
-      await globalTts.setSpeechRate(0.5);
-      await globalTts.speak(text);
+      // Android cihazlarda cihazın sessiz kalmasını önlemek için Google motorunu zorla
+      if (Platform.isAndroid) {
+        await flutterTts.setEngine("com.google.android.tts");
+      }
+
+      // Dil paketi var mı kontrol et, yoksa İngilizceye düş (çökmesini engeller)
+      var isAvailable = await flutterTts.isLanguageAvailable(lang);
+      if (isAvailable) {
+        await flutterTts.setLanguage(lang);
+      } else {
+        debugPrint("Dil paketi bulunamadı: $lang, en-US kullanılıyor.");
+        await flutterTts.setLanguage("en-US");
+      }
+      
+      await flutterTts.speak(text);
     } catch (e) {
       debugPrint("TTS Hatası: $e");
     }
@@ -604,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _nextCard(List<WordModel> activeList) {
     if (activeList.isEmpty) return;
-    globalTts.stop(); // Yeni karta geçerken eskisini sustur
+    flutterTts.stop();
     setState(() {
       isFlipped = false;
       _flipController.reset();
