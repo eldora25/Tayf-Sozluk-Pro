@@ -68,10 +68,14 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
   String customLibraryName = params['libraryName'];
-  // Orijinal dosya adını ve kullanıcı adını birleştirip kontrol et ki yeniden isimlendirmelerde bozulmasın
   String originalFileName = (params['originalFileName'] ?? '').toLowerCase();
   String lowerName = "${customLibraryName.toLowerCase()} $originalFileName";
   List<String> parsedList = [];
+
+  // BOM (Byte Order Mark) temizliği - UTF8 dosyalarının ilk karakter hatasını çözer
+  if (content.startsWith('\uFEFF')) {
+    content = content.substring(1);
+  }
 
   List<String> cleanMeanings(List<dynamic> raw) {
     List<String> result = [];
@@ -122,15 +126,18 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
             parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(mList), 'examples': row.length > 2 ? row[2].toString().split('|||').map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList() : [], 'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
         } catch(e) { continue; }
       }
-    } else if (lowerName.contains('en-tr_tayf')) {
+    } 
+    // GÜÇLENDİRİLMİŞ TAYF AYRIŞTIRICI: Toleransı artırıldı ve zırhlandı
+    else if (lowerName.contains('tayf')) {
       var lines = content.split('\n');
       for (var line in lines) {
         if (!line.contains(':')) continue;
         int colonIdx = line.indexOf(':');
         String w = line.substring(0, colonIdx).trim();
+        if (w.isEmpty) continue; // Boş kelime zırhı
         String mStr = line.substring(colonIdx + 1).trim();
         List<String> meanings = mStr.split(';').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+        parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
       }
     } else if (extension == 'csv' || lowerName.contains('freedict') || lowerName.contains('free-kh')) {
       List<String> lines = content.split('\n');
@@ -146,15 +153,28 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': examples, 'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
         } catch(e) { continue; }
       }
-    } else {
+    } 
+    // AKILLANDIRILMIŞ GENEL (FALLBACK) TXT AYRIŞTIRICI: Tayf dosyasının adını değiştirseniz bile otomatik tanır!
+    else {
       var lines = content.split('\n');
       for (var line in lines) {
         if (!line.contains(':') && !line.contains(';') && !line.contains(',')) continue;
-        String separator = line.contains(':') ? ':' : (line.contains(';') ? ';' : ',');
-        int sepIdx = line.indexOf(separator);
-        if (sepIdx != -1) {
-          parsedList.add(json.encode({'word': line.substring(0, sepIdx).trim(), 'meanings': line.substring(sepIdx + 1).trim().split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-        }
+        
+        // Akıllı Ayraç Tespiti (Öncelik: İki nokta > Noktalı virgül > Virgül)
+        String wordSeparator = line.contains(':') ? ':' : (line.contains(';') ? ';' : ',');
+        int sepIdx = line.indexOf(wordSeparator);
+        if (sepIdx == -1) continue;
+
+        String w = line.substring(0, sepIdx).trim();
+        if (w.isEmpty) continue; // Boş kelime zırhı
+
+        String mStr = line.substring(sepIdx + 1).trim();
+        
+        // Anlamları ayırırken eğer dosya TAYF gibi noktalı virgül kullanmışsa onu seç, yoksa virgül.
+        String meaningSeparator = mStr.contains(';') ? ';' : ',';
+        List<String> meanings = mStr.split(meaningSeparator).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
+        parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
       }
     }
   } catch (e, stacktrace) { parsedList.add(json.encode({'error': "Dosya Okuma Hatası: $e"})); }
@@ -467,7 +487,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
-  // YENİ: Yüklenen Kütüphanedeki "Zaten Var" Engelini Kırdım. Sadece eksik kelimeleri zekice yükleyecek.
   Future<void> _importFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
     if (result != null && result.files.single.path != null) {
@@ -489,7 +508,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           return;
         }
 
-        // Akıllı Çift Kayıt Engelleyici - Eğer kelime zaten sistemin herhangi bir yerindeyse tekrar yükleme!
         Set<String> existingWords = {
           ...allWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
           ...learnedWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
@@ -500,8 +518,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         List<WordModel> newWords = [];
         for (var jsonStr in parsedJsons) {
-          var w = WordModel.fromJson(jsonStr)..listType = 'all';
-          if (!existingWords.contains(w.word)) newWords.add(w);
+          try {
+            var w = WordModel.fromJson(jsonStr)..listType = 'all';
+            if (!existingWords.contains(w.word)) {
+               newWords.add(w);
+               existingWords.add(w.word); // Dosya içi çift kayıt (duplicate) engeli
+            }
+          } catch(e) { continue; }
         }
 
         setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
@@ -515,7 +538,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // YENİ: Assets yüklemesinde de "Zaten Yüklü" uyarısı kalktı, akıllı ekleme yapıldı.
   Future<void> _loadPackageFromAssets(String assetPath, String extension, String customLibraryName) async {
     showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName yükleniyor..."))])));
     try {
@@ -537,8 +559,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       List<WordModel> newWords = [];
       for (var jsonStr in parsedJsons) {
-        var w = WordModel.fromJson(jsonStr)..listType = 'all';
-        if (!existingWords.contains(w.word)) newWords.add(w);
+        try {
+          var w = WordModel.fromJson(jsonStr)..listType = 'all';
+          if (!existingWords.contains(w.word)) {
+             newWords.add(w);
+             existingWords.add(w.word);
+          }
+        } catch(e) { continue; }
       }
 
       setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
