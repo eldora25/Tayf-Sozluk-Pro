@@ -105,9 +105,8 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 
   List<String> parsedList = [];
   
-  // YENİ: Virgül kaldırıldı, sadece "|||" , ";" ve "\n" baz alınarak bölünür. 
-  // Bu sayede "birinci kalite veya derece" gibi cümleler parçalanmaz, ||| işaretleri tertemiz silinir.
-  final RegExp splitRegExp = RegExp(r'\|\|\||;|\n');
+  // YENİ: Anlamlar sadece ||| veya \n ile bölünür. Cümle içindeki virgüller silinmez.
+  final RegExp splitRegExp = RegExp(r'\|\|\||\n');
   final RegExp prefixRegExp = RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*');
   final RegExp spaceRegExp = RegExp(r'\s+');
 
@@ -120,7 +119,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         var clean = p.trim();
         clean = clean.replaceAll(prefixRegExp, '');
         clean = clean.replaceAll(spaceRegExp, ' ');
-        if (clean.isNotEmpty && clean.length < 250) {
+        if (clean.isNotEmpty && clean.length < 300) {
           result.add(clean);
         }
       }
@@ -137,25 +136,27 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         if (e is Map && (e.containsKey('definition') || e.containsKey('synonyms'))) {
           String actualWord = e['word']?.toString() ?? '';
           
+          // YENİ: EĞER KELİME KISMINDA ID (örn: 00001740-a) VARSA BUNU GİZLE, GERÇEK KELİMEYİ YAZ
           if (RegExp(r'^[0-9]{8}-[a-z]$').hasMatch(actualWord) || actualWord.isEmpty || actualWord == 'null') {
             if (e['synonyms'] != null && e['synonyms'] is List && e['synonyms'].isNotEmpty) {
               actualWord = e['synonyms'][0].toString(); 
             } else {
-              continue; 
+              continue; // Kelimenin gerçek adı bulunamazsa listeye alma
             }
           }
 
+          // YENİ: Anlam, Eş Anlam ve Zıt Anlamlar düzenli listelenir
           List<String> combinedMeanings = [];
           if (e['definition'] != null && e['definition'].toString().isNotEmpty) {
-            combinedMeanings.add(e['definition'].toString());
+            combinedMeanings.add("ANLAM: " + e['definition'].toString());
           }
           if (e['synonyms'] != null && e['synonyms'] is List) {
             for (var syn in e['synonyms']) { 
-              if (syn.toString() != actualWord) combinedMeanings.add("Synonym: $syn"); 
+              if (syn.toString() != actualWord) combinedMeanings.add("EŞ ANLAMLI: $syn"); 
             }
           }
           if (e['antonyms'] != null && e['antonyms'] is List) {
-            for (var ant in e['antonyms']) { combinedMeanings.add("Antonym: $ant"); }
+            for (var ant in e['antonyms']) { combinedMeanings.add("ZIT ANLAMLI: $ant"); }
           }
 
           parsedList.add(json.encode({
@@ -178,13 +179,28 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
     } else if (extension == 'txt') {
       var lines = content.split('\n');
       for (var line in lines) {
-        if (!line.contains(':')) continue;
-        var parts = line.split(':');
-        parsedList.add(json.encode({
-          'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': <String>[],
-          'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-          'srsLevel': 0, 'nextReviewDate': 0
-        }));
+        if (!line.contains(':') && !line.contains(',')) continue; 
+        
+        // Eger CSV formatındaysa (Virgülle ayrılmışsa)
+        if (line.contains(',') && !line.contains(':')) {
+           List<String> parts = line.split(',');
+           if (parts.length >= 2) {
+              parsedList.add(json.encode({
+                'word': parts[0].trim(), 
+                'meanings': cleanMeanings([parts[1].trim()]), 
+                'examples': parts.length > 2 ? cleanMeanings([parts[2].trim()]) : <String>[],
+                'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+                'srsLevel': 0, 'nextReviewDate': 0
+              }));
+           }
+        } else {
+            var parts = line.split(':');
+            parsedList.add(json.encode({
+              'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': <String>[],
+              'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+              'srsLevel': 0, 'nextReviewDate': 0
+            }));
+        }
       }
     } else {
       List<List<dynamic>> rows = const CsvToListConverter().convert(content);
@@ -632,7 +648,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       String rawText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
       if (rawText.isEmpty) return;
 
-      String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ');
+      // Anlam kısmında okumasını istemediğimiz etiketleri de silerek pürüzsüz okutalım
+      String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
+                                .replaceAll('ANLAM:', '')
+                                .replaceAll('EŞ ANLAMLI:', '')
+                                .replaceAll('ZIT ANLAMLI:', '');
 
       String lang = isMeaning ? getSmartTargetLanguage(word.libraryName, cleanText) : getSmartSourceLanguage(word.libraryName, cleanText);
       
