@@ -118,92 +118,93 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   }
 
   try {
-    // 1. WORDNET (ASKIYA ALINDI - UYARI DÖNDÜRÜR)
-    if (lowerName.contains('wordnet') || extension == 'json') {
+    // 1. WORDNET KİLİDİ (Yalnızca WordNet kelimesi geçenler kilitlenir)
+    if (lowerName.contains('wordnet')) {
       parsedList.add(json.encode({'error': "Yazılımcı üzerinde halen çalışıyor"}));
       return parsedList;
     } 
-    // 2. BABYLON ENG-TR (ÖZEL CSV ALGORİTMASI)
-    else if (lowerName.contains('babylon_english_turkish') || lowerName.contains('babylon english-turkish')) {
-      List<List<dynamic>> rows = const CsvToListConverter().convert(content);
-      for (var row in rows) {
-        if (row.isEmpty || row.length < 2) continue;
-        String w = row[0].toString().trim();
-        if (w.isEmpty || w.startsWith('#') || w.toLowerCase() == 'word') continue;
-        
-        List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
-
-        parsedList.add(json.encode({
-          'word': w, 'meanings': meanings, 'examples': examples,
-          'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
-          'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-          'srsLevel': 0, 'nextReviewDate': 0
-        }));
+    // 2. TEST PAKETİ VEYA DİĞER JSON DOSYALARI (Kusursuz İçe Aktarım)
+    else if (extension == 'json') {
+      var decoded = json.decode(content);
+      List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
+      
+      for (var e in list) {
+        if (e is Map) {
+          String w = e['word']?.toString() ?? '';
+          if (w.isEmpty) continue;
+          
+          List<String> meanings = [];
+          if (e['meanings'] is List) {
+            meanings = (e['meanings'] as List).map((m) => m.toString()).toList();
+          } else if (e['definition'] != null) {
+            meanings.add(e['definition'].toString());
+          }
+          
+          List<String> examples = e['examples'] is List ? (e['examples'] as List).map((ex) => ex.toString()).toList() : [];
+          String lvl = e['level']?.toString() ?? 'Genel';
+          
+          parsedList.add(json.encode({
+            'word': w, 'meanings': meanings, 'examples': examples,
+            'level': lvl, 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+            'srsLevel': 0, 'nextReviewDate': 0
+          }));
+        }
       }
     }
-    // 3. BABYLON TR-ENG (ÖZEL CSV ALGORİTMASI)
-    else if (lowerName.contains('babylon_turkish_english') || lowerName.contains('babylon turkish-english')) {
-      List<List<dynamic>> rows = const CsvToListConverter().convert(content);
-      for (var row in rows) {
-        if (row.isEmpty || row.length < 2) continue;
-        String w = row[0].toString().trim();
-        if (w.isEmpty || w.startsWith('#') || w.toLowerCase() == 'word') continue;
-        
-        List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
-
-        parsedList.add(json.encode({
-          'word': w, 'meanings': meanings, 'examples': examples,
-          'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
-          'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-          'srsLevel': 0, 'nextReviewDate': 0
-        }));
-      }
-    }
-    // 4. ESKİ TXT BABYLON SÖZLÜKLERİ (FALLBACK)
+    // 3. BABYLON (ZIRHLI SATIR-SATIR CSV AYRIŞTIRICI - 200.000 Kelimeyi Yutmaz!)
     else if (lowerName.contains('babylon')) {
-      if (content.contains('\t')) {
-        var lines = content.split('\n');
-        for (var line in lines) {
-          if (!line.contains('\t')) continue;
-          var parts = line.split('\t');
+      List<String> lines = content.split('\n');
+      for (String line in lines) {
+        line = line.trim();
+        if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) continue;
+        
+        // Klasik Boru (|) veya Tab (\t) Formatı ise
+        if ((line.contains('|') || line.contains('\t')) && !line.contains(',')) {
+          String separator = line.contains('|') ? '|' : '\t';
+          var parts = line.split(separator);
           if (parts.length >= 2) {
-            parsedList.add(json.encode({
-              'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': [],
-              'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0
-            }));
+             parsedList.add(json.encode({
+                'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': [],
+                'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0
+             }));
           }
+          continue;
         }
-      } else if (content.contains('|')) {
-        var lines = content.split('\n');
-        for (var line in lines) {
-          if (!line.contains('|')) continue;
-          var parts = line.split('|');
-          if (parts.length >= 2) {
-            List<String> rawMeanings = parts[1].split(RegExp(r'[;,]'));
+
+        // CSV Formatı ise (Kapatılmamış tırnakların tüm dosyayı bozmasını engellemek için Try-Catch)
+        try {
+            List<List<dynamic>> parsedLine = const CsvToListConverter().convert(line + '\n');
+            if (parsedLine.isEmpty || parsedLine[0].isEmpty) continue;
+            
+            var row = parsedLine[0];
+            if (row.length < 2) continue;
+            
+            String w = row[0].toString().trim();
+            String mStr = row[1].toString().trim();
+            if (w.isEmpty) continue;
+
+            List<String> examples = [];
+            if (row.length > 2) {
+                examples = row[2].toString().split('|||').map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList();
+            }
+            String lvl = row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel';
+
+            List<String> mList = [];
+            if (mStr.contains('|||')) mList = mStr.split('|||').map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList();
+            else if (mStr.contains(';')) mList = mStr.split(';').map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList();
+            else mList = [mStr];
+
             parsedList.add(json.encode({
-              'word': parts[0].trim(), 'meanings': cleanMeanings(rawMeanings), 'examples': [],
-              'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0
+              'word': w, 'meanings': cleanMeanings(mList), 'examples': examples,
+              'level': lvl, 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0
             }));
-          }
-        }
-      } else {
-        var blocks = content.split(RegExp(r'\n\s*\n'));
-        for (var block in blocks) {
-          var lines = block.trim().split('\n');
-          if (lines.length >= 2) {
-            String w = lines[0].trim();
-            String mStr = lines.sublist(1).join(' ').trim();
-            parsedList.add(json.encode({
-              'word': w, 'meanings': cleanMeanings([mStr]), 'examples': [],
-              'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0
-            }));
-          }
+        } catch(e) {
+            // Hatalı veya kapatılmamış tırnağa sahip tek bir satır es geçilir, geri kalan 199.999 kelime kurtarılır!
+            continue;
         }
       }
     }
-    // 5. ÖZEL AYRIŞTIRICI: EN-TR_TAYF (Sadece ":" ve ";" dikkate alınır, virgüller es geçilir)
+    // 4. ÖZEL AYRIŞTIRICI: EN-TR_TAYF (Sadece ":" ve ";" dikkate alınır, virgüller es geçilir)
     else if (lowerName.contains('en-tr_tayf')) {
       var lines = content.split('\n');
       for (var line in lines) {
@@ -220,31 +221,34 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         }));
       }
     } 
-    // 6. ÖZEL AYRIŞTIRICI: FREEDICT / FREE-KH VEYA GENEL CSV
+    // 5. ÖZEL AYRIŞTIRICI: FREEDICT / FREE-KH VEYA GENEL CSV
     else if (extension == 'csv' || lowerName.contains('freedict') || lowerName.contains('free-kh')) {
-      List<List<dynamic>> rows = const CsvToListConverter().convert(content);
-      for (var row in rows) {
-        if (row.isEmpty || row.length < 2) continue;
-        String w = row[0].toString().trim();
-        if (w.isEmpty || w.startsWith('#') || w.toLowerCase() == 'word') continue;
-        
-        List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
+      List<String> lines = content.split('\n');
+      for (String line in lines) {
+        try {
+          List<List<dynamic>> parsedLine = const CsvToListConverter().convert(line + '\n');
+          if (parsedLine.isEmpty || parsedLine[0].length < 2) continue;
+          var row = parsedLine[0];
+          String w = row[0].toString().trim();
+          if (w.isEmpty || w.startsWith('#') || w.toLowerCase() == 'word') continue;
+          
+          List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+          List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
 
-        parsedList.add(json.encode({
-          'word': w, 'meanings': meanings, 'examples': examples,
-          'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
-          'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-          'srsLevel': 0, 'nextReviewDate': 0
-        }));
+          parsedList.add(json.encode({
+            'word': w, 'meanings': meanings, 'examples': examples,
+            'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
+            'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+            'srsLevel': 0, 'nextReviewDate': 0
+          }));
+        } catch(e) { continue; } // Kırık CSV satırlarını es geç
       }
     }
-    // 7. GENEL AYRIŞTIRICI (Dışarıdan yüklenen düz TXT'ler)
+    // 6. GENEL AYRIŞTIRICI (Dışarıdan yüklenen düz TXT'ler)
     else {
       var lines = content.split('\n');
       for (var line in lines) {
         if (!line.contains(':') && !line.contains(';') && !line.contains(',')) continue;
-        
         String separator = ':';
         if (line.contains(':')) separator = ':';
         else if (line.contains(';')) separator = ';';
@@ -498,6 +502,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       List<WordModel> fromIsar = await isar.wordModels.where().findAll();
 
+      if (fromIsar.isEmpty && prefs.containsKey('allWords')) {
+        List<WordModel> oldAll = (prefs.getStringList('allWords') ?? []).map((e) => WordModel.fromJson(e)..listType='all').toList();
+        List<WordModel> oldLearned = (prefs.getStringList('learnedWords') ?? []).map((e) => WordModel.fromJson(e)..listType='learned').toList();
+        List<WordModel> oldRepeat = (prefs.getStringList('toRepeatWords') ?? []).map((e) => WordModel.fromJson(e)..listType='toRepeat').toList();
+        
+        List<WordModel> allToSave = [...oldAll, ...oldLearned, ...oldRepeat];
+        await isar.writeTxn(() async { await isar.wordModels.putAll(allToSave); });
+        
+        prefs.remove('allWords'); prefs.remove('learnedWords'); prefs.remove('toRepeatWords'); prefs.remove('wrongWords');
+        fromIsar = allToSave;
+      }
+
       setState(() {
         allWords = fromIsar.where((w) => w.listType == 'all').toList();
         learningWords = fromIsar.where((w) => w.listType == 'learning').toList();
@@ -625,7 +641,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') {
       return toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel).toList();
     }
-    return allWords.where((w) => w.libraryName == selectedLibrary && (w.level == selectedLevel || selectedLevel == 'Genel')).toList();
+    return allWords.where((w) => 
+      w.libraryName == selectedLibrary && 
+      (w.level == selectedLevel || selectedLevel == 'Genel')
+    ).toList();
   }
 
   List<String> get availableLibraries {
@@ -753,7 +772,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         Navigator.pop(context); 
         
-        // HATA YAKALAYICI (WordNet Engeli veya Diğer Hatalar İçin)
         if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
           String errMsg = json.decode(parsedJsons.first)['error'];
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errMsg), backgroundColor: Colors.orange));
@@ -791,7 +809,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       Navigator.pop(context); 
 
-      // HATA YAKALAYICI (WordNet Engeli vb.)
       if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
         String errMsg = json.decode(parsedJsons.first)['error'];
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errMsg), backgroundColor: Colors.orange));
