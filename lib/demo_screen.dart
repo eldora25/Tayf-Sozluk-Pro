@@ -21,16 +21,16 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 
-  // YENİ: 5 SEVİYE ÇERÇEVELERİ GÖREBİLMEK İÇİN KELİME ENJEKTÖRÜ
+  // YENİ: Demo kelimeleri artık "toSRSRepeat" listesine gönderiliyor.
   Future<void> _injectFiveLevelDemoWords() async {
     int pastTime = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
     
     List<WordModel> demoWords = [
-      WordModel(word: 'Level 1 Word', meanings: ['Seviye 1 Gümüş/Mavi Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 1..nextReviewDate = pastTime,
-      WordModel(word: 'Level 2 Word', meanings: ['Seviye 2 Yeşil Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 2..nextReviewDate = pastTime,
-      WordModel(word: 'Level 3 Word', meanings: ['Seviye 3 Sarı Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 3..nextReviewDate = pastTime,
-      WordModel(word: 'Level 4 Word', meanings: ['Seviye 4 Turuncu Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 4..nextReviewDate = pastTime,
-      WordModel(word: 'Level 5 Word', meanings: ['Seviye 5 Kırmızı Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toRepeat', level: 'Genel')..srsLevel = 5..nextReviewDate = pastTime,
+      WordModel(word: 'Level 1 Word', meanings: ['Seviye 1 Gümüş/Mavi Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 1..nextReviewDate = pastTime,
+      WordModel(word: 'Level 2 Word', meanings: ['Seviye 2 Yeşil Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 2..nextReviewDate = pastTime,
+      WordModel(word: 'Level 3 Word', meanings: ['Seviye 3 Sarı Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 3..nextReviewDate = pastTime,
+      WordModel(word: 'Level 4 Word', meanings: ['Seviye 4 Turuncu Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 4..nextReviewDate = pastTime,
+      WordModel(word: 'Level 5 Word', meanings: ['Seviye 5 Kırmızı Çerçeve'], examples: [], libraryName: 'Demo Sözlük', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 5..nextReviewDate = pastTime,
     ];
 
     await isar.writeTxn(() async {
@@ -39,7 +39,7 @@ class _DemoScreenState extends State<DemoScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("5 farklı SRS seviyesine ait demo kelimeler eklendi! Ana ekranda görebilirsiniz."), backgroundColor: Colors.green)
+        const SnackBar(content: Text("5 farklı SRS seviyesine ait demo kelimeler 'SRS Tekrar' havuzuna eklendi!"), backgroundColor: Colors.green)
       );
     }
   }
@@ -54,7 +54,8 @@ class _DemoScreenState extends State<DemoScreen> {
     int twoDaysMs = 2 * 24 * 60 * 60 * 1000;
     for (var w in learningWords) {
       w.nextReviewDate = w.nextReviewDate - twoDaysMs;
-      if (w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch) w.listType = 'toRepeat';
+      // YENİ: Zamanı dolanlar da toSRSRepeat'e düşüyor
+      if (w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch) w.listType = 'toSRSRepeat';
     }
 
     await isar.writeTxn(() async { await isar.wordModels.putAll(learningWords); });
