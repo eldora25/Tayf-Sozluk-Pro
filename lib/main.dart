@@ -68,8 +68,10 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
   String customLibraryName = params['libraryName'];
+  // Orijinal dosya adını ve kullanıcı adını birleştirip kontrol et ki yeniden isimlendirmelerde bozulmasın
+  String originalFileName = (params['originalFileName'] ?? '').toLowerCase();
+  String lowerName = "${customLibraryName.toLowerCase()} $originalFileName";
   List<String> parsedList = [];
-  String lowerName = customLibraryName.toLowerCase();
 
   List<String> cleanMeanings(List<dynamic> raw) {
     List<String> result = [];
@@ -384,7 +386,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary).length + toRepeatWords.where((w) => w.libraryName == selectedLibrary).length;
   }
 
-  // Akıllı Seslendirme Hızlandırıldı ve Düzenlendi
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       await globalTts.stop();
@@ -393,12 +394,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (rawText.isEmpty) return;
       String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ').replaceAll('ANLAM:', '');
       globalTts.setLanguage(getSmartSourceLanguage(word.libraryName, cleanText));
-      globalTts.setSpeechRate(0.45); // Yavaş ve Doğal Hız Geri Döndü!
+      globalTts.setSpeechRate(0.45); 
       globalTts.speak(cleanText); 
     } catch (e) {}
   }
 
-  // Kart ilerleme mantığı düzeltildi (Aynı kelime gelmeyecek)
   void _nextCard() {
     globalTts.stop();
     setState(() {
@@ -467,25 +467,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
-  // İçe aktarma ve Assets zırhlandı (Sonsuz dönme engellendi)
+  // YENİ: Yüklenen Kütüphanedeki "Zaten Var" Engelini Kırdım. Sadece eksik kelimeleri zekice yükleyecek.
   Future<void> _importFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
     if (result != null && result.files.single.path != null) {
       File file = File(result.files.single.path!);
-      String? customLibraryName = await _showInputDialog("Kütüphane Adı", result.files.single.name.split('.').first);
+      String fileName = result.files.single.name.split('.').first;
+      String? customLibraryName = await _showInputDialog("Kütüphane Adı", fileName);
       if (customLibraryName == null) return;
       
       showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName aktarılıyor..."))])));
       try {
         List<int> bytes = await file.readAsBytes();
-        final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': utf8.decode(bytes), 'extension': result.files.single.extension ?? '', 'libraryName': customLibraryName});
+        String content;
+        try { content = utf8.decode(bytes); } catch (e) { content = latin1.decode(bytes); }
+        
+        final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': content, 'extension': result.files.single.extension ?? '', 'libraryName': customLibraryName, 'originalFileName': fileName});
         
         if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(json.decode(parsedJsons.first)['error']))); 
           return;
         }
-        setState(() { allWords.addAll(parsedJsons.map((e) => WordModel.fromJson(e)..listType = 'all').toList()); selectedLibrary = customLibraryName; currentCardIndex = 0; });
+
+        // Akıllı Çift Kayıt Engelleyici - Eğer kelime zaten sistemin herhangi bir yerindeyse tekrar yükleme!
+        Set<String> existingWords = {
+          ...allWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+          ...learnedWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+          ...toRepeatWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+          ...toSRSRepeatWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+          ...learningWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+        };
+
+        List<WordModel> newWords = [];
+        for (var jsonStr in parsedJsons) {
+          var w = WordModel.fromJson(jsonStr)..listType = 'all';
+          if (!existingWords.contains(w.word)) newWords.add(w);
+        }
+
+        setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
         _saveData();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName güncellendi! (${newWords.length} yeni kelime eklendi)")));
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
       } finally {
@@ -494,22 +515,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  // YENİ: Assets yüklemesinde de "Zaten Yüklü" uyarısı kalktı, akıllı ekleme yapıldı.
   Future<void> _loadPackageFromAssets(String assetPath, String extension, String customLibraryName) async {
-    if (availableLibraries.contains(customLibraryName)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Bu kütüphane zaten yüklü!")));
-      return;
-    }
     showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName yükleniyor..."))])));
     try {
       ByteData data = await rootBundle.load(assetPath);
-      final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': utf8.decode(data.buffer.asUint8List()), 'extension': extension, 'libraryName': customLibraryName});
+      final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': utf8.decode(data.buffer.asUint8List()), 'extension': extension, 'libraryName': customLibraryName, 'originalFileName': assetPath.split('/').last});
       
       if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(json.decode(parsedJsons.first)['error']))); 
           return;
       }
-      setState(() { allWords.addAll(parsedJsons.map((e) => WordModel.fromJson(e)..listType = 'all').toList()); selectedLibrary = customLibraryName; currentCardIndex = 0; });
+
+      Set<String> existingWords = {
+        ...allWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+        ...learnedWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+        ...toRepeatWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+        ...toSRSRepeatWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+        ...learningWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
+      };
+
+      List<WordModel> newWords = [];
+      for (var jsonStr in parsedJsons) {
+        var w = WordModel.fromJson(jsonStr)..listType = 'all';
+        if (!existingWords.contains(w.word)) newWords.add(w);
+      }
+
+      setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
       _saveData();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName güncellendi! (${newWords.length} yeni kelime eklendi)")));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
     } finally {
@@ -636,7 +670,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           if (isSrsMode)
                             Container(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.redAccent, width: 1.5)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.warning_amber_rounded, color: Colors.redAccent), SizedBox(width: 8), Text("SRS Tekrar Zamanı!", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16))])),
                           const Spacer(),
-                          // HAVALI ORTALANMIŞ KART TASARIMI GERİ DÖNDÜ!
                           Center(
                             child: Dismissible(
                               key: ValueKey('${currentWord.word}_${DateTime.now()}'), 
@@ -716,7 +749,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // MENÜ (DRAWER) EKSİKLERİ VE TASARIMLARI DÜZELTİLDİ
   Widget _buildDrawer() {
     return Drawer(
       child: SafeArea(
@@ -737,7 +769,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }))); }),
             const Divider(),
             ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
-            // OYUNLAR GERİ DÖNDÜ!
             ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
