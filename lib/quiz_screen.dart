@@ -99,9 +99,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await globalTts.setLanguage(languageCode);
-      await globalTts.setSpeechRate(0.45);
-      await globalTts.speak(text);
+      // Önceki kuyruğu anında öldür (Gereksiz okumaları engeller)
+      await globalTts.stop();
+      
+      // Özel karakterleri sil (Kilitlenmeleri önler)
+      String cleanText = text.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ');
+      
+      globalTts.setLanguage(languageCode);
+      globalTts.setSpeechRate(0.45);
+      globalTts.speak(cleanText);
     } catch (e) {
       debugPrint("TTS Error: $e");
     }
@@ -110,7 +116,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
     
-    // ÇAKIŞMAYI ÖNLEMEK İÇİN YENİ "SMART" FONKSİYON KULLANILIYOR
+    // YENİ: GECİKMEYİ (LAG) ÖNLEMEK İÇİN BİLDİRİM DİLİ SORUNUN DİLİ (KAYNAK) YAPILDI
+    // Böylece TTS motoru dil değiştirmekle vakit kaybetmeyip anında tepki verir.
     String lang = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String text = "";
     
@@ -169,7 +176,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     setState(() {});
     
     _entranceController.forward(from: 0.0); 
-    // ÇAKIŞMAYI ÖNLEMEK İÇİN YENİ "SMART" FONKSİYON KULLANILIYOR
+    // Soru gelir gelmez akıllı dille anında kelimeyi okur
     _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word));
   }
 
@@ -348,7 +355,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           const SizedBox(height: 20),
           
           GestureDetector(
-            // ÇAKIŞMAYI ÖNLEMEK İÇİN YENİ "SMART" FONKSİYON KULLANILIYOR
             onTap: () => _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word)),
             child: AnimatedBuilder(
               animation: _entranceController,
