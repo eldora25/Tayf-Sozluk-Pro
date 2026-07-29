@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:intl/intl.dart';
 
 class LoggerScreen extends StatefulWidget {
   const LoggerScreen({super.key});
@@ -12,19 +11,20 @@ class LoggerScreen extends StatefulWidget {
 }
 
 class _LoggerScreenState extends State<LoggerScreen> {
-  // Örnek Log Listesi (Gerçek log mekanizmanıza bağlanabilir)
   List<String> logs = [
     "Sistem başlatıldı.",
     "Veritabanı bağlantısı kuruldu.",
-    "WordNet kütüphanesi hazır.",
+    "Sözlük Kütüphaneleri yüklendi.",
     "Kullanıcı girişi başarılı."
   ];
 
+  // MADDE 7: Hata Loglarını Tarih Damgalı TXT Olarak Paylaşma
   Future<void> _exportLogs() async {
     if (logs.isEmpty) return;
 
     try {
-      String timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      DateTime now = DateTime.now();
+      String timestamp = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}";
       String fileName = 'log_$timestamp.txt';
       
       final directory = await getTemporaryDirectory();
