@@ -15,20 +15,20 @@ import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'models.dart';
-import 'quiz_screen.dart';
-import 'add_word_screen.dart';
-import 'word_list_screen.dart';
-import 'settings_screen.dart';
-import 'statistics_screen.dart';
-import 'edit_word_screen.dart';
-import 'library_manager_screen.dart';
-import 'manage_list_screen.dart';
-import 'logger_screen.dart';
+import 'screens/quiz_screen.dart';
+import 'screens/add_word_screen.dart';
+import 'screens/word_list_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/statistics_screen.dart';
+import 'screens/edit_word_screen.dart';
+import 'screens/library_manager_screen.dart';
+import 'screens/manage_list_screen.dart';
+import 'screens/logger_screen.dart';
 import 'notification_service.dart';
-import 'match_game_screen.dart';
-import 'pronunciation_screen.dart';
-import 'info_screen.dart'; 
-import 'wordnet_search_screen.dart'; 
+import 'screens/match_game_screen.dart';
+import 'screens/pronunciation_screen.dart';
+import 'screens/info_screen.dart'; 
+import 'screens/wordnet_search_screen.dart'; 
 
 late Isar isar;
 
@@ -571,29 +571,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // TTS Kilitlenmesini (Deadlock) önleyen STABİL okuma motoru
+  // GÜVENLİ VE HATASIZ TTS (Build 227 Standartlarında)
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? word.meanings.first : word.word;
-      String lang = 'en-US'; 
-      String libName = word.libraryName.toLowerCase();
+      String lang = isMeaning ? getTargetLanguage(word.libraryName) : getSourceLanguage(word.libraryName);
       
-      if (word.level == 'WordNet' || libName.contains('wordnet') || libName.contains('eng-eng')) {
+      if (word.level == 'WordNet' || word.libraryName.toLowerCase().contains('wordnet')) {
         lang = 'en-US';
-      } 
-      else if (isMeaning) {
-        lang = 'tr-TR';
-      } 
-      else {
-        if (libName.contains('alm') || libName.contains('german') || libName.contains('deu')) {
-          lang = 'de-DE';
-        } else if (libName.contains('fra') || libName.contains('fre')) {
-          lang = 'fr-FR';
-        } else if (libName.contains('isp') || libName.contains('spa')) {
-          lang = 'es-ES';
-        } else if (libName.contains('rus')) {
-          lang = 'ru-RU';
-        }
       }
 
       await flutterTts.setLanguage(lang);
