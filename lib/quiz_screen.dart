@@ -88,7 +88,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // YENİ: Zaman formatı dd:hh:mm:ss olarak güncellendi (Madde 4)
+  // MADDE 4: ZAMAN FORMATI DÜZELTİLDİ
   String _formatTime(int totalSeconds) {
     int d = totalSeconds ~/ (24 * 3600);
     int h = (totalSeconds % (24 * 3600)) ~/ 3600;
@@ -103,7 +103,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (!isAudioEnabled) return;
     try {
       await globalTts.stop();
-      await Future.delayed(const Duration(milliseconds: 150)); // YENİ: Gecikmesiz ve kalıntısız TTS 
+      await Future.delayed(const Duration(milliseconds: 250)); // MADDE 3: TTS Ses kırıntıları silinme tamponu
       String cleanText = text.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                              .replaceAll('ANLAM:', '')
                              .replaceAll('EŞ ANLAMLI:', '')
