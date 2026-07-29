@@ -7,8 +7,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -34,9 +36,13 @@ jobs:
           sed -i '/compileOptions {/a \        isCoreLibraryDesugaringEnabled = true' android/app/build.gradle.kts
           echo 'dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4") }' >> android/app/build.gradle.kts
 
-      - name: Add Android Permissions
+      - name: Add Android Permissions & TTS Queries
         run: |
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>' android/app/src/main/AndroidManifest.xml
+          # 1. Standart İzinlerin Eklenmesi
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+          
+          # 2. EN KRİTİK ADIM: ANDROID 11+ TTS ÇALIŞMASI İÇİN ZORUNLU QUERIES EKLENTİSİ (Otomatik Silinmeye Karşı Enjeksiyon)
+          sed -i '/<\/manifest>/i \    <queries>\n        <intent>\n            <action android:name="android.intent.action.TTS_SERVICE" />\n        </intent>\n    </queries>' android/app/src/main/AndroidManifest.xml
 
       - name: Install dependencies
         run: flutter pub get
@@ -67,7 +73,6 @@ jobs:
               
               content = content.replace("import io.flutter.plugin.common.PluginRegistry.Registrar", "")
               
-              # Context ve BinaryMessenger artık Kotlinin beklediği gibi non-null
               dummy_interface = "\ninterface Registrar {\n    fun activity(): android.app.Activity?\n    fun context(): android.content.Context\n    fun messenger(): io.flutter.plugin.common.BinaryMessenger\n    fun addRequestPermissionsResultListener(listener: Any?)\n}\n"
               
               with open(path, "w") as f:
@@ -90,26 +95,20 @@ jobs:
           name: Dynamic-Debug-APK
           path: build/app/outputs/flutter-apk/TY-Sozluk-v1.0.*-debug.apk
 
-      # YENİ: BAŞARILI DERLEMEDEN SONRA KAYNAK KODLARIN DİNAMİK İSİMLE YEDEKLENMESİ
+      # BAŞARILI DERLEMEDEN SONRA KAYNAK KODLARIN DİNAMİK İSİMLE YEDEKLENMESİ
       - name: Backup Source Files with Build & Commit Info
         if: success()
         run: |
-          # Commit hash'inin ilk 7 hanesini ve Build numarasını al
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
           BUILD_NO=${{ github.run_number }}
           BACKUP_DIR="backup_source_${BUILD_NO}_${SHORT_SHA}"
           
           mkdir -p "$BACKUP_DIR"
           
-          # .git, build, .dart_tool gibi devasa boyutlu/otomatik üretilen klasörleri hariç tutarak tüm dosyaları bul
           find . -type f -not -path '*/\.git/*' -not -path '*/build/*' -not -path '*/\.dart_tool/*' -not -path "*/$BACKUP_DIR/*" | while read file; do
             dir=$(dirname "$file")
             filename=$(basename "$file")
-            
-            # Yedek klasörünün içinde orijinal klasör hiyerarşisini oluştur
             mkdir -p "$BACKUP_DIR/$dir"
-            
-            # Dosyayı belirtilen formata göre kopyala (örn: main.dart.224-aaaaaaa)
             cp "$file" "$BACKUP_DIR/$dir/$filename.$BUILD_NO-$SHORT_SHA"
           done
           
