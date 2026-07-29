@@ -2,9 +2,9 @@ import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:lottie/lottie.dart'; 
 import 'models.dart';
+import 'main.dart'; // YENİ: Global TTS servisini kullanmak için eklendi
 
 class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -29,7 +29,6 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
-  final FlutterTts flutterTts = FlutterTts();
   List<WordModel> quizWords = [];
   late WordModel currentWord;
   List<String> options = [];
@@ -82,7 +81,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _timer?.cancel();
-    flutterTts.stop();
+    globalTts.stop(); // Hata önlemek için globalTts durdurulur
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
@@ -97,16 +96,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // --- KİLİTLENMEYİ ÖNLEYEN VE DİREKT UYGULANAN TTS ÇAĞRISI ---
+  // YENİ: KİLİTLENMEYİ ÖNLEYEN VE GLOBAL MOTORU KULLANAN GÜVENLİ FONKSİYON
   Future<void> _speakWord(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await flutterTts.setLanguage(languageCode);
-      await flutterTts.setVolume(1.0);
-      await flutterTts.setSpeechRate(0.5);
-      await flutterTts.setPitch(1.0);
-      
-      await flutterTts.speak(text);
+      await globalTts.setLanguage(languageCode);
+      await globalTts.setSpeechRate(0.5);
+      await globalTts.speak(text);
     } catch (e) {
       debugPrint("TTS Error: $e");
     }
