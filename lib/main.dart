@@ -118,46 +118,50 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   }
 
   try {
+    // 1. WORDNET (ASKIYA ALINDI - UYARI DÖNDÜRÜR)
     if (lowerName.contains('wordnet') || extension == 'json') {
-      var decoded = json.decode(content);
-      List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
-      
-      for (var e in list) {
-        if (e is Map) {
-          String actualWord = e['word']?.toString() ?? '';
-          bool isId = RegExp(r'^[0-9]{8}-[a-zA-Z]$').hasMatch(actualWord);
-          
-          List<dynamic> synsList = e['synonyms'] is List ? List.from(e['synonyms']) : [];
-          List<dynamic> antsList = e['antonyms'] is List ? List.from(e['antonyms']) : [];
-          
-          if (isId || actualWord.isEmpty || actualWord == 'null') {
-            if (synsList.isNotEmpty) {
-              actualWord = synsList[0].toString();
-              synsList.removeAt(0); 
-            } else {
-              continue; 
-            }
-          }
-
-          List<String> combinedMeanings = [];
-          if (e['definition'] != null && e['definition'].toString().trim().isNotEmpty) {
-            combinedMeanings.add("ANLAM: " + e['definition'].toString().trim());
-          }
-          for (var syn in synsList) {
-            if (syn.toString().trim() != actualWord.trim()) combinedMeanings.add("EŞ ANLAMLI: ${syn.toString().trim()}");
-          }
-          for (var ant in antsList) {
-            combinedMeanings.add("ZIT ANLAMLI: ${ant.toString().trim()}");
-          }
-
-          parsedList.add(json.encode({
-            'word': actualWord, 'meanings': combinedMeanings, 'examples': [],
-            'level': 'WordNet', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-            'srsLevel': 0, 'nextReviewDate': 0
-          }));
-        }
-      }
+      parsedList.add(json.encode({'error': "Yazılımcı üzerinde halen çalışıyor"}));
+      return parsedList;
     } 
+    // 2. BABYLON ENG-TR (ÖZEL CSV ALGORİTMASI)
+    else if (lowerName.contains('babylon_english_turkish') || lowerName.contains('babylon english-turkish')) {
+      List<List<dynamic>> rows = const CsvToListConverter().convert(content);
+      for (var row in rows) {
+        if (row.isEmpty || row.length < 2) continue;
+        String w = row[0].toString().trim();
+        if (w.isEmpty || w.startsWith('#') || w.toLowerCase() == 'word') continue;
+        
+        List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
+
+        parsedList.add(json.encode({
+          'word': w, 'meanings': meanings, 'examples': examples,
+          'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
+          'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+          'srsLevel': 0, 'nextReviewDate': 0
+        }));
+      }
+    }
+    // 3. BABYLON TR-ENG (ÖZEL CSV ALGORİTMASI)
+    else if (lowerName.contains('babylon_turkish_english') || lowerName.contains('babylon turkish-english')) {
+      List<List<dynamic>> rows = const CsvToListConverter().convert(content);
+      for (var row in rows) {
+        if (row.isEmpty || row.length < 2) continue;
+        String w = row[0].toString().trim();
+        if (w.isEmpty || w.startsWith('#') || w.toLowerCase() == 'word') continue;
+        
+        List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
+
+        parsedList.add(json.encode({
+          'word': w, 'meanings': meanings, 'examples': examples,
+          'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
+          'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+          'srsLevel': 0, 'nextReviewDate': 0
+        }));
+      }
+    }
+    // 4. ESKİ TXT BABYLON SÖZLÜKLERİ (FALLBACK)
     else if (lowerName.contains('babylon')) {
       if (content.contains('\t')) {
         var lines = content.split('\n');
@@ -199,6 +203,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         }
       }
     }
+    // 5. ÖZEL AYRIŞTIRICI: EN-TR_TAYF (Sadece ":" ve ";" dikkate alınır, virgüller es geçilir)
     else if (lowerName.contains('en-tr_tayf')) {
       var lines = content.split('\n');
       for (var line in lines) {
@@ -215,7 +220,8 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         }));
       }
     } 
-    else if (lowerName.contains('freedict') || lowerName.contains('free-kh')) {
+    // 6. ÖZEL AYRIŞTIRICI: FREEDICT / FREE-KH VEYA GENEL CSV
+    else if (extension == 'csv' || lowerName.contains('freedict') || lowerName.contains('free-kh')) {
       List<List<dynamic>> rows = const CsvToListConverter().convert(content);
       for (var row in rows) {
         if (row.isEmpty || row.length < 2) continue;
@@ -227,12 +233,13 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 
         parsedList.add(json.encode({
           'word': w, 'meanings': meanings, 'examples': examples,
-          'level': row.length > 3 ? row[3].toString().trim() : 'Genel',
+          'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
           'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
           'srsLevel': 0, 'nextReviewDate': 0
         }));
       }
     }
+    // 7. GENEL AYRIŞTIRICI (Dışarıdan yüklenen düz TXT'ler)
     else {
       var lines = content.split('\n');
       for (var line in lines) {
@@ -258,7 +265,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       }
     }
   } catch (e, stacktrace) {
-    parsedList.add(json.encode({'error': "$e\n$stacktrace"}));
+    parsedList.add(json.encode({'error': "Dosya Okuma Hatası: $e"}));
   }
   return parsedList;
 }
@@ -491,18 +498,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       List<WordModel> fromIsar = await isar.wordModels.where().findAll();
 
-      if (fromIsar.isEmpty && prefs.containsKey('allWords')) {
-        List<WordModel> oldAll = (prefs.getStringList('allWords') ?? []).map((e) => WordModel.fromJson(e)..listType='all').toList();
-        List<WordModel> oldLearned = (prefs.getStringList('learnedWords') ?? []).map((e) => WordModel.fromJson(e)..listType='learned').toList();
-        List<WordModel> oldRepeat = (prefs.getStringList('toRepeatWords') ?? []).map((e) => WordModel.fromJson(e)..listType='toRepeat').toList();
-        
-        List<WordModel> allToSave = [...oldAll, ...oldLearned, ...oldRepeat];
-        await isar.writeTxn(() async { await isar.wordModels.putAll(allToSave); });
-        
-        prefs.remove('allWords'); prefs.remove('learnedWords'); prefs.remove('toRepeatWords'); prefs.remove('wrongWords');
-        fromIsar = allToSave;
-      }
-
       setState(() {
         allWords = fromIsar.where((w) => w.listType == 'all').toList();
         learningWords = fromIsar.where((w) => w.listType == 'learning').toList();
@@ -628,12 +623,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   List<WordModel> get filteredWords {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') {
-      return toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel || w.level == 'WordNet').toList();
+      return toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel).toList();
     }
-    return allWords.where((w) => 
-      w.libraryName == selectedLibrary && 
-      (w.level == selectedLevel || w.level == 'WordNet' || selectedLevel == 'Genel')
-    ).toList();
+    return allWords.where((w) => w.libraryName == selectedLibrary && (w.level == selectedLevel || selectedLevel == 'Genel')).toList();
   }
 
   List<String> get availableLibraries {
@@ -648,7 +640,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   int get currentLibraryToRepeatCount {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') return toRepeatWords.length;
-    return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel || w.level == 'WordNet')).length;
+    return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
@@ -659,15 +651,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       String rawText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
       if (rawText.isEmpty) return;
 
-      String cleanText = rawText.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
-                                .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
+      String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                                 .replaceAll('ANLAM:', '')
                                 .replaceAll('EŞ ANLAMLI:', '')
                                 .replaceAll('ZIT ANLAMLI:', '');
 
       String lang = isMeaning ? getSmartTargetLanguage(word.libraryName, cleanText) : getSmartSourceLanguage(word.libraryName, cleanText);
-      if (word.level == 'WordNet' || word.libraryName.toLowerCase().contains('wordnet')) lang = 'en-US';
-
       globalTts.setLanguage(lang);
       globalTts.setSpeechRate(0.45); 
       globalTts.speak(cleanText); 
@@ -763,9 +752,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         });
 
         Navigator.pop(context); 
+        
+        // HATA YAKALAYICI (WordNet Engeli veya Diğer Hatalar İçin)
         if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
           String errMsg = json.decode(parsedJsons.first)['error'];
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $errMsg")));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errMsg), backgroundColor: Colors.orange));
           return;
         }
 
@@ -783,11 +774,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _loadPackageFromAssets(String assetPath, String extension, String customLibraryName) async {
     if (availableLibraries.contains(customLibraryName)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName zaten yüklü! Aynı paketi iki defa yükleyemezsiniz."), backgroundColor: Colors.orange));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName zaten yüklü!"), backgroundColor: Colors.orange));
       return;
     }
 
-    showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName yükleniyor.\n\nBüyük sözlükler 10-15 saniye sürebilir, lütfen bekleyin..."))])));
+    showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName yükleniyor.\n\nBüyük sözlükler 10-15 saniye sürebilir..."))])));
     try {
       ByteData data = await rootBundle.load(assetPath);
       List<int> bytes = data.buffer.asUint8List();
@@ -799,9 +790,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
 
       Navigator.pop(context); 
+
+      // HATA YAKALAYICI (WordNet Engeli vb.)
       if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
         String errMsg = json.decode(parsedJsons.first)['error'];
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $errMsg")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errMsg), backgroundColor: Colors.orange));
         return;
       }
 
@@ -1108,7 +1101,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildCardFront(WordModel word) {
-    String displayWord = word.word.contains('[ID:') ? "WordNet Kaydı" : word.word;
     List<Color> gradientColors = _getPremiumGradientColors(word.srsLevel);
     bool isPremium = word.srsLevel > 0;
 
@@ -1142,7 +1134,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Expanded(
                   child: Stack(
                     children: [
-                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(displayWord, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))))),
+                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))))),
                       Positioned(right: 5, top: 5, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false))),
                       Positioned(left: 5, top: 5, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), tooltip: 'Kelimeyi Düzenle', onPressed: () => _openEditScreen(word)))
                     ],
@@ -1157,7 +1149,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildCardBack(WordModel word) {
-    String displayWord = word.word.contains('[ID:') ? "WordNet Kaydı" : word.word;
     List<Color> gradientColors = _getPremiumGradientColors(word.srsLevel);
     bool isPremium = word.srsLevel > 0;
 
@@ -1197,7 +1188,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Center(child: Text(displayWord, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+                              Center(child: Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
                               const Divider(),
                               const Text("Detaylar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
                               ...word.meanings.map((m) {
@@ -1227,7 +1218,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // MENÜLER DÜZELTİLDİ (Madde 3)
   Widget _buildDrawer() {
     return Drawer(
       child: SafeArea(
@@ -1255,10 +1245,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               onTap: () { Navigator.pop(context); _buyFreeze(); },
             ),
             const Divider(),
-            ListTile(leading: const Icon(Icons.settings), title: const Text("Ayarlar, Temalar, Seçimler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, onSaveSettings: (newGoal, newThreshold, newQCount, newThemeIdx, newLib, newLevel) { setState(() { dailyGoal = newGoal; quizThreshold = newThreshold; quizQuestionCount = newQCount; widget.onThemeChanged(newThemeIdx); selectedLibrary = newLib; selectedLevel = newLevel; currentCardIndex = 0; }); _saveData(); }, onAddPackage: (assetPath, ext, name) => _loadPackageFromAssets(assetPath, ext, name)))); }),
-            ListTile(leading: const Icon(Icons.language, color: Colors.indigo), title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Detaylı İng-İng Sözlük"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordNetSearchScreen(words: allWords))); }),
+            ListTile(
+              leading: const Icon(Icons.language, color: Colors.indigo), 
+              title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), 
+              subtitle: const Text("Detaylı İng-İng Sözlük"), 
+              onTap: () { 
+                Navigator.pop(context); 
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Yazılımcı üzerinde halen çalışıyor"), backgroundColor: Colors.orange)
+                ); 
+              }
+            ),
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: filteredWords, onDelete: (wordToDelete) { setState(() { allWords.removeWhere((w) => w.word == wordToDelete.word); toRepeatWords.removeWhere((w) => w.word == wordToDelete.word); }); _saveData(); }, onLearned: (w) => _markAsLearned(w, filteredWords)))); }),
+            ListTile(leading: const Icon(Icons.settings), title: const Text("Ayarlar, Temalar, Seçimler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, onSaveSettings: (newGoal, newThreshold, newQCount, newThemeIdx, newLib, newLevel) { setState(() { dailyGoal = newGoal; quizThreshold = newThreshold; quizQuestionCount = newQCount; widget.onThemeChanged(newThemeIdx); selectedLibrary = newLib; selectedLevel = newLevel; currentCardIndex = 0; }); _saveData(); }, onAddPackage: (assetPath, ext, name) => _loadPackageFromAssets(assetPath, ext, name)))); }),
             const Divider(),
             ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi"), subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onLearned: (w) => _markAsLearned(w, toRepeatWords), onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
