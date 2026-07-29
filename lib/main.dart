@@ -82,12 +82,11 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         if (e is Map && (e.containsKey('definition') || e.containsKey('synonyms'))) {
           String actualWord = e['word']?.toString() ?? '';
           
-          // YENİ AKILLI WORDNET AYRIŞTIRICI: ID kodu varsa (örn: 00001740-a) kelimeyi Synonym içinden kurtar!
           if (RegExp(r'^[0-9]{8}-[a-z]$').hasMatch(actualWord) || actualWord.isEmpty || actualWord == 'null') {
             if (e['synonyms'] != null && e['synonyms'] is List && e['synonyms'].isNotEmpty) {
-              actualWord = e['synonyms'][0].toString(); // İlk eş anlamlıyı gerçek kelime yap
+              actualWord = e['synonyms'][0].toString(); 
             } else {
-              continue; // Kelime de yok, synonym de yoksa hatalı veridir, atla.
+              continue; 
             }
           }
 
@@ -305,18 +304,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _flipController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     _flipAnimation = Tween<double>(begin: 0, end: 1).animate(_flipController);
     NotificationService.requestPermission();
-    _initMainTTS();
     _loadData();
-  }
-
-  Future<void> _initMainTTS() async {
-    try {
-      await flutterTts.setVolume(1.0);
-      await flutterTts.setSpeechRate(0.5);
-      await flutterTts.setPitch(1.0);
-    } catch (e) {
-      debugPrint("TTS Init Hatası: $e");
-    }
   }
 
   @override
@@ -583,6 +571,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
+  // TTS Kilitlenmesini (Deadlock) önleyen STABİL okuma motoru
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? word.meanings.first : word.word;
