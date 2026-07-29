@@ -1,3 +1,4 @@
+import 'wordnet_search_screen.dart'; // YENİ EKLENEN
 import 'dart:convert';
 import 'dart:math';
 import 'dart:io';
@@ -1147,6 +1148,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."),
               onTap: () { Navigator.pop(context); _buyFreeze(); },
             ),
+            const Divider(),
+            
+            // YENİ: WORDNET MENÜSÜ BURAYA EKLENDİ (Kelime Ekle'nin hemen üstüne)
+            ListTile(
+              leading: const Icon(Icons.language, color: Colors.indigo), 
+              title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), 
+              subtitle: const Text("Detaylı İng-İng Sözlük"),
+              onTap: () { 
+                Navigator.pop(context); 
+                Navigator.push(context, MaterialPageRoute(builder: (context) => WordNetSearchScreen(words: allWords))); 
+              }
+            ),
+            
+            ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             const Divider(),
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
             
