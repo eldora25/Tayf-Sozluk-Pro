@@ -68,11 +68,12 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
   String customLibraryName = params['libraryName'];
+  // Orijinal dosya adını koruyoruz ki Assets dosyalarının algoritmaları isim değişikliğinden etkilenmesin.
   String originalFileName = (params['originalFileName'] ?? '').toLowerCase();
   String lowerName = "${customLibraryName.toLowerCase()} $originalFileName";
   List<String> parsedList = [];
 
-  // BOM (Byte Order Mark) temizliği - UTF8 dosyalarının ilk karakter hatasını çözer
+  // BOM (Byte Order Mark) temizliği - Gizli karakter yüzünden ilk satırın okunmamasını engeller.
   if (content.startsWith('\uFEFF')) {
     content = content.substring(1);
   }
@@ -91,10 +92,13 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   }
 
   try {
+    // 1. ÖZEL ALGORİTMA: WordNet
     if (lowerName.contains('wordnet')) {
       parsedList.add(json.encode({'error': "Yazılımcı üzerinde halen çalışıyor"}));
       return parsedList;
-    } else if (extension == 'json') {
+    } 
+    // 2. ÖZEL ALGORİTMA: Standart JSON
+    else if (extension == 'json') {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       for (var e in list) {
@@ -106,7 +110,9 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': examples, 'level': e['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
         }
       }
-    } else if (lowerName.contains('babylon')) {
+    } 
+    // 3. ÖZEL ALGORİTMA: Babylon Dosyaları
+    else if (lowerName.contains('babylon')) {
       List<String> lines = content.split('\n');
       for (String line in lines) {
         line = line.trim();
@@ -127,19 +133,21 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         } catch(e) { continue; }
       }
     } 
-    // GÜÇLENDİRİLMİŞ TAYF AYRIŞTIRICI: Toleransı artırıldı ve zırhlandı
-    else if (lowerName.contains('tayf')) {
+    // 4. ÖZEL ALGORİTMA: Tayf (EN-TR_tayf.txt) - KESİNLİKLE İZOLE EDİLDİ
+    else if (lowerName.contains('en-tr_tayf')) {
       var lines = content.split('\n');
       for (var line in lines) {
         if (!line.contains(':')) continue;
         int colonIdx = line.indexOf(':');
         String w = line.substring(0, colonIdx).trim();
-        if (w.isEmpty) continue; // Boş kelime zırhı
+        if (w.isEmpty) continue; // Boş satır koruması
         String mStr = line.substring(colonIdx + 1).trim();
         List<String> meanings = mStr.split(';').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
         parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
       }
-    } else if (extension == 'csv' || lowerName.contains('freedict') || lowerName.contains('free-kh')) {
+    } 
+    // 5. ÖZEL ALGORİTMA: FreeDict, Free-KH ve standart CSV'ler
+    else if (extension == 'csv' || lowerName.contains('freedict') || lowerName.contains('free-kh')) {
       List<String> lines = content.split('\n');
       for (String line in lines) {
         try {
@@ -154,23 +162,20 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         } catch(e) { continue; }
       }
     } 
-    // AKILLANDIRILMIŞ GENEL (FALLBACK) TXT AYRIŞTIRICI: Tayf dosyasının adını değiştirseniz bile otomatik tanır!
+    // 6. GENEL ALGORİTMA: Kullanıcının dışarıdan yüklediği bilinmeyen basit TXT formatları için
     else {
       var lines = content.split('\n');
       for (var line in lines) {
         if (!line.contains(':') && !line.contains(';') && !line.contains(',')) continue;
         
-        // Akıllı Ayraç Tespiti (Öncelik: İki nokta > Noktalı virgül > Virgül)
         String wordSeparator = line.contains(':') ? ':' : (line.contains(';') ? ';' : ',');
         int sepIdx = line.indexOf(wordSeparator);
         if (sepIdx == -1) continue;
 
         String w = line.substring(0, sepIdx).trim();
-        if (w.isEmpty) continue; // Boş kelime zırhı
+        if (w.isEmpty) continue;
 
         String mStr = line.substring(sepIdx + 1).trim();
-        
-        // Anlamları ayırırken eğer dosya TAYF gibi noktalı virgül kullanmışsa onu seç, yoksa virgül.
         String meaningSeparator = mStr.contains(';') ? ';' : ',';
         List<String> meanings = mStr.split(meaningSeparator).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
 
@@ -522,7 +527,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             var w = WordModel.fromJson(jsonStr)..listType = 'all';
             if (!existingWords.contains(w.word)) {
                newWords.add(w);
-               existingWords.add(w.word); // Dosya içi çift kayıt (duplicate) engeli
+               existingWords.add(w.word); 
             }
           } catch(e) { continue; }
         }
