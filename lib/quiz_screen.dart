@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:lottie/lottie.dart'; 
 import 'models.dart';
-import 'main.dart'; // globalTts ve dil algılama metodlarını kullanmak için eklendi
+import 'main.dart'; // globalTts ve "Smart" dil algılama metodlarını kullanmak için eklendi
 
 class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -96,7 +96,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // YENİ: Anında, beklemeden okuyan Global TTS motor çağrısı
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
@@ -108,11 +107,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     }
   }
 
-  // YENİ: Akıllı dil algılamayla anında çevrilen doğru/yanlış tepkisi
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
     
-    String lang = getSourceLanguage(currentWord.libraryName, currentWord.word);
+    // ÇAKIŞMAYI ÖNLEMEK İÇİN YENİ "SMART" FONKSİYON KULLANILIYOR
+    String lang = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String text = "";
     
     if (lang == 'en-US') {
@@ -170,8 +169,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     setState(() {});
     
     _entranceController.forward(from: 0.0); 
-    // YENİ: Soru gelir gelmez akıllı algılamayla anında kelimeyi okur
-    _speakText(currentWord.word, getSourceLanguage(currentWord.libraryName, currentWord.word));
+    // ÇAKIŞMAYI ÖNLEMEK İÇİN YENİ "SMART" FONKSİYON KULLANILIYOR
+    _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word));
   }
 
   void _checkAnswer(String option) {
@@ -349,7 +348,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           const SizedBox(height: 20),
           
           GestureDetector(
-            onTap: () => _speakText(currentWord.word, getSourceLanguage(currentWord.libraryName, currentWord.word)),
+            // ÇAKIŞMAYI ÖNLEMEK İÇİN YENİ "SMART" FONKSİYON KULLANILIYOR
+            onTap: () => _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word)),
             child: AnimatedBuilder(
               animation: _entranceController,
               builder: (context, child) {
@@ -360,7 +360,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
-                      // YENİ: Soru kutusu ana temanın renklerine uyumlu hale getirildi
                       decoration: BoxDecoration(
                         color: Theme.of(context).primaryColor.withOpacity(0.08), 
                         borderRadius: BorderRadius.circular(16), 
