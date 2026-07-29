@@ -53,7 +53,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   late AnimationController _shakeController;    
   late AnimationController _scaleController;    
   String? _lastWrongOption; 
-  String _questionSubtext = ""; 
 
   @override
   void initState() {
@@ -147,41 +146,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
-    bool isWordNet = currentWord.level == 'WordNet' || currentWord.libraryName.toLowerCase().contains('wordnet');
-    _questionSubtext = "";
-    String targetPrefix = "";
-
-    if (isWordNet) {
-        List<String> defs = currentWord.meanings.where((m) => m.startsWith("ANLAM: ")).toList();
-        List<String> syns = currentWord.meanings.where((m) => m.startsWith("EŞ ANLAMLI: ")).toList();
-        List<String> ants = currentWord.meanings.where((m) => m.startsWith("ZIT ANLAMLI: ")).toList();
-
-        List<String> availableTypes = [];
-        if (defs.isNotEmpty) availableTypes.add("ANLAM");
-        if (syns.isNotEmpty) availableTypes.add("EŞ");
-        if (ants.isNotEmpty) availableTypes.add("ZIT");
-
-        if (availableTypes.isEmpty) {
-            correctOption = currentWord.meanings.isNotEmpty ? currentWord.meanings[random.nextInt(currentWord.meanings.length)] : "";
-        } else {
-            String chosenType = availableTypes[random.nextInt(availableTypes.length)];
-            if (chosenType == "ANLAM") {
-                _questionSubtext = "(İngilizce Anlamı Hangisidir?)";
-                targetPrefix = "ANLAM: ";
-                correctOption = defs[random.nextInt(defs.length)].substring(7).trim();
-            } else if (chosenType == "EŞ") {
-                _questionSubtext = "(Eş Anlamlısı Hangisidir?)";
-                targetPrefix = "EŞ ANLAMLI: ";
-                correctOption = syns[random.nextInt(syns.length)].substring(12).trim();
-            } else if (chosenType == "ZIT") {
-                _questionSubtext = "(Zıt Anlamlısı Hangisidir?)";
-                targetPrefix = "ZIT ANLAMLI: ";
-                correctOption = ants[random.nextInt(ants.length)].substring(13).trim();
-            }
-        }
-    } else {
-        correctOption = currentWord.meanings.isNotEmpty ? currentWord.meanings[random.nextInt(currentWord.meanings.length)] : "";
-    }
+    // WordNet Kodları Kullanıcının İsteği Üzerine Kafa Karıştırmaması İçin Pasife Alındı. Standart Basit Algoritma Devrede.
+    correctOption = currentWord.meanings.isNotEmpty ? currentWord.meanings[random.nextInt(currentWord.meanings.length)] : "";
 
     Set<String> wrongOptions = {};
     int loopCounter = 0;
@@ -191,19 +157,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
       
       if (randomWord.word != currentWord.word && randomWord.meanings.isNotEmpty) {
-        String randomMeaning = "";
+        String randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
         
-        if (isWordNet && targetPrefix.isNotEmpty) {
-          var matchingMeanings = randomWord.meanings.where((m) => m.startsWith(targetPrefix)).toList();
-          if (matchingMeanings.isNotEmpty) {
-            randomMeaning = matchingMeanings[random.nextInt(matchingMeanings.length)].substring(targetPrefix.length).trim();
-          } else { continue; }
-        } else {
-          randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
-          if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
-          if (randomMeaning.startsWith("EŞ ANLAMLI: ")) randomMeaning = randomMeaning.substring(12).trim();
-          if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
-        }
+        // Olası WordNet kalıntılarını temizleyerek sade göster
+        if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
+        if (randomMeaning.startsWith("EŞ ANLAMLI: ")) randomMeaning = randomMeaning.substring(12).trim();
+        if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
         
         if (!currentWord.meanings.any((m) => m.contains(randomMeaning)) && randomMeaning != correctOption && randomMeaning.isNotEmpty) {
           wrongOptions.add(randomMeaning);
@@ -217,14 +176,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     _entranceController.forward(from: 0.0); 
     
-    // Görüntülenen kelimeyi ayarla (ID varsa gizle)
-    String displayWord = currentWord.word;
-    if (displayWord.contains('[ID:')) {
-      displayWord = "WordNet Kaydı";
-    }
-    
-    String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
-    _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
+    _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word));
   }
 
   void _checkAnswer(String option) {
@@ -312,11 +264,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     }
 
     Color borderColor = Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.5);
-    
-    String displayWord = currentWord.word;
-    if (displayWord.contains('[ID:')) {
-      displayWord = "WordNet Kaydı";
-    }
 
     return Scaffold(
       appBar: AppBar(title: const Text("Quiz Modu"), actions: [IconButton(icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), onPressed: () => setState(() => isAudioEnabled = !isAudioEnabled))]),
@@ -339,8 +286,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           
           GestureDetector(
             onTap: () {
-              String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
-              _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
+              _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word));
             },
             child: AnimatedBuilder(
               animation: _entranceController,
@@ -354,9 +300,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                       decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
                       child: Column(
                         children: [
-                          Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
-                          if (_questionSubtext.isNotEmpty)
-                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.7)))),
+                          Text(currentWord.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                         ],
                       ),
                     ),
