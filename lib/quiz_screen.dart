@@ -49,6 +49,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   bool isAudioEnabled = true;
   bool _isStatsSaved = false;
 
+  // DERLEME HATASINI ÇÖZEN EKSİK DEĞİŞKEN EKLENDİ
+  String _questionSubtext = "";
+
   late AnimationController _entranceController; 
   late AnimationController _shakeController;    
   late AnimationController _scaleController;    
