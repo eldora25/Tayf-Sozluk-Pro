@@ -10,9 +10,9 @@ class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
   final int threshold;
   final int questionCount;
-  final Function(WordModel) onWordMastered; // Parametre adı düzeltildi
-  final Function(WordModel) onWrongWord;    // Parametre adı düzeltildi
-  final Function(int timeElapsed, int answered, int wrong) onQuizFinished; 
+  final Function(WordModel) onWordMastered;
+  final Function(WordModel) onWrongWord;
+  final Function(int timeElapsed, int answered, int wrong) onQuizFinished;
 
   const QuizScreen({
     super.key,
@@ -59,8 +59,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     
-    _initTTS();
-
     _entranceController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
@@ -73,13 +71,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       _startTimer();
       _generateQuestion();
     }
-  }
-
-  Future<void> _initTTS() async {
-    await flutterTts.awaitSpeakCompletion(true); // TTS çakışmalarını önler
-    await flutterTts.setVolume(1.0);
-    await flutterTts.setSpeechRate(0.5);
-    await flutterTts.setPitch(1.0);
   }
 
   void _startTimer() {
@@ -110,6 +101,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (!isAudioEnabled) return;
     try {
       await flutterTts.setLanguage(languageCode);
+      await flutterTts.setSpeechRate(0.5);
       await flutterTts.speak(text);
     } catch (e) {
       debugPrint("TTS Error: $e");
@@ -118,7 +110,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
-    // WordNet quizleri İngilizce-İngilizce olduğundan feedback dili ingilizce ayarlanır
     _speakWord(isCorrect ? "Correct" : "Wrong", "en-US");
   }
 
@@ -157,8 +148,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     setState(() {});
     
-    _entranceController.forward(from: 0.0);
-    _speakWord(currentWord.word, "en-US"); // Soruyu sorarken okur
+    _entranceController.forward(from: 0.0); 
+    _speakWord(currentWord.word, "en-US");
   }
 
   void _checkAnswer(String option) {
@@ -169,8 +160,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         isAnsweredCorrectly = true;
         answeredQuestions++;
         
-        HapticFeedback.mediumImpact();
-        _scaleController.forward(from: 0.0);
+        HapticFeedback.mediumImpact(); 
+        _scaleController.forward(from: 0.0); 
         
         if (selectedWrongOptions.isEmpty) {
           correctAnswers++;
@@ -181,9 +172,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         wrongAnswers++;
         currentWord.wrongCount++;
         
-        HapticFeedback.heavyImpact();
+        HapticFeedback.heavyImpact(); 
         _lastWrongOption = option;
-        _shakeController.forward(from: 0.0);
+        _shakeController.forward(from: 0.0); 
       }
     });
 
@@ -238,7 +229,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
                 const SizedBox(height: 10),
                 Lottie.network(
-                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', // Havai Fişek
+                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', 
                   height: 180,
                   repeat: true,
                   errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber),
@@ -315,7 +306,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // YENİ: İSTENEN ÜST GÖSTERGE ALANI
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
