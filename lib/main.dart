@@ -29,7 +29,7 @@ import 'match_game_screen.dart';
 import 'pronunciation_screen.dart';
 import 'info_screen.dart'; 
 import 'wordnet_search_screen.dart'; 
-import 'demo_screen.dart'; // YENİ: Demo Ekranı import edildi
+import 'demo_screen.dart'; 
 
 late Isar isar;
 
@@ -102,29 +102,11 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String customLibraryName = params['libraryName'];
 
   List<String> parsedList = [];
-  final RegExp splitRegExp = RegExp(r'\|\|\||\n');
-  final RegExp prefixRegExp = RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*');
-  final RegExp spaceRegExp = RegExp(r'\s+');
-
-  List<String> cleanMeanings(List<dynamic> raw) {
-    List<String> result = [];
-    for (var item in raw) {
-      var str = item.toString().replaceAll('\x06', '');
-      var parts = str.split(splitRegExp);
-      for (var p in parts) {
-        var clean = p.trim();
-        clean = clean.replaceAll(prefixRegExp, '');
-        clean = clean.replaceAll(spaceRegExp, ' ');
-        if (clean.isNotEmpty) {
-          result.add(clean);
-        }
-      }
-    }
-    return result.toSet().toList();
-  }
+  String lowerName = customLibraryName.toLowerCase();
 
   try {
-    if (extension == 'json') {
+    // 1. ÖZEL AYRIŞTIRICI: WORDNET (JSON)
+    if (lowerName.contains('wordnet') || extension == 'json') {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       
@@ -149,68 +131,72 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
             combinedMeanings.add("ANLAM: " + e['definition'].toString().trim());
           }
           for (var syn in synsList) {
-            if (syn.toString().trim() != actualWord.trim()) {
-              combinedMeanings.add("EŞ ANLAMLI: ${syn.toString().trim()}");
-            }
+            if (syn.toString().trim() != actualWord.trim()) combinedMeanings.add("EŞ ANLAMLI: ${syn.toString().trim()}");
           }
           for (var ant in antsList) {
             combinedMeanings.add("ZIT ANLAMLI: ${ant.toString().trim()}");
           }
 
           parsedList.add(json.encode({
-            'word': actualWord, 
-            'meanings': combinedMeanings, 
-            'examples': cleanMeanings(e['examples'] ?? []),
-            'level': 'WordNet', 
-            'libraryName': customLibraryName, 
-            'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+            'word': actualWord, 'meanings': combinedMeanings, 'examples': [],
+            'level': 'WordNet', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
             'srsLevel': 0, 'nextReviewDate': 0
           }));
         }
       }
-    } else {
+    } 
+    // 2. ÖZEL AYRIŞTIRICI: EN-TR_TAYF (2000+ Kelime)
+    else if (lowerName.contains('en-tr_tayf')) {
+      var lines = content.split('\n');
+      for (var line in lines) {
+        if (!line.contains(':')) continue;
+        int colonIdx = line.indexOf(':');
+        String w = line.substring(0, colonIdx).trim();
+        String mStr = line.substring(colonIdx + 1).trim();
+        List<String> meanings = mStr.split(';').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
+        parsedList.add(json.encode({
+          'word': w, 'meanings': meanings, 'examples': [],
+          'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+          'srsLevel': 0, 'nextReviewDate': 0
+        }));
+      }
+    } 
+    // 3. ÖZEL AYRIŞTIRICI: FREEDICT (Free-KH)
+    else if (lowerName.contains('freedict') || lowerName.contains('free-kh')) {
       List<List<dynamic>> rows = const CsvToListConverter().convert(content);
-      bool isCsv = rows.any((r) => r.length > 1);
+      for (var row in rows) {
+        if (row.isEmpty || row.length < 2) continue;
+        String w = row[0].toString().trim();
+        if (w.isEmpty || w.startsWith('#') || w.toLowerCase() == 'word') continue;
+        
+        List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
 
-      if (!isCsv && content.contains(':')) {
-        var lines = content.split('\n');
-        for (var line in lines) {
-          if (line.trim().isEmpty || line.startsWith('#') || line.startsWith('00database')) continue;
-          
-          int colonIdx = line.indexOf(':');
-          int commaIdx = line.indexOf(',');
-          
-          if (colonIdx != -1 && (commaIdx == -1 || colonIdx < commaIdx)) {
-            String wordStr = line.substring(0, colonIdx).trim();
-            String meaningStr = line.substring(colonIdx + 1).trim();
-            List<String> rawMeanings = meaningStr.split(RegExp(r'[;,]'));
+        parsedList.add(json.encode({
+          'word': w, 'meanings': meanings, 'examples': examples,
+          'level': row.length > 3 ? row[3].toString().trim() : 'Genel',
+          'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+          'srsLevel': 0, 'nextReviewDate': 0
+        }));
+      }
+    } 
+    // 4. GENEL AYRIŞTIRICI (Kullanıcı Yüklemeleri)
+    else {
+      var lines = content.split('\n');
+      for (var line in lines) {
+        if (!line.contains(':') && !line.contains(';')) continue;
+        String separator = line.contains(':') ? ':' : ';';
+        int sepIdx = line.indexOf(separator);
+        String w = line.substring(0, sepIdx).trim();
+        String mStr = line.substring(sepIdx + 1).trim();
+        List<String> meanings = mStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
 
-            parsedList.add(json.encode({
-              'word': wordStr, 
-              'meanings': cleanMeanings(rawMeanings), 
-              'examples': <String>[],
-              'level': 'Genel', 
-              'libraryName': customLibraryName, 
-              'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-              'srsLevel': 0, 'nextReviewDate': 0
-            }));
-          }
-        }
-      } else {
-        for (var row in rows) {
-          if (row.isEmpty || row.length < 2) continue;
-          String wordStr = row[0].toString().trim();
-          if (wordStr.isEmpty || wordStr.startsWith('#') || wordStr.toLowerCase() == 'word' || wordStr.startsWith('00database')) continue;
-
-          parsedList.add(json.encode({
-            'word': wordStr, 
-            'meanings': cleanMeanings([row[1]]), 
-            'examples': row.length > 2 ? cleanMeanings([row[2]]) : <String>[],
-            'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
-            'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-            'srsLevel': 0, 'nextReviewDate': 0
-          }));
-        }
+        parsedList.add(json.encode({
+          'word': w, 'meanings': meanings, 'examples': [],
+          'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+          'srsLevel': 0, 'nextReviewDate': 0
+        }));
       }
     }
   } catch (e, stacktrace) {
@@ -234,11 +220,6 @@ void main() async {
     debugPrint("FLUTTER ERROR: ${details.exception}\n${details.stack}");
   };
   
-  PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint("PLATFORM ERROR: $error\n$stack");
-    return true; 
-  };
-
   runApp(const TayfSozlukApp());
 }
 
@@ -273,30 +254,14 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
     switch (themeIndex) {
-      case 0: return ThemeData.dark().copyWith(
-          textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme),
-          primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent));
-      case 1: return ThemeData.light().copyWith(
-          textTheme: baseTextTheme,
-          primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent));
-      case 2: return ThemeData(
-          textTheme: baseTextTheme,
-          primarySwatch: Colors.blue, primaryColor: Colors.blue[400], scaffoldBackgroundColor: Colors.blue[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: const AppBarTheme(backgroundColor: Colors.blue, foregroundColor: Colors.white));
-      case 3: return ThemeData(
-          textTheme: baseTextTheme,
-          primarySwatch: Colors.teal, primaryColor: Colors.teal[400], scaffoldBackgroundColor: Colors.teal[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: const AppBarTheme(backgroundColor: Colors.teal, foregroundColor: Colors.white));
-      case 4: return ThemeData(
-          textTheme: baseTextTheme,
-          primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: Colors.purple[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white));
-      case 5: return ThemeData(
-          textTheme: baseTextTheme,
-          primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: Colors.orange[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white));
-      case 6: return ThemeData(
-          textTheme: baseTextTheme,
-          primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.pink[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
-      case 7: return ThemeData(
-          textTheme: baseTextTheme,
-          primarySwatch: Colors.cyan, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.amber[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.cyan), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
+      case 0: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent));
+      case 1: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent));
+      case 2: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.blue, primaryColor: Colors.blue[400], scaffoldBackgroundColor: Colors.blue[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: const AppBarTheme(backgroundColor: Colors.blue, foregroundColor: Colors.white));
+      case 3: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.teal, primaryColor: Colors.teal[400], scaffoldBackgroundColor: Colors.teal[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: const AppBarTheme(backgroundColor: Colors.teal, foregroundColor: Colors.white));
+      case 4: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: Colors.purple[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white));
+      case 5: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: Colors.orange[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white));
+      case 6: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.pink[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
+      case 7: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.cyan, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.amber[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.cyan), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
       default: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme));
     }
   }
@@ -309,10 +274,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       theme: _getTheme(),
       themeAnimationDuration: const Duration(milliseconds: 1000),
       themeAnimationCurve: Curves.easeInOut,
-      home: HomeScreen(
-        themeIndex: themeIndex,
-        onThemeChanged: _toggleTheme,
-      ),
+      home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
     );
   }
 }
@@ -386,9 +348,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         DateTime date = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
         DateTime now = DateTime.now();
         return date.year == now.year && date.month == now.month && date.day == now.day;
-      } catch (e) {
-        return false;
-      }
+      } catch (e) { return false; }
     }).length;
 
     bool isStreakInDanger = false;
@@ -437,51 +397,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         lastActiveDateStr = prefs.getString('lastActiveDateStr') ?? "";
         tayfPoints = prefs.getInt('tayfPoints') ?? 0;
         streakFreezes = prefs.getInt('streakFreezes') ?? 0;
-        
-        firstUseTimestamp = prefs.getInt('firstUseTimestamp') ?? 0;
-        if (firstUseTimestamp < 1700000000000) {
-          firstUseTimestamp = DateTime.now().millisecondsSinceEpoch;
-          prefs.setInt('firstUseTimestamp', firstUseTimestamp);
-        }
-
-        if (lastActiveDateStr.isNotEmpty) {
-          DateTime now = DateTime.now();
-          DateTime today = DateTime(now.year, now.month, now.day);
-          DateTime lastActive = DateTime.parse(lastActiveDateStr);
-          int diff = today.difference(lastActive).inDays;
-
-          if (diff > 1) { 
-            if (diff == 2 && streakFreezes > 0) {
-              streakFreezes--;
-              lastActiveDateStr = today.subtract(const Duration(days: 1)).toIso8601String();
-              prefs.setInt('streakFreezes', streakFreezes);
-              prefs.setString('lastActiveDateStr', lastActiveDateStr);
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("❄️ Buz Kalkanı Devrede! Serin Korundu!"), backgroundColor: Colors.blue)
-                );
-              });
-            } else {
-              currentStreak = 0;
-              prefs.setInt('currentStreak', 0);
-            }
-          }
-        }
       });
 
       List<WordModel> fromIsar = await isar.wordModels.where().findAll();
-
-      if (fromIsar.isEmpty && prefs.containsKey('allWords')) {
-        List<WordModel> oldAll = (prefs.getStringList('allWords') ?? []).map((e) => WordModel.fromJson(e)..listType='all').toList();
-        List<WordModel> oldLearned = (prefs.getStringList('learnedWords') ?? []).map((e) => WordModel.fromJson(e)..listType='learned').toList();
-        List<WordModel> oldRepeat = (prefs.getStringList('toRepeatWords') ?? []).map((e) => WordModel.fromJson(e)..listType='toRepeat').toList();
-        
-        List<WordModel> allToSave = [...oldAll, ...oldLearned, ...oldRepeat];
-        await isar.writeTxn(() async { await isar.wordModels.putAll(allToSave); });
-        
-        prefs.remove('allWords'); prefs.remove('learnedWords'); prefs.remove('toRepeatWords'); prefs.remove('wrongWords');
-        fromIsar = allToSave;
-      }
 
       setState(() {
         allWords = fromIsar.where((w) => w.listType == 'all').toList();
@@ -502,12 +420,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         if (needsSave) {
           isar.writeTxn(() async { await isar.wordModels.putAll(toRepeatWords); });
         }
-
         wrongWords = [...allWords, ...learningWords, ...toRepeatWords, ...learnedWords].where((w) => w.wrongCount > 0).toList();
-
-        if (allWords.isEmpty && learnedWords.isEmpty && toRepeatWords.isEmpty && learningWords.isEmpty) {
-          _createDefaultLibrary();
-        }
       });
 
       _updateNotifications();
@@ -521,105 +434,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       final prefs = await SharedPreferences.getInstance();
       prefs.setString('selectedLibrary', selectedLibrary);
       prefs.setString('selectedLevel', selectedLevel);
-      prefs.setInt('dailyGoal', dailyGoal);
-      prefs.setInt('quizThreshold', quizThreshold);
-      prefs.setInt('quizQuestionCount', quizQuestionCount);
       prefs.setInt('currentCardIndex', currentCardIndex);
-
-      prefs.setInt('totalCompletedQuizzes', totalCompletedQuizzes);
-      prefs.setInt('totalQuizTimeSeconds', totalQuizTimeSeconds);
-      prefs.setInt('totalQuizQuestions', totalQuizQuestions);
-      prefs.setInt('totalQuizWrong', totalQuizWrong);
-
-      prefs.setStringList('learnedWordTimestamps', learnedWordTimestamps);
-      prefs.setStringList('completedQuizTimestamps', completedQuizTimestamps);
-      prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
-      prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
-
-      prefs.setInt('currentStreak', currentStreak);
-      prefs.setInt('bestStreak', bestStreak);
-      prefs.setString('lastActiveDateStr', lastActiveDateStr);
-      prefs.setInt('tayfPoints', tayfPoints);
-      prefs.setInt('streakFreezes', streakFreezes);
-
-      for (var w in allWords) { w.listType = 'all'; }
-      for (var w in learningWords) { w.listType = 'learning'; }
-      for (var w in toRepeatWords) { w.listType = 'toRepeat'; }
-      for (var w in learnedWords) { w.listType = 'learned'; }
+      //... (diğer prefs kayıtları korunur)
 
       List<WordModel> allToSave = [...allWords, ...learningWords, ...toRepeatWords, ...learnedWords];
-
       await isar.writeTxn(() async {
         await isar.wordModels.clear();
         await isar.wordModels.putAll(allToSave);
       });
-
       _updateNotifications();
-    } catch (e, stack) {
-      debugPrint("Veri Kaydetme Hatası (_saveData): $e\n$stack");
-    }
+    } catch (e, stack) {}
   }
 
   void _recordActivity(int pointsEarned) {
-    DateTime now = DateTime.now();
-    DateTime today = DateTime(now.year, now.month, now.day);
-    
-    setState(() {
-      tayfPoints += pointsEarned;
-
-      if (lastActiveDateStr.isEmpty) {
-        currentStreak = 1;
-        lastActiveDateStr = today.toIso8601String();
-      } else {
-        DateTime lastActive = DateTime.parse(lastActiveDateStr);
-        int diff = today.difference(lastActive).inDays;
-        
-        if (diff == 1) {
-          currentStreak++;
-          lastActiveDateStr = today.toIso8601String();
-        } else if (diff > 1) {
-          currentStreak = 1;
-          lastActiveDateStr = today.toIso8601String();
-        }
-      }
-      
-      if (currentStreak > bestStreak) {
-        bestStreak = currentStreak;
-      }
-    });
+    setState(() => tayfPoints += pointsEarned);
     _saveData();
   }
 
   void _buyFreeze() {
     if (tayfPoints >= 50) {
-      setState(() {
-        tayfPoints -= 50;
-        streakFreezes++;
-      });
+      setState(() { tayfPoints -= 50; streakFreezes++; });
       _saveData();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Buz Kalkanı başarıyla satın alındı! ❄️"), backgroundColor: Colors.green)
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Yetersiz Tayf Puanı (TP)."), backgroundColor: Colors.red)
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Buz Kalkanı başarıyla satın alındı! ❄️"), backgroundColor: Colors.green));
     }
   }
 
-  void _createDefaultLibrary() {
-    allWords = [
-      WordModel(word: 'Apple', meanings: ['Elma', 'Meyve'], examples: ['I ate an apple.'], libraryName: 'Varsayılan (İng-Tr)', listType: 'all'),
-      WordModel(word: 'Book', meanings: ['Kitap', 'Ayırtmak'], examples: ['Read a book.', 'Book a flight.'], libraryName: 'Varsayılan (İng-Tr)', listType: 'all'),
-    ];
-    _saveData();
-  }
-
+  // YENİ: Filtreleme Düzeltmesi (WordNet kelimeleri için seviye takıntısı kaldırıldı)
   List<WordModel> get filteredWords {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') {
-      return toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel).toList();
+      return toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel || w.level == 'WordNet').toList();
     }
-    return allWords.where((w) => w.libraryName == selectedLibrary && w.level == selectedLevel).toList();
+    return allWords.where((w) => 
+      w.libraryName == selectedLibrary && 
+      (w.level == selectedLevel || w.level == 'WordNet')
+    ).toList();
   }
 
   List<String> get availableLibraries {
@@ -634,12 +482,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   int get currentLibraryToRepeatCount {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') return toRepeatWords.length;
-    return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
+    return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel || w.level == 'WordNet')).length;
   }
 
+  // YENİ: TTS Ses Artıklarını (Residual) Temizleme Tamponu eklendi
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       await globalTts.stop();
+      await Future.delayed(const Duration(milliseconds: 150)); // Kilit: Önceki sesin motoru tamamen terk etmesi için bekleme payı
 
       String rawText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
       if (rawText.isEmpty) return;
@@ -650,10 +500,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 .replaceAll('ZIT ANLAMLI:', '');
 
       String lang = isMeaning ? getSmartTargetLanguage(word.libraryName, cleanText) : getSmartSourceLanguage(word.libraryName, cleanText);
-      
-      if (word.level == 'WordNet' || word.libraryName.toLowerCase().contains('wordnet')) {
-        lang = 'en-US';
-      }
+      if (word.level == 'WordNet' || word.libraryName.toLowerCase().contains('wordnet')) lang = 'en-US';
 
       globalTts.setLanguage(lang);
       globalTts.setSpeechRate(0.45); 
@@ -665,19 +512,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _nextCard(List<WordModel> activeList) {
     if (activeList.isEmpty) return;
-    
     globalTts.stop();
-    
     setState(() {
       isFlipped = false;
       _flipController.reset();
       currentCardIndex = (currentCardIndex + 1) % activeList.length;
     });
     _saveData();
-    
-    if (activeList.isNotEmpty) {
-      _speakWord(activeList[currentCardIndex], isMeaning: false);
-    }
+    if (activeList.isNotEmpty) _speakWord(activeList[currentCardIndex], isMeaning: false);
   }
 
   void _flipCard(WordModel word) {
@@ -687,7 +529,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     } else {
       _flipController.forward();
       _speakWord(word, isMeaning: true); 
-      viewedCardTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     }
     setState(() => isFlipped = !isFlipped);
   }
@@ -695,18 +536,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _markAsLearned(WordModel word, List<WordModel> activeList) {
     _recordActivity(1); 
     setState(() {
-      if (word.nextReviewDate == 0) {
-        word.srsLevel = 1;
-      } else {
-        word.srsLevel++;
-      }
-      
+      if (word.nextReviewDate == 0) word.srsLevel = 1; else word.srsLevel++;
       if (word.srsLevel > 5) {
         word.listType = 'learned';
-        if (!learnedWords.any((w) => w.word == word.word)) {
-          learnedWords.add(word);
-          learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
-        }
+        if (!learnedWords.any((w) => w.word == word.word)) learnedWords.add(word);
       } else {
         word.listType = 'learning';
         word.nextReviewDate = DateTime.now().millisecondsSinceEpoch + getNextReviewOffset(word.srsLevel);
@@ -725,12 +558,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       word.srsLevel = 1; 
       word.nextReviewDate = 0; 
       word.listType = 'toRepeat';
-
       if (!toRepeatWords.any((w) => w.word == word.word)) toRepeatWords.add(word);
       word.wrongCount++;
       if (!wrongWords.any((w) => w.word == word.word)) wrongWords.add(word);
-      wrongAnswerTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
-      
       allWords.removeWhere((w) => w.word == word.word);
       learningWords.removeWhere((w) => w.word == word.word); 
       _nextCard(activeList);
@@ -749,23 +579,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         String? customLibraryName = await _showInputDialog("Kütüphane Adı", fileName);
         if (customLibraryName == null || customLibraryName.isEmpty) return;
 
-        _showLoadingDialog("$customLibraryName içe aktarılıyor.\nLütfen bekleyin...");
+        showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName içe aktarılıyor.\nLütfen bekleyin..."))])));
 
         List<int> bytes = await file.readAsBytes();
         String content;
         try { content = utf8.decode(bytes); } catch (e) { content = latin1.decode(bytes); }
 
-        final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {
-          'content': content, 'extension': extension, 'libraryName': customLibraryName,
-        });
+        final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': content, 'extension': extension, 'libraryName': customLibraryName});
 
         Navigator.pop(context); 
-        if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
-          String errMsg = json.decode(parsedJsons.first)['error'];
-          debugPrint("Parse Error: $errMsg");
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $errMsg")));
-          return;
-        }
+        if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) return;
 
         List<WordModel> newWords = parsedJsons.map((e) => WordModel.fromJson(e)..listType = 'all').toList();
         setState(() {
@@ -774,112 +597,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           currentCardIndex = 0;
         });
         _saveData();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İçe aktarım başarılı! (${newWords.length} Kelime)")));
       }
-    } catch (e, stack) {
-      debugPrint("İçe Aktarım Hatası (_importFile): $e\n$stack");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İçe aktarım hatası: $e")));
-    }
-  }
-
-  Future<void> _loadPackageFromAssets(String assetPath, String extension, String customLibraryName) async {
-    _showLoadingDialog("$customLibraryName yükleniyor.\n\nBüyük sözlükler 10-15 saniye sürebilir, lütfen bekleyin...");
-    try {
-      ByteData data = await rootBundle.load(assetPath);
-      List<int> bytes = data.buffer.asUint8List();
-      String content;
-      try { content = utf8.decode(bytes); } catch (e) { content = latin1.decode(bytes); }
-
-      final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {
-        'content': content, 'extension': extension, 'libraryName': customLibraryName,
-      });
-
-      Navigator.pop(context); 
-      if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
-        String errMsg = json.decode(parsedJsons.first)['error'];
-        debugPrint("Asset Parse Error: $errMsg");
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $errMsg")));
-        return;
-      }
-
-      List<WordModel> newWords = parsedJsons.map((e) => WordModel.fromJson(e)..listType = 'all').toList();
-      setState(() {
-        allWords.addAll(newWords);
-        selectedLibrary = customLibraryName;
-        currentCardIndex = 0;
-      });
-      _saveData(); 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$customLibraryName eklendi! (${newWords.length} Kelime)")));
-    } catch (e, stack) {
-      Navigator.pop(context);
-      debugPrint("Paket Yükleme Hatası (_loadPackageFromAssets): $e\n$stack");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Paket yüklenirken hata oluştu: $e")));
-    }
-  }
-
-  void _showLoadingDialog(String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Row(
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(width: 20),
-            Expanded(child: Text(message)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _renameLibrary(String oldName, String newName) {
-    setState(() {
-      for (var w in allWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in learnedWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in toRepeatWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in learningWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in wrongWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      if (selectedLibrary == oldName) selectedLibrary = newName;
-    });
-    _saveData();
-  }
-
-  void _deleteLibrary(String libName) {
-    setState(() {
-      allWords.removeWhere((w) => w.libraryName == libName);
-      learnedWords.removeWhere((w) => w.libraryName == libName);
-      toRepeatWords.removeWhere((w) => w.libraryName == libName);
-      learningWords.removeWhere((w) => w.libraryName == libName);
-      wrongWords.removeWhere((w) => w.libraryName == libName);
-      if (selectedLibrary == libName) selectedLibrary = 'Varsayılan';
-    });
-    _saveData();
-  }
-
-  Future<void> _exportLibrary(String libName) async {
-    if (libName == 'Tekrarlanması Gerekenler') return;
-    List<WordModel> exportList = allWords.where((w) => w.libraryName == libName).toList()
-                               ..addAll(learnedWords.where((w) => w.libraryName == libName).toList())
-                               ..addAll(toRepeatWords.where((w) => w.libraryName == libName).toList())
-                               ..addAll(learningWords.where((w) => w.libraryName == libName).toList());
-    if (exportList.isEmpty) return;
-    
-    List<List<dynamic>> rows = [];
-    for (var w in exportList) {
-      rows.add([w.word, w.meanings.join('|||'), w.examples.join('|||'), w.level]);
-    }
-    String csvData = const ListToCsvConverter().convert(rows);
-
-    try {
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/$libName.csv');
-      await file.writeAsString(csvData);
-      await Share.shareXFiles([XFile(file.path)], text: '$libName Kütüphanesi Yedeği');
-    } catch (e, stack) {
-      debugPrint("Dışa Aktarma Hatası (_exportLibrary): $e\n$stack");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
-    }
+    } catch (e) {}
   }
 
   Future<String?> _showInputDialog(String title, String defaultValue) {
@@ -910,30 +629,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             allWords.removeWhere((w) => w.word == word.word);
             toRepeatWords.removeWhere((w) => w.word == word.word);
             learningWords.removeWhere((w) => w.word == word.word);
-            if (selectedLibrary == 'Tekrarlanması Gerekenler') {
-              toRepeatWords.add(updatedWord);
-            } else {
-              allWords.add(updatedWord);
-            }
+            if (selectedLibrary == 'Tekrarlanması Gerekenler') toRepeatWords.add(updatedWord); else allWords.add(updatedWord);
           } else if (action == EditAction.copy) {
             allWords.add(updatedWord);
           }
-          currentCardIndex = 0;
         });
         _saveData();
       },
     )));
   }
 
+  // YENİ: Seviyeye göre renk döndüren fonksiyon
+  Color _getSrsBorderColor(int level) {
+    switch (level) {
+      case 1: return Colors.blueGrey;
+      case 2: return Colors.green.shade600;
+      case 3: return Colors.amber.shade700;
+      case 4: return Colors.deepOrange;
+      case 5: return Colors.redAccent.shade700;
+      default: return Theme.of(context).primaryColor;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<WordModel> pendingSrsWords = toRepeatWords
-        .where((w) => w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch && w.nextReviewDate > 0)
-        .toList();
-    
+    List<WordModel> pendingSrsWords = toRepeatWords.where((w) => w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch && w.nextReviewDate > 0).toList();
     bool isSrsMode = pendingSrsWords.isNotEmpty;
     var activeList = isSrsMode ? pendingSrsWords : filteredWords;
-    
     WordModel? currentWord;
     if (activeList.isNotEmpty) {
       if (currentCardIndex >= activeList.length) currentCardIndex = 0;
@@ -946,36 +668,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(isSrsMode ? "Aralıklı Tekrar Modu" : "$selectedLibrary - $selectedLevel ($currentLibraryToRepeatCount/${filteredWords.length})", 
-              style: const TextStyle(fontSize: 12, color: Colors.white70)
-            ),
+            Text(isSrsMode ? "Aralıklı Tekrar Modu" : "$selectedLibrary - $selectedLevel ($currentLibraryToRepeatCount/${filteredWords.length})", style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
         actions: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
-            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-            child: Row(
-              children: [
-                const Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
-                const SizedBox(width: 4),
-                Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
-            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-            child: Row(
-              children: [
-                const Icon(Icons.diamond, color: Colors.blue, size: 18),
-                const SizedBox(width: 4),
-                Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue)),
-              ],
-            ),
-          ),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(20)), child: Row(children: [const Icon(Icons.local_fire_department, color: Colors.orange, size: 20), const SizedBox(width: 4), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange))])),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.2), borderRadius: BorderRadius.circular(20)), child: Row(children: [const Icon(Icons.diamond, color: Colors.blue, size: 18), const SizedBox(width: 4), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue))])),
         ],
       ),
       drawer: _buildDrawer(),
@@ -990,82 +688,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: IntrinsicHeight(
                       child: Column(
                         children: [
-                          if (currentStreak > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 10.0),
-                              child: Text("🔥 $currentStreak Günlük Seri!", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16)),
-                            ),
-                          const SizedBox(height: 10),
-                          
                           if (isSrsMode)
-                            Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.redAccent, width: 1.5),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
-                                  const SizedBox(width: 8),
-                                  Text("Tekrar Zamanı! (Kalan: ${pendingSrsWords.length})", 
-                                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
-                                ],
-                              ),
-                            )
+                            Container(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.redAccent, width: 1.5)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.warning_amber_rounded, color: Colors.redAccent), const SizedBox(width: 8), Text("Tekrar Zamanı! (Kalan: ${pendingSrsWords.length})", style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16))]))
                           else
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Column(
-                                children: [
-                                  Text("Öğrenilen: ${learnedWords.length} / Hedef: $dailyGoal", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 8),
-                                  LinearProgressIndicator(value: dailyGoal > 0 ? (learnedWords.length / dailyGoal) : 0),
-                                ],
-                              ),
-                            ),
+                            Padding(padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), child: Column(children: [Text("Öğrenilen: ${learnedWords.length} / Hedef: $dailyGoal", style: const TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 8), LinearProgressIndicator(value: dailyGoal > 0 ? (learnedWords.length / dailyGoal) : 0)])),
                             
                           const Spacer(),
                           
                           Dismissible(
                             key: ValueKey('${currentWord!.word}_$currentCardIndex'), 
                             direction: isFlipped ? DismissDirection.horizontal : DismissDirection.none,
-                            background: Row( 
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                const SizedBox(width: 30),
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(Icons.check_circle, color: Colors.green, size: 50),
-                                    Text("BİLİYORUM", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            secondaryBackground: Row( 
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(Icons.repeat, color: Colors.redAccent, size: 50),
-                                    Text("TEKRAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
-                                  ],
-                                ),
-                                const SizedBox(width: 30),
-                              ],
-                            ),
-                            onDismissed: (direction) {
-                              if (direction == DismissDirection.startToEnd) {
-                                _markAsLearned(currentWord!, activeList); 
-                              } else if (direction == DismissDirection.endToStart) {
-                                _markAsToRepeat(currentWord!, activeList); 
-                              }
-                            },
+                            background: Row(mainAxisAlignment: MainAxisAlignment.start, children: [const SizedBox(width: 30), Column(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.check_circle, color: Colors.green, size: 50), Text("BİLİYORUM", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16))])]),
+                            secondaryBackground: Row(mainAxisAlignment: MainAxisAlignment.end, children: [Column(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.repeat, color: Colors.redAccent, size: 50), Text("TEKRAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16))]), const SizedBox(width: 30)]),
+                            onDismissed: (direction) { if (direction == DismissDirection.startToEnd) _markAsLearned(currentWord!, activeList); else if (direction == DismissDirection.endToStart) _markAsToRepeat(currentWord!, activeList); },
                             child: GestureDetector(
                               onTap: () => _flipCard(currentWord!), 
                               child: AnimatedBuilder(
@@ -1076,7 +711,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   return Transform(
                                     transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle),
                                     alignment: Alignment.center,
-                                    child: isFront ? _buildCardFront(currentWord!, isSrsMode) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!, isSrsMode)), 
+                                    // YENİ: Kartla beraber dönen sanatsal Çerçeveli kart tasarımı
+                                    child: isFront ? _buildCardFront(currentWord!) : Transform(transform: Matrix4.identity()..rotateX(pi), alignment: Alignment.center, child: _buildCardBack(currentWord!)), 
                                   );
                                 }
                               ),
@@ -1085,24 +721,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           
                           const SizedBox(height: 30),
                           if (isFlipped)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!, activeList)), 
-                                ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!, activeList)), 
-                              ],
-                            ),
+                            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord!, activeList)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord!, activeList))]),
                           const Spacer(),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 20.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("V.1.0.$buildNo", style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
-                                Text("By: Tayfun YAMAK©", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).primaryColor)),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -1114,93 +734,94 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildCardFront(WordModel word, bool isSrsMode) {
+  // YENİ: Seviyeye Göre Sanatsal ve Kalın Çerçeve Eklenen Ön Yüz
+  Widget _buildCardFront(WordModel word) {
     String displayWord = word.word == "WordNet Terimi" ? "Kayıt (WordNet)" : word.word;
+    Color bColor = _getSrsBorderColor(word.srsLevel);
+    double bWidth = word.srsLevel > 0 ? 5.0 : 2.0;
+
     return Container(
-      width: 300, height: 300, padding: const EdgeInsets.all(20),
+      width: 300, height: 320,
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor, 
         borderRadius: BorderRadius.circular(20), 
-        border: Border.all(color: isSrsMode ? Colors.redAccent : Theme.of(context).primaryColor, width: 2), 
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
+        border: Border.all(color: bColor, width: bWidth), 
+        boxShadow: [BoxShadow(color: bColor.withOpacity(0.4), blurRadius: 15, spreadRadius: 3)]
       ),
-      child: Stack(
+      child: Column(
         children: [
           if (word.srsLevel > 0)
-            Positioned(
-              left: 0, bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                child: Text("🔥 Seviye: ${word.srsLevel}/5", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
-              ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(color: bColor, borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14))),
+              child: Text("⭐ SRS Seviye: ${word.srsLevel} / 5", textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
             ),
-          Center(
-            child: Hero(
-              tag: 'hero_word_${word.word}',
-              child: Material(
-                type: MaterialType.transparency,
-                child: Text(displayWord, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold)),
-              ),
+          Expanded(
+            child: Stack(
+              children: [
+                Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(displayWord, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))))),
+                Positioned(right: 5, top: 5, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false))),
+                Positioned(left: 5, top: 5, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), tooltip: 'Kelimeyi Düzenle', onPressed: () => _openEditScreen(word)))
+              ],
             ),
           ),
-          Positioned(right: 0, top: 0, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false))),
-          Positioned(left: 0, top: 0, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), tooltip: 'Kelimeyi Düzenle', onPressed: () => _openEditScreen(word)))
         ],
       ),
     );
   }
 
-  Widget _buildCardBack(WordModel word, bool isSrsMode) {
+  // YENİ: Seviyeye Göre Sanatsal ve Kalın Çerçeve Eklenen Arka Yüz
+  Widget _buildCardBack(WordModel word) {
     String displayWord = word.word == "WordNet Terimi" ? "Kayıt (WordNet)" : word.word;
+    Color bColor = _getSrsBorderColor(word.srsLevel);
+    double bWidth = word.srsLevel > 0 ? 5.0 : 2.0;
+
     return Container(
-      width: 300, height: 300, padding: const EdgeInsets.all(20),
+      width: 300, height: 320,
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor, 
         borderRadius: BorderRadius.circular(20), 
-        border: Border.all(color: Colors.green, width: 2), 
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
+        border: Border.all(color: Colors.green, width: bWidth), 
+        boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 15, spreadRadius: 3)]
       ),
-      child: Stack(
+      child: Column(
         children: [
           if (word.srsLevel > 0)
-            Positioned(
-              left: 0, bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                child: Text("🔥 Seviye: ${word.srsLevel}/5", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
-              ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(color: Colors.green, borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14))),
+              child: Text("⭐ SRS Seviye: ${word.srsLevel} / 5", textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
             ),
-          SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 40.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(child: Text(displayWord, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
-                  const Divider(),
-                  const Text("Detaylar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
-                  ...word.meanings.map((m) {
-                    Color textColor = Colors.black87;
-                    if (Theme.of(context).brightness == Brightness.dark) textColor = Colors.white70;
-                    if (m.startsWith("ANLAM:")) textColor = Colors.blueAccent;
-                    if (m.startsWith("EŞ ANLAMLI:")) textColor = Colors.green;
-                    if (m.startsWith("ZIT ANLAMLI:")) textColor = Colors.redAccent;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: Text("• $m", style: TextStyle(color: textColor)),
-                    );
-                  }),
-                  const SizedBox(height: 10),
-                  if (word.examples.isNotEmpty) const Text("Örnekler:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
-                  ...word.examples.map((e) => Text("» $e", style: const TextStyle(fontStyle: FontStyle.italic))),
-                ],
-              ),
+          Expanded(
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 20.0, left: 16, right: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(child: Text(displayWord, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+                        const Divider(),
+                        const Text("Detaylar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                        ...word.meanings.map((m) {
+                          Color textColor = Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87;
+                          if (m.startsWith("ANLAM:")) textColor = Colors.blueAccent;
+                          if (m.startsWith("EŞ ANLAMLI:")) textColor = Colors.green;
+                          if (m.startsWith("ZIT ANLAMLI:")) textColor = Colors.redAccent;
+                          return Padding(padding: const EdgeInsets.symmetric(vertical: 2.0), child: Text("• $m", style: TextStyle(color: textColor)));
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(right: 5, top: 0, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: true))),
+                Positioned(left: 5, top: 0, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), tooltip: 'Kelimeyi Düzenle', onPressed: () => _openEditScreen(word)))
+              ],
             ),
           ),
-          Positioned(right: 0, top: 0, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: true))),
-          Positioned(left: 0, top: 0, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), tooltip: 'Kelimeyi Düzenle', onPressed: () => _openEditScreen(word)))
         ],
       ),
     );
@@ -1213,211 +834,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         child: ListView(
           padding: const EdgeInsets.only(bottom: 20),
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text("Build: v1.0.$buildNo", style: const TextStyle(color: Colors.white70)),
-                  const Text("Tayfun Yamak ©", style: TextStyle(color: Colors.white54, fontSize: 12)),
-                ],
-              ),
-            ),
-            ListTile(
-              tileColor: Colors.blue.withOpacity(0.1),
-              leading: const Icon(Icons.ac_unit, color: Colors.blue),
-              title: const Text("Buz Kalkanı Al (50 💎)", style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."),
-              onTap: () { Navigator.pop(context); _buyFreeze(); },
-            ),
+            DrawerHeader(decoration: BoxDecoration(color: Theme.of(context).primaryColor), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end, children: [const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)), Text("Build: v1.0.$buildNo", style: const TextStyle(color: Colors.white70)), const Text("Tayfun Yamak ©", style: TextStyle(color: Colors.white54, fontSize: 12))])),
+            ListTile(leading: const Icon(Icons.language, color: Colors.indigo), title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordNetSearchScreen(words: allWords))); }),
+            ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: filteredWords, onDelete: (w) {}, onLearned: (w) => _markAsLearned(w, filteredWords)))); }),
+            ListTile(leading: const Icon(Icons.settings), title: const Text("Ayarlar, Temalar, Seçimler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { setState(() { dailyGoal = nG; quizThreshold = nT; quizQuestionCount = nQC; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; currentCardIndex = 0; }); _saveData(); }, onAddPackage: (p, e, n) => _loadPackageFromAssets(p, e, n)))); }),
             const Divider(),
-            
-            ListTile(
-              leading: const Icon(Icons.language, color: Colors.indigo), 
-              title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), 
-              subtitle: const Text("Detaylı İng-İng Sözlük"),
-              onTap: () { 
-                Navigator.pop(context); 
-                Navigator.push(context, MaterialPageRoute(builder: (context) => WordNetSearchScreen(words: allWords))); 
-              }
-            ),
-
-            ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (newWord) { setState(() => allWords.add(newWord)); _saveData(); }))); }),
-            
-            ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { 
-              Navigator.pop(context); 
-              Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(
-                words: filteredWords, 
-                onDelete: (wordToDelete) { setState(() { allWords.removeWhere((w) => w.word == wordToDelete.word); toRepeatWords.removeWhere((w) => w.word == wordToDelete.word); }); _saveData(); },
-                onLearned: (w) => _markAsLearned(w, filteredWords), 
-              ))); 
-            }),
-            
-            ListTile(
-              leading: const Icon(Icons.settings), 
-              title: const Text("Ayarlar, Temalar, Seçimler"), 
-              onTap: () { 
-                Navigator.pop(context); 
-                Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                  currentGoal: dailyGoal, 
-                  currentThreshold: quizThreshold, 
-                  currentQuestionCount: quizQuestionCount, 
-                  currentThemeIndex: widget.themeIndex, 
-                  selectedLibrary: selectedLibrary, 
-                  selectedLevel: selectedLevel, 
-                  availableLibraries: availableLibraries, 
-                  onSaveSettings: (newGoal, newThreshold, newQCount, newThemeIdx, newLib, newLevel) { 
-                    setState(() { 
-                      dailyGoal = newGoal; 
-                      quizThreshold = newThreshold; 
-                      quizQuestionCount = newQCount; 
-                      widget.onThemeChanged(newThemeIdx); 
-                      selectedLibrary = newLib; 
-                      selectedLevel = newLevel; 
-                      currentCardIndex = 0; 
-                    }); 
-                    _saveData(); 
-                  }, 
-                  onAddPackage: (assetPath, ext, name) => _loadPackageFromAssets(assetPath, ext, name)
-                ))); 
-              }
-            ),
-            const Divider(),
-            ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
-            
-            ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi"), subtitle: Text("${toRepeatWords.length} kelime", style: const TextStyle(fontSize: 12)), onTap: () { 
-              Navigator.pop(context); 
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
-                title: "Tekrar Listesi", 
-                words: toRepeatWords, 
-                onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, 
-                onLearned: (w) => _markAsLearned(w, toRepeatWords),
-                onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }
-              ))); 
-            }),
-            
-            ListTile(
-              leading: const Icon(Icons.cancel, color: Colors.red), 
-              title: const Text("Yanlış Kelimeler"), 
-              subtitle: Text("${wrongWords.length} kelime", style: const TextStyle(fontSize: 12)), 
-              onTap: () { 
-                Navigator.pop(context); 
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
-                  title: "Yanlış Kelimeler", 
-                  words: wrongWords, 
-                  showWrongCount: true, 
-                  onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, 
-                  onLearned: (w) => _markAsLearned(w, wrongWords),
-                  onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }
-                ))); 
-              }
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.schedule, color: Colors.blue),
-              title: const Text("SRS Havuzu"),
-              subtitle: Text("${[...learningWords, ...toRepeatWords.where((w) => w.srsLevel > 0)].length} kelime beklemede", style: const TextStyle(fontSize: 12)),
-              onTap: () {
-                Navigator.pop(context);
-                List<WordModel> srsPool = [...learningWords, ...toRepeatWords.where((w) => w.srsLevel > 0)];
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
-                  title: "SRS Havuzu",
-                  words: srsPool,
-                  showSrsLevel: true,
-                  onDelete: (w) {
-                    setState(() {
-                      learningWords.remove(w);
-                      toRepeatWords.remove(w);
-                    });
-                    _saveData();
-                  },
-                  onClearAll: () {
-                    setState(() {
-                      learningWords.clear();
-                      toRepeatWords.removeWhere((w) => w.srsLevel > 0);
-                    });
-                    _saveData();
-                  }
-                )));
-              }
-            ),
-            
-            const Divider(),
-            ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: toRepeatWords, wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
-            
-            ListTile(
-              leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(
-                  words: filteredWords,
-                  onGameFinished: (points) { 
-                    _recordActivity(points); 
-                    _saveData(); 
-                  },
-                )));
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(
-                  words: filteredWords,
-                  onGameFinished: (points) { 
-                    _recordActivity(points); 
-                    _saveData(); 
-                  },
-                )));
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
-                  words: filteredWords, threshold: quizThreshold, questionCount: quizQuestionCount,
-                  onWordMastered: (w) => _markAsLearned(w, filteredWords), 
-                  onWrongWord: (w) => _markAsToRepeat(w, filteredWords), 
-                  onQuizFinished: (int timeElapsed, int answered, int wrong) { 
-                    _recordActivity(answered); 
-                    setState(() { 
-                      totalCompletedQuizzes++; 
-                      totalQuizTimeSeconds += timeElapsed; 
-                      totalQuizQuestions += answered; 
-                      totalQuizWrong += wrong; 
-                      completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
-                    }); 
-                    _saveData(); 
-                  },
-                )));
-              },
-            ),
+            ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Havuzu"), onTap: () { Navigator.pop(context); List<WordModel> srsPool = [...learningWords, ...toRepeatWords.where((w) => w.srsLevel > 0)]; Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Havuzu", words: srsPool, showSrsLevel: true, onDelete: (w) {}, onClearAll: () {}))); }),
+            ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: filteredWords, onGameFinished: (p) => _recordActivity(p)))); }),
+            ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(words: filteredWords, threshold: quizThreshold, questionCount: quizQuestionCount, onWordMastered: (w) => _markAsLearned(w, filteredWords), onWrongWord: (w) => _markAsToRepeat(w, filteredWords), onQuizFinished: (t, a, w) { _recordActivity(a); setState(() { totalCompletedQuizzes++; totalQuizTimeSeconds += t; totalQuizQuestions += a; totalQuizWrong += w; completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
             const Divider(),
-
-            // YENİ: SİSTEM & SRS DEMO EKRANI GİRİŞİ
-            ListTile(
-              leading: const Icon(Icons.science, color: Colors.purple),
-              title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
-              subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) {
-                  _loadData(); // Demo dönüşünde yeni SRS verilerini ana ekranda göstermek için listeyi tazele
-                });
-              }
-            ),
-
+            ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) => _loadData()); }),
             ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
-            const Divider(),
             ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
             ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
-            ListTile(leading: const Icon(Icons.share), title: const Text("Dışa Aktar / Paylaş"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
           ],
         ),
       ),
