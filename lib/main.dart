@@ -35,31 +35,64 @@ late Isar isar;
 // Kilitlenmeyi önleyen tekil ve doğal TTS motorumuz
 final FlutterTts globalTts = FlutterTts();
 
-// ÇAKIŞMAYI ÖNLEMEK İÇİN İSİM DEĞİŞTİRİLDİ: Akıllı Kaynak Dili Algılama
+// =====================================================================
+// YENİ: ÖNCE KÜTÜPHANE İSMİNDEN KESİN YÖN, SONRA İÇERİKTEN TAHMİN
+// (SRS Havuzundaki Karışık Kelimeler İçin Kelime Bazlı Dinamik Denetim)
+// =====================================================================
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase();
+  
+  // 1. Kesin kütüphane adı tespiti (TR'den yabancı dile -> Kaynak TR)
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'tr-TR';
-  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('wordnet') || name.contains('eng-eng')) return 'en-US';
-  if (name.contains('alm') || name.contains('deu')) return 'de-DE';
+  if (name.contains('tr-alm') || name.contains('tr-deu') || name.contains('tur-ger')) return 'tr-TR';
+  if (name.contains('tr-fra') || name.contains('tr-fre')) return 'tr-TR';
+  if (name.contains('tr-isp') || name.contains('tr-spa')) return 'tr-TR';
+  if (name.contains('tr-rus')) return 'tr-TR';
+
+  // 2. Kesin kütüphane adı tespiti (Yabancı dilden TR'ye -> Kaynak Yabancı)
+  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'en-US';
+  if (name.contains('alm-tr') || name.contains('deu-tr') || name.contains('ger-tr')) return 'de-DE';
+  if (name.contains('fra-tr') || name.contains('fre-tr')) return 'fr-FR';
+  if (name.contains('isp-tr') || name.contains('spa-tr')) return 'es-ES';
+  if (name.contains('rus-tr')) return 'ru-RU';
+  
+  // Sadece tekil diller belirtilmişse
+  if (name.contains('ing') || name.contains('eng') || name.contains('wordnet')) return 'en-US';
+  if (name.contains('alm') || name.contains('deu') || name.contains('ger')) return 'de-DE';
   if (name.contains('fra') || name.contains('fre')) return 'fr-FR';
   if (name.contains('isp') || name.contains('spa')) return 'es-ES';
   if (name.contains('rus')) return 'ru-RU';
   
-  // İsimde bulamazsa içeriğe bakar (Türkçe karakter tespiti)
+  // 3. İsimden anlaşılamadıysa (Örn: "Kelime Listem") içeriğe bak
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
-  return 'en-US'; // Varsayılan
+  
+  return 'en-US'; // Default
 }
 
-// ÇAKIŞMAYI ÖNLEMEK İÇİN İSİM DEĞİŞTİRİLDİ: Akıllı Hedef Dili Algılama
 String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase();
+  
+  // 1. Kesin kütüphane adı tespiti (TR'den yabancı dile -> Hedef Yabancı)
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'en-US';
+  if (name.contains('tr-alm') || name.contains('tr-deu') || name.contains('tur-ger')) return 'de-DE';
+  if (name.contains('tr-fra') || name.contains('tr-fre')) return 'fr-FR';
+  if (name.contains('tr-isp') || name.contains('tr-spa')) return 'es-ES';
+  if (name.contains('tr-rus')) return 'ru-RU';
+
+  // 2. Kesin kütüphane adı tespiti (Yabancı dilden TR'ye -> Hedef TR)
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'tr-TR';
+  if (name.contains('alm-tr') || name.contains('deu-tr') || name.contains('ger-tr')) return 'tr-TR';
+  if (name.contains('fra-tr') || name.contains('fre-tr')) return 'tr-TR';
+  if (name.contains('isp-tr') || name.contains('spa-tr')) return 'tr-TR';
+  if (name.contains('rus-tr')) return 'tr-TR';
+
   if (name.contains('wordnet') || name.contains('eng-eng')) return 'en-US'; 
   
-  // İsimde bulamazsa içeriğe bakar
+  // 3. İçeriğe bak (Anlam kısmında TR harf varsa muhtemelen Türkçedir)
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
-  return 'en-US'; // Varsayılan
+  if (RegExp(r'[qwxQWX]').hasMatch(meaningText)) return 'en-US';
+  
+  return 'tr-TR'; // Anlam kısmı genellikle anadil (Türkçe) olur
 }
 
 int getNextReviewOffset(int level) {
@@ -600,22 +633,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // Akıllı ve kilitlenmeyen TTS okuma fonksiyonu
+  // =====================================================================
+  // HAFIZA KALINTILARINI SİLEN VE YANLIŞ OKUMAYI BİTİREN TTS FONKSİYONU
+  // =====================================================================
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
-      String text = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
-      if (text.isEmpty) return;
+      // 1. Önceki tüm kuyrukları anında öldür (Gereksiz okumaları engeller)
+      await globalTts.stop();
 
-      // Güncellenmiş fonksiyon adlarıyla dili belirliyoruz
-      String lang = isMeaning ? getSmartTargetLanguage(word.libraryName, text) : getSmartSourceLanguage(word.libraryName, text);
+      String rawText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
+      if (rawText.isEmpty) return;
+
+      // TTS'in kafasını karıştıran gizli/özel JSON karakterlerini temizle
+      String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ');
+
+      // Akıllı algılayıcılarla dili belirle
+      String lang = isMeaning ? getSmartTargetLanguage(word.libraryName, cleanText) : getSmartSourceLanguage(word.libraryName, cleanText);
       
       if (word.level == 'WordNet' || word.libraryName.toLowerCase().contains('wordnet')) {
         lang = 'en-US';
       }
 
-      await globalTts.setLanguage(lang);
-      await globalTts.setSpeechRate(0.45); 
-      await globalTts.speak(text); 
+      globalTts.setLanguage(lang);
+      globalTts.setSpeechRate(0.45); 
+      globalTts.speak(cleanText); 
     } catch (e) {
       debugPrint("TTS Hatası: $e");
     }
@@ -623,13 +664,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _nextCard(List<WordModel> activeList) {
     if (activeList.isEmpty) return;
+    
+    // Geçişte motoru tamamen sustur
     globalTts.stop();
+    
     setState(() {
       isFlipped = false;
       _flipController.reset();
       currentCardIndex = (currentCardIndex + 1) % activeList.length;
     });
     _saveData();
+    
+    // Geçiş tamamlanır tamamlanmaz yeni kelimeyi anında oku (Build 227 mantığı)
     if (activeList.isNotEmpty) {
       _speakWord(activeList[currentCardIndex], isMeaning: false);
     }
