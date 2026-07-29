@@ -32,11 +32,11 @@ import 'wordnet_search_screen.dart';
 
 late Isar isar;
 
-// YENİ: Kilitlenmeyi önleyen tekil ve doğal TTS motorumuz
+// Kilitlenmeyi önleyen tekil ve doğal TTS motorumuz
 final FlutterTts globalTts = FlutterTts();
 
-// YENİ: Kütüphane adından ve kelime içeriğinden Akıllı Kaynak Dili Algılama
-String getSourceLanguage(String libraryName, String wordText) {
+// ÇAKIŞMAYI ÖNLEMEK İÇİN İSİM DEĞİŞTİRİLDİ: Akıllı Kaynak Dili Algılama
+String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase();
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'tr-TR';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('wordnet') || name.contains('eng-eng')) return 'en-US';
@@ -50,8 +50,8 @@ String getSourceLanguage(String libraryName, String wordText) {
   return 'en-US'; // Varsayılan
 }
 
-// YENİ: Kütüphane adından ve anlam içeriğinden Akıllı Hedef Dili Algılama
-String getTargetLanguage(String libraryName, String meaningText) {
+// ÇAKIŞMAYI ÖNLEMEK İÇİN İSİM DEĞİŞTİRİLDİ: Akıllı Hedef Dili Algılama
+String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase();
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'en-US';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'tr-TR';
@@ -600,22 +600,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // YENİ: Doğal cihaz sesi (Samsung vb.) ile çalışan ve anında okuyan akıllı fonksiyon
+  // Akıllı ve kilitlenmeyen TTS okuma fonksiyonu
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
       if (text.isEmpty) return;
 
-      // Akıllı algılama fonksiyonları kullanılıyor
-      String lang = isMeaning ? getTargetLanguage(word.libraryName, text) : getSourceLanguage(word.libraryName, text);
+      // Güncellenmiş fonksiyon adlarıyla dili belirliyoruz
+      String lang = isMeaning ? getSmartTargetLanguage(word.libraryName, text) : getSmartSourceLanguage(word.libraryName, text);
       
       if (word.level == 'WordNet' || word.libraryName.toLowerCase().contains('wordnet')) {
         lang = 'en-US';
       }
 
       await globalTts.setLanguage(lang);
-      await globalTts.setSpeechRate(0.45); // Doğal sesi bozmayan ideal hız
-      await globalTts.speak(text); // Beklemeden anında oku
+      await globalTts.setSpeechRate(0.45); 
+      await globalTts.speak(text); 
     } catch (e) {
       debugPrint("TTS Hatası: $e");
     }
@@ -630,7 +630,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       currentCardIndex = (currentCardIndex + 1) % activeList.length;
     });
     _saveData();
-    // Kart yeni kelimeye geçer geçmez anında ön yüzü okusun (Build 227 mantığı)
     if (activeList.isNotEmpty) {
       _speakWord(activeList[currentCardIndex], isMeaning: false);
     }
