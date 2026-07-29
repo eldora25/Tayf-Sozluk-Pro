@@ -16,6 +16,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
   String _word = '';
   String _level = 'Genel';
   late String _library;
+  late List<String> _currentLibraries;
   
   final List<TextEditingController> _meaningControllers = [TextEditingController()];
   final List<TextEditingController> _exampleControllers = [TextEditingController()];
@@ -23,7 +24,14 @@ class _AddWordScreenState extends State<AddWordScreen> {
   @override
   void initState() {
     super.initState();
-    _library = widget.availableLibraries.isNotEmpty ? widget.availableLibraries.first : 'Varsayılan';
+    _currentLibraries = List.from(widget.availableLibraries);
+    // Tekrarlanması Gerekenler gibi sanal listeleri temizle
+    _currentLibraries.removeWhere((lib) => lib == 'Tekrarlanması Gerekenler');
+    
+    if (_currentLibraries.isEmpty) {
+      _currentLibraries.add('Varsayılan');
+    }
+    _library = _currentLibraries.first;
   }
 
   @override
@@ -31,6 +39,42 @@ class _AddWordScreenState extends State<AddWordScreen> {
     for (var c in _meaningControllers) { c.dispose(); }
     for (var c in _exampleControllers) { c.dispose(); }
     super.dispose();
+  }
+
+  Future<void> _showNewLibraryDialog() async {
+    TextEditingController newLibCtrl = TextEditingController();
+    String? newLibName = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Yeni Kütüphane"),
+        content: TextField(
+          controller: newLibCtrl,
+          decoration: const InputDecoration(hintText: "Kütüphane adını girin", border: OutlineInputBorder()),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+            onPressed: () {
+              if (newLibCtrl.text.trim().isNotEmpty) {
+                Navigator.pop(context, newLibCtrl.text.trim());
+              }
+            }, 
+            child: const Text("Oluştur")
+          ),
+        ],
+      ),
+    );
+
+    if (newLibName != null && newLibName.isNotEmpty) {
+      setState(() {
+        if (!_currentLibraries.contains(newLibName)) {
+          _currentLibraries.add(newLibName);
+        }
+        _library = newLibName;
+      });
+    }
   }
 
   @override
@@ -49,7 +93,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
             ),
             const SizedBox(height: 20),
             
-            // Çoklu Anlam Alanı
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -71,7 +114,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
             
             const SizedBox(height: 10),
             
-            // Çoklu Örnek Cümle Alanı
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -94,17 +136,34 @@ class _AddWordScreenState extends State<AddWordScreen> {
             DropdownButtonFormField<String>(
               value: _level,
               decoration: const InputDecoration(labelText: "Seviye", border: OutlineInputBorder()),
-              items: ['A1','A2','B1','B2','C1','C2','Genel'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              items: ['A1','A2','B1','B2','C1','C2','Genel','WordNet'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
               onChanged: (v) => setState(() => _level = v!),
             ),
             
             const SizedBox(height: 20),
-            // Kütüphane seçimi veya yeni kütüphane oluşturma
-            DropdownButtonFormField<String>(
-              value: _library,
-              decoration: const InputDecoration(labelText: "Kütüphane", border: OutlineInputBorder()),
-              items: widget.availableLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-              onChanged: (v) => setState(() => _library = v!),
+            
+            // YENİ: YANINDA (+) BUTONU OLAN STABİL KÜTÜPHANE SEÇİCİ
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _currentLibraries.contains(_library) ? _library : _currentLibraries.first,
+                    decoration: const InputDecoration(labelText: "Kütüphane", border: OutlineInputBorder()),
+                    items: _currentLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                    onChanged: (v) => setState(() => _library = v!),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(color: Colors.deepPurple.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: IconButton(
+                    icon: const Icon(Icons.add_box, color: Colors.deepPurple, size: 36),
+                    tooltip: "Yeni Kütüphane Ekle",
+                    onPressed: _showNewLibraryDialog,
+                  ),
+                )
+              ],
             ),
             
             const SizedBox(height: 30),
