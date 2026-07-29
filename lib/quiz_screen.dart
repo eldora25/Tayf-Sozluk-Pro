@@ -101,7 +101,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (!isAudioEnabled) return;
     try {
       await flutterTts.setLanguage(languageCode);
-      await flutterTts.setSpeechRate(0.5);
       await flutterTts.speak(text);
     } catch (e) {
       debugPrint("TTS Error: $e");
