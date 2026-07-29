@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:isar/isar.dart';
 
 part 'models.g.dart';
@@ -48,7 +49,6 @@ class WordModel {
   });
 
   factory WordModel.fromJson(String jsonStr) {
-    import 'dart:convert';
     Map<String, dynamic> map = json.decode(jsonStr);
     return WordModel(
       word: map['word'] ?? '',
