@@ -45,6 +45,7 @@ class StatisticsScreen extends StatelessWidget {
     required this.tayfPoints,
   });
 
+  // MADDE 4: Zaman gösterimi kesin olarak dd:hh:mm:ss formatına dönüştürüldü
   String _formatTime(int seconds) {
     int d = seconds ~/ (24 * 3600);
     int h = (seconds % (24 * 3600)) ~/ 3600;
@@ -176,7 +177,6 @@ class StatisticsScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            // 1. BAŞARILAR VE ROZETLER
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -195,7 +195,6 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
 
-            // 2. GENEL ÖZET
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -208,7 +207,6 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
             
-            // 3. ÖĞRENME HIZI VE EĞRİSİ (Aylık ve Yıllık Kartlar Eklendi)
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -276,11 +274,10 @@ class StatisticsScreen extends StatelessWidget {
                 _buildSpeedCard(context, "Haftalık (Son 7 Gün)", const Duration(days: 7), Colors.orange),
                 _buildSpeedCard(context, "Aylık (Son 30 Gün)", const Duration(days: 30), Colors.purple),
                 _buildSpeedCard(context, "Yıllık (Son 365 Gün)", const Duration(days: 365), Colors.redAccent),
-                const SizedBox(height: 80), // Rahat kaydırma için alt boşluk
+                const SizedBox(height: 80), 
               ],
             ),
 
-            // 4. QUİZ İSTATİSTİKLERİ
             ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -291,7 +288,6 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
             
-            // 5. KÜTÜPHANE BAZLI
             ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: availableLibraries.length,
