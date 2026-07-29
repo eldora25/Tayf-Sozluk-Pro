@@ -1,11 +1,10 @@
 import 'dart:math';
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:lottie/lottie.dart'; 
 import 'models.dart';
+import 'main.dart'; // globalTts ve dil algılama metodlarını kullanmak için eklendi
 
 class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -30,7 +29,6 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
-  final FlutterTts flutterTts = FlutterTts();
   List<WordModel> quizWords = [];
   late WordModel currentWord;
   List<String> options = [];
@@ -83,7 +81,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _timer?.cancel();
-    flutterTts.stop();
+    globalTts.stop(); 
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
@@ -98,30 +96,42 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // --- KENDİNİ ONARAN TTS SİSTEMİ EKLENDİ ---
-  Future<void> _speakWord(String text, String languageCode) async {
+  // YENİ: Anında, beklemeden okuyan Global TTS motor çağrısı
+  Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      if (Platform.isAndroid) {
-        await flutterTts.setEngine("com.google.android.tts");
-      }
-      
-      var isAvailable = await flutterTts.isLanguageAvailable(languageCode);
-      if (isAvailable) {
-        await flutterTts.setLanguage(languageCode);
-      } else {
-        await flutterTts.setLanguage("en-US");
-      }
-
-      await flutterTts.speak(text);
+      await globalTts.setLanguage(languageCode);
+      await globalTts.setSpeechRate(0.45);
+      await globalTts.speak(text);
     } catch (e) {
       debugPrint("TTS Error: $e");
     }
   }
 
+  // YENİ: Akıllı dil algılamayla anında çevrilen doğru/yanlış tepkisi
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
-    _speakWord(isCorrect ? "Correct" : "Wrong", "en-US");
+    
+    String lang = getSourceLanguage(currentWord.libraryName, currentWord.word);
+    String text = "";
+    
+    if (lang == 'en-US') {
+      text = isCorrect ? "Correct" : "Wrong";
+    } else if (lang == 'tr-TR') {
+      text = isCorrect ? "Doğru" : "Yanlış";
+    } else if (lang == 'de-DE') {
+      text = isCorrect ? "Richtig" : "Falsch";
+    } else if (lang == 'es-ES') {
+      text = isCorrect ? "Correcto" : "Incorrecto";
+    } else if (lang == 'fr-FR') {
+      text = isCorrect ? "Vrai" : "Faux";
+    } else if (lang == 'ru-RU') {
+      text = isCorrect ? "Правильно" : "Неправильно";
+    } else {
+      text = isCorrect ? "Correct" : "Wrong";
+    }
+    
+    _speakText(text, lang);
   }
 
   void _generateQuestion() {
@@ -134,7 +144,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         _isStatsSaved = true;
         widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers);
       }
-      _speakWord("Congratulations", "en-US");
+      _speakText("Congratulations", "en-US");
       return;
     }
     
@@ -160,7 +170,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     setState(() {});
     
     _entranceController.forward(from: 0.0); 
-    _speakWord(currentWord.word, "en-US");
+    // YENİ: Soru gelir gelmez akıllı algılamayla anında kelimeyi okur
+    _speakText(currentWord.word, getSourceLanguage(currentWord.libraryName, currentWord.word));
   }
 
   void _checkAnswer(String option) {
@@ -301,7 +312,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     }
 
     bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    Color borderColor = isDarkMode ? Theme.of(context).primaryColor : Colors.deepPurple;
+    Color borderColor = isDarkMode ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.5);
 
     return Scaffold(
       appBar: AppBar(
@@ -338,7 +349,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           const SizedBox(height: 20),
           
           GestureDetector(
-            onTap: () => _speakWord(currentWord.word, "en-US"),
+            onTap: () => _speakText(currentWord.word, getSourceLanguage(currentWord.libraryName, currentWord.word)),
             child: AnimatedBuilder(
               animation: _entranceController,
               builder: (context, child) {
@@ -349,8 +360,18 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
-                      child: Text(currentWord.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue)),
+                      // YENİ: Soru kutusu ana temanın renklerine uyumlu hale getirildi
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.08), 
+                        borderRadius: BorderRadius.circular(16), 
+                        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
+                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]
+                      ),
+                      child: Text(
+                        currentWord.word, 
+                        textAlign: TextAlign.center, 
+                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)
+                      ),
                     ),
                   ),
                 );
