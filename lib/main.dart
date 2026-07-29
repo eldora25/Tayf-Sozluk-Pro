@@ -31,6 +31,8 @@ import 'info_screen.dart';
 import 'wordnet_search_screen.dart'; 
 
 late Isar isar;
+// YENİ VE KESİN ÇÖZÜM: Tüm ekranların kullanacağı, asla kilitlenmeyen TEK (Global) TTS motoru
+final FlutterTts globalTts = FlutterTts();
 
 int getNextReviewOffset(int level) {
   const int oneDay = 24 * 60 * 60 * 1000;
@@ -263,7 +265,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   static const String buildNo = String.fromEnvironment('BUILD_NUMBER', defaultValue: 'Dev');
 
-  final FlutterTts flutterTts = FlutterTts();
   late AnimationController _flipController;
   late Animation<double> _flipAnimation;
 
@@ -310,7 +311,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _flipController.dispose();
-    flutterTts.stop();
     super.dispose();
   }
 
@@ -571,15 +571,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)).length;
   }
 
-  // --- KİLİTLENMEYİ ÖNLEYEN VE DİL KODLARINI DİREKT (en-US vs.) KULLANAN GÜVENLİ TTS FONKSİYONU ---
+  // GLOBAL TTS KULLANILARAK HATASIZ OKUMA (MULTI-INSTANCE DEADLOCK ÇÖZÜLDÜ)
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       String text = isMeaning ? word.meanings.first : word.word;
       String lang = 'en-US'; 
       String libName = word.libraryName.toLowerCase();
       
-      // Hatanın kök çözümü: İnsan okumasına yönelik 'İngilizce' gibi kelimeler yerine 
-      // doğrudan BCP-47 dil kodları (en-US, tr-TR) atandı. TTS motoru artık çökmeyecek!
       if (word.level == 'WordNet' || libName.contains('wordnet') || libName.contains('eng-eng')) {
         lang = 'en-US';
       } else if (isMeaning) {
@@ -596,12 +594,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         }
       }
 
-      await flutterTts.setLanguage(lang);
-      await flutterTts.setVolume(1.0);
-      await flutterTts.setSpeechRate(0.5);
-      await flutterTts.setPitch(1.0);
-      
-      await flutterTts.speak(text);
+      await globalTts.setLanguage(lang);
+      await globalTts.setSpeechRate(0.5);
+      await globalTts.speak(text);
     } catch (e) {
       debugPrint("TTS Hatası: $e");
     }
@@ -609,6 +604,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _nextCard(List<WordModel> activeList) {
     if (activeList.isEmpty) return;
+    globalTts.stop(); // Yeni karta geçerken eskisini sustur
     setState(() {
       isFlipped = false;
       _flipController.reset();
