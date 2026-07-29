@@ -105,7 +105,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 
   List<String> parsedList = [];
   
-  // YENİ: Anlamlar sadece ||| veya \n ile bölünür. Cümle içindeki virgüller silinmez.
+  // YENİ: Anlamlar "|||" veya satır atlamayla tertemiz ayrılır.
   final RegExp splitRegExp = RegExp(r'\|\|\||\n');
   final RegExp prefixRegExp = RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*');
   final RegExp spaceRegExp = RegExp(r'\s+');
@@ -119,7 +119,8 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         var clean = p.trim();
         clean = clean.replaceAll(prefixRegExp, '');
         clean = clean.replaceAll(spaceRegExp, ' ');
-        if (clean.isNotEmpty && clean.length < 300) {
+        // YENİ: Uzunluk kısıtlaması (length < 300) KALDIRILDI. Uzun anlamlar da kaybolmayacak.
+        if (clean.isNotEmpty) {
           result.add(clean);
         }
       }
@@ -136,16 +137,14 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         if (e is Map && (e.containsKey('definition') || e.containsKey('synonyms'))) {
           String actualWord = e['word']?.toString() ?? '';
           
-          // YENİ: EĞER KELİME KISMINDA ID (örn: 00001740-a) VARSA BUNU GİZLE, GERÇEK KELİMEYİ YAZ
           if (RegExp(r'^[0-9]{8}-[a-z]$').hasMatch(actualWord) || actualWord.isEmpty || actualWord == 'null') {
             if (e['synonyms'] != null && e['synonyms'] is List && e['synonyms'].isNotEmpty) {
               actualWord = e['synonyms'][0].toString(); 
             } else {
-              continue; // Kelimenin gerçek adı bulunamazsa listeye alma
+              continue; 
             }
           }
 
-          // YENİ: Anlam, Eş Anlam ve Zıt Anlamlar düzenli listelenir
           List<String> combinedMeanings = [];
           if (e['definition'] != null && e['definition'].toString().isNotEmpty) {
             combinedMeanings.add("ANLAM: " + e['definition'].toString());
@@ -176,45 +175,41 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           }));
         }
       }
-    } else if (extension == 'txt') {
-      var lines = content.split('\n');
-      for (var line in lines) {
-        if (!line.contains(':') && !line.contains(',')) continue; 
-        
-        // Eger CSV formatındaysa (Virgülle ayrılmışsa)
-        if (line.contains(',') && !line.contains(':')) {
-           List<String> parts = line.split(',');
-           if (parts.length >= 2) {
-              parsedList.add(json.encode({
-                'word': parts[0].trim(), 
-                'meanings': cleanMeanings([parts[1].trim()]), 
-                'examples': parts.length > 2 ? cleanMeanings([parts[2].trim()]) : <String>[],
-                'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-                'srsLevel': 0, 'nextReviewDate': 0
-              }));
-           }
-        } else {
-            var parts = line.split(':');
-            parsedList.add(json.encode({
-              'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': <String>[],
-              'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-              'srsLevel': 0, 'nextReviewDate': 0
-            }));
-        }
-      }
     } else {
+      // YENİ: Hem .csv hem de .txt uzantılı dosyalar, veri kaybını önlemek için Profesyonel CSV Ayrıştırıcısı ile okunur.
+      // Bu sayede "a,b,c" gibi tırnak içindeki virgüller metni bozmaz ve 30.000 kelimenin tamamı kurtulur.
       List<List<dynamic>> rows = const CsvToListConverter().convert(content);
-      for (var row in rows) {
-        if (row.isEmpty || row.length < 2) continue;
-        String wordStr = row[0].toString().trim();
-        if (wordStr.isEmpty || wordStr.startsWith('#') || wordStr.toLowerCase() == 'word' || wordStr.startsWith('00database')) continue;
+      
+      bool isCsv = rows.any((r) => r.length > 1);
 
-        parsedList.add(json.encode({
-          'word': wordStr, 'meanings': cleanMeanings([row[1]]), 'examples': row.length > 2 ? cleanMeanings([row[2]]) : <String>[],
-          'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
-          'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
-          'srsLevel': 0, 'nextReviewDate': 0
-        }));
+      if (!isCsv && content.contains(':')) {
+        // Eski tarz (word:meaning) metin dosyası formatı
+        var lines = content.split('\n');
+        for (var line in lines) {
+          if (!line.contains(':')) continue;
+          var parts = line.split(':');
+          parsedList.add(json.encode({
+            'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': <String>[],
+            'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+            'srsLevel': 0, 'nextReviewDate': 0
+          }));
+        }
+      } else {
+        // Free-KH.txt gibi CSV standartlarındaki profesyonel sözlükler
+        for (var row in rows) {
+          if (row.isEmpty || row.length < 2) continue;
+          String wordStr = row[0].toString().trim();
+          if (wordStr.isEmpty || wordStr.startsWith('#') || wordStr.toLowerCase() == 'word' || wordStr.startsWith('00database')) continue;
+
+          parsedList.add(json.encode({
+            'word': wordStr, 
+            'meanings': cleanMeanings([row[1]]), 
+            'examples': row.length > 2 ? cleanMeanings([row[2]]) : <String>[],
+            'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel',
+            'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all',
+            'srsLevel': 0, 'nextReviewDate': 0
+          }));
+        }
       }
     }
   } catch (e, stacktrace) {
@@ -648,7 +643,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       String rawText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
       if (rawText.isEmpty) return;
 
-      // Anlam kısmında okumasını istemediğimiz etiketleri de silerek pürüzsüz okutalım
       String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                                 .replaceAll('ANLAM:', '')
                                 .replaceAll('EŞ ANLAMLI:', '')
