@@ -1,48 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
 
-// GLOBAL HATA KAYDEDİCİ MOTOR
-class AppLogger {
-  static Future<void> logError(String message) async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/app_errors.log');
-      final timestamp = DateTime.now().toString();
-      await file.writeAsString('[$timestamp] $message\n\n', mode: FileMode.append);
-    } catch (e) {
-      // Dosyaya yazılamazsa sessizce geç
-    }
-  }
-
-  static Future<String> readLogs() async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/app_errors.log');
-      if (await file.exists()) {
-        return await file.readAsString();
-      }
-    } catch (e) {
-      return "Log dosyası okunamadı: $e";
-    }
-    return "Kayıtlı hata bulunamadı.";
-  }
-
-  static Future<void> clearLogs() async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/app_errors.log');
-      if (await file.exists()) {
-        await file.delete();
-      }
-    } catch (e) {
-      // Hata olursa görmezden gel
-    }
-  }
-}
-
-// LOG GÖRÜNTÜLEME EKRANI
 class LoggerScreen extends StatefulWidget {
   const LoggerScreen({super.key});
 
@@ -51,53 +12,64 @@ class LoggerScreen extends StatefulWidget {
 }
 
 class _LoggerScreenState extends State<LoggerScreen> {
-  String logContent = "Yükleniyor...";
+  // Örnek Log Listesi (Gerçek log mekanizmanıza bağlanabilir)
+  List<String> logs = [
+    "Sistem başlatıldı.",
+    "Veritabanı bağlantısı kuruldu.",
+    "WordNet kütüphanesi hazır.",
+    "Kullanıcı girişi başarılı."
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadLogs();
-  }
+  Future<void> _exportLogs() async {
+    if (logs.isEmpty) return;
 
-  Future<void> _loadLogs() async {
-    String logs = await AppLogger.readLogs();
-    setState(() {
-      logContent = logs.isEmpty ? "Kayıtlı hata bulunamadı." : logs;
-    });
+    try {
+      String timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      String fileName = 'log_$timestamp.txt';
+      
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/$fileName');
+      
+      String logContent = logs.join('\n');
+      await file.writeAsString(logContent);
+      
+      await Share.shareXFiles([XFile(file.path)], text: 'Tayf Sözlük Pro - Sistem Hata Logları');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Log dışa aktarma hatası: $e")));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sistem Hata Kayıtları"),
+        title: const Text("Hata Kayıtları (Log)"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.copy),
-            tooltip: "Tümünü Kopyala",
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: logContent));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Loglar kopyalandı!")));
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_forever),
-            tooltip: "Temizle",
-            onPressed: () async {
-              await AppLogger.clearLogs();
-              _loadLogs();
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Loglar temizlendi.")));
-            },
+            icon: const Icon(Icons.share),
+            tooltip: "Logları .txt Olarak Paylaş",
+            onPressed: _exportLogs,
           )
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          logContent, 
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-        ),
-      ),
+      body: logs.isEmpty
+          ? const Center(child: Text("Henüz bir hata kaydı bulunmuyor."))
+          : ListView.builder(
+              padding: const EdgeInsets.all(8.0),
+              itemCount: logs.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  color: Colors.black87,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Text(
+                      "[${DateTime.now().toLocal().toString().split('.')[0]}] ${logs[index]}",
+                      style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace'),
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
