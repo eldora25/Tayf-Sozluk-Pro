@@ -1,66 +1,45 @@
-import 'dart:convert';
 import 'package:isar/isar.dart';
 
-// Veritabanı tabloları otomatik bu dosyada oluşacak
 part 'models.g.dart';
-
-// Akıllı ve Performanslı Dil Algılama
-String getSourceLanguage(String libraryName) {
-  String lowerLib = libraryName.toLowerCase();
-  if (lowerLib.contains('tr-en') || lowerLib.contains('tr-ing') || lowerLib.contains('türkçe-ing')) return 'tr-TR';
-  if (lowerLib.contains('en-tr') || lowerLib.contains('ing-tr') || lowerLib.contains('ingilizce')) return 'en-US';
-  return 'en-US';
-}
-
-String getTargetLanguage(String libraryName) {
-  String lowerLib = libraryName.toLowerCase();
-  if (lowerLib.contains('tr-en') || lowerLib.contains('tr-ing') || lowerLib.contains('türkçe-ing')) return 'en-US';
-  if (lowerLib.contains('en-tr') || lowerLib.contains('ing-tr') || lowerLib.contains('ingilizce')) return 'tr-TR';
-  return 'tr-TR'; 
-}
-
-String detectLanguage(String text) {
-  String lower = text.toLowerCase();
-  if (RegExp(r'[çğıöşü]').hasMatch(lower)) return 'tr-TR';
-  if (RegExp(r'[wqx]').hasMatch(lower)) return 'en-US';
-  final trWords = ['bir', 've', 'için', 'ile', 'de', 'da', 'mi', 'mu', 'bu', 'şu', 'o', 'ne', 'gibi', 'kadar', 'olarak', 'olan', 'göre', 'kabul', 'etmek', 'yapmak', 'olmak'];
-  for (var w in trWords) {
-    if (RegExp(r'\b' + w + r'\b').hasMatch(lower)) return 'tr-TR';
-  }
-  return 'en-US';
-}
 
 @collection
 class WordModel {
   Id id = Isar.autoIncrement;
 
-  @Index(type: IndexType.value)
-  String word;
+  @Index()
+  late String word;
 
-  List<String> meanings;
-  List<String> examples;
-  String level;
+  List<String> meanings = [];
+  List<String> examples = [];
 
-  @Index(type: IndexType.value)
-  String libraryName;
+  @Index()
+  late String libraryName;
 
-  int correctCount;
-  int wrongCount;
+  @Index()
+  late String level;
 
-  // Hangi listede olduğunu (all, learning, toRepeat, learned, wrong) belirler
-  @Index(type: IndexType.value)
-  String listType; 
+  @Index()
+  int correctCount = 0;
 
-  // YENİ: SRS (Aralıklı Tekrar) Sistemi Parametreleri
-  int srsLevel; 
-  int nextReviewDate;
+  @Index()
+  int wrongCount = 0;
+
+  // 'all', 'learning', 'toRepeat', 'toSRSRepeat', 'learned'
+  @Index()
+  late String listType; 
+
+  @Index()
+  int srsLevel = 0;
+
+  @Index()
+  int nextReviewDate = 0;
 
   WordModel({
-    this.word = '',
-    this.meanings = const [],
-    this.examples = const [],
-    this.level = 'Genel',
-    this.libraryName = 'Genel',
+    required this.word,
+    required this.meanings,
+    required this.examples,
+    required this.libraryName,
+    required this.level,
     this.correctCount = 0,
     this.wrongCount = 0,
     this.listType = 'all',
@@ -68,24 +47,15 @@ class WordModel {
     this.nextReviewDate = 0,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'word': word, 'meanings': meanings, 'examples': examples,
-      'level': level, 'libraryName': libraryName,
-      'correctCount': correctCount, 'wrongCount': wrongCount,
-      'listType': listType,
-      'srsLevel': srsLevel,
-      'nextReviewDate': nextReviewDate,
-    };
-  }
-
-  factory WordModel.fromMap(Map<String, dynamic> map) {
+  factory WordModel.fromJson(String jsonStr) {
+    import 'dart:convert';
+    Map<String, dynamic> map = json.decode(jsonStr);
     return WordModel(
       word: map['word'] ?? '',
-      meanings: List<String>.from(map['meanings'] ?? []),
-      examples: List<String>.from(map['examples'] ?? []),
-      level: map['level'] ?? 'Genel',
+      meanings: map['meanings'] != null ? List<String>.from(map['meanings']) : [],
+      examples: map['examples'] != null ? List<String>.from(map['examples']) : [],
       libraryName: map['libraryName'] ?? 'Genel',
+      level: map['level'] ?? 'Genel',
       correctCount: map['correctCount'] ?? 0,
       wrongCount: map['wrongCount'] ?? 0,
       listType: map['listType'] ?? 'all',
@@ -93,7 +63,4 @@ class WordModel {
       nextReviewDate: map['nextReviewDate'] ?? 0,
     );
   }
-
-  String toJson() => json.encode(toMap());
-  factory WordModel.fromJson(String source) => WordModel.fromMap(json.decode(source));
 }
