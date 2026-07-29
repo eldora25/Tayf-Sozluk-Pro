@@ -61,8 +61,39 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
 
-    List<WordModel> pool = List.from(widget.words)..shuffle();
-    quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
+    // YENİ: %40 ZOR (YANLIŞLAR) VE %60 YENİ KELİME ALGORİTMASI
+    List<WordModel> reviewPool = widget.words.where((w) => w.listType == 'toRepeat' || w.wrongCount > 0).toList();
+    // En çok yanlış yapılanlara öncelik vermek için azalan sıraya göre diziyoruz
+    reviewPool.sort((a, b) => b.wrongCount.compareTo(a.wrongCount)); 
+
+    List<WordModel> newPool = widget.words.where((w) => w.listType == 'all' && w.wrongCount == 0).toList();
+    newPool.shuffle();
+
+    int targetReviewCount = (widget.questionCount * 0.4).round();
+    int targetNewCount = widget.questionCount - targetReviewCount;
+
+    List<WordModel> selectedReview = [];
+    List<WordModel> selectedNew = [];
+
+    if (reviewPool.length <= targetReviewCount) {
+      selectedReview = reviewPool;
+      targetNewCount = widget.questionCount - selectedReview.length; 
+      selectedNew = newPool.take(targetNewCount).toList();
+    } else {
+      // En çok yanlış yapılanlardan alıyoruz ama Quiz içinde sıralı gelmesinler diye kendi içlerinde karıştırıyoruz
+      selectedReview = reviewPool.take(targetReviewCount).toList()..shuffle(); 
+      selectedNew = newPool.take(targetNewCount).toList();
+    }
+
+    quizWords = [...selectedReview, ...selectedNew];
+    
+    // Eğer kütüphanede yeterli yeni veya eski kelime yoksa havuzu doldurmak için yedekleme
+    if (quizWords.length < widget.questionCount) {
+      var remaining = widget.words.where((w) => !quizWords.contains(w)).toList()..shuffle();
+      quizWords.addAll(remaining.take(widget.questionCount - quizWords.length));
+    }
+    
+    quizWords.shuffle(); // Tüm seçilenleri tamamen rastgele dağıt
     totalQuestions = quizWords.length;
 
     if (totalQuestions > 0) {
@@ -176,7 +207,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     _entranceController.forward(from: 0.0); 
     
-    _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word));
+    String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
+    String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
+    
+    _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
   void _checkAnswer(String option) {
@@ -188,21 +222,36 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         answeredQuestions++;
         HapticFeedback.mediumImpact(); 
         _scaleController.forward(from: 0.0); 
-        if (selectedWrongOptions.isEmpty) { correctAnswers++; currentWord.correctCount++; }
+        
+        if (selectedWrongOptions.isEmpty) { 
+          correctAnswers++; 
+          currentWord.correctCount++; 
+          
+          // YENİ: TEK ATIMLIK THRESHOLD KONTROLÜ
+          if (currentWord.correctCount == widget.threshold) {
+             widget.onWordMastered(currentWord);
+          }
+        }
       } else {
         selectedWrongOptions.add(option);
-        wrongAnswers++; currentWord.wrongCount++;
+        wrongAnswers++; 
+        
+        // Yanlış sayısı bir kelime için o soruda sadece 1 kez ceza puanı alsın diye kontrol edilir
+        if (selectedWrongOptions.length == 1) { 
+            currentWord.wrongCount++;
+            widget.onWrongWord(currentWord);
+        }
+        
         HapticFeedback.heavyImpact(); 
-        _lastWrongOption = option; _shakeController.forward(from: 0.0); 
+        _lastWrongOption = option; 
+        _shakeController.forward(from: 0.0); 
       }
     });
 
     if (option == correctOption) {
       _speakFeedback(true);
-      if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
       Future.delayed(const Duration(milliseconds: 1500), _generateQuestion);
     } else {
-      widget.onWrongWord(currentWord);
       _speakFeedback(false);
     }
   }
@@ -264,6 +313,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     }
 
     Color borderColor = Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.5);
+    String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Quiz Modu"), actions: [IconButton(icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), onPressed: () => setState(() => isAudioEnabled = !isAudioEnabled))]),
@@ -286,7 +336,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           
           GestureDetector(
             onTap: () {
-              _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word));
+              String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
+              _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
             },
             child: AnimatedBuilder(
               animation: _entranceController,
@@ -300,7 +351,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                       decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
                       child: Column(
                         children: [
-                          Text(currentWord.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                          Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                          if (_questionSubtext.isNotEmpty)
+                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.7)))),
                         ],
                       ),
                     ),
