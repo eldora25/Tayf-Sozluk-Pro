@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:lottie/lottie.dart'; 
 import 'models.dart';
-import 'main.dart'; // globalTts ve "Smart" dil algılama metodlarını kullanmak için eklendi
+import 'main.dart'; 
 
 class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -99,10 +99,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      // Önceki kuyruğu anında öldür (Gereksiz okumaları engeller)
       await globalTts.stop();
-      
-      // Özel karakterleri sil (Kilitlenmeleri önler)
       String cleanText = text.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ');
       
       globalTts.setLanguage(languageCode);
@@ -116,8 +113,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
     
-    // YENİ: GECİKMEYİ (LAG) ÖNLEMEK İÇİN BİLDİRİM DİLİ SORUNUN DİLİ (KAYNAK) YAPILDI
-    // Böylece TTS motoru dil değiştirmekle vakit kaybetmeyip anında tepki verir.
     String lang = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String text = "";
     
@@ -159,14 +154,25 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
+    // Doğru Şık: Çoklu anlamlardan rastgele sadece 1 tanesi alınır.
     correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
     Set<String> wrongOptions = {};
     
+    // Yanlış Şıklar (Çeldiriciler):
     while (wrongOptions.length < 3 && wrongOptions.length < widget.words.length - 1) {
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
+      
+      // 1. Kesinlikle başka kelime olacak
+      // 2. Anlamı boş olmayacak
       if (randomWord.word != currentWord.word && randomWord.meanings.isNotEmpty) {
+        
+        // Çoklu anlamlardan SADECE BİR TANESİ rastgele seçilir
         String randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
-        wrongOptions.add(randomMeaning);
+        
+        // Seçilen bu yanlış anlam, tesadüfen doğru kelimenin anlamlarından biriyle aynı olmasın
+        if (!currentWord.meanings.contains(randomMeaning)) {
+          wrongOptions.add(randomMeaning);
+        }
       }
     }
     
@@ -176,7 +182,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     setState(() {});
     
     _entranceController.forward(from: 0.0); 
-    // Soru gelir gelmez akıllı dille anında kelimeyi okur
     _speakText(currentWord.word, getSmartSourceLanguage(currentWord.libraryName, currentWord.word));
   }
 
