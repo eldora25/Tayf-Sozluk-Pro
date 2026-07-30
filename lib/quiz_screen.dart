@@ -127,11 +127,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     return '$days${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // KESİN DİL KURALLARI (Veritabanını bozmadan kütüphane isminden okuma)
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await globalTts.stop(); // Hayalet sesleri tamamen engeller
+      await globalTts.stop(); 
       String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
                              .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                              .replaceAll('ANLAM:', '')
@@ -148,7 +147,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
-    // Geri bildirimde orijinal kütüphanenin dili kullanılır
     String lang = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String text = "";
     if (lang == 'en-US') text = isCorrect ? "Correct" : "Wrong";
@@ -177,35 +175,34 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
-    // ZEKİ SORU MAKİNESİ: Doğru cevap için ÇOKLU anlamlardan SADECE BİRİNİ seç!
-    correctOption = currentWord.meanings.isNotEmpty 
-        ? currentWord.meanings[random.nextInt(currentWord.meanings.length)] 
-        : (currentWord.examples.isNotEmpty ? currentWord.examples.first : "");
+    // ZEKİ SORU MAKİNESİ: Çoklu anlamlardan SADECE BİR TANESİNİ seç. Anlam yoksa örneği seç.
+    List<String> correctPool = [...currentWord.meanings, ...currentWord.examples];
+    correctOption = correctPool.isNotEmpty ? correctPool[random.nextInt(correctPool.length)] : "";
 
     Set<String> wrongOptions = {};
     int loopCounter = 0;
     
-    // ÇELDİRİCİ ZEKÂSI: Asla ana kelimenin diğer anlamlarını kullanma! Başka kelimelerden de sadece TEK BİR anlam seç.
+    // ÇELDİRİCİ ZEKÂSI: Asla ana kelimenin diğer anlamlarını kullanma.
     while (wrongOptions.length < 3 && loopCounter < 150) {
       loopCounter++;
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
       
       if (randomWord.word != currentWord.word) {
-        String randomMeaning = "";
+        List<String> wrongPool = [...randomWord.meanings, ...randomWord.examples];
         
-        if (randomWord.meanings.isNotEmpty) {
-          randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
-        } else if (randomWord.examples.isNotEmpty) {
-          randomMeaning = randomWord.examples[random.nextInt(randomWord.examples.length)];
-        }
-        
-        if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
-        if (randomMeaning.startsWith("EŞ ANLAMLI: ")) randomMeaning = randomMeaning.substring(12).trim();
-        if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
-        
-        // Bu tek anlamın, doğru kelimenin anlamlarıyla aynı olmadığından emin ol!
-        if (randomMeaning.isNotEmpty && !currentWord.meanings.contains(randomMeaning) && randomMeaning != correctOption && !wrongOptions.contains(randomMeaning)) {
-          wrongOptions.add(randomMeaning);
+        if (wrongPool.isNotEmpty) {
+          String randomMeaning = wrongPool[random.nextInt(wrongPool.length)];
+          
+          if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
+          if (randomMeaning.startsWith("EŞ ANLAMLI: ")) randomMeaning = randomMeaning.substring(12).trim();
+          if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
+          
+          // Çeldiricinin asıl kelimenin HERHANGİ bir anlamıyla çakışmadığından emin ol!
+          bool isAlreadyCorrect = currentWord.meanings.contains(randomMeaning) || currentWord.examples.contains(randomMeaning) || randomMeaning == correctOption;
+          
+          if (randomMeaning.isNotEmpty && !isAlreadyCorrect && !wrongOptions.contains(randomMeaning)) {
+            wrongOptions.add(randomMeaning);
+          }
         }
       }
     }
@@ -219,7 +216,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
     String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
     
-    // Akıllı TTS ile soruyu okut (Kütüphane ismine göre)
     _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
@@ -427,7 +423,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(16),
                   onTap: () => _checkAnswer(option),
                   child: Padding(
-                    // ESNEK ŞIKLAR (Taşmaları Engelleyen Kısım)
+                    // ESNEK METİN: Kelimenin anlamı veya cümlesi ne kadar uzun olursa olsun taşmayı engeller
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     child: Row(
                       children: [
