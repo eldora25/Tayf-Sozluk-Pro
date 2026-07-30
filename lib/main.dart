@@ -34,7 +34,6 @@ import 'demo_screen.dart';
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
 
-// TTS DİLİ ZIRHI (Free-KH İng-Tr olarak mühürlendi)
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase().replaceAll('i̇', 'i').replaceAll('ı', 'i');
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('english-turkish') || name.contains('free-kh') || name.contains('freedict')) return 'en-US';
@@ -65,60 +64,39 @@ int getNextReviewOffset(int level) {
   }
 }
 
-// -------------------------------------------------------------
-// 1. ZEKİ FİLTRE: ÇÖP SEMBOL TEMİZLEYİCİ VE ANLAM PARÇALAYICI
-// -------------------------------------------------------------
 List<String> cleanAndSplit(String rawText) {
   List<String> results = [];
-  // Görünmez karakterleri, -III gibi çöpleri temizle
   String text = rawText.replaceAll('-III', '').replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '').replaceAll('\"', '');
-  
-  // Virgül, noktalı virgül, |||, alt satır ve NOKTA-BOŞLUK'tan metni ZEKİCE BÖL!
   var parts = text.split(RegExp(r'\|\|\||;|\n|,|\.\s+'));
-  
   for (var p in parts) {
     String clean = p.trim();
-    // Başındaki ve sonundaki eksi, parantez, çizgi gibi pislikleri tıraşla
     clean = clean.replaceAll(RegExp(r'^[^a-zA-Z0-9çğışöüÇĞIŞÖÜ(]+|[^a-zA-Z0-9çğışöüÇĞIŞÖÜ)]+$'), '').trim();
-    clean = clean.replaceAll(RegExp(r'\s+'), ' '); // Çift boşlukları sil
-    
-    // Yalnız kalan "n", "v", "adj" gibi kısaltmaları at, sadece gerçek kelime kalsın
+    clean = clean.replaceAll(RegExp(r'\s+'), ' ');
     if (clean.length > 1 && !['n', 'v', 'adj', 'adv', 'prep', 'conj', 'pron'].contains(clean.toLowerCase())) {
       results.add(clean);
     }
   }
-  return results.toSet().toList(); // Aynı anlama gelenleri tekilleştir
+  return results.toSet().toList();
 }
 
-// -------------------------------------------------------------
-// 2. MUCİZE MOTOR: MULTILINE CSV PARSER (1.4 Milyon Kelime İçin)
-// -------------------------------------------------------------
 List<List<String>> parseCsvMultiline(String text) {
   List<List<String>> rows = [];
   List<String> currentRow = [];
   StringBuffer currentCell = StringBuffer();
   bool inQuotes = false;
-  
   for (int i = 0; i < text.length; i++) {
     String c = text[i];
     if (c == '"') {
-      if (inQuotes && i + 1 < text.length && text[i + 1] == '"') {
-        currentCell.write('"'); i++; // Çift tırnak kaçışını yoksay
-      } else {
-        inQuotes = !inQuotes;
-      }
+      if (inQuotes && i + 1 < text.length && text[i + 1] == '"') { currentCell.write('"'); i++; } 
+      else { inQuotes = !inQuotes; }
     } else if (c == ',' && !inQuotes) {
-      currentRow.add(currentCell.toString().trim());
-      currentCell.clear();
+      currentRow.add(currentCell.toString().trim()); currentCell.clear();
     } else if ((c == '\n' || c == '\r') && !inQuotes) {
-      if (c == '\r' && i + 1 < text.length && text[i + 1] == '\n') i++; // Windows alt satırı atla
-      currentRow.add(currentCell.toString().trim());
-      currentCell.clear();
+      if (c == '\r' && i + 1 < text.length && text[i + 1] == '\n') i++; 
+      currentRow.add(currentCell.toString().trim()); currentCell.clear();
       if (currentRow.where((e) => e.isNotEmpty).isNotEmpty) rows.add(currentRow);
       currentRow = [];
-    } else {
-      currentCell.write(c);
-    }
+    } else { currentCell.write(c); }
   }
   if (currentCell.isNotEmpty || currentRow.isNotEmpty) {
     currentRow.add(currentCell.toString().trim());
@@ -127,9 +105,6 @@ List<List<String>> parseCsvMultiline(String text) {
   return rows;
 }
 
-// -------------------------------------------------------------
-// 6 EŞSİZ İMPORT ALGORİTMASI (Arka Planda Donmadan Çalışır)
-// -------------------------------------------------------------
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
@@ -140,7 +115,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   if (content.startsWith('\uFEFF')) content = content.substring(1);
 
   try {
-    // ALGORİTMA 1 & 2: JSON SÖZLÜKLER (WordNet ve Test Paketi)
     if (extension == 'json') {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
@@ -148,15 +122,12 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         if (item is Map) {
           List<String> subWords = [];
           String w = item['word']?.toString().trim() ?? '';
-          
           if (!RegExp(r'^\d{8}-').hasMatch(w) && w.isNotEmpty) subWords.add(w);
           if (item['synonyms'] is List) subWords.addAll((item['synonyms'] as List).map((e) => e.toString()));
           if (item['lemmas'] is List) subWords.addAll((item['lemmas'] as List).map((e) => e.toString()));
-          
           String def = item['definition']?.toString() ?? '';
           List<String> mList = item['meanings'] is List ? (item['meanings'] as List).map((e) => e.toString()).toList() : (def.isNotEmpty ? [def] : []);
           List<String> eList = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
-          
           List<String> cleanM = cleanAndSplit(mList.join('|||'));
           List<String> cleanE = cleanAndSplit(eList.join('|||'));
 
@@ -171,16 +142,13 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       return parsedList;
     }
 
-    // ALGORİTMA 3: TAYF İNG-TR (TXT Formatı)
     if (originalFileName.contains('tayf') && extension == 'txt') {
       List<String> lines = const LineSplitter().convert(content);
       for (String line in lines) {
         int colonIdx = line.indexOf(':');
         if (colonIdx != -1) {
-          // Sub-word: virgül ve / ile ayır ("a lot of, a lot" -> 2 ayrı kelime)
           List<String> subWords = line.substring(0, colonIdx).split(RegExp(r'[,/]'));
           List<String> meanings = cleanAndSplit(line.substring(colonIdx + 1));
-          
           for (String w in subWords) {
             w = w.replaceAll('\"', '').trim();
             if (w.length > 1 && meanings.isNotEmpty) {
@@ -192,11 +160,9 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       return parsedList;
     }
 
-    // ALGORİTMA 4, 5, 6: BABYLONLAR ve FREEDICT (Devasa CSV Dosyaları)
     List<List<String>> rows = parseCsvMultiline(content);
     for (List<String> row in rows) {
       if (row.length >= 2) {
-        // Sub-word Parsing Zekâsı ("abandon, abandons" -> 2 kelime olur)
         List<String> subWords = row[0].split(RegExp(r'[,/|]'));
         List<String> mList = cleanAndSplit(row[1]);
         List<String> eList = row.length > 2 ? cleanAndSplit(row[2]) : [];
@@ -353,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         for (var w in learningWords.toList()) {
           if (w.nextReviewDate <= now && w.nextReviewDate > 0) {
             w.listType = 'toSRSRepeat';
-            learningWords.remove(w);
+            learningWords.removeWhere((item) => item.id == w.id);
             toSRSRepeatWords.add(w);
             needsSave = true;
           }
@@ -364,7 +330,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
 
         wrongWords = [...allWords, ...learningWords, ...toRepeatWords, ...toSRSRepeatWords, ...learnedWords].where((w) => w.wrongCount > 0).toList();
-        
         if (allWords.isEmpty && learnedWords.isEmpty && toRepeatWords.isEmpty && toSRSRepeatWords.isEmpty && learningWords.isEmpty) {
           _createDefaultLibrary();
         }
@@ -380,7 +345,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       prefs.setInt('quizThreshold', quizThreshold);
       prefs.setInt('tayfPoints', tayfPoints);
       prefs.setInt('currentCardIndex', currentCardIndex);
-      
       prefs.setInt('totalCompletedQuizzes', totalCompletedQuizzes);
       prefs.setInt('totalQuizTimeSeconds', totalQuizTimeSeconds);
       prefs.setInt('totalQuizQuestions', totalQuizQuestions);
@@ -485,52 +449,57 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() => isFlipped = !isFlipped);
   }
 
-  void _markAsLearned(WordModel word) {
-    HapticFeedback.heavyImpact(); 
-    _recordActivity(1); 
+  // Quiz'den gelen çakışmayı önleyen KİLİTLİ versiyonlar
+  void _markAsLearned(WordModel word, {bool fromQuiz = false}) {
+    if (!fromQuiz) { HapticFeedback.heavyImpact(); _recordActivity(1); }
+    
     setState(() {
       if (word.srsLevel == 0) {
         word.srsLevel = 1;
         word.listType = 'learning';
         word.nextReviewDate = DateTime.now().millisecondsSinceEpoch + getNextReviewOffset(1);
-        learningWords.add(word);
-        allWords.remove(word);
-        toRepeatWords.remove(word);
+        if (!learningWords.any((w) => w.id == word.id)) learningWords.add(word);
+        allWords.removeWhere((w) => w.id == word.id);
+        toRepeatWords.removeWhere((w) => w.id == word.id);
       } else {
         word.srsLevel++;
         if (word.srsLevel > 5) {
           word.listType = 'learned';
-          learnedWords.add(word);
+          if (!learnedWords.any((w) => w.id == word.id)) learnedWords.add(word);
         } else {
           word.listType = 'learning';
           word.nextReviewDate = DateTime.now().millisecondsSinceEpoch + getNextReviewOffset(word.srsLevel);
-          learningWords.add(word);
+          if (!learningWords.any((w) => w.id == word.id)) learningWords.add(word);
         }
-        toSRSRepeatWords.remove(word);
+        toSRSRepeatWords.removeWhere((w) => w.id == word.id);
       }
-      _nextCard();
+      
+      if (!fromQuiz) _nextCard(); 
+      else _saveData(); 
     });
   }
 
-  void _markAsToRepeat(WordModel word) {
-    HapticFeedback.mediumImpact(); 
-    _recordActivity(0); 
+  void _markAsToRepeat(WordModel word, {bool fromQuiz = false}) {
+    if (!fromQuiz) { HapticFeedback.mediumImpact(); _recordActivity(0); }
+    
     setState(() {
       word.wrongCount++;
-      if (!wrongWords.any((w) => w.word == word.word)) wrongWords.add(word);
+      if (!wrongWords.any((w) => w.id == word.id)) wrongWords.add(word);
 
       if (word.srsLevel > 0) {
         word.srsLevel = 1; 
         word.nextReviewDate = 0; 
         word.listType = 'toSRSRepeat';
-        if (!toSRSRepeatWords.any((w) => w.word == word.word)) toSRSRepeatWords.add(word);
-        learningWords.removeWhere((w) => w.word == word.word);
+        if (!toSRSRepeatWords.any((w) => w.id == word.id)) toSRSRepeatWords.add(word);
+        learningWords.removeWhere((w) => w.id == word.id);
       } else {
         word.listType = 'toRepeat';
-        if (!toRepeatWords.any((w) => w.word == word.word)) toRepeatWords.add(word);
-        allWords.removeWhere((w) => w.word == word.word);
+        if (!toRepeatWords.any((w) => w.id == word.id)) toRepeatWords.add(word);
+        allWords.removeWhere((w) => w.id == word.id);
       }
-      _nextCard();
+      
+      if (!fromQuiz) _nextCard();
+      else _saveData();
     });
   }
 
@@ -549,13 +518,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       try {
         List<int> bytes = await file.readAsBytes();
-        // HATA GİDERİCİ (Dosyadan yüklerken çökmeyi engeller)
         String content;
-        try {
-          content = utf8.decode(bytes);
-        } catch (e) {
-          content = String.fromCharCodes(bytes);
-        }
+        try { content = utf8.decode(bytes); } catch (e) { content = String.fromCharCodes(bytes); }
         
         final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': content, 'extension': result.files.single.extension ?? '', 'libraryName': customLibraryName, 'originalFileName': fileName});
         
@@ -613,13 +577,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       ByteData data = await rootBundle.load(assetPath);
       List<int> bytes = data.buffer.asUint8List();
-      
-      // HATA GİDERİCİ ZIRH (Missing extension byte hatasını kökünden çözer)
       String content;
       try {
         content = utf8.decode(bytes);
       } catch (e) {
-        content = String.fromCharCodes(bytes); // UTF-8 bozuksa zorla ASCII oku
+        content = String.fromCharCodes(bytes); 
       }
       
       final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': content, 'extension': extension, 'libraryName': customLibraryName, 'originalFileName': assetPath.split('/').last});
@@ -1083,12 +1045,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
                     ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
                     ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
+                    
+                    // QUIZ BUTONU (Quiz'den Gelen SRS Kayıtları İçin fromQuiz Kilidi Gönderilir)
                     ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
                       HapticFeedback.lightImpact();
                       Navigator.pop(context); 
                       List<WordModel> fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
                       Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
-                        words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, onWordMastered: _markAsLearned, onWrongWord: _markAsToRepeat, 
+                        words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, 
+                        onWordMastered: (w) => _markAsLearned(w, fromQuiz: true), // KİLİT AKTİF
+                        onWrongWord: (w) => _markAsToRepeat(w, fromQuiz: true), // KİLİT AKTİF
                         onQuizFinished: (t, a, w) { 
                           setState(() {
                             totalCompletedQuizzes++;
@@ -1100,6 +1066,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         }
                       ))); 
                     }),
+                    
                     ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
                     const Divider(),
                     ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) => _loadData()); }),
@@ -1183,33 +1150,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         actions: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-            margin: const EdgeInsets.only(right: 8, top: 4, bottom: 4), 
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
+            margin: const EdgeInsets.only(right: 8, top: 6, bottom: 6), 
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.9), 
-              borderRadius: BorderRadius.circular(30), 
-              border: Border.all(color: Colors.orangeAccent, width: 2.5),
-              boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 12, spreadRadius: 3)]
+              borderRadius: BorderRadius.circular(24), 
+              border: Border.all(color: Colors.orangeAccent, width: 2),
+              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
             ), 
             child: Row(children: [
-              const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 36), 
+              const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 28), 
               const SizedBox(width: 8), 
-              Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.white))
+              Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
             ])
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-            margin: const EdgeInsets.only(right: 12, top: 4, bottom: 4), 
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
+            margin: const EdgeInsets.only(right: 12, top: 6, bottom: 6), 
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.9), 
-              borderRadius: BorderRadius.circular(30), 
-              border: Border.all(color: Colors.lightBlueAccent, width: 2.5),
-              boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.8), blurRadius: 12, spreadRadius: 3)]
+              borderRadius: BorderRadius.circular(24), 
+              border: Border.all(color: Colors.lightBlueAccent, width: 2),
+              boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
             ), 
             child: Row(children: [
-              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 34), 
+              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 26), 
               const SizedBox(width: 8), 
-              Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.white))
+              Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
             ])
           ),
         ],
