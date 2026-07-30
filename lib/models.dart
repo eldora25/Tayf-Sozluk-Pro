@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:isar/isar.dart';
 
 part 'models.g.dart';
@@ -23,7 +24,7 @@ class WordModel {
   int srsLevel = 0;
   int nextReviewDate = 0;
 
-  // YENİ: TTS için Kalıcı Dil Kimliği Parametreleri
+  // TTS için Kalıcı Dil Kimliği Parametreleri
   String sourceLanguage = 'en-US';
   String targetLanguage = 'tr-TR';
 
@@ -43,7 +44,6 @@ class WordModel {
   });
 
   factory WordModel.fromJson(String jsonString) {
-    import 'dart:convert';
     Map<String, dynamic> map = json.decode(jsonString);
     return WordModel(
       word: map['word'] ?? '',
@@ -56,7 +56,6 @@ class WordModel {
       listType: map['listType'] ?? 'all',
       srsLevel: map['srsLevel'] ?? 0,
       nextReviewDate: map['nextReviewDate'] ?? 0,
-      // Default fallback
       sourceLanguage: map['sourceLanguage'] ?? 'en-US',
       targetLanguage: map['targetLanguage'] ?? 'tr-TR',
     );
