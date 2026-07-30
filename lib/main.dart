@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:csv/csv.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
@@ -34,11 +33,12 @@ import 'demo_screen.dart';
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
 
+// 5. MADDE ÇÖZÜMÜ: Gelişmiş Harf Normalizasyonlu TTS Dil Algılayıcı
 String getSmartSourceLanguage(String libraryName, String wordText) {
-  String name = libraryName.toLowerCase();
+  String name = libraryName.toLowerCase().replaceAll('i̇', 'i').replaceAll('ı', 'i');
   
-  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'tr-TR';
-  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'en-US';
+  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkce-ingilizce')) return 'tr-TR';
+  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('ingilizce-turkce')) return 'en-US';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
 
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
@@ -46,10 +46,10 @@ String getSmartSourceLanguage(String libraryName, String wordText) {
 }
 
 String getSmartTargetLanguage(String libraryName, String meaningText) {
-  String name = libraryName.toLowerCase();
+  String name = libraryName.toLowerCase().replaceAll('i̇', 'i').replaceAll('ı', 'i');
   
-  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'en-US';
-  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'tr-TR';
+  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkce-ingilizce')) return 'en-US';
+  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('ingilizce-turkce')) return 'tr-TR';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
   
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
@@ -68,6 +68,26 @@ int getNextReviewOffset(int level) {
   }
 }
 
+// YENİ: Hatalı virgül ve tırnaklara karşı kırılmaz manuel CSV ayırıcı
+List<String> manualCsvSplit(String line) {
+  List<String> result = [];
+  bool inQuotes = false;
+  StringBuffer current = StringBuffer();
+  for (int i = 0; i < line.length; i++) {
+    if (line[i] == '"') {
+      inQuotes = !inQuotes;
+    } else if (line[i] == ',' && !inQuotes) {
+      result.add(current.toString().trim());
+      current.clear();
+    } else {
+      current.write(line[i]);
+    }
+  }
+  result.add(current.toString().trim());
+  return result;
+}
+
+// 2, 3 ve 4. MADDE ÇÖZÜMÜ: YENİLMEZ "TAYF PARSER" MOTORU (Kayıpsız Okuma)
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
@@ -76,85 +96,88 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String lowerName = "${customLibraryName.toLowerCase()} $originalFileName";
   List<String> parsedList = [];
 
-  if (content.startsWith('\uFEFF')) {
-    content = content.substring(1);
-  }
+  if (content.startsWith('\uFEFF')) content = content.substring(1);
 
-  List<String> cleanMeanings(List<dynamic> raw) {
+  List<String> cleanMeanings(List<String> raw) {
     List<String> result = [];
-    for (var item in raw) {
-      var str = item.toString().replaceAll('\x06', '');
-      var parts = str.split(RegExp(r'\|\|\||\n'));
+    for (var str in raw) {
+      var parts = str.replaceAll('\x06', '').split(RegExp(r'\|\|\||\n'));
       for (var p in parts) {
-        var clean = p.trim().replaceAll(RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*'), '').replaceAll(RegExp(r'\s+'), ' ');
+        var clean = p.trim().replaceAll(RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*'), '').replaceAll(RegExp(r'\s+'), ' ').replaceAll('\"', '');
         if (clean.isNotEmpty) result.add(clean);
       }
     }
     return result.toSet().toList();
   }
 
-  try {
-    if (extension == 'json') {
+  if (extension == 'json' && !lowerName.contains('wordnet')) {
+    try {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       for (var e in list) {
         if (e is Map) {
-          String w = e['word']?.toString() ?? '';
+          String w = e['word']?.toString().replaceAll('\"', '').trim() ?? '';
           if (w.isEmpty) continue;
           List<String> meanings = e['meanings'] is List ? (e['meanings'] as List).map((m) => m.toString()).toList() : (e['definition'] != null ? [e['definition'].toString()] : []);
           List<String> examples = e['examples'] is List ? (e['examples'] as List).map((ex) => ex.toString()).toList() : [];
-          parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': examples, 'level': e['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+          parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': examples, 'level': e['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
         }
       }
-    } 
-    else {
-      List<String> lines = content.split('\n');
-      for (String line in lines) {
-        line = line.trim();
-        if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) continue;
-        
-        int splitIdx = -1;
+    } catch(e) { parsedList.add(json.encode({'error': "JSON Okuma Hatası:\n$e"})); }
+    return parsedList;
+  }
 
-        if (lowerName.contains('en-tr_tayf')) {
-          splitIdx = line.indexOf(':');
-        } else if (lowerName.contains('babylon') || extension == 'gls') {
-          int pipeIdx = line.indexOf('|');
-          int tabIdx = line.indexOf('\t');
-          int eqIdx = line.indexOf('=');
-          splitIdx = pipeIdx != -1 ? pipeIdx : (tabIdx != -1 ? tabIdx : eqIdx);
-        } else if (extension != 'csv') {
-          int colonIdx = line.indexOf(':');
-          int semiIdx = line.indexOf(';');
-          int tabIdx = line.indexOf('\t');
-          int pipeIdx = line.indexOf('|');
-          splitIdx = colonIdx != -1 ? colonIdx : (semiIdx != -1 ? semiIdx : (tabIdx != -1 ? tabIdx : pipeIdx));
+  List<String> lines = content.split('\n');
+  for (String line in lines) {
+    line = line.trim();
+    if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) continue;
+
+    try {
+      String w = '';
+      List<String> mList = [];
+      List<String> examples = [];
+      String level = 'Genel';
+
+      // Dinamik Auto-Detect Ayrıştırıcı
+      if (line.contains('|||')) {
+        List<String> row = manualCsvSplit(line);
+        if (row.length >= 2) {
+          w = row[0];
+          mList = row[1].split('|||');
+          if (row.length > 2) examples = row[2].split('|||');
+          if (row.length > 3) level = row[3];
         }
-
-        if (splitIdx != -1) {
-          String w = line.substring(0, splitIdx).trim();
-          if (w.isEmpty) continue;
-          String mStr = line.substring(splitIdx + 1).trim();
-          
-          List<String> meanings = mStr.split(RegExp(r'\|\|\||;|,')).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-          parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-          continue;
+      } else if (line.contains(':') && !line.contains(',')) { // EN-TR_tayf zırhı
+        int colonIdx = line.indexOf(':');
+        if (colonIdx != -1) {
+          w = line.substring(0, colonIdx);
+          mList = line.substring(colonIdx + 1).split(';');
         }
-
-        if (extension == 'csv') {
-          try {
-            List<List<dynamic>> parsedLine = const CsvToListConverter().convert(line + '\n');
-            if (parsedLine.isEmpty || parsedLine[0].length < 2) continue;
-            var row = parsedLine[0];
-            String w = row[0].toString().trim();
-            if (w.isEmpty) continue;
-            List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-            List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
-            parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': examples, 'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-          } catch(e) { continue; }
+      } else if (line.contains('\t')) {
+        var parts = line.split('\t');
+        w = parts[0];
+        mList = parts.length > 1 ? [parts[1]] : [];
+      } else if (line.contains(',')) { // Babylon ve standart CSV Zırhı
+        List<String> row = manualCsvSplit(line);
+        if (row.length >= 2) {
+          w = row[0];
+          mList = row[1].split(';').expand((e) => e.split('|||')).toList();
+          if (row.length > 2) examples = [row[2]];
+          if (row.length > 3) level = row[3];
         }
       }
+
+      w = w.replaceAll('\"', '').trim();
+      if (w.isEmpty) continue;
+      
+      mList = cleanMeanings(mList);
+      if (mList.isEmpty) continue;
+
+      parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': examples.map((e) => e.replaceAll('\"', '').trim()).toList(), 'level': level.isNotEmpty ? level : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+    } catch (e) {
+      continue; // Sadece hatalı tek satırı atla, 200.000 kelimelik döngüyü asla kırma!
     }
-  } catch (e, stacktrace) { parsedList.add(json.encode({'error': "Dosya Okuma Hatası:\n$e"})); }
+  }
   return parsedList;
 }
 
@@ -383,10 +406,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return uniqueLibs;
   }
 
+  // 8. MADDE ÇÖZÜMÜ: Gecikmeyi kaldırdım, TTS hayalet sesleri yok oldu
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
-      await globalTts.stop();
-      await Future.delayed(const Duration(milliseconds: 250)); 
+      await globalTts.stop(); // Tamamen durdurur ve anında yenisine geçer
       String rawText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
       if (rawText.isEmpty) return;
       String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ').replaceAll('ANLAM:', '');
@@ -1006,10 +1029,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               
-              // İMZA KATMANI VE GÜVENLİK BOŞLUĞU (MEDİA QUERY)
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.only(top: 16, left: 20, right: 20, bottom: 16 + MediaQuery.of(context).padding.bottom), // Sistem alt kaydırma çubuğu boşluğu
+                padding: EdgeInsets.only(top: 16, left: 20, right: 20, bottom: 16 + MediaQuery.of(context).padding.bottom), 
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor.withOpacity(0.08),
                   border: Border(top: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1))
@@ -1077,8 +1099,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
         actions: [
-          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.orange.withOpacity(0.5))), child: Row(children: [const Icon(Icons.local_fire_department, color: Colors.orange, size: 20), const SizedBox(width: 4), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange))])),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.blue.withOpacity(0.5))), child: Row(children: [const Icon(Icons.diamond, color: Colors.blue, size: 18), const SizedBox(width: 4), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue))])),
+          // 7. MADDE ÇÖZÜMÜ: Ateş (Seri) ve Elmas (TP) için zıt arka plan ve neon glow eklendi.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), 
+            margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8), 
+            decoration: BoxDecoration(
+              color: Colors.black87, 
+              borderRadius: BorderRadius.circular(20), 
+              border: Border.all(color: Colors.orangeAccent, width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.5), blurRadius: 6, spreadRadius: 1)]
+            ), 
+            child: Row(children: [const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 20), const SizedBox(width: 6), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white))])
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), 
+            margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8), 
+            decoration: BoxDecoration(
+              color: Colors.black87, 
+              borderRadius: BorderRadius.circular(20), 
+              border: Border.all(color: Colors.lightBlueAccent, width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.5), blurRadius: 6, spreadRadius: 1)]
+            ), 
+            child: Row(children: [const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 18), const SizedBox(width: 6), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white))])
+          ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(30),
@@ -1145,6 +1188,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           const SizedBox(height: 30),
                           if (isFlipped) Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.repeat), label: const Text("Tekrar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsToRepeat(currentWord)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.check), label: const Text("Biliyorum", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsLearned(currentWord))]),
                           const Spacer(),
+                          
+                          // 1. MADDE ÇÖZÜMÜ: Ana Ekran Alt İmza Katmanı
+                          Container(
+                            padding: EdgeInsets.only(top: 16, bottom: 16 + MediaQuery.of(context).padding.bottom),
+                            width: double.infinity,
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                    const SizedBox(width: 16),
+                                    Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor.withOpacity(0.5))),
+                              ],
+                            ),
+                          )
                         ],
                       ),
                     ),
