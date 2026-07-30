@@ -79,7 +79,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("Ayarlar & Temalar")),
       body: ListView(
-        // ALT BUTON GÜVENLİK BOŞLUĞU DİNAMİK OLARAK EKLENDİ
         padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0 + MediaQuery.of(context).padding.bottom),
         children: [
           const Text("Görünüm", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
