@@ -3,7 +3,7 @@ import 'dart:math';
 import 'dart:io';
 import 'dart:ui'; 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // HapticFeedback için gerekli
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -34,11 +34,11 @@ import 'demo_screen.dart';
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
 
+// AKILLI TTS: Harf analizine dayalı kesin dil tespiti
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase();
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'tr-TR';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'en-US';
-  if (name.contains('ing') || name.contains('eng') || name.contains('wordnet')) return 'en-US';
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
   return 'en-US'; 
 }
@@ -47,7 +47,6 @@ String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase();
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'en-US';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'tr-TR';
-  if (name.contains('wordnet') || name.contains('eng-eng')) return 'en-US'; 
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
   return 'tr-TR'; 
 }
@@ -64,6 +63,7 @@ int getNextReviewOffset(int level) {
   }
 }
 
+// 180.000 KELİMELİK DEV ZIRHLI AYRIŞTIRICI (PARSER) MOTORU
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
@@ -90,11 +90,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   }
 
   try {
-    if (lowerName.contains('wordnet')) {
-      parsedList.add(json.encode({'error': "WordNet Kütüphanesi\n\nYazılımcı üzerinde halen çalışıyor. Yakında aktif edilecek!"}));
-      return parsedList;
-    } 
-    else if (extension == 'json') {
+    if (extension == 'json') {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       for (var e in list) {
@@ -107,67 +103,51 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         }
       }
     } 
-    else if (lowerName.contains('babylon')) {
+    else {
       List<String> lines = content.split('\n');
       for (String line in lines) {
         line = line.trim();
         if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) continue;
-        if ((line.contains('|') || line.contains('\t')) && !line.contains(',')) {
-          var parts = line.split(line.contains('|') ? '|' : '\t');
-          if (parts.length >= 2) parsedList.add(json.encode({'word': parts[0].trim(), 'meanings': cleanMeanings([parts[1].trim()]), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+        
+        int splitIdx = -1;
+
+        if (lowerName.contains('en-tr_tayf')) {
+          splitIdx = line.indexOf(':');
+        } else if (lowerName.contains('babylon') || extension == 'gls') {
+          int pipeIdx = line.indexOf('|');
+          int tabIdx = line.indexOf('\t');
+          int eqIdx = line.indexOf('=');
+          splitIdx = pipeIdx != -1 ? pipeIdx : (tabIdx != -1 ? tabIdx : eqIdx);
+        } else if (extension != 'csv') {
+          int colonIdx = line.indexOf(':');
+          int semiIdx = line.indexOf(';');
+          int tabIdx = line.indexOf('\t');
+          int pipeIdx = line.indexOf('|');
+          splitIdx = colonIdx != -1 ? colonIdx : (semiIdx != -1 ? semiIdx : (tabIdx != -1 ? tabIdx : pipeIdx));
+        }
+
+        if (splitIdx != -1) {
+          String w = line.substring(0, splitIdx).trim();
+          if (w.isEmpty) continue;
+          String mStr = line.substring(splitIdx + 1).trim();
+          
+          List<String> meanings = mStr.split(RegExp(r'\|\|\||;|,')).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+          parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
           continue;
         }
-        try {
+
+        if (extension == 'csv') {
+          try {
             List<List<dynamic>> parsedLine = const CsvToListConverter().convert(line + '\n');
             if (parsedLine.isEmpty || parsedLine[0].length < 2) continue;
             var row = parsedLine[0];
-            String w = row[0].toString().trim(), mStr = row[1].toString().trim();
+            String w = row[0].toString().trim();
             if (w.isEmpty) continue;
-            List<String> mList = mStr.contains('|||') ? mStr.split('|||').map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList() : (mStr.contains(';') ? mStr.split(';').map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList() : [mStr]);
-            parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(mList), 'examples': row.length > 2 ? row[2].toString().split('|||').map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList() : [], 'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-        } catch(e) { continue; }
-      }
-    } 
-    else if (lowerName.contains('en-tr_tayf')) {
-      var lines = content.split('\n');
-      for (var line in lines) {
-        if (!line.contains(':')) continue;
-        int colonIdx = line.indexOf(':');
-        String w = line.substring(0, colonIdx).trim();
-        if (w.isEmpty) continue; 
-        String mStr = line.substring(colonIdx + 1).trim();
-        List<String> meanings = mStr.split(';').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-      }
-    } 
-    else if (extension == 'csv' || lowerName.contains('freedict') || lowerName.contains('free-kh')) {
-      List<String> lines = content.split('\n');
-      for (String line in lines) {
-        try {
-          List<List<dynamic>> parsedLine = const CsvToListConverter().convert(line + '\n');
-          if (parsedLine.isEmpty || parsedLine[0].length < 2) continue;
-          var row = parsedLine[0];
-          String w = row[0].toString().trim();
-          if (w.isEmpty || w.startsWith('#') || w.toLowerCase() == 'word') continue;
-          List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-          List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
-          parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': examples, 'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-        } catch(e) { continue; }
-      }
-    } 
-    else {
-      var lines = content.split('\n');
-      for (var line in lines) {
-        if (!line.contains(':') && !line.contains(';') && !line.contains(',')) continue;
-        String wordSeparator = line.contains(':') ? ':' : (line.contains(';') ? ';' : ',');
-        int sepIdx = line.indexOf(wordSeparator);
-        if (sepIdx == -1) continue;
-        String w = line.substring(0, sepIdx).trim();
-        if (w.isEmpty) continue;
-        String mStr = line.substring(sepIdx + 1).trim();
-        String meaningSeparator = mStr.contains(';') ? ';' : ',';
-        List<String> meanings = mStr.split(meaningSeparator).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+            List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+            List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
+            parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': examples, 'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+          } catch(e) { continue; }
+        }
       }
     }
   } catch (e, stacktrace) { parsedList.add(json.encode({'error': "Dosya Okuma Hatası:\n$e"})); }
@@ -216,7 +196,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Tayf Sözlük Pro',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
-      themeAnimationDuration: const Duration(milliseconds: 600), // Tema geçişi hızlandırıldı
+      themeAnimationDuration: const Duration(milliseconds: 600), 
       themeAnimationCurve: Curves.easeInOutCubic,
       home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
     );
@@ -272,7 +252,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // --- Veritabanı Yükleme (Aynı Kaldı) ---
   Future<void> _loadData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -327,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {}
   }
 
+  // Quiz İstatistikleri artık kalıcı olarak diske (SharedPreferences) kaydediliyor
   Future<void> _saveData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -335,6 +315,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       prefs.setInt('quizThreshold', quizThreshold);
       prefs.setInt('tayfPoints', tayfPoints);
       prefs.setInt('currentCardIndex', currentCardIndex);
+      
+      prefs.setInt('totalCompletedQuizzes', totalCompletedQuizzes);
+      prefs.setInt('totalQuizTimeSeconds', totalQuizTimeSeconds);
+      prefs.setInt('totalQuizQuestions', totalQuizQuestions);
+      prefs.setInt('totalQuizWrong', totalQuizWrong);
 
       for (var w in allWords) { w.listType = 'all'; }
       for (var w in learningWords) { w.listType = 'learning'; }
@@ -353,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _buyFreeze() {
-    HapticFeedback.mediumImpact(); // Premium dokunuş
+    HapticFeedback.mediumImpact(); 
     if (tayfPoints >= 50) {
       setState(() { tayfPoints -= 50; streakFreezes++; });
       _saveData();
@@ -409,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _nextCard() {
-    HapticFeedback.lightImpact(); // Kart geçişinde soft titreşim
+    HapticFeedback.lightImpact(); 
     globalTts.stop();
     setState(() {
       isFlipped = false;
@@ -425,14 +410,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _flipCard(WordModel word) {
-    HapticFeedback.selectionClick(); // Döndürme titreşimi
+    HapticFeedback.selectionClick(); 
     if (isFlipped) { _flipController.reverse(); _speakWord(word, isMeaning: false); } 
     else { _flipController.forward(); _speakWord(word, isMeaning: true); viewedCardTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }
     setState(() => isFlipped = !isFlipped);
   }
 
   void _markAsLearned(WordModel word) {
-    HapticFeedback.heavyImpact(); // Başarı titreşimi
+    HapticFeedback.heavyImpact(); 
     _recordActivity(1); 
     setState(() {
       if (word.srsLevel == 0) {
@@ -480,7 +465,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
-  // --- İÇE AKTARMA (Aynı Akıllı Algoritma Korundu) ---
   Future<void> _importFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
     if (result != null && result.files.single.path != null) {
@@ -625,7 +609,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // Geri Kalan Yardımcı Fonksiyonlar (Aynı Kaldı)
   void _renameLibrary(String oldName, String newName) {
     setState(() {
       for (var w in allWords) { if (w.libraryName == oldName) w.libraryName = newName; }
@@ -673,7 +656,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _openEditScreen(WordModel word) {
-    // Sayfa geçişine yumuşak animasyon eklendi (Cupertino stili)
     Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: availableLibraries,
       onAction: (action, updatedWord) {
@@ -699,7 +681,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     )));
   }
 
-  // --- KARTIN ÖN YÜZÜ (Performans Optimizasyonlu RepaintBoundary) ---
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
@@ -712,7 +693,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       Color(0xFFFF0055), 
     ];
 
-    // Animasyonu izole etmek için RepaintBoundary eklendi
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: _glowAnimation,
@@ -803,7 +783,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // --- KARTIN ARKA YÜZÜ ---
   Widget _buildCardBack(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
@@ -906,91 +885,133 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // --- DRAWER (GLASSMORPHISM VE HAPTIC DESTEĞİ İLE PREMIUM YAPILANDIRMA) ---
   Widget _buildDrawer() {
     return Drawer(
       elevation: 10,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9), // Yarı saydam
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9), 
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Buzlu Cam (Glassmorphism) Efekti
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), 
         child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.zero,
+          child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.zero,
                   children: [
-                    const SizedBox(height: 20),
-                    const Icon(Icons.language, color: Colors.white, size: 40),
-                    const SizedBox(height: 10),
-                    const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                    Text("Build v1.0.$buildNo", style: const TextStyle(color: Colors.white70))
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          const Icon(Icons.language, color: Colors.white, size: 40),
+                          const SizedBox(height: 10),
+                          const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                          Text("Build v1.0.$buildNo", style: const TextStyle(color: Colors.white70))
+                        ],
+                      ),
+                    ),
+                    ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (50 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
+                    const Divider(),
+                    // 1. SORUN: WordNet Uyarısı Tam Ekran Şık Olarak Çıkarıldı
+                    ListTile(
+                      leading: const Icon(Icons.language, color: Colors.indigo), 
+                      title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), 
+                      subtitle: const Text("Detaylı İng-İng Sözlük"), 
+                      onTap: () { 
+                        HapticFeedback.lightImpact(); 
+                        Navigator.pop(context); 
+                        _showCenteredDialog(title: "Çok Yakında", message: "WordNet Kütüphanesi yazılımcı üzerinde halen çalışıyor. Yakında aktif edilecek!", icon: Icons.build_circle, color: Colors.indigo);
+                      }
+                    ),
+                    ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
+                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
+                    
+                    ListTile(
+                      leading: const Icon(Icons.settings), 
+                      title: const Text("Ayarlar, Temalar, Seçimler"), 
+                      onTap: () { 
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context); 
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
+                          onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
+                            setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
+                            _saveData(); 
+                            Future.delayed(const Duration(milliseconds: 150), () {
+                              _showCenteredDialog(
+                                title: "Harika!", 
+                                message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
+                                icon: Icons.verified_user, 
+                                color: Colors.green
+                              );
+                            });
+                          }, 
+                          onAddPackage: _loadPackageFromAssets
+                        ))); 
+                      }
+                    ),
+                    
+                    const Divider(),
+                    ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
+                    ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
+                    ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }))); }),
+                    ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }))); }),
+                    const Divider(),
+                    ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
+                    ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
+                    ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
+                    ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context); 
+                      List<WordModel> fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
+                      // 5. SORUN (Quiz İstatistik Kayıt Düzeltmesi)
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
+                        words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, onWordMastered: _markAsLearned, onWrongWord: _markAsToRepeat, 
+                        onQuizFinished: (t, a, w) { 
+                          setState(() {
+                            totalCompletedQuizzes++;
+                            totalQuizTimeSeconds += t;
+                            totalQuizQuestions += a;
+                            totalQuizWrong += w;
+                          });
+                          _saveData(); 
+                        }
+                      ))); 
+                    }),
+                    ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
+                    const Divider(),
+                    ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) => _loadData()); }),
+                    ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
+                    const Divider(),
+                    ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
+                    ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _importFile(); }),
+                    ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _exportLibrary(selectedLibrary); }),
                   ],
                 ),
               ),
-              ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (50 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
-              const Divider(),
-              ListTile(leading: const Icon(Icons.language, color: Colors.indigo), title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Detaylı İng-İng Sözlük"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _loadPackageFromAssets('assets/wordnet_veri.txt', 'txt', 'WordNet'); }),
-              ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
-              ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
-              
-              ListTile(
-                leading: const Icon(Icons.settings), 
-                title: const Text("Ayarlar, Temalar, Seçimler"), 
-                onTap: () { 
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(context); 
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                    currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
-                    onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
-                      setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
-                      _saveData(); 
-                      Future.delayed(const Duration(milliseconds: 150), () {
-                        _showCenteredDialog(
-                          title: "Harika!", 
-                          message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
-                          icon: Icons.verified_user, 
-                          color: Colors.green
-                        );
-                      });
-                    }, 
-                    onAddPackage: _loadPackageFromAssets
-                  ))); 
-                }
-              ),
-              
-              const Divider(),
-              ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
-              ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
-              ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }))); }),
-              ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }))); }),
-              const Divider(),
-              ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
-              ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
-              ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
-              ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
-                HapticFeedback.lightImpact();
-                Navigator.pop(context); 
-                List<WordModel> fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
-                Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, onWordMastered: _markAsLearned, onWrongWord: _markAsToRepeat, onQuizFinished: (t, a, w) { _saveData(); }))); 
-              }),
-              ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
-              const Divider(),
-              ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) => _loadData()); }),
-              ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
-              const Divider(),
-              ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
-              ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _importFile(); }),
-              ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _exportLibrary(selectedLibrary); }),
+              // 4. SORUN: Özelleştirilmiş Geliştirici ve Versiyon Alt Bilgisi
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.05)),
+                child: Column(
+                  children: [
+                    Text("Tayf Sözlük Pro", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade600, letterSpacing: 0.5)),
+                    const SizedBox(height: 4),
+                    Text("Geliştirici: Eldora", style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    const SizedBox(height: 2),
+                    Text("v1.0.$buildNo", style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+                  ],
+                ),
+              )
             ],
           ),
         ),
@@ -1004,6 +1025,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (currentCardIndex >= deck.length) currentCardIndex = 0;
     WordModel? currentWord = deck.isNotEmpty ? deck[currentCardIndex] : null;
     bool isSrsMode = currentWord != null && currentWord.listType == 'toSRSRepeat';
+
+    // 8. SORUN: Öğrenilen Kelime ve İlerleme Barı Hesaplaması
+    int totalLibWords = allWords.where((w) => w.libraryName == selectedLibrary).length +
+                        learningWords.where((w) => w.libraryName == selectedLibrary).length +
+                        toRepeatWords.where((w) => w.libraryName == selectedLibrary).length +
+                        toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary).length +
+                        learnedWords.where((w) => w.libraryName == selectedLibrary).length;
+    int learnedLibWords = learnedWords.where((w) => w.libraryName == selectedLibrary).length;
+    double progress = totalLibWords > 0 ? (learnedLibWords / totalLibWords) : 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -1027,6 +1057,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.orange.withOpacity(0.5))), child: Row(children: [const Icon(Icons.local_fire_department, color: Colors.orange, size: 20), const SizedBox(width: 4), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange))])),
           Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.blue.withOpacity(0.5))), child: Row(children: [const Icon(Icons.diamond, color: Colors.blue, size: 18), const SizedBox(width: 4), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue))])),
         ],
+        // ŞIK İLERLEME ÇUBUĞU BURAYA EKLENDİ (APPBAR ALTINA)
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(30),
+          child: selectedLibrary != 'Tekrarlanması Gerekenler' ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("İlerleme:", style: TextStyle(fontSize: 12, color: Colors.white70)),
+                    Text("$learnedLibWords / $totalLibWords Öğrenildi", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ]
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                    minHeight: 4,
+                  )
+                )
+              ]
+            )
+          ) : const SizedBox.shrink()
+        ),
       ),
       drawer: _buildDrawer(),
       body: currentWord == null 
