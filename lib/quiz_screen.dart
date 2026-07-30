@@ -127,12 +127,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     return '$days${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // 1, 5 VE 8. MADDE ÇÖZÜMÜ: ISAR veritabanı kirliliği yaratmadan 
-  // Orijinal kütüphane adına göre anında (on-the-fly) TTS yönlendirmesi
+  // KESİN DİL KURALLARI (Veritabanını bozmadan kütüphane isminden okuma)
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await globalTts.stop(); // Hayalet sesleri engellemek için önce durdur.
+      await globalTts.stop(); // Hayalet sesleri tamamen engeller
       String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
                              .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                              .replaceAll('ANLAM:', '')
@@ -149,7 +148,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
-    // Kelime karma havuzda bile olsa kendi kimliğindeki Kütüphane adını okur.
+    // Geri bildirimde orijinal kütüphanenin dili kullanılır
     String lang = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String text = "";
     if (lang == 'en-US') text = isCorrect ? "Correct" : "Wrong";
@@ -178,23 +177,34 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
-    correctOption = currentWord.meanings.isNotEmpty ? currentWord.meanings[random.nextInt(currentWord.meanings.length)] : "";
+    // ZEKİ SORU MAKİNESİ: Doğru cevap için ÇOKLU anlamlardan SADECE BİRİNİ seç!
+    correctOption = currentWord.meanings.isNotEmpty 
+        ? currentWord.meanings[random.nextInt(currentWord.meanings.length)] 
+        : (currentWord.examples.isNotEmpty ? currentWord.examples.first : "");
 
     Set<String> wrongOptions = {};
     int loopCounter = 0;
     
+    // ÇELDİRİCİ ZEKÂSI: Asla ana kelimenin diğer anlamlarını kullanma! Başka kelimelerden de sadece TEK BİR anlam seç.
     while (wrongOptions.length < 3 && loopCounter < 150) {
       loopCounter++;
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
       
-      if (randomWord.word != currentWord.word && randomWord.meanings.isNotEmpty) {
-        String randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
+      if (randomWord.word != currentWord.word) {
+        String randomMeaning = "";
+        
+        if (randomWord.meanings.isNotEmpty) {
+          randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
+        } else if (randomWord.examples.isNotEmpty) {
+          randomMeaning = randomWord.examples[random.nextInt(randomWord.examples.length)];
+        }
         
         if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
         if (randomMeaning.startsWith("EŞ ANLAMLI: ")) randomMeaning = randomMeaning.substring(12).trim();
         if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
         
-        if (!currentWord.meanings.any((m) => m.contains(randomMeaning)) && randomMeaning != correctOption && randomMeaning.isNotEmpty) {
+        // Bu tek anlamın, doğru kelimenin anlamlarıyla aynı olmadığından emin ol!
+        if (randomMeaning.isNotEmpty && !currentWord.meanings.contains(randomMeaning) && randomMeaning != correctOption && !wrongOptions.contains(randomMeaning)) {
           wrongOptions.add(randomMeaning);
         }
       }
@@ -209,7 +219,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
     String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
     
-    // Doğru Telaffuz (Akıllı Tespit)
+    // Akıllı TTS ile soruyu okut (Kütüphane ismine göre)
     _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
@@ -417,12 +427,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(16),
                   onTap: () => _checkAnswer(option),
                   child: Padding(
-                    // 4. MADDE ÇÖZÜMÜ: Ekrana Sığmama (Taşma) Sorunu Tamamen Esnetilerek Çözüldü.
+                    // ESNEK ŞIKLAR (Taşmaları Engelleyen Kısım)
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500)),
+                          child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500), maxLines: 6, overflow: TextOverflow.ellipsis),
                         ),
                         if (trailingIcon != null) ...[
                           const SizedBox(width: 12),
