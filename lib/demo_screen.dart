@@ -24,17 +24,14 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 
-  // 7. SORUN ÇÖZÜMÜ: Kelimeler artık kesinlikle SRS modunda doğacak.
   Future<void> _injectFiveLevelDemoWords() async {
     HapticFeedback.mediumImpact();
     int pastTime = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
     
-    // Temizlik: Üst üste binmeleri engellemek için eski demo kelimeleri sil
     await isar.writeTxn(() async {
       await isar.wordModels.filter().wordStartsWith('Level ').deleteAll();
     });
     
-    // Garantili Constructor Ataması
     List<WordModel> demoWords = [
       WordModel(word: 'Level 1 Word', meanings: ['Seviye 1 Neon Mavi Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 1, nextReviewDate: pastTime, correctCount: 1),
       WordModel(word: 'Level 2 Word', meanings: ['Seviye 2 Neon Yeşil Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 2, nextReviewDate: pastTime, correctCount: 2),
@@ -89,7 +86,7 @@ class _DemoScreenState extends State<DemoScreen> {
         elevation: 0,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 40.0),
         children: [
           Container(
             padding: const EdgeInsets.all(20),
