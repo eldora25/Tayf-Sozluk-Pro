@@ -68,7 +68,11 @@ Sistemin tts dilini otonom tanıması için dosyalarınızın başına `#tts:ing
 #tts:ing-tr
 apple : elma ; meyve
 book : kitap ; rezervasyon yapmak
+```
+
 2. CSV Formatı
+
+ ```  
 #tts:ing-tr
 Word,Meaning,Example,Level
 apple,elma ||| meyve,I ate an apple.,Başlangıç
