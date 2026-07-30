@@ -103,7 +103,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                     final item = filteredList[index];
                     
                     return Dismissible(
-                      key: Key('${item.id}_$index'), // id üzerinden eşleştirme zırhlandırıldı
+                      key: Key('${item.id}_$index'), // ID üzerinden eşleştirme zırhı
                       direction: widget.onLearned != null 
                           ? DismissDirection.horizontal 
                           : DismissDirection.endToStart,
@@ -156,7 +156,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                   child: Text("${_getSrsDayText(item.srsLevel)} Tekrarı", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
                                 ),
 
-                              // YENİ: DÜZENLE BUTONU
+                              // YENİ: DÜZENLE BUTONU VE ASENKRON YENİLEME
                               if (widget.onEdit != null)
                                 IconButton(
                                   icon: const Icon(Icons.edit, color: Colors.blueAccent),
