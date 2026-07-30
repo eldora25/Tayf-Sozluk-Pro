@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'dart:async';
-import 'dart:ui'; // Glassmorphism (Buzlu cam) efekti için eklendi
+import 'dart:ui'; 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Premium titreşimler için eklendi
+import 'package:flutter/services.dart'; 
 import 'package:lottie/lottie.dart'; 
 import 'models.dart';
 import 'main.dart'; 
@@ -64,7 +64,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
 
-    // %40 ZOR (YANLIŞLAR) VE %60 YENİ KELİME ALGORİTMASI (KORUNDU)
     List<WordModel> reviewPool = widget.words.where((w) => w.listType == 'toRepeat' || w.wrongCount > 0).toList();
     reviewPool.sort((a, b) => b.wrongCount.compareTo(a.wrongCount)); 
 
@@ -128,11 +127,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     return '$days${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  // YENİ: TTS Mimarisine uygun kelime bazlı dil seçimi
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await globalTts.stop();
-      await Future.delayed(const Duration(milliseconds: 250)); 
+      await globalTts.stop(); // Hayalet sesleri engeller
       String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
                              .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                              .replaceAll('ANLAM:', '')
@@ -140,7 +139,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                              .replaceAll('ZIT ANLAMLI:', '');
       
       globalTts.setLanguage(languageCode);
-      globalTts.setSpeechRate(0.45); // Doğal ve yavaş hız
+      globalTts.setSpeechRate(0.45); 
       globalTts.speak(cleanText);
     } catch (e) {
       debugPrint("TTS Error: $e");
@@ -149,7 +148,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
-    String lang = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
+    String lang = currentWord.sourceLanguage; // Artık kelimenin kendi mührü var
     String text = "";
     if (lang == 'en-US') text = isCorrect ? "Correct" : "Wrong";
     else if (lang == 'tr-TR') text = isCorrect ? "Doğru" : "Yanlış";
@@ -159,7 +158,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _generateQuestion() {
     if (answeredQuestions >= totalQuestions) {
-      HapticFeedback.heavyImpact(); // Sınav bitişinde güçlü hissiyat
+      HapticFeedback.heavyImpact(); 
       setState(() {
         isQuizFinished = true;
         _timer?.cancel();
@@ -208,7 +207,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
     String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
     
-    _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
+    // Seslendirmede artık kelimenin kalıcı sourceLanguage mührü kullanılıyor
+    _speakText(readWord, currentWord.sourceLanguage);
   }
 
   void _checkAnswer(String option) {
@@ -218,7 +218,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (option == correctOption) {
         isAnsweredCorrectly = true;
         answeredQuestions++;
-        HapticFeedback.mediumImpact(); // Premium doğru cevap hissi
+        HapticFeedback.mediumImpact(); 
         _scaleController.forward(from: 0.0); 
         
         if (selectedWrongOptions.isEmpty) { 
@@ -238,7 +238,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             widget.onWrongWord(currentWord);
         }
         
-        HapticFeedback.heavyImpact(); // Premium sarsıntı hissi
+        HapticFeedback.heavyImpact(); 
         _lastWrongOption = option; 
         _shakeController.forward(from: 0.0); 
       }
@@ -283,7 +283,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 const SizedBox(height: 10),
                 const Text("Congratulations!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
-                // İstatistik Kartında Şık Derinlik Gölgeleri
                 Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
@@ -352,7 +351,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             onTap: () {
               HapticFeedback.selectionClick();
               String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
-              _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
+              _speakText(readWord, currentWord.sourceLanguage);
             },
             child: AnimatedBuilder(
               animation: _entranceController,
@@ -361,7 +360,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   offset: Offset(0, 50 * (1 - _entranceController.value)),
                   child: Opacity(
                     opacity: _entranceController.value,
-                    // GLASSMORPHISM SORU KARTI
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: BackdropFilter(
@@ -403,7 +401,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.2); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); scaleValue = 1.03; } 
             else if (isWrongSelected) { cardColor = Colors.red.withOpacity(0.2); trailingIcon = const Icon(Icons.cancel, color: Colors.red); }
 
-            // ŞIK KARTLARINDA YUMUŞAK GÖLGE (SOFT SHADOWS)
             Widget tile = Container(
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
@@ -412,11 +409,27 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(16), 
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)]
               ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                title: Text(option, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500), maxLines: 3, overflow: TextOverflow.ellipsis), 
-                trailing: trailingIcon, 
-                onTap: () => _checkAnswer(option)
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _checkAnswer(option),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    // YENİ: Expanded ile Metin Taşmaları Önlendi
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500), maxLines: 6, overflow: TextOverflow.ellipsis),
+                        ),
+                        if (trailingIcon != null) ...[
+                          const SizedBox(width: 12),
+                          trailingIcon,
+                        ]
+                      ],
+                    ),
+                  ),
+                ),
               ),
             );
 
