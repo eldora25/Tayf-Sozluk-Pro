@@ -49,7 +49,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _level = widget.selectedLevel;
   }
 
-  // YENİ: Esprili WordNet Uyarı Fonksiyonu
   void _showWordNetAlert() {
     showDialog(
       context: context,
@@ -80,7 +79,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("Ayarlar & Temalar")),
       body: ListView(
-        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0),
+        // ALT BUTON GÜVENLİK BOŞLUĞU DİNAMİK OLARAK EKLENDİ
+        padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0 + MediaQuery.of(context).padding.bottom),
         children: [
           const Text("Görünüm", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
           const SizedBox(height: 10),
@@ -155,10 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text("WordNet İngilizce", style: TextStyle(fontWeight: FontWeight.bold)),
             subtitle: const Text("Kapsamlı İng-İng Sözlük (JSON)"),
             trailing: const Icon(Icons.download, color: Colors.indigo),
-            onTap: () { 
-              // YENİ: İndirme denemesi yerine şık uyarı ver[cite: 1]
-              _showWordNetAlert(); 
-            },
+            onTap: () { _showWordNetAlert(); },
           ),
           const SizedBox(height: 10),
           ListTile(
