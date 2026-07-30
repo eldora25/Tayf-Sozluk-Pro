@@ -71,7 +71,7 @@ book : kitap ; rezervasyon yapmak
 Word,Meaning,Example,Level
 apple,elma ||| meyve,I ate an apple.,Başlangıç
 
-3. JSON Formatı
+**3. JSON Formatı**
 
 [
   {
@@ -82,9 +82,10 @@ apple,elma ||| meyve,I ate an apple.,Başlangıç
     "level": "İleri"
   }
 ]
-
+***********************************************
 Geliştirici: Tayfun YAMAK (Eldora)
 
 Sürüm: V1.0.x
 
 Motto: Mükemmelleşmiş arayüz, zırhlı altyapı.
+***********************************************
