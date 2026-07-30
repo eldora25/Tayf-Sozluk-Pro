@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// İçe Aktarımlar
 import 'models.dart';
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
@@ -30,6 +31,7 @@ import 'pronunciation_screen.dart';
 import 'info_screen.dart'; 
 import 'wordnet_search_screen.dart'; 
 import 'demo_screen.dart'; 
+import 'report_screen.dart'; // YENİ EKLENEN İSTEK/HATA BİLDİR EKRANI
 
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
@@ -754,14 +756,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     )));
   }
 
-  // YENİ EKLENTİ: SANATSAL BÜYÜYEN TAÇ (CROWN) MEKANİZMASI
   Widget _buildCrown(int level) {
     if (level == 0) return const SizedBox.shrink();
     
     List<Widget> pieces = [];
     
     if (level == 1) {
-      pieces = [const Icon(Icons.change_history, size: 16, color: Color(0xFFFFEA00))]; // Sarı Taç
+      pieces = [const Icon(Icons.change_history, size: 16, color: Color(0xFFFFEA00))]; 
     } else if (level == 2) {
       pieces = [
         const Icon(Icons.spa, size: 14, color: Color(0xFFD500F9)),
@@ -811,13 +812,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     
-    // YENİ EKLENTİ: ÇARPICI VE ZIT RENK PALETİ
     List<Color> distinctColors = const [
-      Color(0xFFFFEA00), // Parlak Sarı (Seviye 1)
-      Color(0xFFD500F9), // Koyu/Neon Mor (Seviye 2)
-      Color(0xFF00E5FF), // Buz/Neon Mavisi (Seviye 3)
-      Color(0xFFFF3D00), // Ateş Kırmızısı (Seviye 4)
-      Color(0xFF00E676), // Zümrüt Yeşili (Seviye 5)
+      Color(0xFFFFEA00), 
+      Color(0xFFD500F9), 
+      Color(0xFF00E5FF), 
+      Color(0xFFFF3D00), 
+      Color(0xFF00E676), 
     ];
 
     return RepaintBoundary(
@@ -825,7 +825,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         animation: _glowAnimation,
         builder: (context, child) {
           
-          // TAŞMA KORUMASI: Çerçeveler kalınlaşacağı için iç kapsül 280x300'e çekildi.
           Widget cardContent = Container(
             width: 280, height: 300, 
             decoration: BoxDecoration(
@@ -837,7 +836,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 if (isPremium) 
                   Container(
                     width: double.infinity, 
-                    padding: const EdgeInsets.symmetric(vertical: 8), // Taç sığsın diye daraltıldı
+                    padding: const EdgeInsets.symmetric(vertical: 8), 
                     decoration: BoxDecoration(
                       color: distinctColors[level - 1].withOpacity(0.15), 
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
@@ -846,7 +845,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildCrown(level), // SANATSAL TAÇ EKLENDİ
+                        _buildCrown(level), 
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -879,7 +878,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           if (isPremium) {
             for (int i = 0; i < level; i++) {
-              // YENİ EKLENTİ: Gittikçe kalınlaşan çerçeve formülü (2.0, 3.5, 5.0, 6.5, 8.0)
               double thickness = 2.0 + (i * 1.5); 
               current = Container(
                 padding: EdgeInsets.all(thickness), 
@@ -924,13 +922,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     
-    // YENİ EKLENTİ: ÇARPICI VE ZIT RENK PALETİ
     List<Color> distinctColors = const [
-      Color(0xFFFFEA00), // Parlak Sarı (Seviye 1)
-      Color(0xFFD500F9), // Koyu/Neon Mor (Seviye 2)
-      Color(0xFF00E5FF), // Buz/Neon Mavisi (Seviye 3)
-      Color(0xFFFF3D00), // Ateş Kırmızısı (Seviye 4)
-      Color(0xFF00E676), // Zümrüt Yeşili (Seviye 5)
+      Color(0xFFFFEA00), 
+      Color(0xFFD500F9), 
+      Color(0xFF00E5FF), 
+      Color(0xFFFF3D00), 
+      Color(0xFF00E676), 
     ];
 
     return RepaintBoundary(
@@ -938,7 +935,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         animation: _glowAnimation,
         builder: (context, child) {
           
-          // TAŞMA KORUMASI: Çerçeveler kalınlaşacağı için iç kapsül 280x300'e çekildi.
           Widget cardContent = Container(
             width: 280, height: 300,
             decoration: BoxDecoration(
@@ -959,7 +955,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildCrown(level), // SANATSAL TAÇ EKLENDİ
+                        _buildCrown(level), 
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1017,7 +1013,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           if (isPremium) {
             for (int i = 0; i < level; i++) {
-              // YENİ EKLENTİ: Gittikçe kalınlaşan çerçeve formülü
               double thickness = 2.0 + (i * 1.5);
               current = Container(
                 padding: EdgeInsets.all(thickness),
@@ -1111,34 +1106,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     
                     ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
-                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
                     
-                    ListTile(
-                      leading: const Icon(Icons.settings), 
-                      title: const Text("Ayarlar, Temalar, Seçimler"), 
-                      onTap: () { 
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context); 
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
-                          onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
-                            setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
-                            _saveData(); 
-                            Future.delayed(const Duration(milliseconds: 150), () {
-                              _showCenteredDialog(
-                                title: "Harika!", 
-                                message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
-                                icon: Icons.verified_user, 
-                                color: Colors.green
-                              );
-                            });
-                          }, 
-                          onAddPackage: _loadPackageFromAssets
-                        ))); 
-                      }
-                    ),
-                    
-                    const Divider(),
                     ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
@@ -1193,6 +1161,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
                     ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _importFile(); }),
                     ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _exportLibrary(selectedLibrary); }),
+                    
+                    // YENİ EKLENTİ: İSTEK VE HATA BİLDİRİMİ BUTONU
+                    ListTile(
+                      leading: const Icon(Icons.bug_report_outlined, color: Colors.redAccent),
+                      title: const Text("İstek / Hata Bildir", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportScreen()));
+                      }
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
