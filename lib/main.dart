@@ -34,20 +34,32 @@ import 'demo_screen.dart';
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
 
-// AKILLI TTS: Harf analizine dayalı kesin dil tespiti
+// 1. DÜZELTME: KESİN TTS KURALLARI VE AKILLI YEDEK (Performans Optimizasyonu)
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase();
+  
+  // Kural 1: Dosya adında yön belirtilmişse DİREKT olarak o dili döndür (Maksimum hız)
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'tr-TR';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'en-US';
+  if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
+
+  // Kural 2: Ortak havuzsa veya özel isimlendirme yoksa kelimenin harflerini analiz et (Akıllı Yedek)
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
+  
   return 'en-US'; 
 }
 
 String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase();
+  
+  // Kural 1: Dosya adında yön belirtilmişse hedef dili DİREKT döndür
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'en-US';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'tr-TR';
+  if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
+  
+  // Kural 2: Karakter analizi
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
+  
   return 'tr-TR'; 
 }
 
@@ -63,7 +75,6 @@ int getNextReviewOffset(int level) {
   }
 }
 
-// 180.000 KELİMELİK DEV ZIRHLI AYRIŞTIRICI (PARSER) MOTORU
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
@@ -306,7 +317,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {}
   }
 
-  // Quiz İstatistikleri artık kalıcı olarak diske (SharedPreferences) kaydediliyor
   Future<void> _saveData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -885,6 +895,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  // --- KİŞİSELLEŞTİRİLMİŞ DRAWER MENU VE WORDNET BİLDİRİMİ ---
   Widget _buildDrawer() {
     return Drawer(
       elevation: 10,
@@ -920,7 +931,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (50 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
                     const Divider(),
-                    // 1. SORUN: WordNet Uyarısı Tam Ekran Şık Olarak Çıkarıldı
+                    
+                    // 1. SORUN DÜZELTMESİ: Esprili WordNet Bildirimi
                     ListTile(
                       leading: const Icon(Icons.language, color: Colors.indigo), 
                       title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), 
@@ -928,9 +940,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       onTap: () { 
                         HapticFeedback.lightImpact(); 
                         Navigator.pop(context); 
-                        _showCenteredDialog(title: "Çok Yakında", message: "WordNet Kütüphanesi yazılımcı üzerinde halen çalışıyor. Yakında aktif edilecek!", icon: Icons.build_circle, color: Colors.indigo);
+                        _showCenteredDialog(
+                          title: "WordNet Kütüphanesi", 
+                          message: "Yazılımcı halen çalışıyor... 😅\n\nÇok yakında harika bir İngilizce-İngilizce sözlük deneyimiyle karşınızda olacak!", 
+                          icon: Icons.code, 
+                          color: Colors.indigo
+                        );
                       }
                     ),
+                    
                     ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
                     ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
                     
@@ -972,7 +990,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       HapticFeedback.lightImpact();
                       Navigator.pop(context); 
                       List<WordModel> fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
-                      // 5. SORUN (Quiz İstatistik Kayıt Düzeltmesi)
                       Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
                         words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, onWordMastered: _markAsLearned, onWrongWord: _markAsToRepeat, 
                         onQuizFinished: (t, a, w) { 
@@ -997,18 +1014,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ],
                 ),
               ),
-              // 4. SORUN: Özelleştirilmiş Geliştirici ve Versiyon Alt Bilgisi
+              
+              // 4. DÜZELTME: Özel, Dinamik İmza Katmanı
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.05)),
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.08),
+                  border: Border(top: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1))
+                ),
                 child: Column(
                   children: [
-                    Text("Tayf Sözlük Pro", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade600, letterSpacing: 0.5)),
+                    const Text("Tayf Sözlük Pro", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.5)),
+                    const SizedBox(height: 6),
+                    Text("© ${DateTime.now().year} Tayfun (Eldora) - Tüm Hakları Saklıdır", style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey.shade600)),
                     const SizedBox(height: 4),
-                    Text("Geliştirici: Eldora", style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                    const SizedBox(height: 2),
-                    Text("v1.0.$buildNo", style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                      child: Text("Sürüm: 1.0.$buildNo", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                    ),
                   ],
                 ),
               )
@@ -1026,7 +1051,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     WordModel? currentWord = deck.isNotEmpty ? deck[currentCardIndex] : null;
     bool isSrsMode = currentWord != null && currentWord.listType == 'toSRSRepeat';
 
-    // 8. SORUN: Öğrenilen Kelime ve İlerleme Barı Hesaplaması
     int totalLibWords = allWords.where((w) => w.libraryName == selectedLibrary).length +
                         learningWords.where((w) => w.libraryName == selectedLibrary).length +
                         toRepeatWords.where((w) => w.libraryName == selectedLibrary).length +
@@ -1057,7 +1081,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.orange.withOpacity(0.5))), child: Row(children: [const Icon(Icons.local_fire_department, color: Colors.orange, size: 20), const SizedBox(width: 4), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange))])),
           Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.blue.withOpacity(0.5))), child: Row(children: [const Icon(Icons.diamond, color: Colors.blue, size: 18), const SizedBox(width: 4), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue))])),
         ],
-        // ŞIK İLERLEME ÇUBUĞU BURAYA EKLENDİ (APPBAR ALTINA)
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(30),
           child: selectedLibrary != 'Tekrarlanması Gerekenler' ? Padding(
