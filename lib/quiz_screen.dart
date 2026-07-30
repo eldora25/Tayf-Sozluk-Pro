@@ -1,7 +1,8 @@
 import 'dart:math';
 import 'dart:async';
+import 'dart:ui'; // Glassmorphism (Buzlu cam) efekti için eklendi
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; 
+import 'package:flutter/services.dart'; // Premium titreşimler için eklendi
 import 'package:lottie/lottie.dart'; 
 import 'models.dart';
 import 'main.dart'; 
@@ -49,7 +50,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   bool isAudioEnabled = true;
   bool _isStatsSaved = false;
 
-  // DERLEME HATASINI ÇÖZEN EKSİK DEĞİŞKEN EKLENDİ
   String _questionSubtext = "";
 
   late AnimationController _entranceController; 
@@ -64,9 +64,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
 
-    // YENİ: %40 ZOR (YANLIŞLAR) VE %60 YENİ KELİME ALGORİTMASI
+    // %40 ZOR (YANLIŞLAR) VE %60 YENİ KELİME ALGORİTMASI (KORUNDU)
     List<WordModel> reviewPool = widget.words.where((w) => w.listType == 'toRepeat' || w.wrongCount > 0).toList();
-    // En çok yanlış yapılanlara öncelik vermek için azalan sıraya göre diziyoruz
     reviewPool.sort((a, b) => b.wrongCount.compareTo(a.wrongCount)); 
 
     List<WordModel> newPool = widget.words.where((w) => w.listType == 'all' && w.wrongCount == 0).toList();
@@ -83,20 +82,18 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       targetNewCount = widget.questionCount - selectedReview.length; 
       selectedNew = newPool.take(targetNewCount).toList();
     } else {
-      // En çok yanlış yapılanlardan alıyoruz ama Quiz içinde sıralı gelmesinler diye kendi içlerinde karıştırıyoruz
       selectedReview = reviewPool.take(targetReviewCount).toList()..shuffle(); 
       selectedNew = newPool.take(targetNewCount).toList();
     }
 
     quizWords = [...selectedReview, ...selectedNew];
     
-    // Eğer kütüphanede yeterli yeni veya eski kelime yoksa havuzu doldurmak için yedekleme
     if (quizWords.length < widget.questionCount) {
       var remaining = widget.words.where((w) => !quizWords.contains(w)).toList()..shuffle();
       quizWords.addAll(remaining.take(widget.questionCount - quizWords.length));
     }
     
-    quizWords.shuffle(); // Tüm seçilenleri tamamen rastgele dağıt
+    quizWords.shuffle(); 
     totalQuestions = quizWords.length;
 
     if (totalQuestions > 0) {
@@ -121,7 +118,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // ZAMAN FORMATI DÜZELTİLDİ: dd:hh:mm:ss
   String _formatTime(int totalSeconds) {
     int d = totalSeconds ~/ (24 * 3600);
     int h = (totalSeconds % (24 * 3600)) ~/ 3600;
@@ -136,7 +132,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (!isAudioEnabled) return;
     try {
       await globalTts.stop();
-      await Future.delayed(const Duration(milliseconds: 250)); // TTS Artık temizliği
+      await Future.delayed(const Duration(milliseconds: 250)); 
       String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
                              .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                              .replaceAll('ANLAM:', '')
@@ -144,7 +140,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                              .replaceAll('ZIT ANLAMLI:', '');
       
       globalTts.setLanguage(languageCode);
-      globalTts.setSpeechRate(0.45);
+      globalTts.setSpeechRate(0.45); // Doğal ve yavaş hız
       globalTts.speak(cleanText);
     } catch (e) {
       debugPrint("TTS Error: $e");
@@ -163,6 +159,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _generateQuestion() {
     if (answeredQuestions >= totalQuestions) {
+      HapticFeedback.heavyImpact(); // Sınav bitişinde güçlü hissiyat
       setState(() {
         isQuizFinished = true;
         _timer?.cancel();
@@ -180,7 +177,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
-    // WordNet Kodları Kullanıcının İsteği Üzerine Kafa Karıştırmaması İçin Pasife Alındı. Standart Basit Algoritma Devrede.
     correctOption = currentWord.meanings.isNotEmpty ? currentWord.meanings[random.nextInt(currentWord.meanings.length)] : "";
 
     Set<String> wrongOptions = {};
@@ -193,7 +189,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (randomWord.word != currentWord.word && randomWord.meanings.isNotEmpty) {
         String randomMeaning = randomWord.meanings[random.nextInt(randomWord.meanings.length)];
         
-        // Olası WordNet kalıntılarını temizleyerek sade göster
         if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
         if (randomMeaning.startsWith("EŞ ANLAMLI: ")) randomMeaning = randomMeaning.substring(12).trim();
         if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
@@ -223,14 +218,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (option == correctOption) {
         isAnsweredCorrectly = true;
         answeredQuestions++;
-        HapticFeedback.mediumImpact(); 
+        HapticFeedback.mediumImpact(); // Premium doğru cevap hissi
         _scaleController.forward(from: 0.0); 
         
         if (selectedWrongOptions.isEmpty) { 
           correctAnswers++; 
           currentWord.correctCount++; 
           
-          // YENİ: TEK ATIMLIK THRESHOLD KONTROLÜ
           if (currentWord.correctCount == widget.threshold) {
              widget.onWordMastered(currentWord);
           }
@@ -239,13 +233,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         selectedWrongOptions.add(option);
         wrongAnswers++; 
         
-        // Yanlış sayısı bir kelime için o soruda sadece 1 kez ceza puanı alsın diye kontrol edilir
         if (selectedWrongOptions.length == 1) { 
             currentWord.wrongCount++;
             widget.onWrongWord(currentWord);
         }
         
-        HapticFeedback.heavyImpact(); 
+        HapticFeedback.heavyImpact(); // Premium sarsıntı hissi
         _lastWrongOption = option; 
         _shakeController.forward(from: 0.0); 
       }
@@ -260,6 +253,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   }
 
   void _resetQuiz() {
+    HapticFeedback.lightImpact();
     setState(() {
       correctAnswers = 0; wrongAnswers = 0; answeredQuestions = 0; _secondsElapsed = 0;
       isQuizFinished = false; _isStatsSaved = false;
@@ -276,7 +270,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
     if (isQuizFinished) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Quiz İstatistikleri")),
+        appBar: AppBar(title: const Text("Quiz İstatistikleri", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -289,8 +283,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 const SizedBox(height: 10),
                 const Text("Congratulations!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
-                Card(
-                  elevation: 5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                // İstatistik Kartında Şık Derinlik Gölgeleri
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 10))]
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
@@ -305,9 +304,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(height: 40),
-                SizedBox(width: double.infinity, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white), icon: const Icon(Icons.refresh), label: const Text("YENİ QUİZ BAŞLAT", style: TextStyle(fontSize: 18)), onPressed: _resetQuiz)),
+                SizedBox(width: double.infinity, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 5), icon: const Icon(Icons.refresh), label: const Text("YENİ QUİZ BAŞLAT", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: _resetQuiz)),
                 const SizedBox(height: 16),
-                SizedBox(width: double.infinity, child: TextButton.icon(style: TextButton.styleFrom(padding: const EdgeInsets.all(16)), icon: const Icon(Icons.home), label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18)), onPressed: () => Navigator.pop(context)))
+                SizedBox(width: double.infinity, child: TextButton.icon(style: TextButton.styleFrom(padding: const EdgeInsets.all(16)), icon: const Icon(Icons.home), label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: () { HapticFeedback.lightImpact(); Navigator.pop(context); }))
               ],
             ),
           ),
@@ -319,7 +318,19 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Quiz Modu"), actions: [IconButton(icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), onPressed: () => setState(() => isAudioEnabled = !isAudioEnabled))]),
+      appBar: AppBar(
+        title: const Text("Quiz Modu", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)), 
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), 
+            onPressed: () { 
+              HapticFeedback.selectionClick(); 
+              setState(() => isAudioEnabled = !isAudioEnabled); 
+            }
+          )
+        ]
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
@@ -332,13 +343,14 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 10),
-          Text("Soru: ${answeredQuestions + 1} / $totalQuestions", textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 5),
+          Text("Soru: ${answeredQuestions + 1} / $totalQuestions", textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
           LinearProgressIndicator(value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0, backgroundColor: Colors.grey[300], color: Theme.of(context).primaryColor, minHeight: 8, borderRadius: BorderRadius.circular(10)),
-          const SizedBox(height: 20),
+          const SizedBox(height: 30),
           
           GestureDetector(
             onTap: () {
+              HapticFeedback.selectionClick();
               String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
               _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
             },
@@ -349,15 +361,27 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   offset: Offset(0, 50 * (1 - _entranceController.value)),
                   child: Opacity(
                     opacity: _entranceController.value,
-                    child: Container(
-                      width: double.infinity, padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
-                      child: Column(
-                        children: [
-                          Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
-                          if (_questionSubtext.isNotEmpty)
-                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.7)))),
-                        ],
+                    // GLASSMORPHISM SORU KARTI
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor.withOpacity(0.08), 
+                            borderRadius: BorderRadius.circular(20), 
+                            border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.4), width: 1.5), 
+                            boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.05), blurRadius: 20, spreadRadius: 5)]
+                          ),
+                          child: Column(
+                            children: [
+                              Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
+                              if (_questionSubtext.isNotEmpty)
+                                Padding(padding: const EdgeInsets.only(top: 12.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.8)))),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -365,7 +389,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               },
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 40),
           
           ...List.generate(options.length, (index) {
             String option = options[index];
@@ -376,13 +400,24 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             Widget? trailingIcon;
             double scaleValue = 1.0;
             
-            if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.3); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); scaleValue = 1.05; } 
-            else if (isWrongSelected) { cardColor = Colors.red.withOpacity(0.3); trailingIcon = const Icon(Icons.cancel, color: Colors.red); }
+            if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.2); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); scaleValue = 1.03; } 
+            else if (isWrongSelected) { cardColor = Colors.red.withOpacity(0.2); trailingIcon = const Icon(Icons.cancel, color: Colors.red); }
 
+            // ŞIK KARTLARINDA YUMUŞAK GÖLGE (SOFT SHADOWS)
             Widget tile = Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(color: cardColor, border: Border.all(color: borderColor, width: 2), borderRadius: BorderRadius.circular(12), boxShadow: scaleValue > 1.0 ? [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 10, spreadRadius: 2)] : []),
-              child: ListTile(title: Text(option, style: const TextStyle(fontSize: 16), maxLines: 3, overflow: TextOverflow.ellipsis), trailing: trailingIcon, onTap: () => _checkAnswer(option)),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: cardColor, 
+                border: Border.all(color: isAnsweredCorrectly && isCorrect ? Colors.green : (isWrongSelected ? Colors.red : borderColor.withOpacity(0.3)), width: 2), 
+                borderRadius: BorderRadius.circular(16), 
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)]
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                title: Text(option, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500), maxLines: 3, overflow: TextOverflow.ellipsis), 
+                trailing: trailingIcon, 
+                onTap: () => _checkAnswer(option)
+              ),
             );
 
             if (isWrongSelected && option == _lastWrongOption) tile = AnimatedBuilder(animation: _shakeController, builder: (c, ch) => Transform.translate(offset: Offset(sin(_shakeController.value * pi * 6) * 10, 0), child: ch), child: tile);
