@@ -13,7 +13,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart'; // YENİ: Boş ekranlar için animasyon desteği
+import 'package:lottie/lottie.dart';
 
 import 'models.dart';
 import 'quiz_screen.dart';
@@ -211,8 +211,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
 
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
-    
-    // ADIM 1: PREMIUM PÜRÜZSÜZ SAYFA GEÇİŞLERİ (Cupertino / Fade Transitions)
     final PageTransitionsTheme smoothTransitions = const PageTransitionsTheme(
       builders: {
         TargetPlatform.android: CupertinoPageTransitionsBuilder(),
@@ -295,7 +293,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // ADIM 2: ISAR OOM (RAM ŞİŞMESİ) KORUMASI VE DOĞRUDAN VERİTABANI FİLTRELEME
   Future<void> _loadData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -313,7 +310,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         tayfPoints = prefs.getInt('tayfPoints') ?? 0;
       });
 
-      // RAM'i şişirmemek için Isar seviyesinde doğrudan liste türlerine göre sorgulama
       allWords = await isar.wordModels.filter().listTypeEqualTo('all').findAll();
       learningWords = await isar.wordModels.filter().listTypeEqualTo('learning').findAll();
       learnedWords = await isar.wordModels.filter().listTypeEqualTo('learned').findAll();
@@ -340,7 +336,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         isar.writeTxnSync(() { isar.wordModels.putAllSync(toSRSRepeatWords); });
       }
 
-      // Yanlış kelimeleri Isar seviyesinden optimize çekme
       wrongWords = await isar.wordModels.filter().wrongCountGreaterThan(0).findAll();
 
       if (allWords.isEmpty && learnedWords.isEmpty && toRepeatWords.isEmpty && toSRSRepeatWords.isEmpty && learningWords.isEmpty) {
@@ -1036,7 +1031,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     
                     ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
+                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
                     
+                    // GERİ GETİRİLDİ: AYARLAR, TEMALAR, SEÇİMLER MENÜSÜ
+                    ListTile(
+                      leading: const Icon(Icons.settings), 
+                      title: const Text("Ayarlar, Temalar, Seçimler"), 
+                      onTap: () { 
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context); 
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
+                          onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
+                            setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
+                            _saveData(); 
+                            Future.delayed(const Duration(milliseconds: 150), () {
+                              _showCenteredDialog(
+                                title: "Harika!", 
+                                message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
+                                icon: Icons.verified_user, 
+                                color: Colors.green
+                              );
+                            });
+                          }, 
+                          onAddPackage: _loadPackageFromAssets
+                        ))); 
+                      }
+                    ),
+                    
+                    const Divider(),
                     ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
@@ -1190,7 +1213,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
       drawer: _buildDrawer(),
-      // ADIM 3: GLASSMORPHISM VE PREMIUM BOŞ EKRAN (EMPTY STATES) GÖRSEL ŞÖLENİ
       body: currentWord == null 
         ? Center(
             child: Padding(
