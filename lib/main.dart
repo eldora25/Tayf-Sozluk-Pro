@@ -333,6 +333,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (allWords.isEmpty && learnedWords.isEmpty && toRepeatWords.isEmpty && toSRSRepeatWords.isEmpty && learningWords.isEmpty) {
           _createDefaultLibrary();
         }
+
+        // -------------------------------------------------------------
+        // YENİ: SRS VE DEMO ÖNCELİK (PRIORITY) ZIRHI
+        // Eğer destede acil (günü gelmiş SRS veya Demo) kartlar varsa 
+        // ve index bunları ES GEÇMİŞSE (ileride kalmışsa), zorla başa (0) sar!
+        // -------------------------------------------------------------
+        var deck = activeDeck;
+        int urgentCount = deck.where((w) => w.listType == 'toSRSRepeat' || w.listType == 'toRepeat').length;
+        
+        if (urgentCount > 0 && currentCardIndex >= urgentCount) {
+          currentCardIndex = 0;
+          isFlipped = false;
+        } else if (deck.isNotEmpty && currentCardIndex >= deck.length) {
+          currentCardIndex = 0;
+          isFlipped = false;
+        }
       });
     } catch (e) {}
   }
@@ -711,7 +727,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: TextField(controller: ctrl), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text("Kaydet"))]));
   }
 
-  // YENİ EKLENTİ: Liste Yöneticisinden (ManageListScreen) gelen tetiklemeler için Asenkron Zırh!
   Future<void> _openEditScreen(WordModel word) async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: availableLibraries,
@@ -1026,8 +1041,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     
                     ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
+                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
                     
-                    // YENİ EKLENTİ: Listeler çağırılırken 'onEdit' fonk. gönderilip dönüşte ana ekran yenilenir.
+                    ListTile(
+                      leading: const Icon(Icons.settings), 
+                      title: const Text("Ayarlar, Temalar, Seçimler"), 
+                      onTap: () { 
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context); 
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
+                          onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
+                            setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
+                            _saveData(); 
+                            Future.delayed(const Duration(milliseconds: 150), () {
+                              _showCenteredDialog(
+                                title: "Harika!", 
+                                message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
+                                icon: Icons.verified_user, 
+                                color: Colors.green
+                              );
+                            });
+                          }, 
+                          onAddPackage: _loadPackageFromAssets
+                        ))); 
+                      }
+                    ),
+                    
+                    const Divider(),
                     ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
@@ -1060,7 +1101,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     
                     ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
                     const Divider(),
-                    ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) => _loadData()); }),
+                    ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () async { 
+                      HapticFeedback.lightImpact(); 
+                      Navigator.pop(context); 
+                      await Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen()));
+                      
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setString('selectedLibrary', 'Tekrarlanması Gerekenler');
+                      await prefs.setInt('currentCardIndex', 0);
+                      
+                      setState(() {
+                        selectedLibrary = 'Tekrarlanması Gerekenler';
+                        currentCardIndex = 0;
+                        isFlipped = false;
+                      });
+                      
+                      _loadData();
+                    }),
                     ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
                     const Divider(),
                     ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
@@ -1123,6 +1180,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     double bottomHeight = selectedLibrary != 'Tekrarlanması Gerekenler' ? 90.0 : 60.0;
 
     return Scaffold(
+      // YENİ APPBAR TASARIMI (Taşmaları Engelleyen Ortalanmış Düzen)
       appBar: AppBar(
         toolbarHeight: 60,
         centerTitle: false,
@@ -1142,6 +1200,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(isSrsMode ? "SRS Tekrar Modu" : "$selectedLibrary - $selectedLevel (${deck.length})", style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
+        
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(bottomHeight),
           child: Column(
@@ -1158,7 +1217,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]
                     ), 
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: MainAxisSize.min, // Kapsül taşmasını engeller
                       children: [
                         const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 24), 
                         const SizedBox(width: 6), 
@@ -1176,7 +1235,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]
                     ), 
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: MainAxisSize.min, // Kapsül taşmasını engeller
                       children: [
                         const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 24), 
                         const SizedBox(width: 6), 
