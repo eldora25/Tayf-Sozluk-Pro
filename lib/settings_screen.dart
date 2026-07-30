@@ -49,11 +49,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _level = widget.selectedLevel;
   }
 
+  // YENİ: Esprili WordNet Uyarı Fonksiyonu
+  void _showWordNetAlert() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.code, color: Colors.indigo, size: 70),
+            const SizedBox(height: 16),
+            const Text("WordNet Kütüphanesi", textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo)),
+            const SizedBox(height: 12),
+            const Text("Yazılımcı halen çalışıyor... 😅\n\nÇok yakında harika bir İngilizce-İngilizce sözlük deneyimiyle karşınızda olacak!", textAlign: TextAlign.center, style: TextStyle(fontSize: 15, height: 1.4)),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Anladım", style: TextStyle(fontWeight: FontWeight.bold))
+            )
+          ]
+        )
+      )
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Ayarlar & Temalar")),
-      // YENİ: Alt kısmı kesilmemesi için ListView'a çevrildi ve padding artırıldı
       body: ListView(
         padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0),
         children: [
@@ -130,7 +155,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text("WordNet İngilizce", style: TextStyle(fontWeight: FontWeight.bold)),
             subtitle: const Text("Kapsamlı İng-İng Sözlük (JSON)"),
             trailing: const Icon(Icons.download, color: Colors.indigo),
-            onTap: () { widget.onAddPackage("assets/tayf_wordnet_optimized.json", "json", "WordNet"); },
+            onTap: () { 
+              // YENİ: İndirme denemesi yerine şık uyarı ver[cite: 1]
+              _showWordNetAlert(); 
+            },
           ),
           const SizedBox(height: 10),
           ListTile(
