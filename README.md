@@ -73,9 +73,11 @@ book : kitap ; rezervasyon yapmak
 Word,Meaning,Example,Level
 apple,elma ||| meyve,I ate an apple.,Başlangıç
 
+
+```
 **3. JSON Formatı**
 
-
+```
 
 [
   {
