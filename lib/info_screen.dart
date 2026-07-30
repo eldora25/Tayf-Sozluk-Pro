@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class InfoScreen extends StatelessWidget {
   const InfoScreen({super.key});
@@ -6,18 +8,17 @@ class InfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    Color primary = Theme.of(context).primaryColor;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // 1. ESKİ ŞIK GİRİŞ VE UYGULAMA ÖZELLİKLERİ
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.indigo.shade400, Colors.deepPurple.shade600],
@@ -25,19 +26,19 @@ class InfoScreen extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 5))],
+              boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8))],
             ),
             child: Column(
               children: const [
                 Icon(Icons.menu_book_rounded, size: 64, color: Colors.white),
-                SizedBox(height: 12),
-                Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2)),
-                SizedBox(height: 6),
+                SizedBox(height: 16),
+                Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2)),
+                SizedBox(height: 8),
                 Text("Akıllı Kelime Öğrenme & Aralıklı Tekrar Sistemi", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontStyle: FontStyle.italic, fontSize: 14)),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 30),
 
           _buildFeatureCard(
             context,
@@ -65,15 +66,14 @@ class InfoScreen extends StatelessWidget {
           const Divider(thickness: 2),
           const SizedBox(height: 24),
 
-          // 2. İÇE AKTARMA (IMPORT) FORMAT REHBERİ
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.download_for_offline, color: Colors.green, size: 28),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               const Expanded(
                 child: Text(
                   "İçe Aktarma (Import) Format Rehberi",
@@ -82,14 +82,13 @@ class InfoScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           const Text(
             "Uygulamaya kendi kelime listelerinizi (TXT, CSV veya JSON) hatasız, kayıpsız ve en verimli şekilde aktarabilmek için dosyalarınızı aşağıdaki ideal formatlara göre düzenlemeniz önerilir.",
             style: TextStyle(fontSize: 14, height: 1.5),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // TXT Formatı Kılavuzu
           _buildFormatCard(
             context,
             title: "1. TXT Formatı (Önerilen Basit Format)",
@@ -101,7 +100,6 @@ araba : taşıt ; motorlu araç
 book : kitap ; ayırtmak ; rezervasyon yapmak""",
           ),
 
-          // CSV Formatı Kılavuzu
           _buildFormatCard(
             context,
             title: "2. CSV Formatı (Excel Tarzı Gelişmiş Format)",
@@ -113,7 +111,6 @@ apple,elma ||| meyve,I ate an apple.,Başlangıç
 abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İleri""",
           ),
 
-          // JSON Formatı Kılavuzu
           _buildFormatCard(
             context,
             title: "3. JSON Formatı (Programcı Formatı)",
@@ -144,29 +141,31 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
 
   Widget _buildFeatureCard(BuildContext context, {required IconData icon, required Color color, required String title, required String description}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: isDark ? Colors.grey.shade900 : Colors.white,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade900 : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 6))]
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: color.withOpacity(0.15),
-              child: Icon(icon, color: color, size: 26),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 28),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Text(description, style: TextStyle(fontSize: 13, color: isDark ? Colors.grey.shade400 : Colors.grey.shade700, height: 1.4)),
+                  Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.3)),
+                  const SizedBox(height: 8),
+                  Text(description, style: TextStyle(fontSize: 13.5, color: isDark ? Colors.grey.shade400 : Colors.grey.shade700, height: 1.5)),
                 ],
               ),
             ),
@@ -178,37 +177,42 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
 
   Widget _buildFormatCard(BuildContext context, {required String title, required String extension, required Color color, required String explanation, required String exampleCode}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: color.withOpacity(0.3), width: 1.5),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade900 : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        boxShadow: [BoxShadow(color: color.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 4))]
       ),
       child: ExpansionTile(
         initiallyExpanded: extension == ".txt", 
+        onExpansionChanged: (expanded) {
+          if (expanded) HapticFeedback.selectionClick();
+        },
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         leading: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
-          child: Text(extension, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+          child: Text(extension, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
         ),
         title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
+            padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0, top: 4.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(explanation, style: const TextStyle(fontSize: 13, height: 1.4)),
-                const SizedBox(height: 14),
-                const Text("Örnek Dosya İçeriği:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-                const SizedBox(height: 6),
+                Text(explanation, style: const TextStyle(fontSize: 13.5, height: 1.5)),
+                const SizedBox(height: 16),
+                const Text("Örnek Dosya İçeriği:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+                const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: isDark ? Colors.black87 : Colors.blueGrey.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
                   ),
                   child: SelectableText(
                     exampleCode,
@@ -216,7 +220,7 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
                       fontFamily: 'monospace',
                       fontSize: 13,
                       color: isDark ? Colors.greenAccent.shade200 : Colors.indigo.shade900,
-                      height: 1.5
+                      height: 1.6
                     ),
                   ),
                 ),
