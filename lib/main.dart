@@ -722,7 +722,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: TextField(controller: ctrl), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text("Kaydet"))]));
   }
 
-  // YENİ EKLENTİ: Asenkron Düzenleme (Tüm Listeleri Eşzamanlı Temizleme Zırhı)
   Future<void> _openEditScreen(WordModel word) async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: availableLibraries,
@@ -755,16 +754,70 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     )));
   }
 
+  // YENİ EKLENTİ: SANATSAL BÜYÜYEN TAÇ (CROWN) MEKANİZMASI
+  Widget _buildCrown(int level) {
+    if (level == 0) return const SizedBox.shrink();
+    
+    List<Widget> pieces = [];
+    
+    if (level == 1) {
+      pieces = [const Icon(Icons.change_history, size: 16, color: Color(0xFFFFEA00))]; // Sarı Taç
+    } else if (level == 2) {
+      pieces = [
+        const Icon(Icons.spa, size: 14, color: Color(0xFFD500F9)),
+        const Icon(Icons.keyboard_arrow_up, size: 20, color: Color(0xFFD500F9)),
+        const Icon(Icons.spa, size: 14, color: Color(0xFFD500F9)),
+      ];
+    } else if (level == 3) {
+      pieces = [
+        const Icon(Icons.filter_vintage, size: 14, color: Color(0xFF00E5FF)),
+        const Icon(Icons.spa, size: 18, color: Color(0xFF00E5FF)),
+        const Icon(Icons.workspace_premium, size: 24, color: Color(0xFF00E5FF)),
+        const Icon(Icons.spa, size: 18, color: Color(0xFF00E5FF)),
+        const Icon(Icons.filter_vintage, size: 14, color: Color(0xFF00E5FF)),
+      ];
+    } else if (level == 4) {
+      pieces = [
+        const Icon(Icons.ac_unit, size: 14, color: Color(0xFFFF3D00)),
+        const Icon(Icons.filter_vintage, size: 18, color: Color(0xFFFF3D00)),
+        const Icon(Icons.spa, size: 22, color: Color(0xFFFF3D00)),
+        const Icon(Icons.military_tech, size: 28, color: Color(0xFFFF3D00)),
+        const Icon(Icons.spa, size: 22, color: Color(0xFFFF3D00)),
+        const Icon(Icons.filter_vintage, size: 18, color: Color(0xFFFF3D00)),
+        const Icon(Icons.ac_unit, size: 14, color: Color(0xFFFF3D00)),
+      ];
+    } else if (level == 5) {
+      pieces = [
+        const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF00E676)),
+        const Icon(Icons.ac_unit, size: 18, color: Color(0xFF00E676)),
+        const Icon(Icons.filter_vintage, size: 22, color: Color(0xFF00E676)),
+        const Icon(Icons.spa, size: 26, color: Color(0xFF00E676)),
+        const Icon(Icons.diamond, size: 32, color: Colors.white),
+        const Icon(Icons.spa, size: 26, color: Color(0xFF00E676)),
+        const Icon(Icons.filter_vintage, size: 22, color: Color(0xFF00E676)),
+        const Icon(Icons.ac_unit, size: 18, color: Color(0xFF00E676)),
+        const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF00E676)),
+      ];
+    }
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: pieces,
+    );
+  }
+
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     
-    List<Color> neonColors = const [
-      Color(0xFF00E5FF), 
-      Color(0xFF00E676), 
-      Color(0xFFFFEA00), 
-      Color(0xFFFF3D00), 
-      Color(0xFFFF0055), 
+    // YENİ EKLENTİ: ÇARPICI VE ZIT RENK PALETİ
+    List<Color> distinctColors = const [
+      Color(0xFFFFEA00), // Parlak Sarı (Seviye 1)
+      Color(0xFFD500F9), // Koyu/Neon Mor (Seviye 2)
+      Color(0xFF00E5FF), // Buz/Neon Mavisi (Seviye 3)
+      Color(0xFFFF3D00), // Ateş Kırmızısı (Seviye 4)
+      Color(0xFF00E676), // Zümrüt Yeşili (Seviye 5)
     ];
 
     return RepaintBoundary(
@@ -772,8 +825,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         animation: _glowAnimation,
         builder: (context, child) {
           
+          // TAŞMA KORUMASI: Çerçeveler kalınlaşacağı için iç kapsül 280x300'e çekildi.
           Widget cardContent = Container(
-            width: 300, height: 320,
+            width: 280, height: 300, 
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16)
@@ -783,20 +837,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 if (isPremium) 
                   Container(
                     width: double.infinity, 
-                    padding: const EdgeInsets.symmetric(vertical: 12), 
+                    padding: const EdgeInsets.symmetric(vertical: 8), // Taç sığsın diye daraltıldı
                     decoration: BoxDecoration(
-                      color: neonColors[level - 1].withOpacity(0.15), 
+                      color: distinctColors[level - 1].withOpacity(0.15), 
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-                      border: Border(bottom: BorderSide(color: neonColors[level - 1].withOpacity(0.5), width: 2))
+                      border: Border(bottom: BorderSide(color: distinctColors[level - 1].withOpacity(0.5), width: 2))
                     ), 
-                    child: Row(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.stars, color: neonColors[level - 1], size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          "SRS Seviye: $level / 5", 
-                          style: TextStyle(color: neonColors[level - 1], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)
+                        _buildCrown(level), // SANATSAL TAÇ EKLENDİ
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              "SRS Seviye: $level / 5", 
+                              style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)
+                            ),
+                          ],
                         ),
                       ],
                     )
@@ -818,19 +879,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           if (isPremium) {
             for (int i = 0; i < level; i++) {
+              // YENİ EKLENTİ: Gittikçe kalınlaşan çerçeve formülü (2.0, 3.5, 5.0, 6.5, 8.0)
+              double thickness = 2.0 + (i * 1.5); 
               current = Container(
-                padding: const EdgeInsets.all(4),
+                padding: EdgeInsets.all(thickness), 
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16 + ((i + 1) * 4.0)),
-                  border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.5), 
+                  borderRadius: BorderRadius.circular(16 + ((i + 1) * thickness)),
+                  border: Border.all(color: Colors.black.withOpacity(0.5), width: 1.0 + (i * 0.5)), 
                   gradient: LinearGradient(
-                    colors: [neonColors[i].withOpacity(0.9), neonColors[i]],
+                    colors: [distinctColors[i].withOpacity(0.9), distinctColors[i]],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   boxShadow: (i == level - 1) ? [
                     BoxShadow(
-                      color: neonColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
+                      color: distinctColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
                       blurRadius: 25 * _glowAnimation.value,
                       spreadRadius: 6 * _glowAnimation.value,
                     )
@@ -861,12 +924,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     
-    List<Color> neonColors = const [
-      Color(0xFF00E5FF), 
-      Color(0xFF00E676), 
-      Color(0xFFFFEA00), 
-      Color(0xFFFF3D00), 
-      Color(0xFFFF0055), 
+    // YENİ EKLENTİ: ÇARPICI VE ZIT RENK PALETİ
+    List<Color> distinctColors = const [
+      Color(0xFFFFEA00), // Parlak Sarı (Seviye 1)
+      Color(0xFFD500F9), // Koyu/Neon Mor (Seviye 2)
+      Color(0xFF00E5FF), // Buz/Neon Mavisi (Seviye 3)
+      Color(0xFFFF3D00), // Ateş Kırmızısı (Seviye 4)
+      Color(0xFF00E676), // Zümrüt Yeşili (Seviye 5)
     ];
 
     return RepaintBoundary(
@@ -874,8 +938,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         animation: _glowAnimation,
         builder: (context, child) {
           
+          // TAŞMA KORUMASI: Çerçeveler kalınlaşacağı için iç kapsül 280x300'e çekildi.
           Widget cardContent = Container(
-            width: 300, height: 320,
+            width: 280, height: 300,
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16)
@@ -885,20 +950,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 if (isPremium) 
                   Container(
                     width: double.infinity, 
-                    padding: const EdgeInsets.symmetric(vertical: 12), 
+                    padding: const EdgeInsets.symmetric(vertical: 8), 
                     decoration: BoxDecoration(
-                      color: neonColors[level - 1].withOpacity(0.15), 
+                      color: distinctColors[level - 1].withOpacity(0.15), 
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-                      border: Border(bottom: BorderSide(color: neonColors[level - 1].withOpacity(0.5), width: 2))
+                      border: Border(bottom: BorderSide(color: distinctColors[level - 1].withOpacity(0.5), width: 2))
                     ), 
-                    child: Row(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.stars, color: neonColors[level - 1], size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          "SRS Seviye: $level / 5", 
-                          style: TextStyle(color: neonColors[level - 1], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)
+                        _buildCrown(level), // SANATSAL TAÇ EKLENDİ
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              "SRS Seviye: $level / 5", 
+                              style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)
+                            ),
+                          ],
                         ),
                       ],
                     )
@@ -945,19 +1017,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           if (isPremium) {
             for (int i = 0; i < level; i++) {
+              // YENİ EKLENTİ: Gittikçe kalınlaşan çerçeve formülü
+              double thickness = 2.0 + (i * 1.5);
               current = Container(
-                padding: const EdgeInsets.all(4),
+                padding: EdgeInsets.all(thickness),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16 + ((i + 1) * 4.0)),
-                  border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.5),
+                  borderRadius: BorderRadius.circular(16 + ((i + 1) * thickness)),
+                  border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.0 + (i * 0.5)),
                   gradient: LinearGradient(
-                    colors: [neonColors[i].withOpacity(0.9), neonColors[i]],
+                    colors: [distinctColors[i].withOpacity(0.9), distinctColors[i]],
                     begin: Alignment.bottomRight, 
                     end: Alignment.topLeft,
                   ),
                   boxShadow: (i == level - 1) ? [
                     BoxShadow(
-                      color: neonColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
+                      color: distinctColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
                       blurRadius: 25 * _glowAnimation.value,
                       spreadRadius: 6 * _glowAnimation.value,
                     )
@@ -1037,8 +1111,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     
                     ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
+                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
                     
-                    // LİSTE MENÜLERİNE "onEdit: _openEditScreen" EKLENDİ VE ASENKRON (then) YENİLEME EKLENDİ
+                    ListTile(
+                      leading: const Icon(Icons.settings), 
+                      title: const Text("Ayarlar, Temalar, Seçimler"), 
+                      onTap: () { 
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context); 
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
+                          onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
+                            setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
+                            _saveData(); 
+                            Future.delayed(const Duration(milliseconds: 150), () {
+                              _showCenteredDialog(
+                                title: "Harika!", 
+                                message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
+                                icon: Icons.verified_user, 
+                                color: Colors.green
+                              );
+                            });
+                          }, 
+                          onAddPackage: _loadPackageFromAssets
+                        ))); 
+                      }
+                    ),
+                    
+                    const Divider(),
                     ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
