@@ -34,24 +34,21 @@ import 'demo_screen.dart';
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
 
+// TTS DİLİ ZIRHI (Free-KH İng-Tr olarak mühürlendi)
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase().replaceAll('i̇', 'i').replaceAll('ı', 'i');
-  
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('english-turkish') || name.contains('free-kh') || name.contains('freedict')) return 'en-US';
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkish-english')) return 'tr-TR';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
-
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
   return 'en-US'; 
 }
 
 String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase().replaceAll('i̇', 'i').replaceAll('ı', 'i');
-  
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('english-turkish') || name.contains('free-kh') || name.contains('freedict')) return 'tr-TR';
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkish-english')) return 'en-US';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
-  
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
   return 'tr-TR'; 
 }
@@ -69,52 +66,69 @@ int getNextReviewOffset(int level) {
 }
 
 // -------------------------------------------------------------
-// 1. KUSURSUZ YARDIMCI: ÇÖP TEMİZLEYİCİ VE ANLAM PARÇALAYICI
+// 1. ZEKİ FİLTRE: ÇÖP SEMBOL TEMİZLEYİCİ VE ANLAM PARÇALAYICI
 // -------------------------------------------------------------
 List<String> cleanAndSplit(String rawText) {
   List<String> results = [];
-  // Önce -III, tırnak, görünmez ASCII karakterleri gibi pislikleri temizle
-  String text = rawText.replaceAll('-III', '').replaceAll('\"', '').replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
+  // Görünmez karakterleri, -III gibi çöpleri temizle
+  String text = rawText.replaceAll('-III', '').replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '').replaceAll('\"', '');
   
-  // Virgül, noktalı virgül, ||| veya yeni satıra göre PARÇALA (Quiz'de çorba olmaması için)
-  var parts = text.split(RegExp(r'\|\|\||;|,|\n'));
+  // Virgül, noktalı virgül, |||, alt satır ve NOKTA-BOŞLUK'tan metni ZEKİCE BÖL!
+  var parts = text.split(RegExp(r'\|\|\||;|\n|,|\.\s+'));
   
   for (var p in parts) {
     String clean = p.trim();
-    // Başındaki ve sonundaki eksi, nokta, parantez gibi çöp işaretleri kazı
+    // Başındaki ve sonundaki eksi, parantez, çizgi gibi pislikleri tıraşla
     clean = clean.replaceAll(RegExp(r'^[^a-zA-Z0-9çğışöüÇĞIŞÖÜ(]+|[^a-zA-Z0-9çğışöüÇĞIŞÖÜ)]+$'), '').trim();
-    // İçerdeki çift boşlukları tek boşluk yap
-    clean = clean.replaceAll(RegExp(r'\s+'), ' ');
+    clean = clean.replaceAll(RegExp(r'\s+'), ' '); // Çift boşlukları sil
     
-    // Anlam 1 karakterden büyükse ve listeye henüz eklenmemişse ekle (Benzersiz şıklar için)
-    if (clean.length > 1) {
+    // Yalnız kalan "n", "v", "adj" gibi kısaltmaları at, sadece gerçek kelime kalsın
+    if (clean.length > 1 && !['n', 'v', 'adj', 'adv', 'prep', 'conj', 'pron'].contains(clean.toLowerCase())) {
       results.add(clean);
     }
   }
-  return results.toSet().toList(); // toSet() ile mükerrer anlamları yokediyoruz
-}
-
-// 2. KUSURSUZ YARDIMCI: VİRGÜLE ZIRHLI CSV PARÇALAYICI
-List<String> manualCsvSplit(String line) {
-  List<String> result = [];
-  bool inQuotes = false;
-  StringBuffer current = StringBuffer();
-  for (int i = 0; i < line.length; i++) {
-    if (line[i] == '"') {
-      inQuotes = !inQuotes;
-    } else if (line[i] == ',' && !inQuotes) {
-      result.add(current.toString().trim());
-      current.clear();
-    } else {
-      current.write(line[i]);
-    }
-  }
-  result.add(current.toString().trim());
-  return result;
+  return results.toSet().toList(); // Aynı anlama gelenleri tekilleştir
 }
 
 // -------------------------------------------------------------
-// 6 EŞSİZ İMPORT ALGORİTMASI MİMARİSİ
+// 2. MUCİZE MOTOR: MULTILINE CSV PARSER (1.4 Milyon Kelime İçin)
+// -------------------------------------------------------------
+List<List<String>> parseCsvMultiline(String text) {
+  List<List<String>> rows = [];
+  List<String> currentRow = [];
+  StringBuffer currentCell = StringBuffer();
+  bool inQuotes = false;
+  
+  for (int i = 0; i < text.length; i++) {
+    String c = text[i];
+    if (c == '"') {
+      if (inQuotes && i + 1 < text.length && text[i + 1] == '"') {
+        currentCell.write('"'); i++; // Çift tırnak kaçışını yoksay
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (c == ',' && !inQuotes) {
+      currentRow.add(currentCell.toString().trim());
+      currentCell.clear();
+    } else if ((c == '\n' || c == '\r') && !inQuotes) {
+      if (c == '\r' && i + 1 < text.length && text[i + 1] == '\n') i++; // Windows alt satırı atla
+      currentRow.add(currentCell.toString().trim());
+      currentCell.clear();
+      if (currentRow.where((e) => e.isNotEmpty).isNotEmpty) rows.add(currentRow);
+      currentRow = [];
+    } else {
+      currentCell.write(c);
+    }
+  }
+  if (currentCell.isNotEmpty || currentRow.isNotEmpty) {
+    currentRow.add(currentCell.toString().trim());
+    if (currentRow.where((e) => e.isNotEmpty).isNotEmpty) rows.add(currentRow);
+  }
+  return rows;
+}
+
+// -------------------------------------------------------------
+// 6 EŞSİZ İMPORT ALGORİTMASI (Arka Planda Donmadan Çalışır)
 // -------------------------------------------------------------
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
@@ -126,129 +140,78 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   if (content.startsWith('\uFEFF')) content = content.substring(1);
 
   try {
-    // ALGORİTMA 1: WORDNET OPTIMIZED (JSON)
-    if (originalFileName.contains('wordnet')) {
+    // ALGORİTMA 1 & 2: JSON SÖZLÜKLER (WordNet ve Test Paketi)
+    if (extension == 'json') {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       for (var item in list) {
         if (item is Map) {
           List<String> subWords = [];
-          String idOrWord = item['word']?.toString() ?? '';
+          String w = item['word']?.toString().trim() ?? '';
           
-          if (!RegExp(r'^\d{8}-').hasMatch(idOrWord) && idOrWord.isNotEmpty) subWords.add(idOrWord);
+          if (!RegExp(r'^\d{8}-').hasMatch(w) && w.isNotEmpty) subWords.add(w);
           if (item['synonyms'] is List) subWords.addAll((item['synonyms'] as List).map((e) => e.toString()));
           if (item['lemmas'] is List) subWords.addAll((item['lemmas'] as List).map((e) => e.toString()));
           
           String def = item['definition']?.toString() ?? '';
-          List<String> examples = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
-          
-          List<String> meanings = cleanAndSplit(def);
-          examples = cleanAndSplit(examples.join('|||'));
-
-          for (String w in subWords) {
-            w = w.replaceAll('_', ' ').trim(); 
-            if (w.length > 1 && meanings.isNotEmpty) {
-              parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': examples, 'level': 'İleri', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-            }
-          }
-        }
-      }
-      return parsedList;
-    }
-
-    // ALGORİTMA 2: TEST PAKETİ (JSON)
-    if (originalFileName.contains('test_paket')) {
-      var decoded = json.decode(content);
-      List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
-      for (var item in list) {
-        if (item is Map) {
-          String w = item['word']?.toString().trim() ?? '';
-          if (w.isEmpty) continue;
-          
-          List<String> mList = item['meanings'] is List ? (item['meanings'] as List).map((e) => e.toString()).toList() : [];
+          List<String> mList = item['meanings'] is List ? (item['meanings'] as List).map((e) => e.toString()).toList() : (def.isNotEmpty ? [def] : []);
           List<String> eList = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
           
-          parsedList.add(json.encode({'word': w, 'meanings': cleanAndSplit(mList.join('|||')), 'examples': cleanAndSplit(eList.join('|||')), 'level': item['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+          List<String> cleanM = cleanAndSplit(mList.join('|||'));
+          List<String> cleanE = cleanAndSplit(eList.join('|||'));
+
+          for (String sw in subWords) {
+            sw = sw.replaceAll('_', ' ').trim(); 
+            if (sw.length > 1 && cleanM.isNotEmpty) {
+              parsedList.add(json.encode({'word': sw, 'meanings': cleanM, 'examples': cleanE, 'level': item['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+            }
+          }
         }
       }
       return parsedList;
     }
 
-    // TXT VE CSV'LER İÇİN SATIR SATIR OKUMA MOTORU
-    List<String> lines = const LineSplitter().convert(content);
-
-    for (String line in lines) {
-      line = line.trim();
-      if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) continue;
-
-      try {
-        List<String> subWords = [];
-        String rawMeanings = '';
-        String rawExamples = '';
-        String level = 'Genel';
-
-        // ALGORİTMA 3: TAYF İNG-TR (TXT) -> "a few:birkaç" FORMATI
-        if (originalFileName.contains('tayf') && !originalFileName.contains('json')) {
-          int colonIdx = line.indexOf(':');
-          if (colonIdx != -1) {
-            // (Sub-word Parsing): Sol tarafta virgül varsa 3 farklı kelime yap!
-            subWords = line.substring(0, colonIdx).split(RegExp(r'[,/]'));
-            rawMeanings = line.substring(colonIdx + 1);
-          }
-        }
-        // ALGORİTMA 4: FREE-KH VE FREEDICT (TXT)
-        else if (originalFileName.contains('free-kh') || originalFileName.contains('freedict')) {
-          List<String> row = manualCsvSplit(line);
-          if (row.length >= 2) {
-            subWords = row[0].split(RegExp(r'[,/]'));
-            rawMeanings = row[1];
-            if (row.length > 2) rawExamples = row[2];
-            if (row.length > 3) level = row[3].replaceAll('"', '').trim();
-          }
-        }
-        // ALGORİTMA 5 & 6: BABYLON İNG-TR VE TR-İNG (CSV)
-        else if (originalFileName.contains('babylon')) {
-          List<String> row = manualCsvSplit(line);
-          if (row.length >= 2) {
-            // (Sub-word Parsing): "abandon, abandons, abandoning" şeklindeki kelimeyi 3'e böler!
-            subWords = row[0].split(RegExp(r'[,/]'));
-            rawMeanings = row[1];
-            if (row.length > 2) rawExamples = row[2];
-            if (row.length > 3) level = row[3].replaceAll('"', '').trim();
-          }
-        }
-        // ALGORİTMA 7: BİLİNMEYEN DOSYALAR (FALLBACK)
-        else {
-          List<String> row = manualCsvSplit(line);
-          if (row.length >= 2) {
-            subWords = row[0].split(',');
-            rawMeanings = row[1];
-          } else {
-            int sep = line.indexOf(':') != -1 ? line.indexOf(':') : line.indexOf('=');
-            if (sep != -1) {
-              subWords = [line.substring(0, sep)];
-              rawMeanings = line.substring(sep + 1);
+    // ALGORİTMA 3: TAYF İNG-TR (TXT Formatı)
+    if (originalFileName.contains('tayf') && extension == 'txt') {
+      List<String> lines = const LineSplitter().convert(content);
+      for (String line in lines) {
+        int colonIdx = line.indexOf(':');
+        if (colonIdx != -1) {
+          // Sub-word: virgül ve / ile ayır ("a lot of, a lot" -> 2 ayrı kelime)
+          List<String> subWords = line.substring(0, colonIdx).split(RegExp(r'[,/]'));
+          List<String> meanings = cleanAndSplit(line.substring(colonIdx + 1));
+          
+          for (String w in subWords) {
+            w = w.replaceAll('\"', '').trim();
+            if (w.length > 1 && meanings.isNotEmpty) {
+              parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
             }
           }
         }
+      }
+      return parsedList;
+    }
 
-        // Sembollerden Temizleme ve Anlamları Kesin Olarak Bölme
-        List<String> mList = cleanAndSplit(rawMeanings);
-        List<String> eList = cleanAndSplit(rawExamples);
+    // ALGORİTMA 4, 5, 6: BABYLONLAR ve FREEDICT (Devasa CSV Dosyaları)
+    List<List<String>> rows = parseCsvMultiline(content);
+    for (List<String> row in rows) {
+      if (row.length >= 2) {
+        // Sub-word Parsing Zekâsı ("abandon, abandons" -> 2 kelime olur)
+        List<String> subWords = row[0].split(RegExp(r'[,/|]'));
+        List<String> mList = cleanAndSplit(row[1]);
+        List<String> eList = row.length > 2 ? cleanAndSplit(row[2]) : [];
+        String level = row.length > 3 ? row[3].replaceAll('"', '').trim() : 'Genel';
+        if (level.isEmpty) level = 'Genel';
 
         if (mList.isNotEmpty) {
           for (String w in subWords) {
             w = w.replaceAll('\"', '').trim();
             w = w.replaceAll(RegExp(r'^[^a-zA-Z0-9çğışöüÇĞIŞÖÜ]+|[^a-zA-Z0-9çğışöüÇĞIŞÖÜ)]+$'), '').trim();
-            
-            // Son olarak veritabanına tertemiz kelimeyi ekle!
             if (w.length > 1) {
-              parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': eList, 'level': level.isEmpty ? 'Genel' : level, 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+              parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': eList, 'level': level, 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
             }
           }
         }
-      } catch (e) {
-        continue; // Bir satırdaki bozukluk koca kütüphaneyi çökerte-mez! Sadece o satırı atla.
       }
     }
   } catch (e) {
@@ -586,8 +549,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       try {
         List<int> bytes = await file.readAsBytes();
+        // HATA GİDERİCİ (Dosyadan yüklerken çökmeyi engeller)
         String content;
-        try { content = utf8.decode(bytes); } catch (e) { content = latin1.decode(bytes); }
+        try {
+          content = utf8.decode(bytes);
+        } catch (e) {
+          content = String.fromCharCodes(bytes);
+        }
         
         final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': content, 'extension': result.files.single.extension ?? '', 'libraryName': customLibraryName, 'originalFileName': fileName});
         
@@ -645,13 +613,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       ByteData data = await rootBundle.load(assetPath);
       List<int> bytes = data.buffer.asUint8List();
+      
+      // HATA GİDERİCİ ZIRH (Missing extension byte hatasını kökünden çözer)
       String content;
       try {
-        // HATA GİDERİCİ: "Missing extension byte" hatasını engeller, UTF-8 dener.
         content = utf8.decode(bytes);
       } catch (e) {
-        // UTF-8 Bozuksa ÇÖKME! Zırhlı Latin1/ASCII ile zorla oku.
-        content = String.fromCharCodes(bytes);
+        content = String.fromCharCodes(bytes); // UTF-8 bozuksa zorla ASCII oku
       }
       
       final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': content, 'extension': extension, 'libraryName': customLibraryName, 'originalFileName': assetPath.split('/').last});
@@ -899,7 +867,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // TERTEMİZ KART ARKASI (Sembollerden Arınmış Liste)
   Widget _buildCardBack(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
@@ -958,7 +925,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             children: [
                               Center(child: Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))), 
                               const Divider(), 
-                              // TEMİZ LİSTELEME
                               ...word.meanings.map((m) => Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 4.0), 
                                 child: Text("• $m", style: const TextStyle(fontSize: 16, height: 1.4))
@@ -1217,33 +1183,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         actions: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
-            margin: const EdgeInsets.only(right: 8, top: 6, bottom: 6), 
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+            margin: const EdgeInsets.only(right: 8, top: 4, bottom: 4), 
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.9), 
-              borderRadius: BorderRadius.circular(24), 
-              border: Border.all(color: Colors.orangeAccent, width: 2),
-              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
+              borderRadius: BorderRadius.circular(30), 
+              border: Border.all(color: Colors.orangeAccent, width: 2.5),
+              boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 12, spreadRadius: 3)]
             ), 
             child: Row(children: [
-              const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 28), 
+              const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 36), 
               const SizedBox(width: 8), 
-              Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
+              Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.white))
             ])
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
-            margin: const EdgeInsets.only(right: 12, top: 6, bottom: 6), 
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+            margin: const EdgeInsets.only(right: 12, top: 4, bottom: 4), 
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.9), 
-              borderRadius: BorderRadius.circular(24), 
-              border: Border.all(color: Colors.lightBlueAccent, width: 2),
-              boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
+              borderRadius: BorderRadius.circular(30), 
+              border: Border.all(color: Colors.lightBlueAccent, width: 2.5),
+              boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.8), blurRadius: 12, spreadRadius: 3)]
             ), 
             child: Row(children: [
-              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 26), 
+              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 34), 
               const SizedBox(width: 8), 
-              Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
+              Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.white))
             ])
           ),
         ],
