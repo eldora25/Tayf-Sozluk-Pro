@@ -409,28 +409,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return uniqueLibs;
   }
 
-  // YENİ UYGULAMA: Arka Yüzdeki TÜM Anlamları ve Cümleleri Birleştirip Dinletir
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       await globalTts.stop(); 
       String rawText = "";
 
       if (isMeaning) {
-        // Eğer kart arkası (anlam) ise, tüm anlamları ve örnekleri birleştir
         List<String> combinedList = [...word.meanings, ...word.examples];
         if (combinedList.isEmpty) return;
-        // TTS'in cümleler/anlamlar arasında "es" (nefes) alması için nokta ile ayır
         rawText = combinedList.join('. '); 
       } else {
-        // Ön yüz ise sadece kelimeyi al
         rawText = word.word;
       }
 
       if (rawText.isEmpty) return;
       
       String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_»•]'), ' ').replaceAll('ANLAM:', '');
-      
-      // Dil tayini için (sadece ilk anlam üzerinden test etmek yeterlidir)
       String detectText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : cleanText) : cleanText;
       
       String targetLang = isMeaning 
@@ -1144,9 +1138,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         learnedWords.where((w) => w.libraryName == selectedLibrary).length;
     int learnedLibWords = learnedWords.where((w) => w.libraryName == selectedLibrary).length;
     double progress = totalLibWords > 0 ? (learnedLibWords / totalLibWords) : 0.0;
+    double bottomHeight = selectedLibrary != 'Tekrarlanması Gerekenler' ? 90.0 : 60.0;
 
     return Scaffold(
+      // Üst menünün hiyerarşisi yeniden yapılandırıldı (Taşmaları engellemek için)
       appBar: AppBar(
+        toolbarHeight: 60,
+        centerTitle: false,
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -1163,64 +1161,84 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(isSrsMode ? "SRS Tekrar Modu" : "$selectedLibrary - $selectedLevel (${deck.length})", style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
-        actions: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
-            margin: const EdgeInsets.only(right: 8, top: 6, bottom: 6), 
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.9), 
-              borderRadius: BorderRadius.circular(24), 
-              border: Border.all(color: Colors.orangeAccent, width: 2),
-              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
-            ), 
-            child: Row(children: [
-              const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 28), 
-              const SizedBox(width: 8), 
-              Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
-            ])
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
-            margin: const EdgeInsets.only(right: 12, top: 6, bottom: 6), 
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.9), 
-              borderRadius: BorderRadius.circular(24), 
-              border: Border.all(color: Colors.lightBlueAccent, width: 2),
-              boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
-            ), 
-            child: Row(children: [
-              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 26), 
-              const SizedBox(width: 8), 
-              Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
-            ])
-          ),
-        ],
+        // ESKİ EKLENTİ ALANI İPTAL EDİLDİ (Üst üste binmeyi engellemek için actions kaldırıldı)
+        
+        // İKONLAR VE İLERLEME ÇUBUĞU ALT KISMA, ORTALANARAK TAŞINDI
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(30),
-          child: selectedLibrary != 'Tekrarlanması Gerekenler' ? Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("İlerleme:", style: TextStyle(fontSize: 12, color: Colors.white70)),
-                    Text("$learnedLibWords / $totalLibWords Öğrenildi", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
-                  ]
-                ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
-                    minHeight: 4,
+          preferredSize: Size.fromHeight(bottomHeight),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // ATEŞ İKONU KAPSÜLÜ (MainAxisSize.min ile sarmalandı)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.8), 
+                      borderRadius: BorderRadius.circular(30), 
+                      border: Border.all(color: Colors.orangeAccent, width: 2),
+                      boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]
+                    ), 
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 24), 
+                        const SizedBox(width: 6), 
+                        Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))
+                      ]
+                    )
+                  ),
+                  const SizedBox(width: 20),
+                  // ELMAS İKONU KAPSÜLÜ (MainAxisSize.min ile sarmalandı)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.8), 
+                      borderRadius: BorderRadius.circular(30), 
+                      border: Border.all(color: Colors.lightBlueAccent, width: 2),
+                      boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]
+                    ), 
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 24), 
+                        const SizedBox(width: 6), 
+                        Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))
+                      ]
+                    )
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              
+              if (selectedLibrary != 'Tekrarlanması Gerekenler') 
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("İlerleme:", style: TextStyle(fontSize: 12, color: Colors.white70)),
+                          Text("$learnedLibWords / $totalLibWords Öğrenildi", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ]
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                          minHeight: 4,
+                        )
+                      )
+                    ]
                   )
                 )
-              ]
-            )
-          ) : const SizedBox.shrink()
+            ]
+          )
         ),
       ),
       drawer: _buildDrawer(),
