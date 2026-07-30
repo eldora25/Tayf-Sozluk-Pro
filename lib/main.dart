@@ -3,7 +3,7 @@ import 'dart:math';
 import 'dart:io';
 import 'dart:ui'; 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle, ByteData;
+import 'package:flutter/services.dart'; // HapticFeedback için gerekli
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -198,14 +198,14 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     switch (themeIndex) {
-      case 0: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent));
-      case 1: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent));
-      case 2: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.blue, primaryColor: Colors.blue[400], scaffoldBackgroundColor: Colors.blue[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: const AppBarTheme(backgroundColor: Colors.blue, foregroundColor: Colors.white));
-      case 3: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.teal, primaryColor: Colors.teal[400], scaffoldBackgroundColor: Colors.teal[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: const AppBarTheme(backgroundColor: Colors.teal, foregroundColor: Colors.white));
-      case 4: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: Colors.purple[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white));
-      case 5: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: Colors.orange[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white));
-      case 6: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.pink[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
-      case 7: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.cyan, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: Colors.amber[50], cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.cyan), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white));
+      case 0: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent), appBarTheme: const AppBarTheme(elevation: 0));
+      case 1: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(elevation: 0));
+      case 2: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.blue, primaryColor: Colors.blue[600], scaffoldBackgroundColor: const Color(0xFFF3F8FF), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: AppBarTheme(backgroundColor: Colors.blue[600], foregroundColor: Colors.white, elevation: 0));
+      case 3: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.teal, primaryColor: Colors.teal[600], scaffoldBackgroundColor: const Color(0xFFF2FAF9), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: AppBarTheme(backgroundColor: Colors.teal[600], foregroundColor: Colors.white, elevation: 0));
+      case 4: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: const Color(0xFFF8F3FF), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white, elevation: 0));
+      case 5: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: const Color(0xFFFFF6F0), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white, elevation: 0));
+      case 6: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: const Color(0xFFFFF0F5), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white, elevation: 0));
+      case 7: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.cyan, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: const Color(0xFFFFFDF5), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.cyan), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white, elevation: 0));
       default: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme));
     }
   }
@@ -216,8 +216,8 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Tayf Sözlük Pro',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
-      themeAnimationDuration: const Duration(milliseconds: 1000),
-      themeAnimationCurve: Curves.easeInOut,
+      themeAnimationDuration: const Duration(milliseconds: 600), // Tema geçişi hızlandırıldı
+      themeAnimationCurve: Curves.easeInOutCubic,
       home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
     );
   }
@@ -256,8 +256,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _flipController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
-    _flipAnimation = Tween<double>(begin: 0, end: 1).animate(_flipController);
+    _flipController = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
+    _flipAnimation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _flipController, curve: Curves.easeInOut));
     _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
     NotificationService.requestPermission();
@@ -272,6 +272,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // --- Veritabanı Yükleme (Aynı Kaldı) ---
   Future<void> _loadData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -352,12 +353,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _buyFreeze() {
+    HapticFeedback.mediumImpact(); // Premium dokunuş
     if (tayfPoints >= 50) {
       setState(() { tayfPoints -= 50; streakFreezes++; });
       _saveData();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Buz Kalkanı satın alındı! ❄️"), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Buz Kalkanı satın alındı! ❄️"), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yetersiz Tayf Puanı (TP)."), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yetersiz Tayf Puanı (TP)."), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
     }
   }
 
@@ -407,6 +409,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _nextCard() {
+    HapticFeedback.lightImpact(); // Kart geçişinde soft titreşim
     globalTts.stop();
     setState(() {
       isFlipped = false;
@@ -422,12 +425,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _flipCard(WordModel word) {
+    HapticFeedback.selectionClick(); // Döndürme titreşimi
     if (isFlipped) { _flipController.reverse(); _speakWord(word, isMeaning: false); } 
     else { _flipController.forward(); _speakWord(word, isMeaning: true); viewedCardTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }
     setState(() => isFlipped = !isFlipped);
   }
 
   void _markAsLearned(WordModel word) {
+    HapticFeedback.heavyImpact(); // Başarı titreşimi
     _recordActivity(1); 
     setState(() {
       if (word.srsLevel == 0) {
@@ -454,6 +459,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _markAsToRepeat(WordModel word) {
+    HapticFeedback.mediumImpact(); 
     _recordActivity(0); 
     setState(() {
       word.wrongCount++;
@@ -474,6 +480,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
+  // --- İÇE AKTARMA (Aynı Akıllı Algoritma Korundu) ---
   Future<void> _importFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
     if (result != null && result.files.single.path != null) {
@@ -618,6 +625,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  // Geri Kalan Yardımcı Fonksiyonlar (Aynı Kaldı)
   void _renameLibrary(String oldName, String newName) {
     setState(() {
       for (var w in allWords) { if (w.libraryName == oldName) w.libraryName = newName; }
@@ -665,6 +673,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _openEditScreen(WordModel word) {
+    // Sayfa geçişine yumuşak animasyon eklendi (Cupertino stili)
     Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: availableLibraries,
       onAction: (action, updatedWord) {
@@ -690,205 +699,302 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     )));
   }
 
-  // --- KARTIN ÖN YÜZÜ (ÇERÇEVE ALGORİTMASIYLA) ---
+  // --- KARTIN ÖN YÜZÜ (Performans Optimizasyonlu RepaintBoundary) ---
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     
-    List<Color> neonColors = [
-      const Color(0xFF00E5FF), // Seviye 1: Neon Mavi
-      const Color(0xFF00E676), // Seviye 2: Neon Yeşil
-      const Color(0xFFFFEA00), // Seviye 3: Neon Sarı
-      const Color(0xFFFF3D00), // Seviye 4: Neon Turuncu
-      const Color(0xFFFF0055), // Seviye 5: Neon Pembe
+    List<Color> neonColors = const [
+      Color(0xFF00E5FF), 
+      Color(0xFF00E676), 
+      Color(0xFFFFEA00), 
+      Color(0xFFFF3D00), 
+      Color(0xFFFF0055), 
     ];
 
-    return AnimatedBuilder(
-      animation: _glowAnimation,
-      builder: (context, child) {
-        
-        Widget cardContent = Container(
-          width: 300, height: 320,
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16)
-          ),
-          child: Column(
-            children: [
-              if (isPremium) 
-                Container(
-                  width: double.infinity, 
-                  padding: const EdgeInsets.symmetric(vertical: 12), 
-                  decoration: BoxDecoration(
-                    color: neonColors[level - 1].withOpacity(0.15), 
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-                    border: Border(bottom: BorderSide(color: neonColors[level - 1].withOpacity(0.5), width: 2))
-                  ), 
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+    // Animasyonu izole etmek için RepaintBoundary eklendi
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _glowAnimation,
+        builder: (context, child) {
+          
+          Widget cardContent = Container(
+            width: 300, height: 320,
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16)
+            ),
+            child: Column(
+              children: [
+                if (isPremium) 
+                  Container(
+                    width: double.infinity, 
+                    padding: const EdgeInsets.symmetric(vertical: 12), 
+                    decoration: BoxDecoration(
+                      color: neonColors[level - 1].withOpacity(0.15), 
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                      border: Border(bottom: BorderSide(color: neonColors[level - 1].withOpacity(0.5), width: 2))
+                    ), 
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.stars, color: neonColors[level - 1], size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          "SRS Seviye: $level / 5", 
+                          style: TextStyle(color: neonColors[level - 1], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)
+                        ),
+                      ],
+                    )
+                  ),
+                Expanded(
+                  child: Stack(
                     children: [
-                      Icon(Icons.stars, color: neonColors[level - 1], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        "SRS Seviye: $level / 5", 
-                        style: TextStyle(color: neonColors[level - 1], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)
-                      ),
-                    ],
+                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))))), 
+                      Positioned(right: 5, top: 5, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false))), 
+                      Positioned(left: 5, top: 5, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))
+                    ]
                   )
-                ),
-              Expanded(
-                child: Stack(
-                  children: [
-                    Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))))), 
-                    Positioned(right: 5, top: 5, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false))), 
-                    Positioned(left: 5, top: 5, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))
-                  ]
                 )
-              )
-            ],
-          ),
-        );
+              ],
+            ),
+          );
 
-        Widget current = cardContent;
+          Widget current = cardContent;
 
-        if (isPremium) {
-          for (int i = 0; i < level; i++) {
-            current = Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16 + ((i + 1) * 4.0)),
-                border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.5), 
-                gradient: LinearGradient(
-                  colors: [neonColors[i].withOpacity(0.9), neonColors[i]],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+          if (isPremium) {
+            for (int i = 0; i < level; i++) {
+              current = Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16 + ((i + 1) * 4.0)),
+                  border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.5), 
+                  gradient: LinearGradient(
+                    colors: [neonColors[i].withOpacity(0.9), neonColors[i]],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: (i == level - 1) ? [
+                    BoxShadow(
+                      color: neonColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
+                      blurRadius: 25 * _glowAnimation.value,
+                      spreadRadius: 6 * _glowAnimation.value,
+                    )
+                  ] : const [],
                 ),
-                boxShadow: (i == level - 1) ? [
-                  BoxShadow(
-                    color: neonColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
-                    blurRadius: 25 * _glowAnimation.value,
-                    spreadRadius: 6 * _glowAnimation.value,
-                  )
-                ] : [],
-              ),
-              child: current,
-            );
+                child: current,
+              );
+            }
+          } else {
+             current = Container(
+               padding: const EdgeInsets.all(2),
+               decoration: BoxDecoration(
+                 color: Theme.of(context).primaryColor,
+                 borderRadius: BorderRadius.circular(18),
+                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
+               ),
+               child: current,
+             );
           }
-        } else {
-           current = Container(
-             padding: const EdgeInsets.all(2),
-             decoration: BoxDecoration(
-               color: Theme.of(context).primaryColor,
-               borderRadius: BorderRadius.circular(18),
-               boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
-             ),
-             child: current,
-           );
-        }
 
-        return current;
-      }
+          return current;
+        }
+      ),
     );
   }
 
-  // --- KARTIN ARKA YÜZÜ (ÇERÇEVE ALGORİTMASIYLA) ---
+  // --- KARTIN ARKA YÜZÜ ---
   Widget _buildCardBack(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     
-    List<Color> neonColors = [
-      const Color(0xFF00E5FF), 
-      const Color(0xFF00E676), 
-      const Color(0xFFFFEA00), 
-      const Color(0xFFFF3D00), 
-      const Color(0xFFFF0055), 
+    List<Color> neonColors = const [
+      Color(0xFF00E5FF), 
+      Color(0xFF00E676), 
+      Color(0xFFFFEA00), 
+      Color(0xFFFF3D00), 
+      Color(0xFFFF0055), 
     ];
 
-    return AnimatedBuilder(
-      animation: _glowAnimation,
-      builder: (context, child) {
-        
-        Widget cardContent = Container(
-          width: 300, height: 320,
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16)
-          ),
-          child: Column(
-            children: [
-              if (isPremium) 
-                Container(
-                  width: double.infinity, 
-                  padding: const EdgeInsets.symmetric(vertical: 12), 
-                  decoration: BoxDecoration(
-                    color: neonColors[level - 1].withOpacity(0.15), 
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-                    border: Border(bottom: BorderSide(color: neonColors[level - 1].withOpacity(0.5), width: 2))
-                  ), 
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _glowAnimation,
+        builder: (context, child) {
+          
+          Widget cardContent = Container(
+            width: 300, height: 320,
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16)
+            ),
+            child: Column(
+              children: [
+                if (isPremium) 
+                  Container(
+                    width: double.infinity, 
+                    padding: const EdgeInsets.symmetric(vertical: 12), 
+                    decoration: BoxDecoration(
+                      color: neonColors[level - 1].withOpacity(0.15), 
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                      border: Border(bottom: BorderSide(color: neonColors[level - 1].withOpacity(0.5), width: 2))
+                    ), 
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.stars, color: neonColors[level - 1], size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          "SRS Seviye: $level / 5", 
+                          style: TextStyle(color: neonColors[level - 1], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)
+                        ),
+                      ],
+                    )
+                  ),
+                Expanded(
+                  child: Stack(
                     children: [
-                      Icon(Icons.stars, color: neonColors[level - 1], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        "SRS Seviye: $level / 5", 
-                        style: TextStyle(color: neonColors[level - 1], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)
-                      ),
-                    ],
+                      SingleChildScrollView(child: Padding(padding: const EdgeInsets.only(top: 20.0, left: 16, right: 16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Center(child: Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))), const Divider(), ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 2.0), child: Text("• $m")))]))), 
+                      Positioned(right: 5, top: 0, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: true))), 
+                      Positioned(left: 5, top: 0, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))
+                    ]
+                  )
+                )
+              ],
+            ),
+          );
+
+          Widget current = cardContent;
+
+          if (isPremium) {
+            for (int i = 0; i < level; i++) {
+              current = Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16 + ((i + 1) * 4.0)),
+                  border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.5),
+                  gradient: LinearGradient(
+                    colors: [neonColors[i].withOpacity(0.9), neonColors[i]],
+                    begin: Alignment.bottomRight, 
+                    end: Alignment.topLeft,
+                  ),
+                  boxShadow: (i == level - 1) ? [
+                    BoxShadow(
+                      color: neonColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
+                      blurRadius: 25 * _glowAnimation.value,
+                      spreadRadius: 6 * _glowAnimation.value,
+                    )
+                  ] : const [],
+                ),
+                child: current,
+              );
+            }
+          } else {
+             current = Container(
+               padding: const EdgeInsets.all(2),
+               decoration: BoxDecoration(
+                 color: Colors.green,
+                 borderRadius: BorderRadius.circular(18),
+                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
+               ),
+               child: current,
+             );
+          }
+
+          return current;
+        }
+      ),
+    );
+  }
+
+  // --- DRAWER (GLASSMORPHISM VE HAPTIC DESTEĞİ İLE PREMIUM YAPILANDIRMA) ---
+  Widget _buildDrawer() {
+    return Drawer(
+      elevation: 10,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9), // Yarı saydam
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Buzlu Cam (Glassmorphism) Efekti
+        child: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   )
                 ),
-              Expanded(
-                child: Stack(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SingleChildScrollView(child: Padding(padding: const EdgeInsets.only(top: 20.0, left: 16, right: 16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Center(child: Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))), const Divider(), ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 2.0), child: Text("• $m")))]))), 
-                    Positioned(right: 5, top: 0, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: true))), 
-                    Positioned(left: 5, top: 0, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))
-                  ]
-                )
-              )
+                    const SizedBox(height: 20),
+                    const Icon(Icons.language, color: Colors.white, size: 40),
+                    const SizedBox(height: 10),
+                    const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                    Text("Build v1.0.$buildNo", style: const TextStyle(color: Colors.white70))
+                  ],
+                ),
+              ),
+              ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (50 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
+              const Divider(),
+              ListTile(leading: const Icon(Icons.language, color: Colors.indigo), title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Detaylı İng-İng Sözlük"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _loadPackageFromAssets('assets/wordnet_veri.txt', 'txt', 'WordNet'); }),
+              ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
+              ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
+              
+              ListTile(
+                leading: const Icon(Icons.settings), 
+                title: const Text("Ayarlar, Temalar, Seçimler"), 
+                onTap: () { 
+                  HapticFeedback.lightImpact();
+                  Navigator.pop(context); 
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
+                    currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
+                    onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
+                      setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
+                      _saveData(); 
+                      Future.delayed(const Duration(milliseconds: 150), () {
+                        _showCenteredDialog(
+                          title: "Harika!", 
+                          message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
+                          icon: Icons.verified_user, 
+                          color: Colors.green
+                        );
+                      });
+                    }, 
+                    onAddPackage: _loadPackageFromAssets
+                  ))); 
+                }
+              ),
+              
+              const Divider(),
+              ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
+              ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
+              ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }))); }),
+              ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }))); }),
+              const Divider(),
+              ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
+              ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
+              ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
+              ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
+                HapticFeedback.lightImpact();
+                Navigator.pop(context); 
+                List<WordModel> fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
+                Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, onWordMastered: _markAsLearned, onWrongWord: _markAsToRepeat, onQuizFinished: (t, a, w) { _saveData(); }))); 
+              }),
+              ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
+              const Divider(),
+              ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) => _loadData()); }),
+              ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
+              const Divider(),
+              ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
+              ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _importFile(); }),
+              ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _exportLibrary(selectedLibrary); }),
             ],
           ),
-        );
-
-        Widget current = cardContent;
-
-        if (isPremium) {
-          for (int i = 0; i < level; i++) {
-            current = Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16 + ((i + 1) * 4.0)),
-                border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.5),
-                gradient: LinearGradient(
-                  colors: [neonColors[i].withOpacity(0.9), neonColors[i]],
-                  begin: Alignment.bottomRight, // Ters gradient efekti 
-                  end: Alignment.topLeft,
-                ),
-                boxShadow: (i == level - 1) ? [
-                  BoxShadow(
-                    color: neonColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
-                    blurRadius: 25 * _glowAnimation.value,
-                    spreadRadius: 6 * _glowAnimation.value,
-                  )
-                ] : [],
-              ),
-              child: current,
-            );
-          }
-        } else {
-           current = Container(
-             padding: const EdgeInsets.all(2),
-             decoration: BoxDecoration(
-               color: Colors.green,
-               borderRadius: BorderRadius.circular(18),
-               boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
-             ),
-             child: current,
-           );
-        }
-
-        return current;
-      }
+        ),
+      ),
     );
   }
 
@@ -901,16 +1007,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             Text(isSrsMode ? "SRS Tekrar Modu" : "$selectedLibrary - $selectedLevel (${deck.length})", style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
         actions: [
-          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(20)), child: Row(children: [const Icon(Icons.local_fire_department, color: Colors.orange, size: 20), const SizedBox(width: 4), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange))])),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.2), borderRadius: BorderRadius.circular(20)), child: Row(children: [const Icon(Icons.diamond, color: Colors.blue, size: 18), const SizedBox(width: 4), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue))])),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.orange.withOpacity(0.5))), child: Row(children: [const Icon(Icons.local_fire_department, color: Colors.orange, size: 20), const SizedBox(width: 4), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange))])),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.blue.withOpacity(0.5))), child: Row(children: [const Icon(Icons.diamond, color: Colors.blue, size: 18), const SizedBox(width: 4), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue))])),
         ],
       ),
       drawer: _buildDrawer(),
@@ -926,7 +1041,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       child: Column(
                         children: [
                           if (isSrsMode)
-                            Container(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.redAccent, width: 1.5)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.warning_amber_rounded, color: Colors.redAccent), SizedBox(width: 8), Text("SRS Tekrar Zamanı!", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16))])),
+                            Container(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.redAccent.shade100.withOpacity(0.2), Colors.orangeAccent.shade100.withOpacity(0.2)]), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.redAccent.withOpacity(0.5), width: 1.5)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.warning_amber_rounded, color: Colors.redAccent), SizedBox(width: 8), Text("SRS Tekrar Zamanı!", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5))])),
                           const Spacer(),
                           Center(
                             child: Dismissible(
@@ -948,7 +1063,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                           ),
                           const SizedBox(height: 30),
-                          if (isFlipped) Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white), icon: const Icon(Icons.repeat), label: const Text("Tekrar"), onPressed: () => _markAsToRepeat(currentWord)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), icon: const Icon(Icons.check), label: const Text("Biliyorum"), onPressed: () => _markAsLearned(currentWord))]),
+                          if (isFlipped) Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.repeat), label: const Text("Tekrar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsToRepeat(currentWord)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.check), label: const Text("Biliyorum", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsLearned(currentWord))]),
                           const Spacer(),
                         ],
                       ),
@@ -958,71 +1073,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               },
             ),
           ),
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(decoration: BoxDecoration(color: Theme.of(context).primaryColor), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end, children: [const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24)), Text("Build v1.0.$buildNo", style: const TextStyle(color: Colors.white70))])),
-            ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (50 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
-            const Divider(),
-            ListTile(leading: const Icon(Icons.language, color: Colors.indigo), title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Detaylı İng-İng Sözlük"), onTap: () { Navigator.pop(context); _loadPackageFromAssets('assets/wordnet_veri.txt', 'txt', 'WordNet'); }),
-            ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
-            ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
-            
-            ListTile(
-              leading: const Icon(Icons.settings), 
-              title: const Text("Ayarlar, Temalar, Seçimler"), 
-              onTap: () { 
-                Navigator.pop(context); 
-                Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                  currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
-                  onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
-                    setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
-                    _saveData(); 
-                    Future.delayed(const Duration(milliseconds: 150), () {
-                      _showCenteredDialog(
-                        title: "Harika!", 
-                        message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
-                        icon: Icons.verified_user, 
-                        color: Colors.green
-                      );
-                    });
-                  }, 
-                  onAddPackage: _loadPackageFromAssets
-                ))); 
-              }
-            ),
-            
-            const Divider(),
-            ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
-            ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
-            ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }))); }),
-            ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }))); }),
-            const Divider(),
-            ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
-            ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
-            ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
-            ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
-              Navigator.pop(context); 
-              List<WordModel> fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
-              Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, onWordMastered: _markAsLearned, onWrongWord: _markAsToRepeat, onQuizFinished: (t, a, w) { _saveData(); }))); 
-            }),
-            ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
-            const Divider(),
-            ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())).then((_) => _loadData()); }),
-            ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
-            const Divider(),
-            ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
-            ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { Navigator.pop(context); _importFile(); }),
-            ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { Navigator.pop(context); _exportLibrary(selectedLibrary); }),
-          ],
-        ),
-      ),
     );
   }
 }
