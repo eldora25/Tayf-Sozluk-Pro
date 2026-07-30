@@ -127,11 +127,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     return '$days${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // YENİ: TTS Mimarisine uygun kelime bazlı dil seçimi
+  // 1, 5 VE 8. MADDE ÇÖZÜMÜ: ISAR veritabanı kirliliği yaratmadan 
+  // Orijinal kütüphane adına göre anında (on-the-fly) TTS yönlendirmesi
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await globalTts.stop(); // Hayalet sesleri engeller
+      await globalTts.stop(); // Hayalet sesleri engellemek için önce durdur.
       String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
                              .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
                              .replaceAll('ANLAM:', '')
@@ -148,7 +149,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
-    String lang = currentWord.sourceLanguage; // Artık kelimenin kendi mührü var
+    // Kelime karma havuzda bile olsa kendi kimliğindeki Kütüphane adını okur.
+    String lang = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String text = "";
     if (lang == 'en-US') text = isCorrect ? "Correct" : "Wrong";
     else if (lang == 'tr-TR') text = isCorrect ? "Doğru" : "Yanlış";
@@ -207,8 +209,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
     String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
     
-    // Seslendirmede artık kelimenin kalıcı sourceLanguage mührü kullanılıyor
-    _speakText(readWord, currentWord.sourceLanguage);
+    // Doğru Telaffuz (Akıllı Tespit)
+    _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
   void _checkAnswer(String option) {
@@ -351,7 +353,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             onTap: () {
               HapticFeedback.selectionClick();
               String readWord = displayWord == "WordNet Kaydı" ? currentWord.meanings.first : currentWord.word;
-              _speakText(readWord, currentWord.sourceLanguage);
+              _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
             },
             child: AnimatedBuilder(
               animation: _entranceController,
@@ -415,12 +417,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(16),
                   onTap: () => _checkAnswer(option),
                   child: Padding(
+                    // 4. MADDE ÇÖZÜMÜ: Ekrana Sığmama (Taşma) Sorunu Tamamen Esnetilerek Çözüldü.
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    // YENİ: Expanded ile Metin Taşmaları Önlendi
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500), maxLines: 6, overflow: TextOverflow.ellipsis),
+                          child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500)),
                         ),
                         if (trailingIcon != null) ...[
                           const SizedBox(width: 12),
