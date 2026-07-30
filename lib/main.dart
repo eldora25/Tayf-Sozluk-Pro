@@ -212,11 +212,11 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
-    // DÜZELTME: CupertinoPageTransitionsBuilder doğru sınıf tanımıyla yapıldı
+    // DÜZELTME: const anahtar kelimesi kaldırıldı
     final PageTransitionsTheme smoothTransitions = PageTransitionsTheme(
       builders: {
-        TargetPlatform.android: const CupertinoPageTransitionsBuilder(),
-        TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
       },
     );
 
