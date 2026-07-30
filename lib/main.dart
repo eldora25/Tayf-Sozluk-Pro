@@ -34,32 +34,30 @@ import 'demo_screen.dart';
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
 
-// 1. DÜZELTME: KESİN TTS KURALLARI VE AKILLI YEDEK (Performans Optimizasyonu)
+// AKILLI VE KESİN TTS MOTORU: Öncelik her zaman dosya adındaki dil kuralıdır.
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase();
   
-  // Kural 1: Dosya adında yön belirtilmişse DİREKT olarak o dili döndür (Maksimum hız)
+  // KESİN KURAL: Dosya adında yön belirtilmişse DİREKT olarak o dili döndür (Maksimum hız)
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'tr-TR';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'en-US';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
 
-  // Kural 2: Ortak havuzsa veya özel isimlendirme yoksa kelimenin harflerini analiz et (Akıllı Yedek)
+  // AKILLI YEDEK: İsimde dil kuralı yoksa içeriğe bakarak dili tahmin et
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
-  
   return 'en-US'; 
 }
 
 String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase();
   
-  // Kural 1: Dosya adında yön belirtilmişse hedef dili DİREKT döndür
+  // KESİN KURAL: Dosya adında yön belirtilmişse hedef dili DİREKT döndür
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'en-US';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'tr-TR';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
   
-  // Kural 2: Karakter analizi
+  // AKILLI YEDEK: İsimde dil kuralı yoksa içeriğe bakarak dili tahmin et
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
-  
   return 'tr-TR'; 
 }
 
@@ -895,7 +893,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // --- KİŞİSELLEŞTİRİLMİŞ DRAWER MENU VE WORDNET BİLDİRİMİ ---
   Widget _buildDrawer() {
     return Drawer(
       elevation: 10,
@@ -932,7 +929,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (50 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
                     const Divider(),
                     
-                    // 1. SORUN DÜZELTMESİ: Esprili WordNet Bildirimi
                     ListTile(
                       leading: const Icon(Icons.language, color: Colors.indigo), 
                       title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), 
@@ -1015,24 +1011,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               
-              // 4. DÜZELTME: Özel, Dinamik İmza Katmanı
+              // ÖZELLEŞTİRİLMİŞ İMZA KATMANI
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 20),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor.withOpacity(0.08),
                   border: Border(top: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1))
                 ),
                 child: Column(
                   children: [
-                    const Text("Tayf Sözlük Pro", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.5)),
-                    const SizedBox(height: 6),
-                    Text("© ${DateTime.now().year} Tayfun (Eldora) - Tüm Hakları Saklıdır", style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey.shade600)),
-                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                        Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-                      child: Text("Sürüm: 1.0.$buildNo", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.deepPurple]),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)]
+                      ),
+                      child: const Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
                     ),
                   ],
                 ),
