@@ -70,7 +70,7 @@ apple : elma ; meyve
 book : kitap ; rezervasyon yapmak
 ```
 
-2. CSV Formatı
+**2. CSV Formatı**
 
  ```  
 #tts:ing-tr
@@ -96,9 +96,9 @@ apple,elma ||| meyve,I ate an apple.,Başlangıç
 
 ```
 ***********************************************
-Geliştirici: Tayfun YAMAK (Eldora)
+**Geliştirici: Tayfun YAMAK (Eldora)**
 
-Sürüm: V1.0.x
+**Sürüm: V1.0.x**
 
-Motto: Mükemmelleşmiş arayüz, zırhlı altyapı.
+**Motto: Mükemmelleşmiş arayüz, zırhlı altyapı.**
 ***********************************************
