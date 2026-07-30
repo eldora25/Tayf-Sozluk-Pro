@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart'; // YENİ: Ekran Görüntüsü İçin
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +17,19 @@ class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _controller = TextEditingController();
   bool _includeLogs = true;
   bool _isSending = false;
+  XFile? _attachedImage; // YENİ: Seçilen ekran görüntüsü
+
+  // YENİ: Galeriden veya Kameradan Ekran Görüntüsü Seçme
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _attachedImage = image;
+      });
+      HapticFeedback.mediumImpact();
+    }
+  }
 
   Future<void> _sendReport() async {
     if (_controller.text.trim().isEmpty) {
@@ -28,7 +42,6 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() => _isSending = true);
 
     try {
-      // Eşsiz Kullanıcı Kimliği (ID) Oluşturma / Alma
       final prefs = await SharedPreferences.getInstance();
       String uid = prefs.getString('user_unique_id') ?? '';
       if (uid.isEmpty) {
@@ -39,7 +52,6 @@ class _ReportScreenState extends State<ReportScreen> {
       String timestamp = DateTime.now().toIso8601String();
       String message = _controller.text.trim();
       
-      // TXT Dosyası İçeriğini Hazırlama
       StringBuffer reportContent = StringBuffer();
       reportContent.writeln("=== TAYF SÖZLÜK PRO - İSTEK / HATA BİLDİRİMİ ===");
       reportContent.writeln("Kullanıcı ID: $uid");
@@ -49,7 +61,6 @@ class _ReportScreenState extends State<ReportScreen> {
       reportContent.writeln(message);
       reportContent.writeln("------------------------------------------------");
 
-      // Kullanıcı log göndermeyi seçtiyse, logları dosyaya ekle
       if (_includeLogs) {
         reportContent.writeln("SİSTEM LOGLARI:");
         reportContent.writeln("[Sistem] Uygulama stabil.");
@@ -58,22 +69,26 @@ class _ReportScreenState extends State<ReportScreen> {
         reportContent.writeln("------------------------------------------------");
       }
 
-      // Geçici TXT dosyasını oluştur
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/Tayf_Bildirim_$uid.txt');
       await file.writeAsString(reportContent.toString());
 
-      // Share Plus ile E-Postaya Yönlendir
+      // Paylaşılacak Dosya Listesi (TXT + varsa Ekran Görüntüsü)
+      List<XFile> filesToShare = [XFile(file.path)];
+      if (_attachedImage != null) {
+        filesToShare.add(_attachedImage!);
+      }
+
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Dosya hazırlandı. Lütfen E-Posta uygulamanızı (Gmail vb.) seçin."), backgroundColor: Colors.green)
+          const SnackBar(content: Text("Rapor hazırlandı. Lütfen E-Posta uygulamanızı seçin."), backgroundColor: Colors.green)
         );
       }
 
       await Share.shareXFiles(
-        [XFile(file.path)], 
-        text: "Sayın Tayfun YAMAK,\n\nEkteki TXT dosyasında hata/istek bildirimimi iletiyorum.\n\nKullanıcı ID: $uid\n\n(Lütfen bu e-postayı tayfunyamak@gmail.com adresine gönderin.)",
+        filesToShare, 
+        text: "Sayın Tayfun YAMAK,\n\nEkteki dosyalarda hata/istek bildirimimi iletiyorum.\n\nKullanıcı ID: $uid\n\n(Lütfen bu e-postayı tayfunyamak@gmail.com adresine gönderin.)",
         subject: "Hata/ istek bildirimi"
       );
 
@@ -96,6 +111,27 @@ class _ReportScreenState extends State<ReportScreen> {
       appBar: AppBar(
         title: const Text("İstek / Hata Bildir", style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
+      ),
+      // DÜZELTİLDİ: SANAL TUŞLARIN ALTINDA KALMAMASI İÇİN BOTTOM NAVIGATION BAR KULLANILDI
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 5,
+              ),
+              icon: _isSending ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.send),
+              label: Text(_isSending ? "Hazırlanıyor..." : "YAZILIMCIYA GÖNDER", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              onPressed: _isSending ? null : _sendReport,
+            ),
+          ),
+        ),
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -135,13 +171,60 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
               child: TextField(
                 controller: _controller,
-                maxLines: 8,
+                maxLines: 6,
                 decoration: InputDecoration(
                   hintText: "Yeni bir özellik isteğinizi veya karşılaştığınız hatayı detaylıca anlatın...",
                   hintStyle: const TextStyle(color: Colors.grey),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                   contentPadding: const EdgeInsets.all(16),
                 ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // YENİ: EKRAN GÖRÜNTÜSÜ EKLEME BÖLÜMÜ
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade900 : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.blueAccent.withOpacity(0.3), width: 1.5),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)]
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.image_outlined, color: Colors.blueAccent, size: 28),
+                    title: const Text("Ekran Görüntüsü Ekle", style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text("Varsa hatanın ekran görüntüsünü ekleyin.", style: TextStyle(fontSize: 12)),
+                    trailing: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.add_a_photo, size: 16),
+                      label: const Text("Seç"),
+                    ),
+                  ),
+                  if (_attachedImage != null) ...[
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(File(_attachedImage!.path), width: 60, height: 60, fit: BoxFit.cover),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(child: Text("Ekran görüntüsü eklendi.", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => setState(() => _attachedImage = null),
+                          )
+                        ],
+                      ),
+                    ),
+                  ]
+                ],
               ),
             ),
             const SizedBox(height: 20),
@@ -165,22 +248,6 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
             ),
             const SizedBox(height: 30),
-
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 5,
-                ),
-                icon: _isSending ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.send),
-                label: Text(_isSending ? "Hazırlanıyor..." : "YAZILIMCIYA GÖNDER", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                onPressed: _isSending ? null : _sendReport,
-              ),
-            ),
           ],
         ),
       ),
