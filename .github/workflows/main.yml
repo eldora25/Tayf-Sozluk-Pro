@@ -36,6 +36,24 @@ jobs:
           sed -i '/compileOptions {/a \        isCoreLibraryDesugaringEnabled = true' android/app/build.gradle.kts
           echo 'dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4") }' >> android/app/build.gradle.kts
 
+      # YENİ: ASSETS İÇİNDEKİ İKONU ANDROİD MİPMAP KLASÖRLERİNE OTOMATİK ENJEKTE ETME ADIMI
+      - name: Inject Custom Android Icons
+        run: |
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+          
+          if [ -f "assets/ic_launcher.png" ]; then
+            cp assets/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+            cp assets/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+            cp assets/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+            cp assets/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+            cp assets/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+            echo "Özel uygulama ikonu başarıyla enjekte edildi!"
+          fi
+
       - name: Add Android Permissions & TTS Queries
         run: |
           # 1. Standart İzinlerin Eklenmesi
