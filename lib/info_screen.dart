@@ -66,7 +66,7 @@ class InfoScreen extends StatelessWidget {
           const Divider(thickness: 2),
           const SizedBox(height: 24),
 
-          // YENİ: AKILLI TTS PRO İPUCU KUTUSU
+          // DÜZELTİLDİ: TAŞMA YAPAN BAŞLIK EXPANDED İLE SARMALANDI
           Container(
             padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.only(bottom: 24),
@@ -83,7 +83,13 @@ class InfoScreen extends StatelessWidget {
                   children: [
                     Icon(Icons.lightbulb_outline, color: Colors.amber.shade700, size: 24),
                     const SizedBox(width: 8),
-                    Text("PRO İPUCU: Akıllı Seslendirme (TTS)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.amber.shade800)),
+                    Expanded(
+                      child: Text(
+                        "PRO İPUCU: Akıllı Seslendirme (TTS)", 
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.amber.shade800),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
