@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:csv/csv.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
@@ -34,21 +33,36 @@ import 'demo_screen.dart';
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
 
-// 5. MADDE ÇÖZÜMÜ: Kesin Kütüphane Dili Tespiti
+// 1. & 5. MADDE ÇÖZÜMÜ: ISAR'ı Bozmadan Kütüphane İsmine Dayalı KESİN TTS Kuralları
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase().replaceAll('i̇', 'i').replaceAll('ı', 'i');
-  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkce')) return 'tr-TR';
-  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('ingilizce')) return 'en-US';
+  
+  // İNG -> TR Sözlükler: Ön yüz kesinlikle İNGİLİZCE
+  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('english-turkish')) return 'en-US';
+  
+  // TR -> İNG Sözlükler: Ön yüz kesinlikle TÜRKÇE
+  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkish-english')) return 'tr-TR';
+  
+  // İNG -> İNG (WordNet): Ön yüz İNGİLİZCE
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
+
+  // İsimde dil bilgisi yoksa harfe bakarak AKILLI TAHMİN (Sadece son çare)
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
   return 'en-US'; 
 }
 
 String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase().replaceAll('i̇', 'i').replaceAll('ı', 'i');
-  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkce')) return 'en-US';
-  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('ingilizce')) return 'tr-TR';
+  
+  // İNG -> TR Sözlükler: Arka yüz kesinlikle TÜRKÇE
+  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('english-turkish')) return 'tr-TR';
+  
+  // TR -> İNG Sözlükler: Arka yüz kesinlikle İNGİLİZCE
+  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkish-english')) return 'en-US';
+  
+  // İNG -> İNG (WordNet): Arka yüz İNGİLİZCE
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
+  
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
   return 'tr-TR'; 
 }
@@ -65,32 +79,23 @@ int getNextReviewOffset(int level) {
   }
 }
 
-// 2, 3 ve 4. MADDE ÇÖZÜMÜ: 200.000+ Kelimeyi Kayıpsız Çeken Ultra Hızlı Parser
+// 2, 3, 4. MADDE ÇÖZÜMÜ: Eşsiz Kütüphanelere Özel, Tırnak/Virgül Hatalarına Zırhlı Manuel Parser
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
   String customLibraryName = params['libraryName'];
   String originalFileName = (params['originalFileName'] ?? '').toLowerCase();
-  String lowerName = "${customLibraryName.toLowerCase()} $originalFileName";
   List<String> parsedList = [];
 
   if (content.startsWith('\uFEFF')) content = content.substring(1);
 
-  List<String> cleanMeanings(List<dynamic> raw) {
-    List<String> result = [];
-    for (var item in raw) {
-      var str = item.toString().replaceAll('\x06', '');
-      var parts = str.split(RegExp(r'\|\|\||\n'));
-      for (var p in parts) {
-        var clean = p.trim().replaceAll(RegExp(r'^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|pron\.)\s*'), '').replaceAll(RegExp(r'\s+'), ' ').replaceAll('\"', '');
-        if (clean.isNotEmpty) result.add(clean);
-      }
-    }
-    return result.toSet().toList();
+  List<String> cleanMeanings(String rawStr, String separator) {
+    return rawStr.split(separator).map((e) => e.replaceAll('\"', '').trim()).where((e) => e.isNotEmpty).toSet().toList();
   }
 
   try {
-    if (extension == 'json' && !lowerName.contains('wordnet')) {
+    // 1. JSON FORMATI (WordNet, Test Paketi)
+    if (extension == 'json') {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       for (var e in list) {
@@ -99,15 +104,18 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           if (w.isEmpty) continue;
           List<String> meanings = e['meanings'] is List ? (e['meanings'] as List).map((m) => m.toString()).toList() : (e['definition'] != null ? [e['definition'].toString()] : []);
           List<String> examples = e['examples'] is List ? (e['examples'] as List).map((ex) => ex.toString()).toList() : [];
-          parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': examples, 'level': e['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+          parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings.join('|||'), '|||'), 'examples': examples, 'level': e['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
         }
       }
       return parsedList;
     }
 
-    LineSplitter.split(content).forEach((line) {
+    // 2. TXT VE CSV'Yİ BELLEK DOSTU SATIR SATIR MANUEL İŞLEME
+    List<String> lines = const LineSplitter().convert(content);
+    
+    for (String line in lines) {
       line = line.trim();
-      if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) return;
+      if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) continue;
 
       try {
         String w = '';
@@ -115,40 +123,71 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
         List<String> examples = [];
         String level = 'Genel';
 
-        if (lowerName.contains('en-tr_tayf') || (extension == 'txt' && line.contains(':') && !line.contains(','))) {
+        // ÖZEL TAYF İNG-TR VE TXT FORMATI (word:meaning VEYA word:meaning;meaning2)
+        if (originalFileName.contains('tayf') || (extension == 'txt' && line.contains(':') && !line.contains('|||')) || (extension == 'csv' && line.contains(':') && !line.contains(','))) {
           int colonIdx = line.indexOf(':');
           if (colonIdx != -1) {
-            w = line.substring(0, colonIdx).replaceAll('\"', '').trim();
-            mList = line.substring(colonIdx + 1).split(';');
+            w = line.substring(0, colonIdx);
+            String mStr = line.substring(colonIdx + 1);
+            mList = cleanMeanings(mStr, ';');
+            // Eğer noktalı virgül yoksa standart virgülle ayrılmış olabilir (Örn: a few:birkaç)
+            if (mList.isEmpty) mList = cleanMeanings(mStr, ',');
           }
-        } else if (lowerName.contains('babylon') || extension == 'gls' || line.contains('|') || line.contains('\t')) {
-          String sep = line.contains('|') ? '|' : (line.contains('\t') ? '\t' : '=');
-          var parts = line.split(sep);
-          if (parts.length >= 2) {
-            w = parts[0].replaceAll('\"', '').trim();
-            mList = parts[1].split(RegExp(r'\|\|\||;'));
+        }
+        // ÖZEL BABYLON / FREEDICT CSV FORMATI (word,"meaning|||meaning",example,level,library)
+        else if (extension == 'csv' || originalFileName.contains('babylon') || originalFileName.contains('free')) {
+          int firstComma = line.indexOf(',');
+          if (firstComma != -1) {
+            w = line.substring(0, firstComma).replaceAll('"', '');
+            String rest = line.substring(firstComma + 1);
+
+            // Klasik CSV parser tırnak hatalarında (örneğin kelime içinde eksik ") çöker ve 200 bin kelimeyi yutar!
+            // Bu manuel döngü tırnaklara zırhlıdır, asla çökmez.
+            List<String> row = [];
+            bool inQuotes = false;
+            StringBuffer current = StringBuffer();
+            for (int i = 0; i < rest.length; i++) {
+              if (rest[i] == '"') {
+                inQuotes = !inQuotes;
+              } else if (rest[i] == ',' && !inQuotes) {
+                row.add(current.toString().trim());
+                current.clear();
+              } else {
+                current.write(rest[i]);
+              }
+            }
+            row.add(current.toString().trim());
+
+            if (row.isNotEmpty) {
+              String mStr = row[0];
+              mList = cleanMeanings(mStr, '|||');
+              if (mList.isEmpty) mList = cleanMeanings(mStr, ';');
+              if (row.length > 1) examples = cleanMeanings(row[1], '|||');
+              if (row.length > 2) level = row[2].replaceAll('"', '').trim();
+            }
           }
-        } else {
-          List<List<dynamic>> parsedLine = const CsvToListConverter().convert(line + '\n');
-          if (parsedLine.isNotEmpty && parsedLine[0].length >= 2) {
-            var row = parsedLine[0];
-            w = row[0].toString().replaceAll('\"', '').trim();
-            mList = row[1].toString().split('|||');
-            if (row.length > 2) examples = row[2].toString().split('|||');
-            if (row.length > 3) level = row[3].toString();
-          }
+        }
+        // ESKİ TAB VEYA BORU (|) FORMATLARI
+        else if (line.contains('|') && !line.contains('|||')) {
+          var parts = line.split('|');
+          w = parts[0];
+          mList = cleanMeanings(parts[1], ';');
+        } else if (line.contains('\t')) {
+          var parts = line.split('\t');
+          w = parts[0];
+          mList = cleanMeanings(parts[1], ';');
         }
 
-        if (w.isNotEmpty) {
-          mList = cleanMeanings(mList);
-          if (mList.isNotEmpty) {
-            parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': examples.map((e) => e.replaceAll('\"', '').trim()).toList(), 'level': level.isNotEmpty ? level : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-          }
+        // Temizleme ve Listeye Ekleme
+        w = w.replaceAll('\"', '').trim();
+        if (w.isNotEmpty && mList.isNotEmpty) {
+          parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': examples, 'level': level.isNotEmpty ? level : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
         }
       } catch (e) {
-        // Satır hatasında çökmeden devam et
+        // Hatalı tek bir satırı atlar, milyonlarca kelimelik döngüyü asla durdurmaz!
+        continue; 
       }
-    });
+    }
   } catch (e) {
     parsedList.add(json.encode({'error': "Dosya Okuma Hatası:\n$e"}));
   }
@@ -380,14 +419,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return uniqueLibs;
   }
 
-  // 8. MADDE ÇÖZÜMÜ: Hayalet sesleri tamamen kaldıran anında durdurma motoru
+  // 8. MADDE ÇÖZÜMÜ: Future.delayed SİLİNDİ, HAYALET SES KALMADI. 
+  // SÖZLÜK ADINA (KİMLİĞİNE) BAĞLI KESİN DİL SEÇİMİ.
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
-      await globalTts.stop(); 
+      await globalTts.stop(); // Anında keser, artık ses bırakmaz.
       String rawText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
       if (rawText.isEmpty) return;
       String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ').replaceAll('ANLAM:', '');
-      globalTts.setLanguage(getSmartSourceLanguage(word.libraryName, cleanText));
+      
+      // Kelime karma havuzda bile olsa kendi orijinal kütüphane ismini kullanır!
+      String targetLang = isMeaning 
+          ? getSmartTargetLanguage(word.libraryName, cleanText) 
+          : getSmartSourceLanguage(word.libraryName, cleanText);
+          
+      globalTts.setLanguage(targetLang);
       globalTts.setSpeechRate(0.45); 
       globalTts.speak(cleanText); 
     } catch (e) {}
@@ -1073,35 +1119,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
         actions: [
-          // 7. MADDE ÇÖZÜMÜ: 2.5 kat büyütülmüş, zıt renkli ve neon çerçeveli Ateş ve TP Alanı
+          // 7. MADDE ÇÖZÜMÜ: 3 Kat Büyütülmüş, Kapsüllü ve Gölgeli Süper İkonlar
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
-            margin: const EdgeInsets.only(right: 8, top: 6, bottom: 6), 
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+            margin: const EdgeInsets.only(right: 8, top: 4, bottom: 4), 
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.9), 
-              borderRadius: BorderRadius.circular(24), 
-              border: Border.all(color: Colors.orangeAccent, width: 2),
-              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
+              borderRadius: BorderRadius.circular(30), 
+              border: Border.all(color: Colors.orangeAccent, width: 2.5),
+              boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 12, spreadRadius: 3)]
             ), 
             child: Row(children: [
-              const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 28), 
+              const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 36), 
               const SizedBox(width: 8), 
-              Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
+              Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.white))
             ])
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
-            margin: const EdgeInsets.only(right: 12, top: 6, bottom: 6), 
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+            margin: const EdgeInsets.only(right: 12, top: 4, bottom: 4), 
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.9), 
-              borderRadius: BorderRadius.circular(24), 
-              border: Border.all(color: Colors.lightBlueAccent, width: 2),
-              boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
+              borderRadius: BorderRadius.circular(30), 
+              border: Border.all(color: Colors.lightBlueAccent, width: 2.5),
+              boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.8), blurRadius: 12, spreadRadius: 3)]
             ), 
             child: Row(children: [
-              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 26), 
+              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 34), 
               const SizedBox(width: 8), 
-              Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
+              Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.white))
             ])
           ),
         ],
@@ -1171,6 +1217,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           if (isFlipped) Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.repeat), label: const Text("Tekrar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsToRepeat(currentWord)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.check), label: const Text("Biliyorum", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsLearned(currentWord))]),
                           const Spacer(),
                           
+                          // 1. MADDE ÇÖZÜMÜ: Ana Ekran Alt İmza Katmanı
                           Container(
                             padding: EdgeInsets.only(top: 16, bottom: 16 + MediaQuery.of(context).padding.bottom),
                             width: double.infinity,
