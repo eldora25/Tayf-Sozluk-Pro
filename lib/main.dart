@@ -711,23 +711,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: TextField(controller: ctrl), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text("Kaydet"))]));
   }
 
-  void _openEditScreen(WordModel word) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
+  // YENİ EKLENTİ: Liste Yöneticisinden (ManageListScreen) gelen tetiklemeler için Asenkron Zırh!
+  Future<void> _openEditScreen(WordModel word) async {
+    await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: availableLibraries,
       onAction: (action, updatedWord) {
         setState(() {
           if (action == EditAction.delete) {
-            allWords.removeWhere((w) => w.word == word.word);
-            toRepeatWords.removeWhere((w) => w.word == word.word);
-            toSRSRepeatWords.removeWhere((w) => w.word == word.word);
-            learningWords.removeWhere((w) => w.word == word.word);
+            allWords.removeWhere((w) => w.id == word.id);
+            toRepeatWords.removeWhere((w) => w.id == word.id);
+            toSRSRepeatWords.removeWhere((w) => w.id == word.id);
+            learningWords.removeWhere((w) => w.id == word.id);
+            wrongWords.removeWhere((w) => w.id == word.id);
+            learnedWords.removeWhere((w) => w.id == word.id);
           } else if (action == EditAction.update || action == EditAction.move) {
-            allWords.removeWhere((w) => w.word == word.word);
-            toRepeatWords.removeWhere((w) => w.word == word.word);
-            toSRSRepeatWords.removeWhere((w) => w.word == word.word);
-            learningWords.removeWhere((w) => w.word == word.word);
+            allWords.removeWhere((w) => w.id == word.id);
+            toRepeatWords.removeWhere((w) => w.id == word.id);
+            toSRSRepeatWords.removeWhere((w) => w.id == word.id);
+            learningWords.removeWhere((w) => w.id == word.id);
+            wrongWords.removeWhere((w) => w.id == word.id);
+            learnedWords.removeWhere((w) => w.id == word.id);
+            
             if (selectedLibrary == 'Tekrarlanması Gerekenler') {
-              if (updatedWord.srsLevel > 0) toSRSRepeatWords.add(updatedWord); else toRepeatWords.add(updatedWord);
+              if (updatedWord.srsLevel > 0) toSRSRepeatWords.add(updatedWord); 
+              else toRepeatWords.add(updatedWord);
             } else { allWords.add(updatedWord); }
           } else if (action == EditAction.copy) { allWords.add(updatedWord); }
           currentCardIndex = 0;
@@ -1019,38 +1026,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     
                     ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
-                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
                     
-                    ListTile(
-                      leading: const Icon(Icons.settings), 
-                      title: const Text("Ayarlar, Temalar, Seçimler"), 
-                      onTap: () { 
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context); 
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
-                          onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
-                            setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
-                            _saveData(); 
-                            Future.delayed(const Duration(milliseconds: 150), () {
-                              _showCenteredDialog(
-                                title: "Harika!", 
-                                message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
-                                icon: Icons.verified_user, 
-                                color: Colors.green
-                              );
-                            });
-                          }, 
-                          onAddPackage: _loadPackageFromAssets
-                        ))); 
-                      }
-                    ),
+                    // YENİ EKLENTİ: Listeler çağırılırken 'onEdit' fonk. gönderilip dönüşte ana ekran yenilenir.
+                    ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
+                    ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
+                    ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
+                    ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     
-                    const Divider(),
-                    ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }))); }),
-                    ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }))); }),
-                    ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }))); }),
-                    ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => wrongWords.clear()); _saveData(); }))); }),
                     const Divider(),
                     ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
                     ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
@@ -1141,7 +1123,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     double bottomHeight = selectedLibrary != 'Tekrarlanması Gerekenler' ? 90.0 : 60.0;
 
     return Scaffold(
-      // Üst menünün hiyerarşisi yeniden yapılandırıldı (Taşmaları engellemek için)
       appBar: AppBar(
         toolbarHeight: 60,
         centerTitle: false,
@@ -1161,9 +1142,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(isSrsMode ? "SRS Tekrar Modu" : "$selectedLibrary - $selectedLevel (${deck.length})", style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
-        // ESKİ EKLENTİ ALANI İPTAL EDİLDİ (Üst üste binmeyi engellemek için actions kaldırıldı)
-        
-        // İKONLAR VE İLERLEME ÇUBUĞU ALT KISMA, ORTALANARAK TAŞINDI
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(bottomHeight),
           child: Column(
@@ -1171,7 +1149,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // ATEŞ İKONU KAPSÜLÜ (MainAxisSize.min ile sarmalandı)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
                     decoration: BoxDecoration(
@@ -1190,7 +1167,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     )
                   ),
                   const SizedBox(width: 20),
-                  // ELMAS İKONU KAPSÜLÜ (MainAxisSize.min ile sarmalandı)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
                     decoration: BoxDecoration(
