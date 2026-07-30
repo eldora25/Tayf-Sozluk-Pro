@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:ui'; // Premium bulanıklık ve arayüz için eklendi
+import 'dart:ui'; 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // HapticFeedback için eklendi
+import 'package:flutter/services.dart'; 
 import 'package:isar/isar.dart';
 import 'models.dart';
 import 'main.dart'; 
@@ -17,23 +17,30 @@ class DemoScreen extends StatefulWidget {
 class _DemoScreenState extends State<DemoScreen> {
 
   void _triggerRealNotification() {
-    HapticFeedback.heavyImpact(); // Butona basıldığında premium titreşim
+    HapticFeedback.heavyImpact(); 
     NotificationService.showInstantTestNotification();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Gerçek sistem bildirimi tetiklendi!"), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating)
     );
   }
 
+  // 7. SORUN ÇÖZÜMÜ: Kelimeler artık kesinlikle SRS modunda doğacak.
   Future<void> _injectFiveLevelDemoWords() async {
     HapticFeedback.mediumImpact();
     int pastTime = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
     
+    // Temizlik: Üst üste binmeleri engellemek için eski demo kelimeleri sil
+    await isar.writeTxn(() async {
+      await isar.wordModels.filter().wordStartsWith('Level ').deleteAll();
+    });
+    
+    // Garantili Constructor Ataması
     List<WordModel> demoWords = [
-      WordModel(word: 'Level 1 Word', meanings: ['Seviye 1 Gümüş/Mavi Çerçeve'], examples: [], libraryName: 'Varsayılan', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 1..nextReviewDate = pastTime,
-      WordModel(word: 'Level 2 Word', meanings: ['Seviye 2 Yeşil Çerçeve'], examples: [], libraryName: 'Varsayılan', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 2..nextReviewDate = pastTime,
-      WordModel(word: 'Level 3 Word', meanings: ['Seviye 3 Sarı Çerçeve'], examples: [], libraryName: 'Varsayılan', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 3..nextReviewDate = pastTime,
-      WordModel(word: 'Level 4 Word', meanings: ['Seviye 4 Turuncu Çerçeve'], examples: [], libraryName: 'Varsayılan', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 4..nextReviewDate = pastTime,
-      WordModel(word: 'Level 5 Word', meanings: ['Seviye 5 Kırmızı Çerçeve'], examples: [], libraryName: 'Varsayılan', listType: 'toSRSRepeat', level: 'Genel')..srsLevel = 5..nextReviewDate = pastTime,
+      WordModel(word: 'Level 1 Word', meanings: ['Seviye 1 Neon Mavi Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 1, nextReviewDate: pastTime, correctCount: 1),
+      WordModel(word: 'Level 2 Word', meanings: ['Seviye 2 Neon Yeşil Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 2, nextReviewDate: pastTime, correctCount: 2),
+      WordModel(word: 'Level 3 Word', meanings: ['Seviye 3 Neon Sarı Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 3, nextReviewDate: pastTime, correctCount: 3),
+      WordModel(word: 'Level 4 Word', meanings: ['Seviye 4 Neon Turuncu Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 4, nextReviewDate: pastTime, correctCount: 4),
+      WordModel(word: 'Level 5 Word', meanings: ['Seviye 5 Neon Pembe Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 5, nextReviewDate: pastTime, correctCount: 5),
     ];
 
     await isar.writeTxn(() async {
@@ -42,7 +49,7 @@ class _DemoScreenState extends State<DemoScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("5 farklı demo kelime 'Varsayılan' kütüphanesine eklendi! Ana ekranda görebilirsiniz."), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating)
+        const SnackBar(content: Text("5 Çerçeveli Kelime eklendi! Ana ekranda SRS olarak görebilirsiniz."), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating)
       );
     }
   }
@@ -138,7 +145,6 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 
-  // Yeniden kullanılabilir, yumuşak gölgeli şık test kartı
   Widget _buildDemoCard({required String title, required String description, required IconData icon, required Color color, required String buttonText, required IconData buttonIcon, required VoidCallback onPressed}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
