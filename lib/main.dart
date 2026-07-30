@@ -13,8 +13,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart'; // YENİ: Boş ekranlar için animasyon desteği
 
-// İçe Aktarımlar
 import 'models.dart';
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
@@ -31,7 +31,7 @@ import 'pronunciation_screen.dart';
 import 'info_screen.dart'; 
 import 'wordnet_search_screen.dart'; 
 import 'demo_screen.dart'; 
-import 'report_screen.dart'; // YENİ EKLENEN İSTEK/HATA BİLDİR EKRANI
+import 'report_screen.dart'; 
 
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
@@ -211,16 +211,25 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
 
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
+    
+    // ADIM 1: PREMIUM PÜRÜZSÜZ SAYFA GEÇİŞLERİ (Cupertino / Fade Transitions)
+    final PageTransitionsTheme smoothTransitions = const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      },
+    );
+
     switch (themeIndex) {
-      case 0: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent), appBarTheme: const AppBarTheme(elevation: 0));
-      case 1: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(elevation: 0));
-      case 2: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.blue, primaryColor: Colors.blue[600], scaffoldBackgroundColor: const Color(0xFFF3F8FF), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: AppBarTheme(backgroundColor: Colors.blue[600], foregroundColor: Colors.white, elevation: 0));
-      case 3: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.teal, primaryColor: Colors.teal[600], scaffoldBackgroundColor: const Color(0xFFF2FAF9), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: AppBarTheme(backgroundColor: Colors.teal[600], foregroundColor: Colors.white, elevation: 0));
-      case 4: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: const Color(0xFFF8F3FF), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white, elevation: 0));
-      case 5: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: const Color(0xFFFFF6F0), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white, elevation: 0));
-      case 6: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: const Color(0xFFFFF0F5), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white, elevation: 0));
-      case 7: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.cyan, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: const Color(0xFFFFFDF5), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.cyan), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white, elevation: 0));
-      default: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme));
+      case 0: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions);
+      case 1: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions);
+      case 2: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.blue, primaryColor: Colors.blue[600], scaffoldBackgroundColor: const Color(0xFFF3F8FF), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: AppBarTheme(backgroundColor: Colors.blue[600], foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
+      case 3: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.teal, primaryColor: Colors.teal[600], scaffoldBackgroundColor: const Color(0xFFF2FAF9), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: AppBarTheme(backgroundColor: Colors.teal[600], foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
+      case 4: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: const Color(0xFFF8F3FF), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
+      case 5: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: const Color(0xFFFFF6F0), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
+      case 6: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: const Color(0xFFFFF0F5), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
+      case 7: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.cyan, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: const Color(0xFFFFFDF5), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.cyan), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
+      default: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), pageTransitionsTheme: smoothTransitions);
     }
   }
 
@@ -286,6 +295,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // ADIM 2: ISAR OOM (RAM ŞİŞMESİ) KORUMASI VE DOĞRUDAN VERİTABANI FİLTRELEME
   Future<void> _loadData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -303,39 +313,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         tayfPoints = prefs.getInt('tayfPoints') ?? 0;
       });
 
-      List<WordModel> fromIsar = await isar.wordModels.where().findAll();
+      // RAM'i şişirmemek için Isar seviyesinde doğrudan liste türlerine göre sorgulama
+      allWords = await isar.wordModels.filter().listTypeEqualTo('all').findAll();
+      learningWords = await isar.wordModels.filter().listTypeEqualTo('learning').findAll();
+      learnedWords = await isar.wordModels.filter().listTypeEqualTo('learned').findAll();
+      
+      List<WordModel> tempToRepeat = await isar.wordModels.filter().listTypeEqualTo('toRepeat').findAll();
+      toRepeatWords = tempToRepeat.where((w) => w.srsLevel == 0).toList();
+      
+      List<WordModel> directSrs = await isar.wordModels.filter().listTypeEqualTo('toSRSRepeat').findAll();
+      toSRSRepeatWords = [...directSrs, ...tempToRepeat.where((w) => w.srsLevel > 0)]; 
+
+      int now = DateTime.now().millisecondsSinceEpoch;
+      bool needsSave = false;
+      
+      for (var w in learningWords.toList()) {
+        if (w.nextReviewDate <= now && w.nextReviewDate > 0) {
+          w.listType = 'toSRSRepeat';
+          learningWords.removeWhere((item) => item.id == w.id);
+          toSRSRepeatWords.add(w);
+          needsSave = true;
+        }
+      }
+
+      if (needsSave) {
+        isar.writeTxnSync(() { isar.wordModels.putAllSync(toSRSRepeatWords); });
+      }
+
+      // Yanlış kelimeleri Isar seviyesinden optimize çekme
+      wrongWords = await isar.wordModels.filter().wrongCountGreaterThan(0).findAll();
+
+      if (allWords.isEmpty && learnedWords.isEmpty && toRepeatWords.isEmpty && toSRSRepeatWords.isEmpty && learningWords.isEmpty) {
+        _createDefaultLibrary();
+      }
 
       setState(() {
-        allWords = fromIsar.where((w) => w.listType == 'all').toList();
-        learningWords = fromIsar.where((w) => w.listType == 'learning').toList();
-        learnedWords = fromIsar.where((w) => w.listType == 'learned').toList();
-        
-        List<WordModel> tempToRepeat = fromIsar.where((w) => w.listType == 'toRepeat').toList();
-        toRepeatWords = tempToRepeat.where((w) => w.srsLevel == 0).toList();
-        toSRSRepeatWords = fromIsar.where((w) => w.listType == 'toSRSRepeat').toList()
-          ..addAll(tempToRepeat.where((w) => w.srsLevel > 0)); 
-
-        int now = DateTime.now().millisecondsSinceEpoch;
-        bool needsSave = false;
-        
-        for (var w in learningWords.toList()) {
-          if (w.nextReviewDate <= now && w.nextReviewDate > 0) {
-            w.listType = 'toSRSRepeat';
-            learningWords.removeWhere((item) => item.id == w.id);
-            toSRSRepeatWords.add(w);
-            needsSave = true;
-          }
-        }
-
-        if (needsSave) {
-          isar.writeTxn(() async { await isar.wordModels.putAll(toSRSRepeatWords); });
-        }
-
-        wrongWords = [...allWords, ...learningWords, ...toRepeatWords, ...toSRSRepeatWords, ...learnedWords].where((w) => w.wrongCount > 0).toList();
-        if (allWords.isEmpty && learnedWords.isEmpty && toRepeatWords.isEmpty && toSRSRepeatWords.isEmpty && learningWords.isEmpty) {
-          _createDefaultLibrary();
-        }
-
         var deck = activeDeck;
         int urgentCount = deck.where((w) => w.listType == 'toSRSRepeat' || w.listType == 'toRepeat').length;
         
@@ -758,9 +770,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildCrown(int level) {
     if (level == 0) return const SizedBox.shrink();
-    
     List<Widget> pieces = [];
-    
     if (level == 1) {
       pieces = [const Icon(Icons.change_history, size: 16, color: Color(0xFFFFEA00))]; 
     } else if (level == 2) {
@@ -800,37 +810,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF00E676)),
       ];
     }
-    
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: pieces,
-    );
+    return Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: pieces);
   }
 
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
-    
-    List<Color> distinctColors = const [
-      Color(0xFFFFEA00), 
-      Color(0xFFD500F9), 
-      Color(0xFF00E5FF), 
-      Color(0xFFFF3D00), 
-      Color(0xFF00E676), 
-    ];
+    List<Color> distinctColors = const [Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)];
 
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: _glowAnimation,
         builder: (context, child) {
-          
           Widget cardContent = Container(
             width: 280, height: 300, 
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(16)
-            ),
+            decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
                 if (isPremium) 
@@ -852,10 +846,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           children: [
                             Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
                             const SizedBox(width: 8),
-                            Text(
-                              "SRS Seviye: $level / 5", 
-                              style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)
-                            ),
+                            Text("SRS Seviye: $level / 5", style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)),
                           ],
                         ),
                       ],
@@ -875,7 +866,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
 
           Widget current = cardContent;
-
           if (isPremium) {
             for (int i = 0; i < level; i++) {
               double thickness = 2.0 + (i * 1.5); 
@@ -884,18 +874,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16 + ((i + 1) * thickness)),
                   border: Border.all(color: Colors.black.withOpacity(0.5), width: 1.0 + (i * 0.5)), 
-                  gradient: LinearGradient(
-                    colors: [distinctColors[i].withOpacity(0.9), distinctColors[i]],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: (i == level - 1) ? [
-                    BoxShadow(
-                      color: distinctColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
-                      blurRadius: 25 * _glowAnimation.value,
-                      spreadRadius: 6 * _glowAnimation.value,
-                    )
-                  ] : const [],
+                  gradient: LinearGradient(colors: [distinctColors[i].withOpacity(0.9), distinctColors[i]], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  boxShadow: (i == level - 1) ? [BoxShadow(color: distinctColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)), blurRadius: 25 * _glowAnimation.value, spreadRadius: 6 * _glowAnimation.value)] : const [],
                 ),
                 child: current,
               );
@@ -903,15 +883,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           } else {
              current = Container(
                padding: const EdgeInsets.all(2),
-               decoration: BoxDecoration(
-                 color: Theme.of(context).primaryColor,
-                 borderRadius: BorderRadius.circular(18),
-                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
-               ),
+               decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: BorderRadius.circular(18), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
                child: current,
              );
           }
-
           return current;
         }
       ),
@@ -921,26 +896,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildCardBack(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
-    
-    List<Color> distinctColors = const [
-      Color(0xFFFFEA00), 
-      Color(0xFFD500F9), 
-      Color(0xFF00E5FF), 
-      Color(0xFFFF3D00), 
-      Color(0xFF00E676), 
-    ];
+    List<Color> distinctColors = const [Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)];
 
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: _glowAnimation,
         builder: (context, child) {
-          
           Widget cardContent = Container(
             width: 280, height: 300,
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(16)
-            ),
+            decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
                 if (isPremium) 
@@ -962,10 +926,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           children: [
                             Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
                             const SizedBox(width: 8),
-                            Text(
-                              "SRS Seviye: $level / 5", 
-                              style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)
-                            ),
+                            Text("SRS Seviye: $level / 5", style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)),
                           ],
                         ),
                       ],
@@ -983,18 +944,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             children: [
                               Center(child: Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))), 
                               const Divider(), 
-                              ...word.meanings.map((m) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4.0), 
-                                child: Text("• $m", style: const TextStyle(fontSize: 16, height: 1.4))
-                              )),
+                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("• $m", style: const TextStyle(fontSize: 16, height: 1.4)))),
                               if (word.examples.isNotEmpty) ...[
                                 const SizedBox(height: 12),
                                 const Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
                                 const SizedBox(height: 4),
-                                ...word.examples.map((e) => Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                  child: Text("» $e", style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, height: 1.4))
-                                )),
+                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» $e", style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, height: 1.4)))),
                               ]
                             ]
                           )
@@ -1010,7 +965,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
 
           Widget current = cardContent;
-
           if (isPremium) {
             for (int i = 0; i < level; i++) {
               double thickness = 2.0 + (i * 1.5);
@@ -1019,18 +973,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16 + ((i + 1) * thickness)),
                   border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.0 + (i * 0.5)),
-                  gradient: LinearGradient(
-                    colors: [distinctColors[i].withOpacity(0.9), distinctColors[i]],
-                    begin: Alignment.bottomRight, 
-                    end: Alignment.topLeft,
-                  ),
-                  boxShadow: (i == level - 1) ? [
-                    BoxShadow(
-                      color: distinctColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
-                      blurRadius: 25 * _glowAnimation.value,
-                      spreadRadius: 6 * _glowAnimation.value,
-                    )
-                  ] : const [],
+                  gradient: LinearGradient(colors: [distinctColors[i].withOpacity(0.9), distinctColors[i]], begin: Alignment.bottomRight, end: Alignment.topLeft),
+                  boxShadow: (i == level - 1) ? [BoxShadow(color: distinctColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)), blurRadius: 25 * _glowAnimation.value, spreadRadius: 6 * _glowAnimation.value)] : const [],
                 ),
                 child: current,
               );
@@ -1038,15 +982,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           } else {
              current = Container(
                padding: const EdgeInsets.all(2),
-               decoration: BoxDecoration(
-                 color: Colors.green,
-                 borderRadius: BorderRadius.circular(18),
-                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
-               ),
+               decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(18), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
                child: current,
              );
           }
-
           return current;
         }
       ),
@@ -1069,11 +1008,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
+                        gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary], begin: Alignment.topLeft, end: Alignment.bottomRight)
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1096,12 +1031,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       onTap: () { 
                         HapticFeedback.lightImpact(); 
                         Navigator.pop(context); 
-                        _showCenteredDialog(
-                          title: "WordNet Kütüphanesi", 
-                          message: "Yazılımcı halen çalışıyor... 😅\n\nÇok yakında harika bir İngilizce-İngilizce sözlük deneyimiyle karşınızda olacak!", 
-                          icon: Icons.code, 
-                          color: Colors.indigo
-                        );
+                        _showCenteredDialog(title: "WordNet Kütüphanesi", message: "Yazılımcı halen çalışıyor... 😅\n\nÇok yakında harika bir İngilizce-İngilizce sözlük deneyimiyle karşınızda olacak!", icon: Icons.code, color: Colors.indigo);
                       }
                     ),
                     
@@ -1126,12 +1056,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         onWordMastered: (w) => _markAsLearned(w, fromQuiz: true), 
                         onWrongWord: (w) => _markAsToRepeat(w, fromQuiz: true), 
                         onQuizFinished: (t, a, w) { 
-                          setState(() {
-                            totalCompletedQuizzes++;
-                            totalQuizTimeSeconds += t;
-                            totalQuizQuestions += a;
-                            totalQuizWrong += w;
-                          });
+                          setState(() { totalCompletedQuizzes++; totalQuizTimeSeconds += t; totalQuizQuestions += a; totalQuizWrong += w; });
                           _saveData(); 
                         }
                       ))); 
@@ -1143,17 +1068,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       HapticFeedback.lightImpact(); 
                       Navigator.pop(context); 
                       await Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen()));
-                      
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setString('selectedLibrary', 'Tekrarlanması Gerekenler');
                       await prefs.setInt('currentCardIndex', 0);
-                      
-                      setState(() {
-                        selectedLibrary = 'Tekrarlanması Gerekenler';
-                        currentCardIndex = 0;
-                        isFlipped = false;
-                      });
-                      
+                      setState(() { selectedLibrary = 'Tekrarlanması Gerekenler'; currentCardIndex = 0; isFlipped = false; });
                       _loadData();
                     }),
                     ListTile(leading: const Icon(Icons.bug_report, color: Colors.orange), title: const Text("Hata Kayıtları (Log)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const LoggerScreen())); }),
@@ -1161,17 +1079,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
                     ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _importFile(); }),
                     ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _exportLibrary(selectedLibrary); }),
-                    
-                    // YENİ EKLENTİ: İSTEK VE HATA BİLDİRİMİ BUTONU
-                    ListTile(
-                      leading: const Icon(Icons.bug_report_outlined, color: Colors.redAccent),
-                      title: const Text("İstek / Hata Bildir", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportScreen()));
-                      }
-                    ),
+                    ListTile(leading: const Icon(Icons.bug_report_outlined, color: Colors.redAccent), title: const Text("İstek / Hata Bildir", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportScreen())); }),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -1180,10 +1088,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.only(top: 16, left: 20, right: 20, bottom: 16 + MediaQuery.of(context).padding.bottom), 
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.08),
-                  border: Border(top: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1))
-                ),
+                decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.08), border: Border(top: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1))),
                 child: Column(
                   children: [
                     Row(
@@ -1196,11 +1101,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.deepPurple]),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)]
-                      ),
+                      decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.deepPurple]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)]),
                       child: const Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
                     ),
                   ],
@@ -1234,13 +1135,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         toolbarHeight: 60,
         centerTitle: false,
         flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          decoration: BoxDecoration(gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary], begin: Alignment.topLeft, end: Alignment.bottomRight)),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1249,7 +1144,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(isSrsMode ? "SRS Tekrar Modu" : "$selectedLibrary - $selectedLevel (${deck.length})", style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
-        
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(bottomHeight),
           child: Column(
@@ -1259,43 +1153,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.8), 
-                      borderRadius: BorderRadius.circular(30), 
-                      border: Border.all(color: Colors.orangeAccent, width: 2),
-                      boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]
-                    ), 
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 24), 
-                        const SizedBox(width: 6), 
-                        Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))
-                      ]
-                    )
+                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.8), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.orangeAccent, width: 2), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]), 
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 24), const SizedBox(width: 6), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))])
                   ),
                   const SizedBox(width: 20),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.8), 
-                      borderRadius: BorderRadius.circular(30), 
-                      border: Border.all(color: Colors.lightBlueAccent, width: 2),
-                      boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]
-                    ), 
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 24), 
-                        const SizedBox(width: 6), 
-                        Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))
-                      ]
-                    )
+                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.8), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.lightBlueAccent, width: 2), boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]), 
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 24), const SizedBox(width: 6), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))])
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              
               if (selectedLibrary != 'Tekrarlanması Gerekenler') 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -1311,12 +1180,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const SizedBox(height: 4),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
-                          minHeight: 4,
-                        )
+                        child: LinearProgressIndicator(value: progress, backgroundColor: Colors.white.withOpacity(0.2), valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent), minHeight: 4),
                       )
                     ]
                   )
@@ -1326,8 +1190,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
       drawer: _buildDrawer(),
+      // ADIM 3: GLASSMORPHISM VE PREMIUM BOŞ EKRAN (EMPTY STATES) GÖRSEL ŞÖLENİ
       body: currentWord == null 
-        ? const Center(child: Text("Harika! Bu filtrede çalışılacak kelime kalmadı."))
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, spreadRadius: 5)]
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.verified_user_rounded, color: Colors.greenAccent, size: 70),
+                        const SizedBox(height: 16),
+                        const Text("Harika İş Çıkardın!", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                        const SizedBox(height: 8),
+                        const Text("Bu filtrede çalışılacak başka kelime kalmadı. Günün hedefi başarıyla tamamlandı! 🎉", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.4)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
         : SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -1362,7 +1256,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           const SizedBox(height: 30),
                           if (isFlipped) Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.repeat), label: const Text("Tekrar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsToRepeat(currentWord)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.check), label: const Text("Biliyorum", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsLearned(currentWord))]),
                           const Spacer(),
-                          
                           Container(
                             padding: EdgeInsets.only(top: 16, bottom: 16 + MediaQuery.of(context).padding.bottom),
                             width: double.infinity,
