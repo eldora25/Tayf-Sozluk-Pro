@@ -122,22 +122,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     int h = (totalSeconds % (24 * 3600)) ~/ 3600;
     int m = (totalSeconds % 3600) ~/ 60;
     int s = totalSeconds % 60;
-    
-    String days = d > 0 ? '${d.toString().padLeft(2, '0')}:' : '';
-    return '$days${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    return '${d > 0 ? '${d.toString().padLeft(2, '0')}:' : ''}${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  // KESİN DİL KURALLARI (Veritabanını bozmadan kütüphane isminden okuma)
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await globalTts.stop(); // Hayalet sesleri tamamen engeller
+      await globalTts.stop(); 
       String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
-                             .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ')
-                             .replaceAll('ANLAM:', '')
-                             .replaceAll('EŞ ANLAMLI:', '')
-                             .replaceAll('ZIT ANLAMLI:', '');
-      
+                             .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ');
       globalTts.setLanguage(languageCode);
       globalTts.setSpeechRate(0.45); 
       globalTts.speak(cleanText);
@@ -148,7 +141,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _speakFeedback(bool isCorrect) {
     if (!isAudioEnabled) return;
-    // Geri bildirimde orijinal kütüphanenin dili kullanılır
     String lang = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String text = "";
     if (lang == 'en-US') text = isCorrect ? "Correct" : "Wrong";
@@ -160,10 +152,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   void _generateQuestion() {
     if (answeredQuestions >= totalQuestions) {
       HapticFeedback.heavyImpact(); 
-      setState(() {
-        isQuizFinished = true;
-        _timer?.cancel();
-      });
+      setState(() { isQuizFinished = true; _timer?.cancel(); });
       if (!_isStatsSaved) {
         _isStatsSaved = true;
         widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers);
@@ -177,31 +166,22 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
-    // ZEKİ SORU MAKİNESİ: Çoklu anlamlardan SADECE BİR TANESİNİ seç. Anlam yoksa örneği seç.
+    // ZEKİ SORU: Sadece 1 Anlam Seç!
     List<String> correctPool = [...currentWord.meanings, ...currentWord.examples];
     correctOption = correctPool.isNotEmpty ? correctPool[random.nextInt(correctPool.length)] : currentWord.word;
 
     Set<String> wrongOptions = {};
     int loopCounter = 0;
     
-    // ÇELDİRİCİ ZEKÂSI: Asla ana kelimenin diğer anlamlarını kullanma.
+    // ZEKİ ÇELDİRİCİ: Asla mevcut kelimenin diğer anlamlarını kullanma! Başka kelimeden sadece TEK bir anlam seç.
     while (wrongOptions.length < 3 && loopCounter < 150) {
       loopCounter++;
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
       
-      // Çeldirici kelime, asıl sorulan kelimeyle aynı olamaz
       if (randomWord.word != currentWord.word) {
         List<String> wrongPool = [...randomWord.meanings, ...randomWord.examples];
-        
         if (wrongPool.isNotEmpty) {
-          // Çeldiricinin de sadece TEK BİR anlamını/cümlesini al
           String randomMeaning = wrongPool[random.nextInt(wrongPool.length)];
-          
-          if (randomMeaning.startsWith("ANLAM: ")) randomMeaning = randomMeaning.substring(7).trim();
-          if (randomMeaning.startsWith("EŞ ANLAMLI: ")) randomMeaning = randomMeaning.substring(12).trim();
-          if (randomMeaning.startsWith("ZIT ANLAMLI: ")) randomMeaning = randomMeaning.substring(13).trim();
-          
-          // Çeldiricinin asıl kelimenin HERHANGİ bir anlamıyla KESİNLİKLE çakışmadığından emin ol!
           bool isAlreadyCorrect = currentWord.meanings.contains(randomMeaning) || 
                                   currentWord.examples.contains(randomMeaning) || 
                                   randomMeaning == correctOption;
@@ -220,50 +200,114 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _entranceController.forward(from: 0.0); 
     
     String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
-    // Okunacak kelimeyi seç
     String readWord = displayWord == "WordNet Kaydı" && currentWord.meanings.isNotEmpty ? currentWord.meanings.first : currentWord.word;
     
-    // Akıllı TTS ile soruyu okut (Kütüphane ismine göre)
     _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
-  void _checkAnswer(String option) {
+  // MİTOZ BÖLÜNME İŞLEMİ (Veritabanı Asenkron Kilidi)
+  void _checkAnswer(String option) async {
     if (isAnsweredCorrectly || selectedWrongOptions.contains(option)) return;
+    bool isCorrect = (option == correctOption);
     
-    setState(() {
-      if (option == correctOption) {
+    if (isCorrect) {
+      setState(() {
         isAnsweredCorrectly = true;
         answeredQuestions++;
         HapticFeedback.mediumImpact(); 
         _scaleController.forward(from: 0.0); 
+      });
+
+      if (selectedWrongOptions.isEmpty) { 
+        correctAnswers++; 
         
-        if (selectedWrongOptions.isEmpty) { 
-          correctAnswers++; 
-          currentWord.correctCount++; 
+        // EĞER KELİMENİN BİRDEN FAZLA ANLAMI VARSA, SORULAN ANLAMI KOPAR VE YENİ KART YAP!
+        int totalOptions = currentWord.meanings.length + currentWord.examples.length;
+        if (totalOptions > 1) {
+          bool isMeaning = currentWord.meanings.contains(correctOption);
           
-          if (currentWord.correctCount == widget.threshold) {
-             widget.onWordMastered(currentWord);
-          }
+          WordModel splitWord = WordModel(
+            word: currentWord.word,
+            meanings: isMeaning ? [correctOption] : [],
+            examples: !isMeaning ? [correctOption] : [],
+            libraryName: currentWord.libraryName,
+            level: currentWord.level,
+            correctCount: currentWord.correctCount + 1, 
+            wrongCount: currentWord.wrongCount,
+            listType: currentWord.listType,
+            srsLevel: currentWord.srsLevel,
+            nextReviewDate: currentWord.nextReviewDate,
+            sourceLanguage: currentWord.sourceLanguage,
+            targetLanguage: currentWord.targetLanguage,
+          );
+          
+          if (isMeaning) currentWord.meanings.remove(correctOption);
+          else currentWord.examples.remove(correctOption);
+          
+          await isar.writeTxn(() async {
+            await isar.wordModels.put(currentWord); // Orijinal kelimenin anlamı eksildi
+            await isar.wordModels.put(splitWord);   // Yepyeni bağımsız kelime doğdu
+          });
+          
+          currentWord = splitWord; // Arayüzü yeni kelimeye kilitler
+          if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
+        } else {
+          // Zaten tek anlamı varsa normal arttır
+          currentWord.correctCount++;
+          await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+          if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
         }
-      } else {
+      }
+      
+      _speakFeedback(true);
+      Future.delayed(const Duration(milliseconds: 1500), _generateQuestion);
+      
+    } else {
+      setState(() {
         selectedWrongOptions.add(option);
         wrongAnswers++; 
-        
-        if (selectedWrongOptions.length == 1) { 
-            currentWord.wrongCount++;
-            widget.onWrongWord(currentWord);
-        }
-        
         HapticFeedback.heavyImpact(); 
         _lastWrongOption = option; 
         _shakeController.forward(from: 0.0); 
-      }
-    });
+      });
 
-    if (option == correctOption) {
-      _speakFeedback(true);
-      Future.delayed(const Duration(milliseconds: 1500), _generateQuestion);
-    } else {
+      if (selectedWrongOptions.length == 1) { 
+        // Yanlış bilince de aynı Mitoz Bölünmeyi yap ki o kelimenin o anlamı tek başına SRS'ye "yanlış" olarak düşsün
+        int totalOptions = currentWord.meanings.length + currentWord.examples.length;
+        if (totalOptions > 1) {
+          bool isMeaning = currentWord.meanings.contains(correctOption);
+          
+          WordModel splitWord = WordModel(
+            word: currentWord.word,
+            meanings: isMeaning ? [correctOption] : [],
+            examples: !isMeaning ? [correctOption] : [],
+            libraryName: currentWord.libraryName,
+            level: currentWord.level,
+            correctCount: currentWord.correctCount,
+            wrongCount: currentWord.wrongCount + 1,
+            listType: currentWord.listType,
+            srsLevel: currentWord.srsLevel,
+            nextReviewDate: currentWord.nextReviewDate,
+            sourceLanguage: currentWord.sourceLanguage,
+            targetLanguage: currentWord.targetLanguage,
+          );
+          
+          if (isMeaning) currentWord.meanings.remove(correctOption);
+          else currentWord.examples.remove(correctOption);
+          
+          await isar.writeTxn(() async {
+            await isar.wordModels.put(currentWord);
+            await isar.wordModels.put(splitWord);
+          });
+          
+          currentWord = splitWord;
+          widget.onWrongWord(splitWord);
+        } else {
+          currentWord.wrongCount++;
+          await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+          widget.onWrongWord(currentWord);
+        }
+      }
       _speakFeedback(false);
     }
   }
@@ -412,9 +456,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             
             Color cardColor = Theme.of(context).cardColor;
             Widget? trailingIcon;
-            double scaleValue = 1.0;
             
-            if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.2); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); scaleValue = 1.03; } 
+            if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.2); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); } 
             else if (isWrongSelected) { cardColor = Colors.red.withOpacity(0.2); trailingIcon = const Icon(Icons.cancel, color: Colors.red); }
 
             Widget tile = Container(
@@ -431,7 +474,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(16),
                   onTap: () => _checkAnswer(option),
                   child: Padding(
-                    // ESNEK METİN YAPISI: Uzun metinler artık kesinlikle taşmayacak ve alt satıra geçecek
+                    // EKRANDAN TAŞMAYI VE ÇİRKİN GÖRÜNTÜYÜ ENGELLEYEN YAPI:
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     child: Row(
                       children: [
