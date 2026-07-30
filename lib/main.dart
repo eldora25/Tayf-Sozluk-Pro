@@ -34,16 +34,13 @@ import 'demo_screen.dart';
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
 
-// AKILLI VE KESİN TTS MOTORU: Öncelik her zaman dosya adındaki dil kuralıdır.
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase();
   
-  // KESİN KURAL: Dosya adında yön belirtilmişse DİREKT olarak o dili döndür (Maksimum hız)
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'tr-TR';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'en-US';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
 
-  // AKILLI YEDEK: İsimde dil kuralı yoksa içeriğe bakarak dili tahmin et
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
   return 'en-US'; 
 }
@@ -51,12 +48,10 @@ String getSmartSourceLanguage(String libraryName, String wordText) {
 String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase();
   
-  // KESİN KURAL: Dosya adında yön belirtilmişse hedef dili DİREKT döndür
   if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng')) return 'en-US';
   if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur')) return 'tr-TR';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
   
-  // AKILLI YEDEK: İsimde dil kuralı yoksa içeriğe bakarak dili tahmin et
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
   return 'tr-TR'; 
 }
@@ -1011,10 +1006,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               
-              // ÖZELLEŞTİRİLMİŞ İMZA KATMANI
+              // İMZA KATMANI VE GÜVENLİK BOŞLUĞU (MEDİA QUERY)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                padding: EdgeInsets.only(top: 16, left: 20, right: 20, bottom: 16 + MediaQuery.of(context).padding.bottom), // Sistem alt kaydırma çubuğu boşluğu
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor.withOpacity(0.08),
                   border: Border(top: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1))
