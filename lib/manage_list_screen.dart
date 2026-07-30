@@ -5,10 +5,11 @@ class ManageListScreen extends StatefulWidget {
   final String title;
   final List<WordModel> words;
   final bool showWrongCount;
-  final bool showSrsLevel; // YENİ: SRS Havuzu gün gösterimi için
+  final bool showSrsLevel; 
   final Function(WordModel) onDelete;
   final Function(WordModel)? onLearned; 
   final Function() onClearAll;
+  final Future<void> Function(WordModel)? onEdit; // YENİ: Düzenleme tetikleyicisi
 
   const ManageListScreen({
     super.key,
@@ -19,6 +20,7 @@ class ManageListScreen extends StatefulWidget {
     required this.onDelete,
     this.onLearned,
     required this.onClearAll,
+    this.onEdit, // YENİ
   });
 
   @override
@@ -50,12 +52,11 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
-  // YENİ: SRS seviyesine göre gün metni oluşturucu
   String _getSrsDayText(int level) {
     switch (level) {
       case 1: return "1. Gün";
       case 2: return "2. Gün";
-      case 3: return "4. Gün"; // Güncellendi
+      case 3: return "4. Gün"; 
       case 4: return "9. Gün";
       case 5: return "14. Gün";
       default: return "Beklemede";
@@ -102,7 +103,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                     final item = filteredList[index];
                     
                     return Dismissible(
-                      key: Key('${item.word}_$index'),
+                      key: Key('${item.id}_$index'), // id üzerinden eşleştirme zırhlandırıldı
                       direction: widget.onLearned != null 
                           ? DismissDirection.horizontal 
                           : DismissDirection.endToStart,
@@ -134,7 +135,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         child: ListTile(
                           title: Hero(
-                            tag: 'hero_word_${item.word}',
+                            tag: 'hero_word_list_${item.id}',
                             child: Material(
                               type: MaterialType.transparency,
                               child: Text(item.word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
@@ -144,17 +145,26 @@ class _ManageListScreenState extends State<ManageListScreen> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Yanlış sayısı gösterimi
                               if (widget.showWrongCount)
                                 Text("Yanlış: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                               
-                              // YENİ: SRS Gün Tekrarı Gösterimi
                               if (widget.showSrsLevel && item.srsLevel > 0)
                                 Container(
                                   margin: const EdgeInsets.only(right: 8),
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
                                   child: Text("${_getSrsDayText(item.srsLevel)} Tekrarı", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
+                                ),
+
+                              // YENİ: DÜZENLE BUTONU
+                              if (widget.onEdit != null)
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                                  tooltip: 'Düzenle',
+                                  onPressed: () async {
+                                    await widget.onEdit!(item);
+                                    setState(() {}); // Düzenleme bitince listeyi yenile
+                                  },
                                 ),
 
                               IconButton(
