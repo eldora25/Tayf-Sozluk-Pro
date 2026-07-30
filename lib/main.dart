@@ -474,7 +474,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
-  // --- İÇE AKTARMA (IMPORT) HATA VE BAŞARI PENCERELERİ ŞIKLAŞTIRILDI ---
   Future<void> _importFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
     if (result != null && result.files.single.path != null) {
@@ -525,7 +524,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       } catch (e) {
         dialogMessage = "Sistem Hatası:\n$e";
       } finally {
-        Navigator.pop(context); // Yükleniyor dialogunu kapat
+        Navigator.pop(context); 
         if (dialogMessage != null) {
           Future.delayed(const Duration(milliseconds: 150), () {
             _showCenteredDialog(
@@ -540,7 +539,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // --- ASSETS YÜKLEME HATA VE BAŞARI PENCERELERİ ŞIKLAŞTIRILDI ---
   Future<void> _loadPackageFromAssets(String assetPath, String extension, String customLibraryName) async {
     showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName yükleniyor..."))])));
     
@@ -581,7 +579,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {
       dialogMessage = "Sistem Hatası:\n$e";
     } finally {
-      Navigator.pop(context); // Yükleniyor dialogunu kapat
+      Navigator.pop(context); 
       if (dialogMessage != null) {
         Future.delayed(const Duration(milliseconds: 150), () {
           _showCenteredDialog(
@@ -595,7 +593,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // YENİ: Tam Ortadan Çıkan Şık ve Okunaklı Bildirim Penceresi Fonksiyonu
   void _showCenteredDialog({required String title, required String message, required IconData icon, required Color color}) {
     showDialog(
       context: context,
@@ -693,15 +690,206 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     )));
   }
 
-  List<Color> _getPremiumGradientColors(int level) {
-    switch (level) {
-      case 1: return [Colors.blueGrey.shade300, Colors.lightBlue.shade400];
-      case 2: return [Colors.teal.shade400, Colors.green.shade400];
-      case 3: return [Colors.orange.shade400, Colors.amber.shade400];
-      case 4: return [Colors.red.shade400, Colors.deepOrange.shade400];
-      case 5: return [Colors.purple.shade500, Colors.pinkAccent.shade400];
-      default: return [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary];
-    }
+  // --- KARTIN ÖN YÜZÜ (ÇERÇEVE ALGORİTMASIYLA) ---
+  Widget _buildCardFront(WordModel word) {
+    int level = word.srsLevel.clamp(0, 5);
+    bool isPremium = level > 0;
+    
+    List<Color> neonColors = [
+      const Color(0xFF00E5FF), // Seviye 1: Neon Mavi
+      const Color(0xFF00E676), // Seviye 2: Neon Yeşil
+      const Color(0xFFFFEA00), // Seviye 3: Neon Sarı
+      const Color(0xFFFF3D00), // Seviye 4: Neon Turuncu
+      const Color(0xFFFF0055), // Seviye 5: Neon Pembe
+    ];
+
+    return AnimatedBuilder(
+      animation: _glowAnimation,
+      builder: (context, child) {
+        
+        Widget cardContent = Container(
+          width: 300, height: 320,
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16)
+          ),
+          child: Column(
+            children: [
+              if (isPremium) 
+                Container(
+                  width: double.infinity, 
+                  padding: const EdgeInsets.symmetric(vertical: 12), 
+                  decoration: BoxDecoration(
+                    color: neonColors[level - 1].withOpacity(0.15), 
+                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                    border: Border(bottom: BorderSide(color: neonColors[level - 1].withOpacity(0.5), width: 2))
+                  ), 
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.stars, color: neonColors[level - 1], size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        "SRS Seviye: $level / 5", 
+                        style: TextStyle(color: neonColors[level - 1], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)
+                      ),
+                    ],
+                  )
+                ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))))), 
+                    Positioned(right: 5, top: 5, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false))), 
+                    Positioned(left: 5, top: 5, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))
+                  ]
+                )
+              )
+            ],
+          ),
+        );
+
+        Widget current = cardContent;
+
+        if (isPremium) {
+          for (int i = 0; i < level; i++) {
+            current = Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16 + ((i + 1) * 4.0)),
+                border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.5), 
+                gradient: LinearGradient(
+                  colors: [neonColors[i].withOpacity(0.9), neonColors[i]],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: (i == level - 1) ? [
+                  BoxShadow(
+                    color: neonColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
+                    blurRadius: 25 * _glowAnimation.value,
+                    spreadRadius: 6 * _glowAnimation.value,
+                  )
+                ] : [],
+              ),
+              child: current,
+            );
+          }
+        } else {
+           current = Container(
+             padding: const EdgeInsets.all(2),
+             decoration: BoxDecoration(
+               color: Theme.of(context).primaryColor,
+               borderRadius: BorderRadius.circular(18),
+               boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
+             ),
+             child: current,
+           );
+        }
+
+        return current;
+      }
+    );
+  }
+
+  // --- KARTIN ARKA YÜZÜ (ÇERÇEVE ALGORİTMASIYLA) ---
+  Widget _buildCardBack(WordModel word) {
+    int level = word.srsLevel.clamp(0, 5);
+    bool isPremium = level > 0;
+    
+    List<Color> neonColors = [
+      const Color(0xFF00E5FF), 
+      const Color(0xFF00E676), 
+      const Color(0xFFFFEA00), 
+      const Color(0xFFFF3D00), 
+      const Color(0xFFFF0055), 
+    ];
+
+    return AnimatedBuilder(
+      animation: _glowAnimation,
+      builder: (context, child) {
+        
+        Widget cardContent = Container(
+          width: 300, height: 320,
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16)
+          ),
+          child: Column(
+            children: [
+              if (isPremium) 
+                Container(
+                  width: double.infinity, 
+                  padding: const EdgeInsets.symmetric(vertical: 12), 
+                  decoration: BoxDecoration(
+                    color: neonColors[level - 1].withOpacity(0.15), 
+                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                    border: Border(bottom: BorderSide(color: neonColors[level - 1].withOpacity(0.5), width: 2))
+                  ), 
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.stars, color: neonColors[level - 1], size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        "SRS Seviye: $level / 5", 
+                        style: TextStyle(color: neonColors[level - 1], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)
+                      ),
+                    ],
+                  )
+                ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    SingleChildScrollView(child: Padding(padding: const EdgeInsets.only(top: 20.0, left: 16, right: 16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Center(child: Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))), const Divider(), ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 2.0), child: Text("• $m")))]))), 
+                    Positioned(right: 5, top: 0, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: true))), 
+                    Positioned(left: 5, top: 0, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))
+                  ]
+                )
+              )
+            ],
+          ),
+        );
+
+        Widget current = cardContent;
+
+        if (isPremium) {
+          for (int i = 0; i < level; i++) {
+            current = Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16 + ((i + 1) * 4.0)),
+                border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.5),
+                gradient: LinearGradient(
+                  colors: [neonColors[i].withOpacity(0.9), neonColors[i]],
+                  begin: Alignment.bottomRight, // Ters gradient efekti 
+                  end: Alignment.topLeft,
+                ),
+                boxShadow: (i == level - 1) ? [
+                  BoxShadow(
+                    color: neonColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)),
+                    blurRadius: 25 * _glowAnimation.value,
+                    spreadRadius: 6 * _glowAnimation.value,
+                  )
+                ] : [],
+              ),
+              child: current,
+            );
+          }
+        } else {
+           current = Container(
+             padding: const EdgeInsets.all(2),
+             decoration: BoxDecoration(
+               color: Colors.green,
+               borderRadius: BorderRadius.circular(18),
+               boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
+             ),
+             child: current,
+           );
+        }
+
+        return current;
+      }
+    );
   }
 
   @override
@@ -773,52 +961,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCardFront(WordModel word) {
-    bool isPremium = word.srsLevel > 0;
-    List<Color> gradientColors = _getPremiumGradientColors(word.srsLevel);
-    return AnimatedBuilder(
-      animation: _glowAnimation,
-      builder: (context, child) {
-        return Container(
-          width: 300, height: 320,
-          decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), gradient: isPremium ? LinearGradient(colors: gradientColors, begin: Alignment.topLeft, end: Alignment.bottomRight) : null, border: isPremium ? null : Border.all(color: Theme.of(context).primaryColor, width: 2), boxShadow: isPremium ? [BoxShadow(color: gradientColors.last.withOpacity(0.6 * _glowAnimation.value), blurRadius: 20 * _glowAnimation.value, spreadRadius: 3 * _glowAnimation.value)] : [const BoxShadow(color: Colors.black26, blurRadius: 10)]),
-          child: Container(
-            margin: EdgeInsets.all(isPremium ? 4.0 : 0), decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              children: [
-                if (isPremium) Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 8), decoration: BoxDecoration(gradient: LinearGradient(colors: gradientColors), borderRadius: const BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15))), child: Text("⭐ SRS Seviye: ${word.srsLevel} / 5", textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15))),
-                Expanded(child: Stack(children: [Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))))), Positioned(right: 5, top: 5, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false))), Positioned(left: 5, top: 5, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))]))
-              ],
-            ),
-          ),
-        );
-      }
-    );
-  }
-
-  Widget _buildCardBack(WordModel word) {
-    bool isPremium = word.srsLevel > 0;
-    List<Color> gradientColors = _getPremiumGradientColors(word.srsLevel);
-    return AnimatedBuilder(
-      animation: _glowAnimation,
-      builder: (context, child) {
-        return Container(
-          width: 300, height: 320,
-          decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), gradient: isPremium ? LinearGradient(colors: gradientColors, begin: Alignment.bottomRight, end: Alignment.topLeft) : null, border: isPremium ? null : Border.all(color: Colors.green, width: 2), boxShadow: isPremium ? [BoxShadow(color: gradientColors.first.withOpacity(0.6 * _glowAnimation.value), blurRadius: 20 * _glowAnimation.value, spreadRadius: 3 * _glowAnimation.value)] : [const BoxShadow(color: Colors.black26, blurRadius: 10)]),
-          child: Container(
-            margin: EdgeInsets.all(isPremium ? 4.0 : 0), decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              children: [
-                if (isPremium) Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 8), decoration: BoxDecoration(gradient: LinearGradient(colors: gradientColors), borderRadius: const BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15))), child: Text("⭐ SRS Seviye: ${word.srsLevel} / 5", textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15))),
-                Expanded(child: Stack(children: [SingleChildScrollView(child: Padding(padding: const EdgeInsets.only(top: 20.0, left: 16, right: 16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Center(child: Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))), const Divider(), ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 2.0), child: Text("• $m")))]))), Positioned(right: 5, top: 0, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: true))), Positioned(left: 5, top: 0, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))]))
-              ],
-            ),
-          ),
-        );
-      }
-    );
-  }
-
   Widget _buildDrawer() {
     return Drawer(
       child: SafeArea(
@@ -832,7 +974,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
             ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
             
-            // YENİ: AYARLAR KAYDEDİLDİĞİNDE TAM ORTADA ÇIKAN ŞIK BİLDİRİM
             ListTile(
               leading: const Icon(Icons.settings), 
               title: const Text("Ayarlar, Temalar, Seçimler"), 
