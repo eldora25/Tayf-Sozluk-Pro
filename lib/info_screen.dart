@@ -66,6 +66,35 @@ class InfoScreen extends StatelessWidget {
           const Divider(thickness: 2),
           const SizedBox(height: 24),
 
+          // YENİ: AKILLI TTS PRO İPUCU KUTUSU
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              color: Colors.amber.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.amber.shade700, width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.amber.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.lightbulb_outline, color: Colors.amber.shade700, size: 24),
+                    const SizedBox(width: 8),
+                    Text("PRO İPUCU: Akıllı Seslendirme (TTS)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.amber.shade800)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Uygulamanın yüklediğiniz dosyaları İngilizce mi yoksa Türkçe mi okuyacağını bilmesi için; dosya adınıza 'ing-tr' (veya 'eng-tur') ekleyebilirsiniz. \nÖrn: benim_sozlugum_ing-tr.csv\n\nVeya doğrudan dosyanızın İLK SATIRINA '#tts:ing-tr' parametresini yazarak motoru kusursuzca yönlendirebilirsiniz.",
+                  style: TextStyle(fontSize: 13.5, height: 1.5, color: isDark ? Colors.amber.shade100 : Colors.black87),
+                ),
+              ],
+            ),
+          ),
+
           Row(
             children: [
               Container(
@@ -94,8 +123,9 @@ class InfoScreen extends StatelessWidget {
             title: "1. TXT Formatı (Önerilen Basit Format)",
             extension: ".txt",
             color: Colors.blueGrey,
-            explanation: "Kelime ile anlamı ayırmak için İki Nokta ( : ), birden fazla anlamı birbirinden ayırmak için Noktalı Virgül ( ; ) kullanmalısınız.",
-            exampleCode: """elma : meyve ; kırmızı veya yeşil renkli tatlı meyve
+            explanation: "Kelime ile anlamı ayırmak için İki Nokta ( : ), birden fazla anlamı birbirinden ayırmak için Noktalı Virgül ( ; ) kullanmalısınız. İsteğe bağlı olarak ilk satıra TTS dilini belirten parametreyi yazabilirsiniz.",
+            exampleCode: """#tts:ing-tr
+elma : meyve ; kırmızı veya yeşil renkli tatlı meyve
 araba : taşıt ; motorlu araç
 book : kitap ; ayırtmak ; rezervasyon yapmak""",
           ),
@@ -106,7 +136,8 @@ book : kitap ; ayırtmak ; rezervasyon yapmak""",
             extension: ".csv",
             color: Colors.teal,
             explanation: "Sütunlar virgül ( , ) ile ayrılır. Sırasıyla: Kelime, Anlamlar, Örnekler, Seviye. Bir hücrenin içinde birden fazla anlam veya örnek varsa bunları Üç Boru ( ||| ) ile ayırabilirsiniz.",
-            exampleCode: """Word,Meaning,Example,Level
+            exampleCode: """#tts:ing-tr
+Word,Meaning,Example,Level
 apple,elma ||| meyve,I ate an apple.,Başlangıç
 abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İleri""",
           ),
@@ -119,6 +150,7 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
             explanation: "Dosyanız bir liste (array) içinde JSON objelerinden oluşmalıdır. 'word' kelimeyi, 'meanings' anlamları (dizi olarak), 'examples' örnekleri belirtir.",
             exampleCode: """[
   {
+    "tts_language": "ing-tr",
     "word": "resilient",
     "meanings": ["dirençli", "çabuk iyileşen"],
     "examples": ["She is a resilient person."],
