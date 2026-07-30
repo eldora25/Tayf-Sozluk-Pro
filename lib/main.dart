@@ -76,7 +76,7 @@ List<String> cleanAndSplit(String rawText) {
       results.add(clean);
     }
   }
-  return results.toSet().toList();
+  return results.toSet().toList(); 
 }
 
 List<List<String>> parseCsvMultiline(String text) {
@@ -409,16 +409,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return uniqueLibs;
   }
 
+  // YENİ UYGULAMA: Arka Yüzdeki TÜM Anlamları ve Cümleleri Birleştirip Dinletir
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       await globalTts.stop(); 
-      String rawText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : '') : word.word;
+      String rawText = "";
+
+      if (isMeaning) {
+        // Eğer kart arkası (anlam) ise, tüm anlamları ve örnekleri birleştir
+        List<String> combinedList = [...word.meanings, ...word.examples];
+        if (combinedList.isEmpty) return;
+        // TTS'in cümleler/anlamlar arasında "es" (nefes) alması için nokta ile ayır
+        rawText = combinedList.join('. '); 
+      } else {
+        // Ön yüz ise sadece kelimeyi al
+        rawText = word.word;
+      }
+
       if (rawText.isEmpty) return;
-      String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ').replaceAll('ANLAM:', '');
+      
+      String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_»•]'), ' ').replaceAll('ANLAM:', '');
+      
+      // Dil tayini için (sadece ilk anlam üzerinden test etmek yeterlidir)
+      String detectText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : cleanText) : cleanText;
       
       String targetLang = isMeaning 
-          ? getSmartTargetLanguage(word.libraryName, cleanText) 
-          : getSmartSourceLanguage(word.libraryName, cleanText);
+          ? getSmartTargetLanguage(word.libraryName, detectText) 
+          : getSmartSourceLanguage(word.libraryName, detectText);
           
       globalTts.setLanguage(targetLang);
       globalTts.setSpeechRate(0.45); 
@@ -449,7 +466,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() => isFlipped = !isFlipped);
   }
 
-  // Quiz'den gelen çakışmayı önleyen KİLİTLİ versiyonlar
   void _markAsLearned(WordModel word, {bool fromQuiz = false}) {
     if (!fromQuiz) { HapticFeedback.heavyImpact(); _recordActivity(1); }
     
@@ -1046,15 +1062,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
                     ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _saveData(); }))); }),
                     
-                    // QUIZ BUTONU (Quiz'den Gelen SRS Kayıtları İçin fromQuiz Kilidi Gönderilir)
                     ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
                       HapticFeedback.lightImpact();
                       Navigator.pop(context); 
                       List<WordModel> fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
                       Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
                         words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, 
-                        onWordMastered: (w) => _markAsLearned(w, fromQuiz: true), // KİLİT AKTİF
-                        onWrongWord: (w) => _markAsToRepeat(w, fromQuiz: true), // KİLİT AKTİF
+                        onWordMastered: (w) => _markAsLearned(w, fromQuiz: true), 
+                        onWrongWord: (w) => _markAsToRepeat(w, fromQuiz: true), 
                         onQuizFinished: (t, a, w) { 
                           setState(() {
                             totalCompletedQuizzes++;
