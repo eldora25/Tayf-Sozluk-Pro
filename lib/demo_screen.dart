@@ -24,17 +24,17 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 
-  // 6. MADDE ÇÖZÜMÜ: Kelimeler artık kesinlikle "toSRSRepeat" modunda ve premium seviyede doğacak.
+  // 6. MADDE ÇÖZÜMÜ: Demo Çerçevelerin Anında Ana Ekrana Fırlatılıp Çalıştırılması
   Future<void> _injectFiveLevelDemoWords() async {
     HapticFeedback.mediumImpact();
     int pastTime = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
     
-    // Temizlik: Üst üste binmeleri engellemek için eski demo kelimeleri sil
+    // Eski çöpleri temizle
     await isar.writeTxn(() async {
       await isar.wordModels.filter().wordStartsWith('Level ').deleteAll();
     });
     
-    // Garantili Constructor Ataması
+    // Garantili Premium Ataması (Tam seviyeler, tam liste ve bekleme süresi bitmiş)
     List<WordModel> demoWords = [
       WordModel(word: 'Level 1 Word', meanings: ['Seviye 1 Neon Mavi Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 1, nextReviewDate: pastTime, correctCount: 1),
       WordModel(word: 'Level 2 Word', meanings: ['Seviye 2 Neon Yeşil Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 2, nextReviewDate: pastTime, correctCount: 2),
@@ -48,8 +48,11 @@ class _DemoScreenState extends State<DemoScreen> {
     });
 
     if (mounted) {
+      // SİHİRLİ DOKUNUŞ: Eklenen kelimeleri GÖRMEK için anında geri (Ana Ekrana) fırlat!
+      Navigator.pop(context);
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("5 Çerçeveli Kelime eklendi! Ana ekranda SRS olarak görebilirsiniz."), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating)
+        const SnackBar(content: Text("✨ Demo Yüklendi! SRS Çerçeveleri karşınızda."), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating)
       );
     }
   }
@@ -76,7 +79,11 @@ class _DemoScreenState extends State<DemoScreen> {
     }
 
     await isar.writeTxn(() async { await isar.wordModels.putAll(learningWords); });
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Zaman 2 gün ileri sarıldı! Eğitimdeki kelimeleriniz SRS Tekrar Listesine düştü."), backgroundColor: Colors.blueAccent, behavior: SnackBarBehavior.floating));
+    
+    if (mounted) {
+      Navigator.pop(context); // Yine sonucu görmek için direkt Ana Ekrana dönüş
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Zaman 2 gün ileri sarıldı! Eğitimdeki kelimeleriniz SRS Tekrar Listesine düştü."), backgroundColor: Colors.blueAccent, behavior: SnackBarBehavior.floating));
+    }
   }
 
   @override
