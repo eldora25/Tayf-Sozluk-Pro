@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:ui'; // Premium bulanıklık ve arayüz için eklendi
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // HapticFeedback için eklendi
 import 'package:isar/isar.dart';
 import 'models.dart';
 import 'main.dart'; 
@@ -15,15 +17,15 @@ class DemoScreen extends StatefulWidget {
 class _DemoScreenState extends State<DemoScreen> {
 
   void _triggerRealNotification() {
+    HapticFeedback.heavyImpact(); // Butona basıldığında premium titreşim
     NotificationService.showInstantTestNotification();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Gerçek sistem bildirimi tetiklendi!"), backgroundColor: Colors.green)
+      const SnackBar(content: Text("Gerçek sistem bildirimi tetiklendi!"), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating)
     );
   }
 
-  // ÇÖZÜM: Kelimeler artık 'Demo Sözlük' yerine 'Varsayılan' kütüphanesine ekleniyor, 
-  // böylece Ana Ekranda (Varsayılan seçiliyken) anında karşınıza çıkacak.
   Future<void> _injectFiveLevelDemoWords() async {
+    HapticFeedback.mediumImpact();
     int pastTime = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
     
     List<WordModel> demoWords = [
@@ -40,12 +42,13 @@ class _DemoScreenState extends State<DemoScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("5 farklı demo kelime 'Varsayılan' kütüphanesine eklendi! Ana ekranda görebilirsiniz."), backgroundColor: Colors.green)
+        const SnackBar(content: Text("5 farklı demo kelime 'Varsayılan' kütüphanesine eklendi! Ana ekranda görebilirsiniz."), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating)
       );
     }
   }
 
   Future<void> _timeTravelForward() async {
+    HapticFeedback.mediumImpact();
     List<WordModel> learningWords = await isar.wordModels.filter().listTypeEqualTo('learning').findAll();
     if (learningWords.isEmpty) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -53,6 +56,7 @@ class _DemoScreenState extends State<DemoScreen> {
           content: Text("Havuzda zamanı ileri sarılacak kelime yok!\n(Önce ana ekranda yeni kelimeleri 'Biliyorum' diyerek eğitime alın)"), 
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating
         )
       );
       return;
@@ -61,38 +65,37 @@ class _DemoScreenState extends State<DemoScreen> {
     int twoDaysMs = 2 * 24 * 60 * 60 * 1000;
     for (var w in learningWords) {
       w.nextReviewDate = w.nextReviewDate - twoDaysMs;
-      // Zamanı dolanlar otomatik toSRSRepeat'e düşüyor
       if (w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch) w.listType = 'toSRSRepeat';
     }
 
     await isar.writeTxn(() async { await isar.wordModels.putAll(learningWords); });
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Zaman 2 gün ileri sarıldı! Eğitimdeki kelimeleriniz SRS Tekrar Listesine düştü."), backgroundColor: Colors.blueAccent));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Zaman 2 gün ileri sarıldı! Eğitimdeki kelimeleriniz SRS Tekrar Listesine düştü."), backgroundColor: Colors.blueAccent, behavior: SnackBarBehavior.floating));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
         backgroundColor: Colors.purple,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // HAVALI AÇIKLAMA GERİ DÖNDÜ!
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.purple.shade700, Colors.deepPurpleAccent.shade400]),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))]
+              gradient: LinearGradient(colors: [Colors.purple.shade700, Colors.deepPurpleAccent.shade400], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))]
             ),
             child: Column(
               children: const [
-                Icon(Icons.science, size: 50, color: Colors.white),
+                Icon(Icons.science, size: 54, color: Colors.white),
                 SizedBox(height: 12),
-                Text("Geliştirici Test Laboratuvarı", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text("Geliştirici Test Laboratuvarı", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
                 SizedBox(height: 8),
                 Text("Bu alan, arka planda çalışan SRS algoritmalarını, bildirimleri ve premium UI bileşenlerini saniyeler içinde simüle edebilmeniz için tasarlanmıştır.", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.white70, height: 1.4)),
               ],
@@ -100,73 +103,71 @@ class _DemoScreenState extends State<DemoScreen> {
           ),
           const SizedBox(height: 24),
 
-          Card(
-            elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  const Icon(Icons.phonelink_ring, size: 48, color: Colors.redAccent),
-                  const SizedBox(height: 10),
-                  const Text("Gerçek Cihaz Bildirimi Testi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text("Bu butona basıldığında Android/iOS sistemine 'gerçek' bir bildirim sinyali gönderilir.", textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-                    icon: const Icon(Icons.notifications_active),
-                    label: const Text("Gerçek Bildirim Gönder"),
-                    onPressed: _triggerRealNotification,
-                  )
-                ],
-              ),
-            ),
+          _buildDemoCard(
+            title: "Gerçek Cihaz Bildirimi Testi",
+            description: "Bu butona basıldığında Android/iOS sistemine 'gerçek' bir bildirim sinyali gönderilir.",
+            icon: Icons.phonelink_ring,
+            color: Colors.redAccent,
+            buttonText: "Gerçek Bildirim Gönder",
+            buttonIcon: Icons.notifications_active,
+            onPressed: _triggerRealNotification,
           ),
-          const SizedBox(height: 16),
 
-          Card(
-            elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  const Icon(Icons.filter_frames, size: 48, color: Colors.green),
-                  const SizedBox(height: 10),
-                  const Text("5 Seviye Çerçeve Testi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text("Ana ekrandaki Premium Animasyonlu Çerçeveleri görmek için Varsayılan listesine 1'den 5'e kadar seviyelendirilmiş kelimeler ekler.", textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), 
-                    icon: const Icon(Icons.add), 
-                    label: const Text("5 Seviye Çerçeve Demosu Yükle"), 
-                    onPressed: _injectFiveLevelDemoWords
-                  )
-                ],
-              ),
-            ),
+          _buildDemoCard(
+            title: "5 Seviye Çerçeve Testi",
+            description: "Ana ekrandaki Premium Animasyonlu Çerçeveleri görmek için Varsayılan listesine 1'den 5'e kadar seviyelendirilmiş kelimeler ekler.",
+            icon: Icons.filter_frames,
+            color: Colors.green,
+            buttonText: "5 Seviye Çerçeve Demosu Yükle",
+            buttonIcon: Icons.add,
+            onPressed: _injectFiveLevelDemoWords,
           ),
-          const SizedBox(height: 16),
 
-          Card(
-            elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  const Icon(Icons.history_toggle_off, size: 48, color: Colors.blueAccent),
-                  const SizedBox(height: 10),
-                  const Text("Zaman Makinesi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text("SRS havuzunda uslu uslu bekleyen kelimelerinizin sürelerini anında doldurup 'Tekrar' listesine düşürür.", textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white), icon: const Icon(Icons.fast_forward), label: const Text("Zamanı 2 Gün İleri Sar"), onPressed: _timeTravelForward)
-                ],
-              ),
-            ),
+          _buildDemoCard(
+            title: "Zaman Makinesi",
+            description: "SRS havuzunda uslu uslu bekleyen kelimelerinizin sürelerini anında doldurup 'Tekrar' listesine düşürür.",
+            icon: Icons.history_toggle_off,
+            color: Colors.blueAccent,
+            buttonText: "Zamanı 2 Gün İleri Sar",
+            buttonIcon: Icons.fast_forward,
+            onPressed: _timeTravelForward,
           ),
           const SizedBox(height: 30),
         ],
+      ),
+    );
+  }
+
+  // Yeniden kullanılabilir, yumuşak gölgeli şık test kartı
+  Widget _buildDemoCard({required String title, required String description, required IconData icon, required Color color, required String buttonText, required IconData buttonIcon, required VoidCallback onPressed}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))]
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle), child: Icon(icon, size: 36, color: color)),
+            const SizedBox(height: 16),
+            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(description, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.4)),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 4),
+                icon: Icon(buttonIcon),
+                label: Text(buttonText, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                onPressed: onPressed,
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
