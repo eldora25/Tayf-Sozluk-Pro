@@ -62,6 +62,8 @@ Kullanıcıyı öğrenmeye teşvik eden dinamik ve hiyerarşik görsel ödül si
 Sistemin tts dilini otonom tanıması için dosyalarınızın başına `#tts:ing-tr` (veya hedeflenen dil) parametresini ekleyebilirsiniz.
 
 **1. TXT Formatı**
+
+
 ```text
 #tts:ing-tr
 apple : elma ; meyve
@@ -73,6 +75,8 @@ apple,elma ||| meyve,I ate an apple.,Başlangıç
 
 **3. JSON Formatı**
 
+
+
 [
   {
     "tts_language": "ing-tr",
@@ -82,6 +86,9 @@ apple,elma ||| meyve,I ate an apple.,Başlangıç
     "level": "İleri"
   }
 ]
+
+
+```
 ***********************************************
 Geliştirici: Tayfun YAMAK (Eldora)
 
