@@ -45,5 +45,6 @@ flutter:
     - assets/EN-TR_tayf.txt
     - assets/Babylon_English_Turkish_donustu.csv
     - assets/Babylon_Turkish_English_donustu.csv
+    - assets/ic_launcher.png # YENİ: Menü için eklendi
     - assets/Free-KH.txt
     - assets/tayf_wordnet_optimized.json
