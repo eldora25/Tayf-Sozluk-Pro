@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'models.dart';
+import 'main.dart'; // YENİ: Global isar veritabanı erişimi için eklendi
 
 class AddWordScreen extends StatefulWidget {
   final List<String> availableLibraries;
@@ -13,7 +14,7 @@ class AddWordScreen extends StatefulWidget {
 }
 
 class _AddWordScreenState extends State<AddWordScreen> {
-  final _formKey = GlobalKey5 = GlobalKey<FormState>(); // Düzeltildi
+  final _formKey = GlobalKey<FormState>(); // HATALI GLOBALKEY5 DÜZELTİLDİ
   String _word = '';
   String _level = 'Genel';
   late String _library;
@@ -22,7 +23,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
   final List<TextEditingController> _meaningControllers = [TextEditingController()];
   final List<TextEditingController> _exampleControllers = [TextEditingController()];
 
-  // YENİ: Canlı Eşleşme (Mevcut Kelime Önizlemesi) İçin Değişkenler
   List<WordModel> _existingMatches = [];
   bool _isChecking = false;
 
@@ -45,7 +45,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
     super.dispose();
   }
 
-  // YENİ: Seçili kütüphanede bu kelime var mı diye anlık tarama yapan zeka
   Future<void> _checkExistingWord(String typedWord) async {
     if (typedWord.trim().isEmpty) {
       setState(() => _existingMatches = []);
@@ -54,7 +53,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
 
     setState(() => _isChecking = true);
     try {
-      // ISAR üzerinden seçili kütüphanede ve kelime eşleşmesinde arama yap
       List<WordModel> matches = await isar.wordModels
           .filter()
           .libraryNameEqualTo(_library)
@@ -103,7 +101,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
         }
         _library = newLibName;
       });
-      // Kütüphane değiştiğinde varsa yazılan kelimeyi tekrar kontrol et
       if (_word.isNotEmpty) {
         _checkExistingWord(_word);
       }
@@ -121,7 +118,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // KELİME GİRİŞ ALANI VE CANLI TARAMA TETİKLEYİCİSİ
             TextFormField(
               decoration: const InputDecoration(
                 labelText: "Kelime", 
@@ -131,12 +127,11 @@ class _AddWordScreenState extends State<AddWordScreen> {
               validator: (v) => v!.isEmpty ? "Bu alan boş bırakılamaz" : null,
               onChanged: (val) {
                 _word = val;
-                _checkExistingWord(val); // Harf değiştikçe eşleşmeyi ara
+                _checkExistingWord(val);
               },
               onSaved: (v) => _word = v!,
             ),
             
-            // YENİ: EĞER KELİME KÜTÜPHANEDE VARSA CANLI ÖNİZLEME KUTUSU
             if (_existingMatches.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
@@ -247,7 +242,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
                     items: _currentLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                     onChanged: (v) {
                       setState(() => _library = v!);
-                      if (_word.isNotEmpty) _checkExistingWord(_word); // Kütüphane değişince tekrar tara
+                      if (_word.isNotEmpty) _checkExistingWord(_word);
                     },
                   ),
                 ),
