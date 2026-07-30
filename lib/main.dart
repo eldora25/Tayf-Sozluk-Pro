@@ -334,11 +334,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _createDefaultLibrary();
         }
 
-        // -------------------------------------------------------------
-        // YENİ: SRS VE DEMO ÖNCELİK (PRIORITY) ZIRHI
-        // Eğer destede acil (günü gelmiş SRS veya Demo) kartlar varsa 
-        // ve index bunları ES GEÇMİŞSE (ileride kalmışsa), zorla başa (0) sar!
-        // -------------------------------------------------------------
         var deck = activeDeck;
         int urgentCount = deck.where((w) => w.listType == 'toSRSRepeat' || w.listType == 'toRepeat').length;
         
@@ -727,6 +722,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: TextField(controller: ctrl), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text("Kaydet"))]));
   }
 
+  // YENİ EKLENTİ: Asenkron Düzenleme (Tüm Listeleri Eşzamanlı Temizleme Zırhı)
   Future<void> _openEditScreen(WordModel word) async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: availableLibraries,
@@ -1041,34 +1037,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     
                     ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _saveData(); }))); }),
-                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); _saveData(); }, onLearned: _markAsLearned))); }),
                     
-                    ListTile(
-                      leading: const Icon(Icons.settings), 
-                      title: const Text("Ayarlar, Temalar, Seçimler"), 
-                      onTap: () { 
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context); 
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
-                          onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
-                            setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
-                            _saveData(); 
-                            Future.delayed(const Duration(milliseconds: 150), () {
-                              _showCenteredDialog(
-                                title: "Harika!", 
-                                message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", 
-                                icon: Icons.verified_user, 
-                                color: Colors.green
-                              );
-                            });
-                          }, 
-                          onAddPackage: _loadPackageFromAssets
-                        ))); 
-                      }
-                    ),
-                    
-                    const Divider(),
+                    // LİSTE MENÜLERİNE "onEdit: _openEditScreen" EKLENDİ VE ASENKRON (then) YENİLEME EKLENDİ
                     ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => learnedWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); _saveData(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _saveData(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
@@ -1180,7 +1150,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     double bottomHeight = selectedLibrary != 'Tekrarlanması Gerekenler' ? 90.0 : 60.0;
 
     return Scaffold(
-      // YENİ APPBAR TASARIMI (Taşmaları Engelleyen Ortalanmış Düzen)
       appBar: AppBar(
         toolbarHeight: 60,
         centerTitle: false,
@@ -1217,7 +1186,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]
                     ), 
                     child: Row(
-                      mainAxisSize: MainAxisSize.min, // Kapsül taşmasını engeller
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 24), 
                         const SizedBox(width: 6), 
@@ -1235,7 +1204,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]
                     ), 
                     child: Row(
-                      mainAxisSize: MainAxisSize.min, // Kapsül taşmasını engeller
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 24), 
                         const SizedBox(width: 6), 
