@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:isar/isar.dart';
 
 part 'models.g.dart';
@@ -7,33 +6,26 @@ part 'models.g.dart';
 class WordModel {
   Id id = Isar.autoIncrement;
 
-  @Index()
+  @Index(type: IndexType.value)
   late String word;
 
-  List<String> meanings = [];
-  List<String> examples = [];
-
-  @Index()
+  late List<String> meanings;
+  late List<String> examples;
   late String libraryName;
-
-  @Index()
   late String level;
 
-  @Index()
   int correctCount = 0;
-
-  @Index()
   int wrongCount = 0;
 
-  // 'all', 'learning', 'toRepeat', 'toSRSRepeat', 'learned'
-  @Index()
-  late String listType; 
+  @Index(type: IndexType.value)
+  String listType = 'all';
 
-  @Index()
   int srsLevel = 0;
-
-  @Index()
   int nextReviewDate = 0;
+
+  // YENİ: TTS için Kalıcı Dil Kimliği Parametreleri
+  String sourceLanguage = 'en-US';
+  String targetLanguage = 'tr-TR';
 
   WordModel({
     required this.word,
@@ -46,21 +38,27 @@ class WordModel {
     this.listType = 'all',
     this.srsLevel = 0,
     this.nextReviewDate = 0,
+    this.sourceLanguage = 'en-US',
+    this.targetLanguage = 'tr-TR',
   });
 
-  factory WordModel.fromJson(String jsonStr) {
-    Map<String, dynamic> map = json.decode(jsonStr);
+  factory WordModel.fromJson(String jsonString) {
+    import 'dart:convert';
+    Map<String, dynamic> map = json.decode(jsonString);
     return WordModel(
       word: map['word'] ?? '',
-      meanings: map['meanings'] != null ? List<String>.from(map['meanings']) : [],
-      examples: map['examples'] != null ? List<String>.from(map['examples']) : [],
-      libraryName: map['libraryName'] ?? 'Genel',
+      meanings: List<String>.from(map['meanings'] ?? []),
+      examples: List<String>.from(map['examples'] ?? []),
+      libraryName: map['libraryName'] ?? 'Varsayılan',
       level: map['level'] ?? 'Genel',
       correctCount: map['correctCount'] ?? 0,
       wrongCount: map['wrongCount'] ?? 0,
       listType: map['listType'] ?? 'all',
       srsLevel: map['srsLevel'] ?? 0,
       nextReviewDate: map['nextReviewDate'] ?? 0,
+      // Default fallback
+      sourceLanguage: map['sourceLanguage'] ?? 'en-US',
+      targetLanguage: map['targetLanguage'] ?? 'tr-TR',
     );
   }
 }
