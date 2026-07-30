@@ -68,7 +68,33 @@ int getNextReviewOffset(int level) {
   }
 }
 
-// 1. KUSURSUZ YARDIMCI: MANUEL CSV PARÇALAYICI
+// -------------------------------------------------------------
+// 1. KUSURSUZ YARDIMCI: ÇÖP TEMİZLEYİCİ VE ANLAM PARÇALAYICI
+// -------------------------------------------------------------
+List<String> cleanAndSplit(String rawText) {
+  List<String> results = [];
+  // Önce -III, tırnak, görünmez ASCII karakterleri gibi pislikleri temizle
+  String text = rawText.replaceAll('-III', '').replaceAll('\"', '').replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
+  
+  // Virgül, noktalı virgül, ||| veya yeni satıra göre PARÇALA (Quiz'de çorba olmaması için)
+  var parts = text.split(RegExp(r'\|\|\||;|,|\n'));
+  
+  for (var p in parts) {
+    String clean = p.trim();
+    // Başındaki ve sonundaki eksi, nokta, parantez gibi çöp işaretleri kazı
+    clean = clean.replaceAll(RegExp(r'^[^a-zA-Z0-9çğışöüÇĞIŞÖÜ(]+|[^a-zA-Z0-9çğışöüÇĞIŞÖÜ)]+$'), '').trim();
+    // İçerdeki çift boşlukları tek boşluk yap
+    clean = clean.replaceAll(RegExp(r'\s+'), ' ');
+    
+    // Anlam 1 karakterden büyükse ve listeye henüz eklenmemişse ekle (Benzersiz şıklar için)
+    if (clean.length > 1) {
+      results.add(clean);
+    }
+  }
+  return results.toSet().toList(); // toSet() ile mükerrer anlamları yokediyoruz
+}
+
+// 2. KUSURSUZ YARDIMCI: VİRGÜLE ZIRHLI CSV PARÇALAYICI
 List<String> manualCsvSplit(String line) {
   List<String> result = [];
   bool inQuotes = false;
@@ -87,7 +113,9 @@ List<String> manualCsvSplit(String line) {
   return result;
 }
 
-// 6 EŞSİZ İMPORT ALGORİTMASI VE ÇÖP TEMİZLEYİCİ MİMARİSİ
+// -------------------------------------------------------------
+// 6 EŞSİZ İMPORT ALGORİTMASI MİMARİSİ
+// -------------------------------------------------------------
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
@@ -97,56 +125,29 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 
   if (content.startsWith('\uFEFF')) content = content.substring(1);
 
-  // 2. KUSURSUZ YARDIMCI: ÇÖP SEMBOL TEMİZLEYİCİ (Tertemiz Kart Arkası İçin)
-  List<String> cleanTextList(List<String> rawList) {
-    List<String> result = [];
-    for (var p in rawList) {
-      String clean = p
-          .replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '') // Görünmez karakterleri sil
-          .replaceAll('-III', '') // Sık rastlanan çöp metin
-          .replaceAll('\"', '')
-          .replaceAll(RegExp(r'\s+'), ' ') // Fazla boşlukları tek boşluk yap
-          .trim();
-          
-      // Başındaki ve sonundaki tüm gereksiz noktalama işaretlerini (, - ; _ . *) kökünden kazı!
-      clean = clean.replaceAll(RegExp(r'^[^a-zA-Z0-9çğışöüÇĞIŞÖÜ(]+|[^a-zA-Z0-9çğışöüÇĞIŞÖÜ)]+$'), '').trim();
-      
-      if (clean.isNotEmpty && clean.length > 1) { 
-        result.add(clean);
-      }
-    }
-    return result.toSet().toList(); // Aynı anlamların tekrarını engelle (Unique)
-  }
-
   try {
-    // ALGORİTMA 1: TAYF WORDNET OPTIMIZED (JSON)
+    // ALGORİTMA 1: WORDNET OPTIMIZED (JSON)
     if (originalFileName.contains('wordnet')) {
       var decoded = json.decode(content);
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       for (var item in list) {
         if (item is Map) {
           List<String> subWords = [];
-          String mainW = item['word']?.toString() ?? '';
+          String idOrWord = item['word']?.toString() ?? '';
           
-          // WordNet'in içindeki anlamsız ID'leri (00001740-a vb.) kelime olarak kaydetmeyi engeller.
-          if (!RegExp(r'^\d{8}-').hasMatch(mainW) && mainW.isNotEmpty) subWords.add(mainW);
-          
-          // Gerçek kelimeleri 'synonyms' listesinden çıkartır.
-          if (item['synonyms'] is List) {
-            subWords.addAll((item['synonyms'] as List).map((e) => e.toString()));
-          }
+          if (!RegExp(r'^\d{8}-').hasMatch(idOrWord) && idOrWord.isNotEmpty) subWords.add(idOrWord);
+          if (item['synonyms'] is List) subWords.addAll((item['synonyms'] as List).map((e) => e.toString()));
+          if (item['lemmas'] is List) subWords.addAll((item['lemmas'] as List).map((e) => e.toString()));
           
           String def = item['definition']?.toString() ?? '';
-          List<String> meanings = def.isNotEmpty ? [def] : [];
           List<String> examples = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
           
-          meanings = cleanTextList(meanings);
-          examples = cleanTextList(examples);
+          List<String> meanings = cleanAndSplit(def);
+          examples = cleanAndSplit(examples.join('|||'));
 
-          if (meanings.isNotEmpty) {
-            for (String w in subWords.toSet()) {
-              w = w.replaceAll('_', ' ').trim(); // Alt tireleri düzelt
-              if (w.isEmpty) continue;
+          for (String w in subWords) {
+            w = w.replaceAll('_', ' ').trim(); 
+            if (w.length > 1 && meanings.isNotEmpty) {
               parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': examples, 'level': 'İleri', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
             }
           }
@@ -164,16 +165,16 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           String w = item['word']?.toString().trim() ?? '';
           if (w.isEmpty) continue;
           
-          List<String> meanings = item['meanings'] is List ? (item['meanings'] as List).map((e) => e.toString()).toList() : [];
-          List<String> examples = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
+          List<String> mList = item['meanings'] is List ? (item['meanings'] as List).map((e) => e.toString()).toList() : [];
+          List<String> eList = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
           
-          parsedList.add(json.encode({'word': w, 'meanings': cleanTextList(meanings), 'examples': cleanTextList(examples), 'level': item['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+          parsedList.add(json.encode({'word': w, 'meanings': cleanAndSplit(mList.join('|||')), 'examples': cleanAndSplit(eList.join('|||')), 'level': item['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
         }
       }
       return parsedList;
     }
 
-    // DİĞER DEVASA TXT/CSV LİSTELERİNİ ÇÖKMEDEN SATIR SATIR OKUMA MOTORU
+    // TXT VE CSV'LER İÇİN SATIR SATIR OKUMA MOTORU
     List<String> lines = const LineSplitter().convert(content);
 
     for (String line in lines) {
@@ -182,73 +183,72 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 
       try {
         List<String> subWords = [];
-        List<String> mList = [];
-        List<String> eList = [];
+        String rawMeanings = '';
+        String rawExamples = '';
         String level = 'Genel';
 
-        // ALGORİTMA 3: EN-TR TAYF (TXT / CSV)
-        if (originalFileName.contains('tayf') && (extension == 'txt' || extension == 'csv')) {
+        // ALGORİTMA 3: TAYF İNG-TR (TXT) -> "a few:birkaç" FORMATI
+        if (originalFileName.contains('tayf') && !originalFileName.contains('json')) {
           int colonIdx = line.indexOf(':');
           if (colonIdx != -1) {
-            // Kelime kısmında virgül veya slash varsa bunları ayrı bağımsız kelimeler (subWords) yap!
-            subWords = line.substring(0, colonIdx).split(RegExp(r'[,;/]'));
-            mList = line.substring(colonIdx + 1).split(RegExp(r'[;,]')); 
+            // (Sub-word Parsing): Sol tarafta virgül varsa 3 farklı kelime yap!
+            subWords = line.substring(0, colonIdx).split(RegExp(r'[,/]'));
+            rawMeanings = line.substring(colonIdx + 1);
           }
         }
-        // ALGORİTMA 4: FREE-KH VE FREEDICT (TXT / CSV)
+        // ALGORİTMA 4: FREE-KH VE FREEDICT (TXT)
         else if (originalFileName.contains('free-kh') || originalFileName.contains('freedict')) {
           List<String> row = manualCsvSplit(line);
           if (row.length >= 2) {
-            subWords = row[0].split(RegExp(r'[,;/]')); 
-            mList = row[1].split('|||');
-            if (mList.length <= 1) mList = row[1].split(';'); // ||| yoksa noktalı virgül dene
-            if (row.length > 2) eList = row[2].split('|||');
-            if (row.length > 3) level = row[3];
+            subWords = row[0].split(RegExp(r'[,/]'));
+            rawMeanings = row[1];
+            if (row.length > 2) rawExamples = row[2];
+            if (row.length > 3) level = row[3].replaceAll('"', '').trim();
           }
         }
-        // ALGORİTMA 5 & 6: BABYLON (İng-Tr & Tr-İng) (CSV)
+        // ALGORİTMA 5 & 6: BABYLON İNG-TR VE TR-İNG (CSV)
         else if (originalFileName.contains('babylon')) {
           List<String> row = manualCsvSplit(line);
           if (row.length >= 2) {
-            // "abandon, abandons, abandoning" gibi türevleri tek bir saçma kelime yapmak yerine
-            // parçalayıp hepsine aynı muazzam anlam listesini atar. Yüz binlerce kelime kurtulur!
-            subWords = row[0].split(RegExp(r'[,/]')); 
-            mList = row[1].split('|||');
-            if (row.length > 2) eList = row[2].split('|||');
-            if (row.length > 3) level = row[3];
+            // (Sub-word Parsing): "abandon, abandons, abandoning" şeklindeki kelimeyi 3'e böler!
+            subWords = row[0].split(RegExp(r'[,/]'));
+            rawMeanings = row[1];
+            if (row.length > 2) rawExamples = row[2];
+            if (row.length > 3) level = row[3].replaceAll('"', '').trim();
           }
         }
-        // ALGORİTMA 7: GENEL YEDEK (FALLBACK) PARSER
+        // ALGORİTMA 7: BİLİNMEYEN DOSYALAR (FALLBACK)
         else {
           List<String> row = manualCsvSplit(line);
           if (row.length >= 2) {
             subWords = row[0].split(',');
-            mList = row[1].split(RegExp(r'\|\|\||;'));
+            rawMeanings = row[1];
           } else {
-            int sepIdx = line.indexOf(':') != -1 ? line.indexOf(':') : (line.indexOf(';') != -1 ? line.indexOf(';') : line.indexOf('|'));
-            if (sepIdx != -1) {
-               subWords = [line.substring(0, sepIdx)];
-               mList = line.substring(sepIdx + 1).split(RegExp(r'\|\|\||;|,'));
+            int sep = line.indexOf(':') != -1 ? line.indexOf(':') : line.indexOf('=');
+            if (sep != -1) {
+              subWords = [line.substring(0, sep)];
+              rawMeanings = line.substring(sep + 1);
             }
           }
         }
 
-        mList = cleanTextList(mList);
-        eList = cleanTextList(eList);
+        // Sembollerden Temizleme ve Anlamları Kesin Olarak Bölme
+        List<String> mList = cleanAndSplit(rawMeanings);
+        List<String> eList = cleanAndSplit(rawExamples);
 
         if (mList.isNotEmpty) {
           for (String w in subWords) {
-            // Her kelimenin kendi üzerindeki çöp işaretlerini temizle
             w = w.replaceAll('\"', '').trim();
             w = w.replaceAll(RegExp(r'^[^a-zA-Z0-9çğışöüÇĞIŞÖÜ]+|[^a-zA-Z0-9çğışöüÇĞIŞÖÜ)]+$'), '').trim();
             
-            if (w.isNotEmpty && w.length > 1) {
-              parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': eList, 'level': level.isNotEmpty ? level : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+            // Son olarak veritabanına tertemiz kelimeyi ekle!
+            if (w.length > 1) {
+              parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': eList, 'level': level.isEmpty ? 'Genel' : level, 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
             }
           }
         }
       } catch (e) {
-        continue; // Bir satır bozuksa milyonlarca satırı kurban etme, sadece onu atla!
+        continue; // Bir satırdaki bozukluk koca kütüphaneyi çökerte-mez! Sadece o satırı atla.
       }
     }
   } catch (e) {
@@ -644,7 +644,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     try {
       ByteData data = await rootBundle.load(assetPath);
-      final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': utf8.decode(data.buffer.asUint8List()), 'extension': extension, 'libraryName': customLibraryName, 'originalFileName': assetPath.split('/').last});
+      List<int> bytes = data.buffer.asUint8List();
+      String content;
+      try {
+        // HATA GİDERİCİ: "Missing extension byte" hatasını engeller, UTF-8 dener.
+        content = utf8.decode(bytes);
+      } catch (e) {
+        // UTF-8 Bozuksa ÇÖKME! Zırhlı Latin1/ASCII ile zorla oku.
+        content = String.fromCharCodes(bytes);
+      }
+      
+      final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': content, 'extension': extension, 'libraryName': customLibraryName, 'originalFileName': assetPath.split('/').last});
       
       if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
           dialogMessage = json.decode(parsedJsons.first)['error'];
@@ -752,7 +762,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     List<List<dynamic>> rows = exportList.map((w) => [w.word, w.meanings.join('|||'), w.examples.join('|||'), w.level]).toList();
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/$libName.csv');
-    // SABİT (CONST) KELİMESİ KALDIRILDI! DERLEME HATASI ÇÖZÜLDÜ.
     await file.writeAsString(const ListToCsvConverter().convert(rows));
     await Share.shareXFiles([XFile(file.path)], text: '$libName Yedeği');
   }
@@ -890,7 +899,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // TERTEMİZ VE KAYDIRILABİLİR KART ARKASI (ÖZEL TASARIM)
+  // TERTEMİZ KART ARKASI (Sembollerden Arınmış Liste)
   Widget _buildCardBack(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
@@ -949,6 +958,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             children: [
                               Center(child: Text(word.word, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))), 
                               const Divider(), 
+                              // TEMİZ LİSTELEME
                               ...word.meanings.map((m) => Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 4.0), 
                                 child: Text("• $m", style: const TextStyle(fontSize: 16, height: 1.4))
