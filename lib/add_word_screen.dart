@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:isar/isar.dart';
 import 'models.dart';
 
 class AddWordScreen extends StatefulWidget {
@@ -12,7 +13,7 @@ class AddWordScreen extends StatefulWidget {
 }
 
 class _AddWordScreenState extends State<AddWordScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey5 = GlobalKey<FormState>(); // Düzeltildi
   String _word = '';
   String _level = 'Genel';
   late String _library;
@@ -21,11 +22,14 @@ class _AddWordScreenState extends State<AddWordScreen> {
   final List<TextEditingController> _meaningControllers = [TextEditingController()];
   final List<TextEditingController> _exampleControllers = [TextEditingController()];
 
+  // YENİ: Canlı Eşleşme (Mevcut Kelime Önizlemesi) İçin Değişkenler
+  List<WordModel> _existingMatches = [];
+  bool _isChecking = false;
+
   @override
   void initState() {
     super.initState();
     _currentLibraries = List.from(widget.availableLibraries);
-    // Tekrarlanması Gerekenler gibi sanal listeleri temizle
     _currentLibraries.removeWhere((lib) => lib == 'Tekrarlanması Gerekenler');
     
     if (_currentLibraries.isEmpty) {
@@ -39,6 +43,31 @@ class _AddWordScreenState extends State<AddWordScreen> {
     for (var c in _meaningControllers) { c.dispose(); }
     for (var c in _exampleControllers) { c.dispose(); }
     super.dispose();
+  }
+
+  // YENİ: Seçili kütüphanede bu kelime var mı diye anlık tarama yapan zeka
+  Future<void> _checkExistingWord(String typedWord) async {
+    if (typedWord.trim().isEmpty) {
+      setState(() => _existingMatches = []);
+      return;
+    }
+
+    setState(() => _isChecking = true);
+    try {
+      // ISAR üzerinden seçili kütüphanede ve kelime eşleşmesinde arama yap
+      List<WordModel> matches = await isar.wordModels
+          .filter()
+          .libraryNameEqualTo(_library)
+          .wordEqualTo(typedWord.trim(), caseSensitive: false)
+          .findAll();
+
+      setState(() {
+        _existingMatches = matches;
+        _isChecking = false;
+      });
+    } catch (e) {
+      setState(() => _isChecking = false);
+    }
   }
 
   Future<void> _showNewLibraryDialog() async {
@@ -74,11 +103,17 @@ class _AddWordScreenState extends State<AddWordScreen> {
         }
         _library = newLibName;
       });
+      // Kütüphane değiştiğinde varsa yazılan kelimeyi tekrar kontrol et
+      if (_word.isNotEmpty) {
+        _checkExistingWord(_word);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(title: const Text("Yeni Kelime Ekle")),
       body: Form(
@@ -86,11 +121,71 @@ class _AddWordScreenState extends State<AddWordScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // KELİME GİRİŞ ALANI VE CANLI TARAMA TETİKLEYİCİSİ
             TextFormField(
-              decoration: const InputDecoration(labelText: "Kelime", border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: "Kelime", 
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.spellcheck),
+              ),
               validator: (v) => v!.isEmpty ? "Bu alan boş bırakılamaz" : null,
+              onChanged: (val) {
+                _word = val;
+                _checkExistingWord(val); // Harf değiştikçe eşleşmeyi ara
+              },
               onSaved: (v) => _word = v!,
             ),
+            
+            // YENİ: EĞER KELİME KÜTÜPHANEDE VARSA CANLI ÖNİZLEME KUTUSU
+            if (_existingMatches.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(isDark ? 0.2 : 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.amber.shade700, width: 1.5),
+                  boxShadow: [BoxShadow(color: Colors.amber.withOpacity(0.05), blurRadius: 10)]
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800, size: 22),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Bu kelime '$_library' kütüphanesinde zaten mevcut!",
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber.shade900, fontSize: 13.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 16),
+                    ..._existingMatches.map((existing) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Mevcut Anlamlar:", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                        ...existing.meanings.map((m) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2.0),
+                          child: Text("• $m", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                        )),
+                        if (existing.examples.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          const Text("Mevcut Örnekler:", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                          ...existing.examples.map((e) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2.0),
+                            child: Text("» $e", style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 13)),
+                          )),
+                        ],
+                      ],
+                    )),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 20),
             
             Row(
@@ -142,7 +237,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
             
             const SizedBox(height: 20),
             
-            // YENİ: YANINDA (+) BUTONU OLAN STABİL KÜTÜPHANE SEÇİCİ
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -151,7 +245,10 @@ class _AddWordScreenState extends State<AddWordScreen> {
                     value: _currentLibraries.contains(_library) ? _library : _currentLibraries.first,
                     decoration: const InputDecoration(labelText: "Kütüphane", border: OutlineInputBorder()),
                     items: _currentLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                    onChanged: (v) => setState(() => _library = v!),
+                    onChanged: (v) {
+                      setState(() => _library = v!);
+                      if (_word.isNotEmpty) _checkExistingWord(_word); // Kütüphane değişince tekrar tara
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
