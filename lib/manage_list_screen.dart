@@ -1,3 +1,4 @@
+import 'dart:async'; // YENİ: Debounce Zamanlayıcı Kütüphanesi
 import 'package:flutter/material.dart';
 import 'models.dart';
 
@@ -9,7 +10,7 @@ class ManageListScreen extends StatefulWidget {
   final Function(WordModel) onDelete;
   final Function(WordModel)? onLearned; 
   final Function() onClearAll;
-  final Future<void> Function(WordModel)? onEdit; // YENİ: Düzenleme tetikleyicisi
+  final Future<void> Function(WordModel)? onEdit;
 
   const ManageListScreen({
     super.key,
@@ -20,7 +21,7 @@ class ManageListScreen extends StatefulWidget {
     required this.onDelete,
     this.onLearned,
     required this.onClearAll,
-    this.onEdit, // YENİ
+    this.onEdit,
   });
 
   @override
@@ -29,6 +30,41 @@ class ManageListScreen extends StatefulWidget {
 
 class _ManageListScreenState extends State<ManageListScreen> {
   String searchQuery = '';
+  Timer? _debounceTimer; // YENİ: Performans için klavye geciktiricisi
+  List<WordModel> _filteredList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredList = widget.words;
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel(); // Bellek sızıntılarını önleme koruması
+    super.dispose();
+  }
+
+  // YENİ: DEBOUNCE ALGORİTMASI (Hızlı yazarken donmaları önleyen performans zırhı)
+  void _onSearchChanged(String query) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          searchQuery = query;
+          if (query.trim().isEmpty) {
+            _filteredList = widget.words;
+          } else {
+            _filteredList = widget.words.where((w) => 
+              w.word.toLowerCase().contains(query.toLowerCase()) ||
+              w.meanings.join(' ').toLowerCase().contains(query.toLowerCase())
+            ).toList();
+          }
+        });
+      }
+    });
+  }
 
   void _confirmClearAll() {
     showDialog(
@@ -43,7 +79,9 @@ class _ManageListScreenState extends State<ManageListScreen> {
             onPressed: () {
               widget.onClearAll();
               Navigator.pop(context);
-              setState(() {});
+              setState(() {
+                _filteredList = widget.words;
+              });
             },
             child: const Text("TÜMÜNÜ ÇIKAR"),
           ),
@@ -65,10 +103,10 @@ class _ManageListScreenState extends State<ManageListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    var filteredList = widget.words.where((w) => 
-      w.word.toLowerCase().contains(searchQuery.toLowerCase()) ||
-      w.meanings.join(' ').toLowerCase().contains(searchQuery.toLowerCase())
-    ).toList();
+    // Eğer dışarıdan liste güncellendiyse ve arama yoksa listeyi senkronize tut
+    if (searchQuery.isEmpty && _filteredList.length != widget.words.length) {
+      _filteredList = widget.words;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -91,19 +129,19 @@ class _ManageListScreenState extends State<ManageListScreen> {
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
-              onChanged: (val) => setState(() => searchQuery = val),
+              onChanged: _onSearchChanged, // Optimizasyonlu Debounce tetikleyicisi bağlandı
             ),
           ),
           Expanded(
-            child: filteredList.isEmpty 
+            child: _filteredList.isEmpty 
               ? const Center(child: Text("Bu liste şu an boş."))
               : ListView.builder(
-                  itemCount: filteredList.length,
+                  itemCount: _filteredList.length,
                   itemBuilder: (context, index) {
-                    final item = filteredList[index];
+                    final item = _filteredList[index];
                     
                     return Dismissible(
-                      key: Key('${item.id}_$index'), // ID üzerinden eşleştirme zırhı
+                      key: Key('${item.id}_$index'),
                       direction: widget.onLearned != null 
                           ? DismissDirection.horizontal 
                           : DismissDirection.endToStart,
@@ -122,6 +160,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                       onDismissed: (direction) {
                         setState(() {
                           widget.words.remove(item);
+                          _filteredList.remove(item);
                         });
                         if (direction == DismissDirection.endToStart) {
                           widget.onDelete(item);
@@ -151,19 +190,20 @@ class _ManageListScreenState extends State<ManageListScreen> {
                               if (widget.showSrsLevel && item.srsLevel > 0)
                                 Container(
                                   margin: const EdgeInsets.only(right: 8),
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                                   decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
                                   child: Text("${_getSrsDayText(item.srsLevel)} Tekrarı", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
                                 ),
 
-                              // YENİ: DÜZENLE BUTONU VE ASENKRON YENİLEME
                               if (widget.onEdit != null)
                                 IconButton(
                                   icon: const Icon(Icons.edit, color: Colors.blueAccent),
                                   tooltip: 'Düzenle',
                                   onPressed: () async {
                                     await widget.onEdit!(item);
-                                    setState(() {}); // Düzenleme bitince listeyi yenile
+                                    setState(() {
+                                      _filteredList = widget.words;
+                                    });
                                   },
                                 ),
 
@@ -172,7 +212,9 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                 tooltip: 'Listeden Çıkar',
                                 onPressed: () {
                                   widget.onDelete(item);
-                                  setState(() {});
+                                  setState(() {
+                                    _filteredList.remove(item);
+                                  });
                                 },
                               ),
                             ],
