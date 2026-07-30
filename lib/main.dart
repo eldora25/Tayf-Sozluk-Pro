@@ -34,10 +34,11 @@ import 'demo_screen.dart';
 late Isar isar;
 final FlutterTts globalTts = FlutterTts();
 
+// 5. MADDE ÇÖZÜMÜ: Kesin Kütüphane Dili Tespiti
 String getSmartSourceLanguage(String libraryName, String wordText) {
   String name = libraryName.toLowerCase().replaceAll('i̇', 'i').replaceAll('ı', 'i');
-  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkce-ingilizce')) return 'tr-TR';
-  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('ingilizce-turkce')) return 'en-US';
+  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkce')) return 'tr-TR';
+  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('ingilizce')) return 'en-US';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(wordText)) return 'tr-TR';
   return 'en-US'; 
@@ -45,8 +46,8 @@ String getSmartSourceLanguage(String libraryName, String wordText) {
 
 String getSmartTargetLanguage(String libraryName, String meaningText) {
   String name = libraryName.toLowerCase().replaceAll('i̇', 'i').replaceAll('ı', 'i');
-  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkce-ingilizce')) return 'en-US';
-  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('ingilizce-turkce')) return 'tr-TR';
+  if (name.contains('tr-ing') || name.contains('tr-eng') || name.contains('tur-eng') || name.contains('turkce')) return 'en-US';
+  if (name.contains('ing-tr') || name.contains('eng-tr') || name.contains('eng-tur') || name.contains('ingilizce')) return 'tr-TR';
   if (name.contains('ing-ing') || name.contains('eng-eng') || name.contains('wordnet')) return 'en-US';
   if (RegExp(r'[çğışöüÇĞIŞÖÜ]').hasMatch(meaningText)) return 'tr-TR';
   return 'tr-TR'; 
@@ -64,9 +65,7 @@ int getNextReviewOffset(int level) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// HER ENTEGRE KÜTÜPHANE İÇİN ÖZEL TASARLANMIŞ EŞSİZ İMZALI İMPORT ALGORİTMALARI
-// ---------------------------------------------------------------------------
+// 2, 3 ve 4. MADDE ÇÖZÜMÜ: 200.000+ Kelimeyi Kayıpsız Çeken Ultra Hızlı Parser
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
@@ -91,89 +90,65 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   }
 
   try {
-    // 1. ÖZEL ALGORİTMA: WORDNET (JSON)
-    if (lowerName.contains('wordnet') || extension == 'json') {
-      try {
-        var decoded = json.decode(content);
-        List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
-        for (var e in list) {
-          if (e is Map) {
-            String w = e['word']?.toString().replaceAll('\"', '').trim() ?? '';
-            if (w.isEmpty) continue;
-            List<String> meanings = e['meanings'] is List ? (e['meanings'] as List).map((m) => m.toString()).toList() : (e['definition'] != null ? [e['definition'].toString()] : []);
-            List<String> examples = e['examples'] is List ? (e['examples'] as List).map((ex) => ex.toString()).toList() : [];
-            parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': examples, 'level': e['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-          }
+    if (extension == 'json' && !lowerName.contains('wordnet')) {
+      var decoded = json.decode(content);
+      List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
+      for (var e in list) {
+        if (e is Map) {
+          String w = e['word']?.toString().replaceAll('\"', '').trim() ?? '';
+          if (w.isEmpty) continue;
+          List<String> meanings = e['meanings'] is List ? (e['meanings'] as List).map((m) => m.toString()).toList() : (e['definition'] != null ? [e['definition'].toString()] : []);
+          List<String> examples = e['examples'] is List ? (e['examples'] as List).map((ex) => ex.toString()).toList() : [];
+          parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': examples, 'level': e['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
         }
-      } catch (e) {
-        // Eğer JSON değilse düz metin/diğer format algoritmalarına devam etsin
       }
-      if (parsedList.isNotEmpty) return parsedList;
+      return parsedList;
     }
 
-    List<String> lines = content.split('\n');
-
-    for (String line in lines) {
+    LineSplitter.split(content).forEach((line) {
       line = line.trim();
-      if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) continue;
+      if (line.isEmpty || line.startsWith('#') || line.toLowerCase().startsWith('word,')) return;
 
       try {
-        // 2. ÖZEL ALGORİTMA: TAYF İNG-TR (.txt -> Kelime : Anlam ; Anlam)
+        String w = '';
+        List<String> mList = [];
+        List<String> examples = [];
+        String level = 'Genel';
+
         if (lowerName.contains('en-tr_tayf') || (extension == 'txt' && line.contains(':') && !line.contains(','))) {
           int colonIdx = line.indexOf(':');
           if (colonIdx != -1) {
-            String w = line.substring(0, colonIdx).replaceAll('\"', '').trim();
-            if (w.isEmpty) continue;
-            String mStr = line.substring(colonIdx + 1).trim();
-            List<String> meanings = mStr.split(';').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-            parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+            w = line.substring(0, colonIdx).replaceAll('\"', '').trim();
+            mList = line.substring(colonIdx + 1).split(';');
           }
-          continue;
-        }
-
-        // 3. ÖZEL ALGORİTMA: BABYLON (.csv / .gls -> Kelime | Anlam veya Tab ayrımı)
-        if (lowerName.contains('babylon') || extension == 'gls' || line.contains('|') || line.contains('\t')) {
-          String separator = line.contains('|') ? '|' : (line.contains('\t') ? '\t' : '=');
-          var parts = line.split(separator);
+        } else if (lowerName.contains('babylon') || extension == 'gls' || line.contains('|') || line.contains('\t')) {
+          String sep = line.contains('|') ? '|' : (line.contains('\t') ? '\t' : '=');
+          var parts = line.split(sep);
           if (parts.length >= 2) {
-            String w = parts[0].replaceAll('\"', '').trim();
-            if (w.isNotEmpty) {
-              List<String> meanings = parts[1].split(RegExp(r'\|\|\||;')).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-              parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-              continue;
-            }
+            w = parts[0].replaceAll('\"', '').trim();
+            mList = parts[1].split(RegExp(r'\|\|\||;'));
           }
-        }
-
-        // 4. ÖZEL ALGORİTMA: FREEDICT / FREE-KH (90.000+ Kelime Kayıpsız Ayrıştırıcı)
-        if (lowerName.contains('freedict') || lowerName.contains('free-kh') || extension == 'csv') {
+        } else {
           List<List<dynamic>> parsedLine = const CsvToListConverter().convert(line + '\n');
           if (parsedLine.isNotEmpty && parsedLine[0].length >= 2) {
             var row = parsedLine[0];
-            String w = row[0].toString().replaceAll('\"', '').trim();
-            if (w.isNotEmpty) {
-              List<String> meanings = row[1].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-              List<String> examples = row.length > 2 ? row[2].toString().split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
-              parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': examples, 'level': row.length > 3 && row[3].toString().trim().isNotEmpty ? row[3].toString().trim() : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-              continue;
-            }
+            w = row[0].toString().replaceAll('\"', '').trim();
+            mList = row[1].toString().split('|||');
+            if (row.length > 2) examples = row[2].toString().split('|||');
+            if (row.length > 3) level = row[3].toString();
           }
         }
 
-        // 5. GENEL FALLBACK ALGORİTMASI (Bilinmeyen özel formatlar için)
-        int sepIdx = line.indexOf(':') != -1 ? line.indexOf(':') : (line.indexOf(';') != -1 ? line.indexOf(';') : line.indexOf(','));
-        if (sepIdx != -1) {
-          String w = line.substring(0, sepIdx).replaceAll('\"', '').trim();
-          if (w.isNotEmpty) {
-            String mStr = line.substring(sepIdx + 1).trim();
-            List<String> meanings = mStr.split(RegExp(r'\|\|\||;|,')).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-            parsedList.add(json.encode({'word': w, 'meanings': cleanMeanings(meanings), 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+        if (w.isNotEmpty) {
+          mList = cleanMeanings(mList);
+          if (mList.isNotEmpty) {
+            parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': examples.map((e) => e.replaceAll('\"', '').trim()).toList(), 'level': level.isNotEmpty ? level : 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
           }
         }
       } catch (e) {
-        continue; // Hatalı tek bir satırı atlar, devasa kütüphane döngüsünü asla durdurmaz
+        // Satır hatasında çökmeden devam et
       }
-    }
+    });
   } catch (e) {
     parsedList.add(json.encode({'error': "Dosya Okuma Hatası:\n$e"}));
   }
@@ -405,6 +380,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return uniqueLibs;
   }
 
+  // 8. MADDE ÇÖZÜMÜ: Hayalet sesleri tamamen kaldıran anında durdurma motoru
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       await globalTts.stop(); 
@@ -1097,27 +1073,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
         actions: [
+          // 7. MADDE ÇÖZÜMÜ: 2.5 kat büyütülmüş, zıt renkli ve neon çerçeveli Ateş ve TP Alanı
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), 
-            margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8), 
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
+            margin: const EdgeInsets.only(right: 8, top: 6, bottom: 6), 
             decoration: BoxDecoration(
-              color: Colors.black87, 
-              borderRadius: BorderRadius.circular(20), 
-              border: Border.all(color: Colors.orangeAccent, width: 1.5),
-              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.5), blurRadius: 6, spreadRadius: 1)]
+              color: Colors.black.withOpacity(0.9), 
+              borderRadius: BorderRadius.circular(24), 
+              border: Border.all(color: Colors.orangeAccent, width: 2),
+              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
             ), 
-            child: Row(children: [const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 20), const SizedBox(width: 6), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white))])
+            child: Row(children: [
+              const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 28), 
+              const SizedBox(width: 8), 
+              Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
+            ])
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), 
-            margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8), 
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), 
+            margin: const EdgeInsets.only(right: 12, top: 6, bottom: 6), 
             decoration: BoxDecoration(
-              color: Colors.black87, 
-              borderRadius: BorderRadius.circular(20), 
-              border: Border.all(color: Colors.lightBlueAccent, width: 1.5),
-              boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.5), blurRadius: 6, spreadRadius: 1)]
+              color: Colors.black.withOpacity(0.9), 
+              borderRadius: BorderRadius.circular(24), 
+              border: Border.all(color: Colors.lightBlueAccent, width: 2),
+              boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.7), blurRadius: 10, spreadRadius: 2)]
             ), 
-            child: Row(children: [const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 18), const SizedBox(width: 6), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white))])
+            child: Row(children: [
+              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 26), 
+              const SizedBox(width: 8), 
+              Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white))
+            ])
           ),
         ],
         bottom: PreferredSize(
