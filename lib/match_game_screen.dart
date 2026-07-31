@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui'; // YENİ: Cam efekti (Blur) için eklendi
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
@@ -99,6 +100,62 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
         }
       });
     }
+  }
+
+  // YENİ VE PREMIUM: Uzun metinleri okumak için cam efektli detay penceresi
+  void _showPremiumTextDialog(BuildContext context, String text, String type) {
+    HapticFeedback.selectionClick();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        contentPadding: EdgeInsets.zero,
+        content: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.4), width: 2),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))]
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(type.contains('İngilizce') ? Icons.language : Icons.g_translate, color: Theme.of(context).primaryColor, size: 40),
+                  const SizedBox(height: 12),
+                  Text(type, style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                  const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Text(text, textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color, height: 1.4)),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 5
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text("Kapat", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))
+                    ),
+                  )
+                ]
+              )
+            )
+          )
+        )
+      )
+    );
   }
 
   @override
@@ -225,7 +282,10 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
               decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
               child: Text("Raunt: ${currentRound + 1} / $totalRounds", style: TextStyle(fontSize: 16, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
+            // YENİ: Bilgilendirme Metni
+            Text("Metinleri tam okumak için kartlara basılı tutun.", style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
+            const SizedBox(height: 12),
             Expanded(
               child: Row(
                 children: [
@@ -266,16 +326,20 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                             decoration: BoxDecoration(color: Colors.grey.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid, width: 2)),
                           ),
-                          child: Container(
-                            height: 70,
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.9), Theme.of(context).primaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
+                          // YENİ: Basılı tutunca metin okuma ekranını aç (Sol Sütun)
+                          child: GestureDetector(
+                            onLongPress: () => _showPremiumTextDialog(context, word.word, "Hedef Kelime"),
+                            child: Container(
+                              height: 70,
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.9), Theme.of(context).primaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
+                              ),
+                              child: Text(word.word, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                             ),
-                            child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                           ),
                         );
                       }).toList(),
@@ -306,30 +370,34 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                           onAccept: (data) => _handleDrop(data, word),
                           builder: (context, candidateData, rejectedData) {
                             bool isHovered = candidateData.isNotEmpty;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeOutBack,
-                              height: isHovered ? 75 : 70, // Hover anında hafifçe büyür
-                              margin: const EdgeInsets.symmetric(horizontal: 8),
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isWrong 
-                                    ? Colors.redAccent.withOpacity(0.9)
-                                    : (isHovered ? Colors.orangeAccent.withOpacity(0.9) : Theme.of(context).cardColor),
-                                border: Border.all(
-                                  color: isWrong ? Colors.red : (isHovered ? Colors.orange : Colors.grey.withOpacity(0.3)),
-                                  width: isHovered || isWrong ? 3 : 1
+                            // YENİ: Basılı tutunca metin okuma ekranını aç (Sağ Sütun)
+                            return GestureDetector(
+                              onLongPress: () => _showPremiumTextDialog(context, word.meanings.first, "Kartın Anlamı"),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeOutBack,
+                                height: isHovered ? 75 : 70, 
+                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: isWrong 
+                                      ? Colors.redAccent.withOpacity(0.9)
+                                      : (isHovered ? Colors.orangeAccent.withOpacity(0.9) : Theme.of(context).cardColor),
+                                  border: Border.all(
+                                    color: isWrong ? Colors.red : (isHovered ? Colors.orange : Colors.grey.withOpacity(0.3)),
+                                    width: isHovered || isWrong ? 3 : 1
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: isHovered || isWrong 
+                                      ? [BoxShadow(color: isWrong ? Colors.red.withOpacity(0.4) : Colors.orange.withOpacity(0.4), blurRadius: 15, spreadRadius: 2)] 
+                                      : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]
                                 ),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: isHovered || isWrong 
-                                    ? [BoxShadow(color: isWrong ? Colors.red.withOpacity(0.4) : Colors.orange.withOpacity(0.4), blurRadius: 15, spreadRadius: 2)] 
-                                    : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]
+                                child: Text(word.meanings.first, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(
+                                  color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+                                  fontSize: isHovered ? 15 : 14, fontWeight: FontWeight.bold
+                                )),
                               ),
-                              child: Text(word.meanings.first, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(
-                                color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                fontSize: isHovered ? 15 : 14, fontWeight: FontWeight.bold
-                              )),
                             );
                           },
                         );
