@@ -269,6 +269,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _glowAnimation;
   late AnimationController _bgGradientController; 
 
+  // YENİ: Neon ve Flaş Animasyon Kontrolcüleri
+  late AnimationController _neonPulseController;
+  late Animation<double> _neonPulseAnim;
+  late AnimationController _tpFlashController;
+  late AnimationController _freezeFlashController;
+  late AnimationController _streakFlashController;
+
   List<WordModel> allWords = [];
   List<WordModel> learningWords = []; 
   List<WordModel> learnedWords = [];
@@ -293,6 +300,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
     _bgGradientController = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true); 
+    
+    // YENİ: Neon Motorları Başlatılıyor
+    _neonPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat(reverse: true);
+    _neonPulseAnim = Tween<double>(begin: 0.6, end: 1.4).animate(CurvedAnimation(parent: _neonPulseController, curve: Curves.easeInOutCubic));
+    
+    _tpFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _freezeFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _streakFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+
     NotificationService.requestPermission();
     _loadData();
   }
@@ -302,6 +318,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _flipController.dispose();
     _glowController.dispose();
     _bgGradientController.dispose(); 
+    _neonPulseController.dispose();
+    _tpFlashController.dispose();
+    _freezeFlashController.dispose();
+    _streakFlashController.dispose();
     globalTts.stop();
     super.dispose();
   }
@@ -416,30 +436,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {}
   }
 
-  void _showFlyingParticle(IconData icon, Color color) {
+  // YENİ: Uçan Parçacık Sistemi. targetIndex: 0 (Ateş), 1 (Kalkan), 2 (TP)
+  void _showFlyingParticle(IconData icon, Color color, VoidCallback onArrived, {int targetIndex = 2}) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
       builder: (context) {
         return TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 1500),
-          curve: Curves.easeInOutBack,
+          duration: const Duration(milliseconds: 1000), 
+          curve: Curves.easeInOutCubic,
           onEnd: () {
             overlayEntry?.remove();
+            onArrived(); // Gideceği yere ulaşınca Flaş Patlar ve Puan eklenir!
           },
           builder: (context, value, child) {
+            double startX = MediaQuery.of(context).size.width / 2 - 20;
+            double startY = MediaQuery.of(context).size.height / 2;
+            
+            double endX;
+            if (targetIndex == 0) endX = MediaQuery.of(context).size.width * 0.2;
+            else if (targetIndex == 1) endX = MediaQuery.of(context).size.width * 0.5 - 20;
+            else endX = MediaQuery.of(context).size.width * 0.8;
+            
+            double endY = MediaQuery.of(context).padding.top + 40.0; 
+
+            double currentX = startX + (endX - startX) * value;
+            double currentY = startY + (endY - startY) * value;
+
             return Positioned(
-              left: MediaQuery.of(context).size.width / 2 - 20,
-              bottom: 100 + (MediaQuery.of(context).size.height * 0.7 * value),
+              left: currentX,
+              top: currentY,
               child: Opacity(
-                opacity: (1.0 - value).clamp(0.0, 1.0), 
+                opacity: value < 0.8 ? 1.0 : (1.0 - ((value - 0.8) * 5)).clamp(0.0, 1.0), 
                 child: Transform.scale(
-                  scale: 1.0 + (value * 2),
+                  scale: 1.0 + (sin(value * pi) * 1.5), 
                   child: Container(
                     decoration: BoxDecoration(
-                      boxShadow: [BoxShadow(color: color.withOpacity(0.8), blurRadius: 20, spreadRadius: 5)]
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: color.withOpacity(0.9), blurRadius: 25, spreadRadius: 5)]
                     ),
-                    child: Icon(icon, color: color, size: 40)
+                    child: Icon(icon, color: color, size: 30)
                   )
                 )
               ),
@@ -453,19 +489,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _recordActivity(int pointsEarned) {
     if (pointsEarned > 0) {
-      _showFlyingParticle(Icons.diamond, Colors.lightBlueAccent);
-      if (pointsEarned > 1) {
-        Future.delayed(const Duration(milliseconds: 200), () => _showFlyingParticle(Icons.diamond, Colors.lightBlueAccent));
+      // 5 puana kadar tane tek tek uçur, fazlasıysa hızlıca 5 tane uçur.
+      int particles = pointsEarned > 5 ? 5 : pointsEarned;
+      int pointsPerParticle = pointsEarned ~/ particles;
+      int remainder = pointsEarned % particles;
+
+      for (int i = 0; i < particles; i++) {
+        Future.delayed(Duration(milliseconds: i * 250), () {
+          _showFlyingParticle(Icons.diamond, Colors.lightBlueAccent, () {
+            if (mounted) {
+              setState(() => tayfPoints += pointsPerParticle + (i == particles - 1 ? remainder : 0));
+              _savePreferencesOnly();
+              _tpFlashController.forward(from: 0.0).then((_) => _tpFlashController.reverse());
+            }
+          }, targetIndex: 2); // 2: TP Kapsülü
+        });
       }
+    } else {
+      _savePreferencesOnly();
     }
-    setState(() => tayfPoints += pointsEarned);
-    _savePreferencesOnly();
   }
 
   void _buyFreeze() {
     HapticFeedback.heavyImpact(); 
     if (tayfPoints >= 50) {
-      setState(() { tayfPoints -= 50; streakFreezes++; });
+      setState(() { tayfPoints -= 50; });
       _savePreferencesOnly();
       
       showGeneralDialog(
@@ -485,12 +533,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 children: [
                   Container(
                     width: 200, height: 200,
-                    decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.6), blurRadius: 50, spreadRadius: 20)]),
+                    decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.cyanAccent.withOpacity(0.6), blurRadius: 50, spreadRadius: 20)]),
                   ),
                   const Icon(Icons.ac_unit, size: 100, color: Colors.white),
                   const Positioned(
                     bottom: 0, 
-                    child: Text("KALKAN ALINDI!", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, shadows: [Shadow(blurRadius: 10, color: Colors.blueAccent)]))
+                    child: Text("KALKAN ALINDI!", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, shadows: [Shadow(blurRadius: 10, color: Colors.cyanAccent)]))
                   )
                 ],
               )
@@ -498,6 +546,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
         }
       );
+
+      // Dialog kapandıktan hemen sonra Kalkan parçacığı uçarak yerine yerleşsin
+      Future.delayed(const Duration(milliseconds: 800), () {
+        _showFlyingParticle(Icons.ac_unit, Colors.cyanAccent, () {
+          if (mounted) {
+            setState(() { streakFreezes++; });
+            _savePreferencesOnly();
+            _freezeFlashController.forward(from: 0.0).then((_) => _freezeFlashController.reverse());
+          }
+        }, targetIndex: 1); // 1: Kalkan Kapsülü
+      });
+
     } else {
       showGeneralDialog(
         context: context,
@@ -1024,7 +1084,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), 
             child: Column(
               children: [
-                // YENİ: Mitoz kartları seviye 0 olsa bile (öğrenme aşamasında) başlığa ve biyolojik logoya sahip olur
                 if (isPremium || isMitosis) 
                   Container(
                     width: double.infinity, 
@@ -1400,6 +1459,44 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  // YENİ: Neon, Flaş ve Pulse Efektlerini Tek Bir Kapsülde Birleştiren Fonksiyon
+  Widget _buildNeonBadge(IconData icon, String value, Color color, int count, AnimationController? flashController) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_neonPulseController, if (flashController != null) flashController]),
+      builder: (context, child) {
+        double baseSpread = (count * 0.3).clamp(2.0, 20.0); 
+        double pulseSpread = baseSpread * _neonPulseAnim.value;
+        double flashValue = flashController?.value ?? 0.0;
+        double flashSpread = flashValue * 30.0; 
+        double flashOpacity = (0.6 + (flashValue * 0.4)).clamp(0.0, 1.0);
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: color.withOpacity((0.8 + (flashValue * 0.2)).clamp(0.0, 1.0)), width: 2 + (flashValue * 2)),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(flashOpacity),
+                blurRadius: (baseSpread * 1.5) + flashSpread,
+                spreadRadius: pulseSpread + flashSpread,
+              )
+            ]
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 20 + (flashValue * 8)),
+              const SizedBox(width: 6),
+              Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16 + (flashValue * 4), color: Colors.white, shadows: [Shadow(color: color, blurRadius: flashValue * 15)])),
+            ]
+          )
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var deck = activeDeck;
@@ -1435,49 +1532,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly, // YENİ: Kapsülleri ayırdı
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.8), 
-                      borderRadius: BorderRadius.circular(30), 
-                      border: Border.all(color: Colors.orangeAccent, width: 2), 
-                      boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: (currentStreak * 2.0).clamp(8.0, 30.0), spreadRadius: 1)] 
-                    ), 
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min, 
-                      children: [
-                        const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 24), 
-                        const SizedBox(width: 6), 
-                        Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white)),
-                        if (streakFreezes > 0) ...[
-                          const SizedBox(width: 8),
-                          Icon(Icons.ac_unit, color: Colors.blueAccent.shade100, size: 16),
-                          const SizedBox(width: 4),
-                          Text("$streakFreezes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueAccent.shade100)),
-                        ]
-                      ]
-                    )
-                  ),
-                  const SizedBox(width: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.8), 
-                      borderRadius: BorderRadius.circular(30), 
-                      border: Border.all(color: Colors.lightBlueAccent, width: 2), 
-                      boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.8), blurRadius: (tayfPoints * 0.2).clamp(8.0, 30.0), spreadRadius: 1)] 
-                    ), 
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min, 
-                      children: [
-                        const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 24), 
-                        const SizedBox(width: 6), 
-                        Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))
-                      ]
-                    )
-                  ),
+                  _buildNeonBadge(Icons.local_fire_department, "$currentStreak", Colors.orangeAccent, currentStreak, _streakFlashController),
+                  _buildNeonBadge(Icons.ac_unit, "$streakFreezes", Colors.cyanAccent, streakFreezes * 10, _freezeFlashController),
+                  _buildNeonBadge(Icons.diamond, "$tayfPoints", Colors.lightBlueAccent, tayfPoints, _tpFlashController),
                 ],
               ),
               const SizedBox(height: 12),
