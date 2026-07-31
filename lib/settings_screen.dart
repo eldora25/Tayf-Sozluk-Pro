@@ -36,7 +36,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _library;
   late String _level;
 
-  // YENİ: Toplam 16 Premium Tema Rengi
   final List<Color> _themeColors = [
     Colors.grey.shade900,         // 0: Koyu Mod
     Colors.grey.shade300,         // 1: Aydınlık Mod
@@ -48,12 +47,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Colors.cyan,                  // 7: Rengarenk
     const Color(0xFF2C3E50),      // 8: Koyu Gri / Gece
     const Color(0xFFB0BEC5),      // 9: Açık Gri / Gümüş
-    const Color(0xFFF4ECD8),      // 10: Sıcak Kağıt (Sepya - Göz Yormayan)
-    const Color(0xFFE8F4F8),      // 11: Soğuk Kağıt (Buzul - Göz Yormayan)
-    const Color(0xFFF5F5DC),      // 12: Krem Kağıt (Nötr - Göz Yormayan)
+    const Color(0xFFF4ECD8),      // 10: Sıcak Kağıt (Sepya)
+    const Color(0xFFE8F4F8),      // 11: Soğuk Kağıt (Buzul)
+    const Color(0xFFF5F5DC),      // 12: Krem Kağıt (Nötr)
     const Color(0xFF4E342E),      // 13: Kahve / Çikolata
     const Color(0xFF37474F),      // 14: Kömür Karası
     const Color(0xFF558B2F),      // 15: Mat Doğal Yeşil
+  ];
+
+  // YENİ VE PREMIUM: Tema İsimleri Listesi (Seçildiğinde Başlık Olarak Görünecek)
+  final List<String> _themeNames = [
+    "Gece Siyahı (Koyu)", "Sade Aydınlık (Açık)", "Deniz Mavisi", "Nane Yeşili",
+    "Canlı Mor", "Sıcak Turuncu", "Şeker Pembe", "Okyanus Esintisi",
+    "Koyu Gri / Gece", "Açık Gri / Gümüş", "Sıcak Kağıt (Göz Yormayan)", "Soğuk Kağıt (Göz Yormayan)",
+    "Krem Kağıt (Göz Yormayan)", "Sıcak Çikolata", "Kömür Karası", "Mat Doğal Yeşil"
   ];
 
   @override
@@ -137,16 +144,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Tema Rengini Seçin", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 16),
-                    // YENİ: Wrap yapısı ile 16 tema ekrana düzgünce sığdırıldı
+                    // YENİ VE PREMIUM: Seçilen temanın adını başlık olarak gösterir
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text("Tema Rengi Seçimi", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                        Expanded(
+                          child: Text(
+                            _themeNames[_themeIndex], 
+                            textAlign: TextAlign.right,
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
                     Wrap(
                       spacing: 12,
                       runSpacing: 12,
                       children: List.generate(_themeColors.length, (index) {
                         bool isSelected = _themeIndex == index;
                         return GestureDetector(
-                          onTap: () => setState(() => _themeIndex = index),
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => _themeIndex = index);
+                          },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeOutBack,
@@ -172,7 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     DropdownButtonFormField<String>(
-                      isExpanded: true, // DÜZELTİLDİ: Taşma Hatası için eklendi
+                      isExpanded: true, 
                       value: _library,
                       decoration: InputDecoration(labelText: "Aktif Kütüphane", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Theme.of(context).scaffoldBackgroundColor),
                       items: widget.availableLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis))).toList(),
@@ -180,7 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      isExpanded: true, // DÜZELTİLDİ: Taşma Hatası için eklendi
+                      isExpanded: true, 
                       value: _level,
                       decoration: InputDecoration(labelText: "Zorluk Seviyesi", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Theme.of(context).scaffoldBackgroundColor),
                       items: ['A1','A2','B1','B2','C1','C2','Genel'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
