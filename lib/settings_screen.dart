@@ -38,29 +38,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _level;
 
   final List<Color> _themeColors = [
-    Colors.grey.shade900,         
-    Colors.grey.shade300,         
-    Colors.blue,                  
-    Colors.teal,                  
-    Colors.deepPurpleAccent,      
-    Colors.deepOrangeAccent,      
-    Colors.pinkAccent,            
-    Colors.cyan,                  
-    const Color(0xFF2C3E50),      
-    const Color(0xFFB0BEC5),      
-    const Color(0xFFF4ECD8),      
-    const Color(0xFFE8F4F8),      
-    const Color(0xFFF5F5DC),      
-    const Color(0xFF4E342E),      
-    const Color(0xFF37474F),      
-    const Color(0xFF558B2F),      
+    Colors.grey.shade900, Colors.grey.shade300, Colors.blue, Colors.teal,                  
+    Colors.deepPurpleAccent, Colors.deepOrangeAccent, Colors.pinkAccent, Colors.cyan,                  
+    const Color(0xFF2C3E50), const Color(0xFFB0BEC5), const Color(0xFFF4ECD8), const Color(0xFFE8F4F8),      
+    const Color(0xFFF5F5DC), const Color(0xFF4E342E), const Color(0xFF37474F), const Color(0xFF558B2F),      
   ];
 
   final List<String> _themeNames = [
     "Gece Siyahı (Koyu)", "Sade Aydınlık (Açık)", "Deniz Mavisi", "Nane Yeşili",
     "Canlı Mor", "Sıcak Turuncu", "Şeker Pembe", "Okyanus Esintisi",
-    "Koyu Gri / Gece", "Açık Gri / Gümüş", "Sıcak Kağıt (Göz Yormayan)", "Soğuk Kağıt (Göz Yormayan)",
-    "Krem Kağıt (Göz Yormayan)", "Sıcak Çikolata", "Kömür Karası", "Mat Doğal Yeşil"
+    "Koyu Gri / Gece", "Açık Gri / Gümüş", "Sıcak Kağıt", "Soğuk Kağıt",
+    "Krem Kağıt", "Sıcak Çikolata", "Kömür Karası", "Mat Doğal Yeşil"
   ];
 
   @override
@@ -142,29 +130,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSectionTitle("Görünüm & Tema", Icons.palette),
               _buildCard(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text("Tema Rengi Seçimi", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _themeNames[_themeIndex], 
-                            textAlign: TextAlign.right,
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
-                            maxLines: 2, 
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    const Text("Tema Rengi Seçimi", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    // YENİ: İsimler artık alt satırda, taşma (overflow) imkansız.
+                    Text(
+                      _themeNames[_themeIndex], 
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                      textAlign: TextAlign.center,
                     ),
-                    const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
+                    const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider()),
                     Wrap(
                       spacing: 12,
                       runSpacing: 12,
+                      alignment: WrapAlignment.center,
                       children: List.generate(_themeColors.length, (index) {
                         bool isSelected = _themeIndex == index;
                         return GestureDetector(
@@ -181,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: _themeColors[index],
                               shape: BoxShape.circle,
                               border: isSelected ? Border.all(color: Theme.of(context).primaryColor, width: 3) : Border.all(color: Colors.grey.withOpacity(0.4), width: 1),
-                              boxShadow: isSelected ? [BoxShadow(color: _themeColors[index].withOpacity(0.5), blurRadius: 10, spreadRadius: 2)] : [],
+                              boxShadow: isSelected ? [BoxShadow(color: _themeColors[index].withOpacity(0.5), blurRadius: 10.0, spreadRadius: 2.0)] : [],
                             ),
                             child: isSelected ? Icon(Icons.check, color: (index == 1 || index >= 9 && index <= 12) ? Colors.black : Colors.white, size: 26) : null,
                           ),
