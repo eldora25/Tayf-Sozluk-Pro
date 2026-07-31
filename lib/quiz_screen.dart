@@ -114,6 +114,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
+    // DÜZELTİLDİ: Çıkış yapılsa bile quiz istatistiklerini hesaplar ve kaydeder
+    if (!_isStatsSaved && answeredQuestions > 0) {
+      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers);
+    }
     super.dispose();
   }
 
@@ -204,7 +208,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
-  // YENİ: Dilleri okunabilir formata çeviren yardımcı fonksiyon
   String _getReadableLang(String code) {
     if (code.contains('en')) return 'İng';
     if (code.contains('tr')) return 'Tr';
@@ -219,7 +222,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (isAnsweredCorrectly || selectedWrongOptions.contains(option)) return;
     bool isCorrect = (option == correctOption);
     
-    // YENİ: MİTOZ HAVUZU İÇİN DİL ANALİZİ VE İSİMLENDİRME
     String srcCode = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String tgtCode = getSmartTargetLanguage(currentWord.libraryName, correctOption);
     String mitosisLibName = "🧬 Mitoz (${_getReadableLang(srcCode)}-${_getReadableLang(tgtCode)})";
@@ -243,7 +245,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             word: currentWord.word,
             meanings: isMeaning ? [correctOption] : [],
             examples: !isMeaning ? [correctOption] : [],
-            libraryName: mitosisLibName, // YENİ: Özel Mitoz Kütüphanesine Atandı
+            libraryName: mitosisLibName, 
             level: currentWord.level,
             correctCount: currentWord.correctCount + 1, 
             wrongCount: currentWord.wrongCount,
@@ -260,24 +262,18 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
           
-          try {
-            await isar.writeTxn(() async {
-              await isar.wordModels.put(currentWord); 
-              await isar.wordModels.put(splitWord);   
-            });
-          } catch (e) {
-            debugPrint("DB Hata (Doğru): $e");
-          }
+          // DÜZELTİLDİ: DB kayıt işlemi asenkron yapıldı (UI donmalarını sıfırlar)
+          isar.writeTxn((isar) async {
+            await isar.wordModels.putAll([currentWord, splitWord]);   
+          });
           
           currentWord = splitWord; 
           if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
         } else {
           currentWord.correctCount++;
-          try {
-            await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
-          } catch (e) {
-            debugPrint("DB Hata (Normal Artış): $e");
-          }
+          // DÜZELTİLDİ: UI donmalarını önlemek için asenkron çağrı
+          isar.writeTxn((isar) async { await isar.wordModels.put(currentWord); });
+          
           if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
         }
       }
@@ -305,7 +301,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             word: currentWord.word,
             meanings: isMeaning ? [correctOption] : [],
             examples: !isMeaning ? [correctOption] : [],
-            libraryName: mitosisLibName, // YENİ: Özel Mitoz Kütüphanesine Atandı
+            libraryName: mitosisLibName, 
             level: currentWord.level,
             correctCount: currentWord.correctCount,
             wrongCount: currentWord.wrongCount + 1,
@@ -322,24 +318,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
           
-          try {
-            await isar.writeTxn(() async {
-              await isar.wordModels.put(currentWord);
-              await isar.wordModels.put(splitWord);
-            });
-          } catch (e) {
-            debugPrint("DB Hata (Yanlış): $e");
-          }
+          isar.writeTxn((isar) async {
+            await isar.wordModels.putAll([currentWord, splitWord]);
+          });
           
           currentWord = splitWord;
           widget.onWrongWord(splitWord);
         } else {
           currentWord.wrongCount++;
-          try {
-            await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
-          } catch (e) {
-            debugPrint("DB Hata (Yanlış Normal Artış): $e");
-          }
+          isar.writeTxn((isar) async { await isar.wordModels.put(currentWord); });
           widget.onWrongWord(currentWord);
         }
       }
