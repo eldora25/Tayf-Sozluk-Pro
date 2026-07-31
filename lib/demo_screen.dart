@@ -24,23 +24,30 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 
-  // 6. MADDE ÇÖZÜMÜ: Demo Çerçevelerin Anında Ana Ekrana Fırlatılıp Çalıştırılması
+  // YENİ: 5 Normal + 5 Mitoz olmak üzere 10 kartlık süper demo destesi
   Future<void> _injectFiveLevelDemoWords() async {
     HapticFeedback.mediumImpact();
     int pastTime = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
     
-    // Eski çöpleri temizle
     await isar.writeTxn(() async {
       await isar.wordModels.filter().wordStartsWith('Level ').deleteAll();
+      await isar.wordModels.filter().wordStartsWith('Mitoz L').deleteAll();
     });
     
-    // Garantili Premium Ataması (Tam seviyeler, tam liste ve bekleme süresi bitmiş)
     List<WordModel> demoWords = [
-      WordModel(word: 'Level 1 Word', meanings: ['Seviye 1 Neon Mavi Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 1, nextReviewDate: pastTime, correctCount: 1),
-      WordModel(word: 'Level 2 Word', meanings: ['Seviye 2 Neon Yeşil Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 2, nextReviewDate: pastTime, correctCount: 2),
-      WordModel(word: 'Level 3 Word', meanings: ['Seviye 3 Neon Sarı Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 3, nextReviewDate: pastTime, correctCount: 3),
-      WordModel(word: 'Level 4 Word', meanings: ['Seviye 4 Neon Turuncu Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 4, nextReviewDate: pastTime, correctCount: 4),
-      WordModel(word: 'Level 5 Word', meanings: ['Seviye 5 Neon Pembe Çerçeve'], examples: [], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 5, nextReviewDate: pastTime, correctCount: 5),
+      // NORMAL KARTLAR (5 SEVİYE)
+      WordModel(word: 'Level 1 Normal', meanings: ['Normal L1 Sarı Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 1, nextReviewDate: pastTime, correctCount: 1),
+      WordModel(word: 'Level 2 Normal', meanings: ['Normal L2 Mor Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 2, nextReviewDate: pastTime, correctCount: 2),
+      WordModel(word: 'Level 3 Normal', meanings: ['Normal L3 Mavi Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 3, nextReviewDate: pastTime, correctCount: 3),
+      WordModel(word: 'Level 4 Normal', meanings: ['Normal L4 Turuncu Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 4, nextReviewDate: pastTime, correctCount: 4),
+      WordModel(word: 'Level 5 Normal', meanings: ['Normal L5 Yeşil Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 5, nextReviewDate: pastTime, correctCount: 5),
+
+      // MİTOZ KARTLARI (5 SEVİYE) - Özel genetik renkleri ve taçları olacak
+      WordModel(word: 'Mitoz L1 Saf', meanings: ['Mitoz L1 Sarı Çerçeve'], examples: ['Bu bölünmüş saf (atomic) bir kart.'], libraryName: '🧬 Mitoz (Demo)', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 1, nextReviewDate: pastTime, correctCount: 1),
+      WordModel(word: 'Mitoz L2 Saf', meanings: ['Mitoz L2 Mor Çerçeve'], examples: ['Bu bölünmüş saf (atomic) bir kart.'], libraryName: '🧬 Mitoz (Demo)', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 2, nextReviewDate: pastTime, correctCount: 2),
+      WordModel(word: 'Mitoz L3 Saf', meanings: ['Mitoz L3 Mavi Çerçeve'], examples: ['Bu bölünmüş saf (atomic) bir kart.'], libraryName: '🧬 Mitoz (Demo)', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 3, nextReviewDate: pastTime, correctCount: 3),
+      WordModel(word: 'Mitoz L4 Saf', meanings: ['Mitoz L4 Turuncu Çerçeve'], examples: ['Bu bölünmüş saf (atomic) bir kart.'], libraryName: '🧬 Mitoz (Demo)', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 4, nextReviewDate: pastTime, correctCount: 4),
+      WordModel(word: 'Mitoz L5 Saf', meanings: ['Mitoz L5 Yeşil Çerçeve'], examples: ['Bu bölünmüş saf (atomic) bir kart.'], libraryName: '🧬 Mitoz (Demo)', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 5, nextReviewDate: pastTime, correctCount: 5),
     ];
 
     await isar.writeTxn(() async {
@@ -48,11 +55,10 @@ class _DemoScreenState extends State<DemoScreen> {
     });
 
     if (mounted) {
-      // SİHİRLİ DOKUNUŞ: Eklenen kelimeleri GÖRMEK için anında geri (Ana Ekrana) fırlat!
       Navigator.pop(context);
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✨ Demo Yüklendi! SRS Çerçeveleri karşınızda."), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating)
+        const SnackBar(content: Text("✨ Süper Demo Yüklendi! 5 Normal + 5 Mitoz SRS Çerçevesi karşınızda."), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating)
       );
     }
   }
@@ -72,17 +78,16 @@ class _DemoScreenState extends State<DemoScreen> {
       return;
     }
 
-    int twoDaysMs = 2 * 24 * 60 * 60 * 1000;
     for (var w in learningWords) {
-      w.nextReviewDate = w.nextReviewDate - twoDaysMs;
-      if (w.nextReviewDate <= DateTime.now().millisecondsSinceEpoch) w.listType = 'toSRSRepeat';
+      w.nextReviewDate = DateTime.now().millisecondsSinceEpoch - 1000;
+      w.listType = 'toSRSRepeat';
     }
 
     await isar.writeTxn(() async { await isar.wordModels.putAll(learningWords); });
     
     if (mounted) {
-      Navigator.pop(context); // Yine sonucu görmek için direkt Ana Ekrana dönüş
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Zaman 2 gün ileri sarıldı! Eğitimdeki kelimeleriniz SRS Tekrar Listesine düştü."), backgroundColor: Colors.blueAccent, behavior: SnackBarBehavior.floating));
+      Navigator.pop(context); 
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Zaman Makinesi Çalıştı! Eğitimdeki TÜM kelimeleriniz anında SRS Tekrar Listesine düştü."), backgroundColor: Colors.blueAccent, behavior: SnackBarBehavior.floating));
     }
   }
 
@@ -128,11 +133,11 @@ class _DemoScreenState extends State<DemoScreen> {
           ),
 
           _buildDemoCard(
-            title: "5 Seviye Çerçeve Testi",
-            description: "Ana ekrandaki Premium Animasyonlu Çerçeveleri görmek için Varsayılan listesine 1'den 5'e kadar seviyelendirilmiş kelimeler ekler.",
+            title: "10 Seviye Çerçeve Testi (5 Normal + 5 Mitoz)",
+            description: "Ana ekrandaki Premium Animasyonlu Çerçevelerin hem standart kelimeler hem de saf 'Mitoz' kartları üzerinde nasıl durduğunu gösterir.",
             icon: Icons.filter_frames,
             color: Colors.green,
-            buttonText: "5 Seviye Çerçeve Demosu Yükle",
+            buttonText: "Süper Çerçeve Demosu Yükle",
             buttonIcon: Icons.add,
             onPressed: _injectFiveLevelDemoWords,
           ),
@@ -142,7 +147,7 @@ class _DemoScreenState extends State<DemoScreen> {
             description: "SRS havuzunda uslu uslu bekleyen kelimelerinizin sürelerini anında doldurup 'Tekrar' listesine düşürür.",
             icon: Icons.history_toggle_off,
             color: Colors.blueAccent,
-            buttonText: "Zamanı 2 Gün İleri Sar",
+            buttonText: "Zamanı İleri Sar (Tümünü Getir)",
             buttonIcon: Icons.fast_forward,
             onPressed: _timeTravelForward,
           ),
@@ -166,7 +171,7 @@ class _DemoScreenState extends State<DemoScreen> {
           children: [
             Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle), child: Icon(icon, size: 36, color: color)),
             const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(description, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.4)),
             const SizedBox(height: 20),
