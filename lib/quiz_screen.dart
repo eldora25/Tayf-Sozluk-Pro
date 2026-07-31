@@ -240,33 +240,57 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         if (totalOptions > 1) {
           bool isMeaning = currentWord.meanings.contains(correctOption);
           
-          WordModel splitWord = WordModel(
-            word: currentWord.word,
-            meanings: isMeaning ? [correctOption] : [],
-            examples: !isMeaning ? [correctOption] : [],
-            libraryName: mitosisLibName, 
-            level: currentWord.level,
-            correctCount: currentWord.correctCount + 1, 
-            wrongCount: currentWord.wrongCount,
-            listType: currentWord.listType,
-            srsLevel: currentWord.srsLevel,
-            nextReviewDate: currentWord.nextReviewDate,
-            sourceLanguage: currentWord.sourceLanguage,
-            targetLanguage: currentWord.targetLanguage,
-          );
-          
           if (isMeaning) {
             currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
           } else {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
-          
-          isar.writeTxn(() async {
-            await isar.wordModels.putAll([currentWord, splitWord]);   
-          });
-          
-          currentWord = splitWord; 
-          if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
+
+          // YENİ: MİTOZ DUPLİKASYON ÇÖZÜMÜ
+          // Orijinal kelimenin (Örn: Apple), bölünen aynı anlama sahip (Örn: Elma) versiyonu Mitoz Havuzunda var mı?
+          WordModel? existingMitosisCard;
+          try {
+            var matchingWords = await isar.wordModels.filter()
+                .wordEqualTo(currentWord.word)
+                .libraryNameEqualTo(mitosisLibName)
+                .findAll();
+            
+            for (var mWord in matchingWords) {
+              if (isMeaning && mWord.meanings.contains(correctOption)) existingMitosisCard = mWord;
+              else if (!isMeaning && mWord.examples.contains(correctOption)) existingMitosisCard = mWord;
+            }
+          } catch(e) { debugPrint("Arama hatası: $e"); }
+
+          if (existingMitosisCard != null) {
+            // Eğer varsa, yeni kart yaratma! Sadece var olan eşsiz kartın seviyesini yükselt!
+            existingMitosisCard.correctCount++;
+            isar.writeTxn(() async {
+              await isar.wordModels.putAll([currentWord, existingMitosisCard!]);
+            });
+            currentWord = existingMitosisCard;
+            if (existingMitosisCard.correctCount >= widget.threshold) widget.onWordMastered(existingMitosisCard);
+          } else {
+            // Yoksa yeni tertemiz, eşsiz bir mitoz kart oluştur.
+            WordModel splitWord = WordModel(
+              word: currentWord.word,
+              meanings: isMeaning ? [correctOption] : [],
+              examples: !isMeaning ? [correctOption] : [],
+              libraryName: mitosisLibName, 
+              level: currentWord.level,
+              correctCount: currentWord.correctCount + 1, 
+              wrongCount: currentWord.wrongCount,
+              listType: currentWord.listType,
+              srsLevel: currentWord.srsLevel,
+              nextReviewDate: currentWord.nextReviewDate,
+              sourceLanguage: currentWord.sourceLanguage,
+              targetLanguage: currentWord.targetLanguage,
+            );
+            isar.writeTxn(() async {
+              await isar.wordModels.putAll([currentWord, splitWord]);   
+            });
+            currentWord = splitWord; 
+            if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
+          }
         } else {
           currentWord.correctCount++;
           isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
@@ -294,33 +318,54 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         if (totalOptions > 1) {
           bool isMeaning = currentWord.meanings.contains(correctOption);
           
-          WordModel splitWord = WordModel(
-            word: currentWord.word,
-            meanings: isMeaning ? [correctOption] : [],
-            examples: !isMeaning ? [correctOption] : [],
-            libraryName: mitosisLibName, 
-            level: currentWord.level,
-            correctCount: currentWord.correctCount,
-            wrongCount: currentWord.wrongCount + 1,
-            listType: currentWord.listType,
-            srsLevel: currentWord.srsLevel,
-            nextReviewDate: currentWord.nextReviewDate,
-            sourceLanguage: currentWord.sourceLanguage,
-            targetLanguage: currentWord.targetLanguage,
-          );
-          
           if (isMeaning) {
             currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
           } else {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
-          
-          isar.writeTxn(() async {
-            await isar.wordModels.putAll([currentWord, splitWord]);
-          });
-          
-          currentWord = splitWord;
-          widget.onWrongWord(splitWord);
+
+          // YENİ: MİTOZ DUPLİKASYON ÇÖZÜMÜ (Yanlış Cevap Senaryosu)
+          WordModel? existingMitosisCard;
+          try {
+            var matchingWords = await isar.wordModels.filter()
+                .wordEqualTo(currentWord.word)
+                .libraryNameEqualTo(mitosisLibName)
+                .findAll();
+            
+            for (var mWord in matchingWords) {
+              if (isMeaning && mWord.meanings.contains(correctOption)) existingMitosisCard = mWord;
+              else if (!isMeaning && mWord.examples.contains(correctOption)) existingMitosisCard = mWord;
+            }
+          } catch(e) {}
+
+          if (existingMitosisCard != null) {
+            existingMitosisCard.wrongCount++;
+            isar.writeTxn(() async {
+              await isar.wordModels.putAll([currentWord, existingMitosisCard!]);
+            });
+            currentWord = existingMitosisCard;
+            widget.onWrongWord(existingMitosisCard);
+          } else {
+            WordModel splitWord = WordModel(
+              word: currentWord.word,
+              meanings: isMeaning ? [correctOption] : [],
+              examples: !isMeaning ? [correctOption] : [],
+              libraryName: mitosisLibName, 
+              level: currentWord.level,
+              correctCount: currentWord.correctCount,
+              wrongCount: currentWord.wrongCount + 1,
+              listType: currentWord.listType,
+              srsLevel: currentWord.srsLevel,
+              nextReviewDate: currentWord.nextReviewDate,
+              sourceLanguage: currentWord.sourceLanguage,
+              targetLanguage: currentWord.targetLanguage,
+            );
+            isar.writeTxn(() async {
+              await isar.wordModels.putAll([currentWord, splitWord]);
+            });
+            currentWord = splitWord;
+            widget.onWrongWord(splitWord);
+          }
         } else {
           currentWord.wrongCount++;
           isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
