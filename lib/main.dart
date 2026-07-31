@@ -259,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _flipAnimation;
   late AnimationController _glowController;
   late Animation<double> _glowAnimation;
-  late AnimationController _bgGradientController; // YENİ: Başlık arka planı için
+  late AnimationController _bgGradientController; 
 
   List<WordModel> allWords = [];
   List<WordModel> learningWords = []; 
@@ -272,6 +272,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String selectedLevel = 'Genel';
   int dailyGoal = 10, quizThreshold = 10, quizQuestionCount = 10, currentCardIndex = 0;
   bool isFlipped = false;
+  
+  // İSTATİSTİK DEĞİŞKENLERİ
   int totalCompletedQuizzes = 0, totalQuizTimeSeconds = 0, totalQuizQuestions = 0, totalQuizWrong = 0;
   List<String> learnedWordTimestamps = [], completedQuizTimestamps = [], viewedCardTimestamps = [], wrongAnswerTimestamps = [];
   int firstUseTimestamp = 0, currentStreak = 0, bestStreak = 0, tayfPoints = 0, streakFreezes = 0;
@@ -283,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _flipAnimation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _flipController, curve: Curves.easeInOut));
     _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
-    _bgGradientController = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true); // YENİ
+    _bgGradientController = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true); 
     NotificationService.requestPermission();
     _loadData();
   }
@@ -292,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _flipController.dispose();
     _glowController.dispose();
-    _bgGradientController.dispose(); // YENİ
+    _bgGradientController.dispose(); 
     globalTts.stop();
     super.dispose();
   }
@@ -307,11 +309,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         quizThreshold = prefs.getInt('quizThreshold') ?? 10;
         quizQuestionCount = prefs.getInt('quizQuestionCount') ?? 10;
         currentCardIndex = prefs.getInt('currentCardIndex') ?? 0;
+        
+        // 20665 GÜN HATASI DÜZELTİLDİ: Başlangıç tarihi kontrolü ve koruması eklendi
+        firstUseTimestamp = prefs.getInt('firstUseTimestamp') ?? 0;
+        if (firstUseTimestamp < 1600000000000) { // Eski (0) veya hatalı tarihleri sıfırla
+          firstUseTimestamp = DateTime.now().millisecondsSinceEpoch;
+          prefs.setInt('firstUseTimestamp', firstUseTimestamp);
+        }
+
+        // İSTATİSTİK ZIRHI: Kaybolan veriler kalıcı bellekten yükleniyor
+        currentStreak = prefs.getInt('currentStreak') ?? 0;
+        bestStreak = prefs.getInt('bestStreak') ?? 0;
+        streakFreezes = prefs.getInt('streakFreezes') ?? 0;
+        tayfPoints = prefs.getInt('tayfPoints') ?? 0;
+
         totalCompletedQuizzes = prefs.getInt('totalCompletedQuizzes') ?? 0;
         totalQuizTimeSeconds = prefs.getInt('totalQuizTimeSeconds') ?? 0;
         totalQuizQuestions = prefs.getInt('totalQuizQuestions') ?? 0;
         totalQuizWrong = prefs.getInt('totalQuizWrong') ?? 0;
-        tayfPoints = prefs.getInt('tayfPoints') ?? 0;
+        
+        learnedWordTimestamps = prefs.getStringList('learnedWordTimestamps') ?? [];
+        completedQuizTimestamps = prefs.getStringList('completedQuizTimestamps') ?? [];
+        viewedCardTimestamps = prefs.getStringList('viewedCardTimestamps') ?? [];
+        wrongAnswerTimestamps = prefs.getStringList('wrongAnswerTimestamps') ?? [];
       });
 
       allWords = await isar.wordModels.filter().listTypeEqualTo('all').findAll();
@@ -364,15 +384,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _saveData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      
+      // Performans Koruması: Listeler 5000 elemanı geçerse eskileri siler, hafızayı şişirmez
+      if (learnedWordTimestamps.length > 5000) learnedWordTimestamps.removeRange(0, learnedWordTimestamps.length - 5000);
+      if (completedQuizTimestamps.length > 5000) completedQuizTimestamps.removeRange(0, completedQuizTimestamps.length - 5000);
+      if (viewedCardTimestamps.length > 5000) viewedCardTimestamps.removeRange(0, viewedCardTimestamps.length - 5000);
+      if (wrongAnswerTimestamps.length > 5000) wrongAnswerTimestamps.removeRange(0, wrongAnswerTimestamps.length - 5000);
+
+      // İSTATİSTİK ZIRHI: Tüm veriler kalıcı belleğe mühürleniyor
       prefs.setString('selectedLibrary', selectedLibrary);
       prefs.setString('selectedLevel', selectedLevel);
       prefs.setInt('quizThreshold', quizThreshold);
       prefs.setInt('tayfPoints', tayfPoints);
       prefs.setInt('currentCardIndex', currentCardIndex);
+      prefs.setInt('firstUseTimestamp', firstUseTimestamp);
+      prefs.setInt('currentStreak', currentStreak);
+      prefs.setInt('bestStreak', bestStreak);
+      prefs.setInt('streakFreezes', streakFreezes);
       prefs.setInt('totalCompletedQuizzes', totalCompletedQuizzes);
       prefs.setInt('totalQuizTimeSeconds', totalQuizTimeSeconds);
       prefs.setInt('totalQuizQuestions', totalQuizQuestions);
       prefs.setInt('totalQuizWrong', totalQuizWrong);
+      
+      prefs.setStringList('learnedWordTimestamps', learnedWordTimestamps);
+      prefs.setStringList('completedQuizTimestamps', completedQuizTimestamps);
+      prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
+      prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
 
       for (var w in allWords) { w.listType = 'all'; }
       for (var w in learningWords) { w.listType = 'learning'; }
@@ -479,13 +516,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _flipCard(WordModel word) {
     HapticFeedback.selectionClick(); 
-    if (isFlipped) { _flipController.reverse(); _speakWord(word, isMeaning: false); } 
-    else { _flipController.forward(); _speakWord(word, isMeaning: true); viewedCardTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); }
+    if (isFlipped) { 
+      _flipController.reverse(); 
+      _speakWord(word, isMeaning: false); 
+    } else { 
+      _flipController.forward(); 
+      _speakWord(word, isMeaning: true); 
+      // STATS FIX: Bakılan kartları kalıcı kaydet
+      viewedCardTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
+      _saveData();
+    }
     setState(() => isFlipped = !isFlipped);
   }
 
   void _markAsLearned(WordModel word, {bool fromQuiz = false}) {
-    if (!fromQuiz) { HapticFeedback.heavyImpact(); _recordActivity(1); }
+    if (!fromQuiz) { 
+      HapticFeedback.heavyImpact(); 
+      _recordActivity(1); 
+    }
+    // STATS FIX: Öğrenilen kelimeyi istatistiklere kalıcı kaydet
+    learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     
     setState(() {
       if (word.srsLevel == 0) {
@@ -514,7 +564,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _markAsToRepeat(WordModel word, {bool fromQuiz = false}) {
-    if (!fromQuiz) { HapticFeedback.mediumImpact(); _recordActivity(0); }
+    if (!fromQuiz) { 
+      HapticFeedback.mediumImpact(); 
+      _recordActivity(0); 
+    }
+    // STATS FIX: Yanlış bilinen kelimeyi istatistiklere kalıcı kaydet
+    wrongAnswerTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     
     setState(() {
       word.wrongCount++;
@@ -1004,7 +1059,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: ListView(
                   padding: EdgeInsets.zero,
                   children: [
-                    // YENİ: PREMIUM ANİMASYONLU DRAWER BAŞLIĞI
                     AnimatedBuilder(
                       animation: _bgGradientController,
                       builder: (context, child) {
@@ -1072,9 +1126,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         HapticFeedback.lightImpact();
                         Navigator.pop(context); 
                         Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
+                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
                           onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
-                            setState(() { quizThreshold = nT; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
+                            setState(() { dailyGoal = nG; quizThreshold = nT; quizQuestionCount = nQC; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
                             _saveData(); 
                             Future.delayed(const Duration(milliseconds: 150), () {
                               _showCenteredDialog(
@@ -1110,7 +1164,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         onWordMastered: (w) => _markAsLearned(w, fromQuiz: true), 
                         onWrongWord: (w) => _markAsToRepeat(w, fromQuiz: true), 
                         onQuizFinished: (t, a, w) { 
-                          setState(() { totalCompletedQuizzes++; totalQuizTimeSeconds += t; totalQuizQuestions += a; totalQuizWrong += w; });
+                          setState(() { 
+                            totalCompletedQuizzes++; 
+                            totalQuizTimeSeconds += t; 
+                            totalQuizQuestions += a; 
+                            totalQuizWrong += w; 
+                            // STATS FIX: Quiz tamamlanma zamanı eklendi
+                            completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
+                          });
                           _saveData(); 
                         }
                       ))); 
