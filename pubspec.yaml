@@ -22,11 +22,11 @@ dependencies:
   timezone: ^0.9.2
   google_fonts: ^6.2.1
   lottie: ^3.1.2
-  # GRAFİK, SES TANIMA VE İZİN PAKETLERİ
   fl_chart: ^0.68.0
   speech_to_text: ^6.6.0
   permission_handler: ^11.3.0
-  image_picker: ^1.1.2 # YENİ: İstek/Hata bildirimine ekran görüntüsü eklemek için eklendi
+  image_picker: ^1.1.2
+  http: ^1.2.0 # YENİ: Topluluk kütüphanesini GitHub'dan çekmek için
 
 dependency_overrides:
   flutter_plugin_android_lifecycle: 2.0.20
@@ -45,6 +45,6 @@ flutter:
     - assets/EN-TR_tayf.txt
     - assets/Babylon_English_Turkish_donustu.csv
     - assets/Babylon_Turkish_English_donustu.csv
-    - assets/ic_launcher.png # YENİ: Menü için eklendi
+    - assets/ic_launcher.png 
     - assets/Free-KH.txt
     - assets/tayf_wordnet_optimized.json
