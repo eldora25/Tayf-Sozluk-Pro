@@ -1,4 +1,4 @@
-import 'dart:async'; // YENİ: Debounce Zamanlayıcı Kütüphanesi
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'models.dart';
 
@@ -30,7 +30,7 @@ class ManageListScreen extends StatefulWidget {
 
 class _ManageListScreenState extends State<ManageListScreen> {
   String searchQuery = '';
-  Timer? _debounceTimer; // YENİ: Performans için klavye geciktiricisi
+  Timer? _debounceTimer; 
   List<WordModel> _filteredList = [];
 
   @override
@@ -41,11 +41,10 @@ class _ManageListScreenState extends State<ManageListScreen> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel(); // Bellek sızıntılarını önleme koruması
+    _debounceTimer?.cancel(); 
     super.dispose();
   }
 
-  // YENİ: DEBOUNCE ALGORİTMASI (Hızlı yazarken donmaları önleyen performans zırhı)
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
     
@@ -103,128 +102,142 @@ class _ManageListScreenState extends State<ManageListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Eğer dışarıdan liste güncellendiyse ve arama yoksa listeyi senkronize tut
     if (searchQuery.isEmpty && _filteredList.length != widget.words.length) {
       _filteredList = widget.words;
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
-            tooltip: 'Tümünü Çıkar',
-            onPressed: widget.words.isNotEmpty ? _confirmClearAll : null,
-          )
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              decoration: const InputDecoration(
-                labelText: "Kelime veya Anlam Ara...",
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            floating: true,
+            pinned: true,
+            snap: false,
+            expandedHeight: 110.0,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(widget.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              centerTitle: false,
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
+                tooltip: 'Tümünü Çıkar',
+                onPressed: widget.words.isNotEmpty ? _confirmClearAll : null,
+              )
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: TextField(
+                decoration: const InputDecoration(
+                  labelText: "Kelime veya Anlam Ara...",
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: _onSearchChanged,
               ),
-              onChanged: _onSearchChanged, // Optimizasyonlu Debounce tetikleyicisi bağlandı
             ),
           ),
-          Expanded(
-            child: _filteredList.isEmpty 
-              ? const Center(child: Text("Bu liste şu an boş."))
-              : ListView.builder(
-                  itemCount: _filteredList.length,
-                  itemBuilder: (context, index) {
+          _filteredList.isEmpty 
+            ? const SliverFillRemaining(
+                child: Center(child: Text("Bu liste şu an boş.", style: TextStyle(fontSize: 16, color: Colors.grey))),
+              )
+            : SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
                     final item = _filteredList[index];
                     
-                    return Dismissible(
-                      key: Key('${item.id}_$index'),
-                      direction: widget.onLearned != null 
-                          ? DismissDirection.horizontal 
-                          : DismissDirection.endToStart,
-                      background: Container(
-                        color: Colors.green,
-                        alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
-                      ),
-                      secondaryBackground: Container(
-                        color: Colors.redAccent,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: const Icon(Icons.delete, color: Colors.white, size: 30),
-                      ),
-                      onDismissed: (direction) {
-                        setState(() {
-                          widget.words.remove(item);
-                          _filteredList.remove(item);
-                        });
-                        if (direction == DismissDirection.endToStart) {
-                          widget.onDelete(item);
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime silindi."), duration: Duration(seconds: 1)));
-                        } else if (direction == DismissDirection.startToEnd) {
-                          if (widget.onLearned != null) widget.onLearned!(item);
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime öğrenildi! ✅"), backgroundColor: Colors.green, duration: Duration(seconds: 1)));
-                        }
-                      },
-                      child: Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        child: ListTile(
-                          title: Hero(
-                            tag: 'hero_word_list_${item.id}',
-                            child: Material(
-                              type: MaterialType.transparency,
-                              child: Text(item.word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
+                    return RepaintBoundary(
+                      child: Dismissible(
+                        key: Key('${item.id}_$index'),
+                        direction: widget.onLearned != null 
+                            ? DismissDirection.horizontal 
+                            : DismissDirection.endToStart,
+                        background: Container(
+                          color: Colors.green,
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
+                        ),
+                        secondaryBackground: Container(
+                          color: Colors.redAccent,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Icon(Icons.delete, color: Colors.white, size: 30),
+                        ),
+                        onDismissed: (direction) {
+                          setState(() {
+                            widget.words.remove(item);
+                            _filteredList.remove(item);
+                          });
+                          if (direction == DismissDirection.endToStart) {
+                            widget.onDelete(item);
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime silindi."), duration: Duration(seconds: 1)));
+                          } else if (direction == DismissDirection.startToEnd) {
+                            if (widget.onLearned != null) widget.onLearned!(item);
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime öğrenildi! ✅"), backgroundColor: Colors.green, duration: Duration(seconds: 1)));
+                          }
+                        },
+                        child: Card(
+                          elevation: 2,
+                          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: ListTile(
+                            title: Hero(
+                              tag: 'hero_word_list_${item.id}',
+                              child: Material(
+                                type: MaterialType.transparency,
+                                child: Text(item.word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
+                              ),
                             ),
-                          ),
-                          subtitle: Text(item.meanings.join(', ')),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (widget.showWrongCount)
-                                Text("Yanlış: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                              
-                              if (widget.showSrsLevel && item.srsLevel > 0)
-                                Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                  decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                                  child: Text("${_getSrsDayText(item.srsLevel)} Tekrarı", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
-                                ),
+                            subtitle: Text(item.meanings.join(', ')),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (widget.showWrongCount)
+                                  Text("Yanlış: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                
+                                if (widget.showSrsLevel && item.srsLevel > 0)
+                                  Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                                    child: Text("${_getSrsDayText(item.srsLevel)} Tekrarı", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
+                                  ),
 
-                              if (widget.onEdit != null)
+                                if (widget.onEdit != null)
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                                    tooltip: 'Düzenle',
+                                    onPressed: () async {
+                                      await widget.onEdit!(item);
+                                      setState(() {
+                                        _filteredList = widget.words;
+                                      });
+                                    },
+                                  ),
+
                                 IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                                  tooltip: 'Düzenle',
-                                  onPressed: () async {
-                                    await widget.onEdit!(item);
+                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+                                  tooltip: 'Listeden Çıkar',
+                                  onPressed: () {
+                                    widget.onDelete(item);
                                     setState(() {
-                                      _filteredList = widget.words;
+                                      _filteredList.remove(item);
                                     });
                                   },
                                 ),
-
-                              IconButton(
-                                icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
-                                tooltip: 'Listeden Çıkar',
-                                onPressed: () {
-                                  widget.onDelete(item);
-                                  setState(() {
-                                    _filteredList.remove(item);
-                                  });
-                                },
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     );
                   },
+                  childCount: _filteredList.length,
                 ),
-          ),
+              ),
         ],
       ),
     );
