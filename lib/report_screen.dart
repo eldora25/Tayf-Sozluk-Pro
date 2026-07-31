@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart'; // YENİ: Ekran Görüntüsü İçin
+import 'package:image_picker/image_picker.dart'; 
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,15 +17,15 @@ class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _controller = TextEditingController();
   bool _includeLogs = true;
   bool _isSending = false;
-  XFile? _attachedImage; // YENİ: Seçilen ekran görüntüsü
+  List<XFile> _attachedImages = []; // DÜZELTİLDİ: Birden fazla resim için liste
 
-  // YENİ: Galeriden veya Kameradan Ekran Görüntüsü Seçme
-  Future<void> _pickImage() async {
+  Future<void> _pickImages() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
+    // DÜZELTİLDİ: MultiImage picker kullanılarak çoklu seçim aktif edildi
+    final List<XFile> images = await picker.pickMultiImage();
+    if (images.isNotEmpty) {
       setState(() {
-        _attachedImage = image;
+        _attachedImages.addAll(images);
       });
       HapticFeedback.mediumImpact();
     }
@@ -73,10 +73,9 @@ class _ReportScreenState extends State<ReportScreen> {
       final file = File('${dir.path}/Tayf_Bildirim_$uid.txt');
       await file.writeAsString(reportContent.toString());
 
-      // Paylaşılacak Dosya Listesi (TXT + varsa Ekran Görüntüsü)
       List<XFile> filesToShare = [XFile(file.path)];
-      if (_attachedImage != null) {
-        filesToShare.add(_attachedImage!);
+      if (_attachedImages.isNotEmpty) {
+        filesToShare.addAll(_attachedImages);
       }
 
       if (mounted) {
@@ -112,7 +111,6 @@ class _ReportScreenState extends State<ReportScreen> {
         title: const Text("İstek / Hata Bildir", style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
       ),
-      // DÜZELTİLDİ: SANAL TUŞLARIN ALTINDA KALMAMASI İÇİN BOTTOM NAVIGATION BAR KULLANILDI
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -182,7 +180,6 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
             const SizedBox(height: 20),
 
-            // YENİ: EKRAN GÖRÜNTÜSÜ EKLEME BÖLÜMÜ
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -196,31 +193,43 @@ class _ReportScreenState extends State<ReportScreen> {
                   ListTile(
                     leading: const Icon(Icons.image_outlined, color: Colors.blueAccent, size: 28),
                     title: const Text("Ekran Görüntüsü Ekle", style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text("Varsa hatanın ekran görüntüsünü ekleyin.", style: TextStyle(fontSize: 12)),
+                    subtitle: const Text("Birden fazla ekran görüntüsü seçebilirsiniz.", style: TextStyle(fontSize: 12)),
                     trailing: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
-                      onPressed: _pickImage,
-                      icon: const Icon(Icons.add_a_photo, size: 16),
+                      onPressed: _pickImages,
+                      icon: const Icon(Icons.add_photo_alternate, size: 16),
                       label: const Text("Seç"),
                     ),
                   ),
-                  if (_attachedImage != null) ...[
+                  if (_attachedImages.isNotEmpty) ...[
                     const Divider(),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(File(_attachedImage!.path), width: 60, height: 60, fit: BoxFit.cover),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(child: Text("Ekran görüntüsü eklendi.", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => setState(() => _attachedImage = null),
-                          )
-                        ],
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _attachedImages.map((img) => Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(File(img.path), width: 70, height: 70, fit: BoxFit.cover),
+                            ),
+                            Positioned(
+                              top: -10,
+                              right: -10,
+                              child: IconButton(
+                                icon: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                  child: const Icon(Icons.cancel, color: Colors.red, size: 20)
+                                ),
+                                onPressed: () {
+                                  setState(() => _attachedImages.remove(img));
+                                },
+                              ),
+                            )
+                          ],
+                        )).toList(),
                       ),
                     ),
                   ]
