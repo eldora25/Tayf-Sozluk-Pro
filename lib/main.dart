@@ -211,8 +211,10 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
 
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
-    final PageTransitionsTheme smoothTransitions = const PageTransitionsTheme(
-      builders: {
+    
+    // KESİN ÇÖZÜM: Const anahtarları tamamen kaldırıldı, tipik ve güvenli örnekleme yapıldı.
+    final PageTransitionsTheme smoothTransitions = PageTransitionsTheme(
+      builders: <TargetPlatform, PageTransitionsBuilder>{
         TargetPlatform.android: CupertinoPageTransitionsBuilder(),
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
       },
@@ -1009,7 +1011,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 10),
-                          // YENİ: DÜNYA SİMGESİ YERİNE ASSETS İÇİNDEKİ İKON GETİRİLDİ
                           Container(
                             width: 60,
                             height: 60,
