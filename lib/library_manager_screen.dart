@@ -115,10 +115,9 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     await widget.onExport(libName);
   }
 
-  // ZEKİ SİSTEM 1: Mitoz Dedektörlü Topluluk Önerisi
   Future<void> _submitToCommunity(String libName) async {
     try {
-      bool isMitosis = libName.startsWith('🧬'); // Mitoz kontrolü
+      bool isMitosis = libName.startsWith('🧬'); 
 
       List<WordModel> wordsToExport = [
         ...widget.allWords.where((w) => w.libraryName == libName),
@@ -132,7 +131,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
         return;
       }
 
-      // Eşsizliği Kelime+Anlam bazında garantile
       Set<String> uniqueSignatures = {};
       List<Map<String, dynamic>> jsonData = [];
 
@@ -146,15 +144,18 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
             "meanings": w.meanings,
             "examples": w.examples,
             "level": w.level,
-            "libraryName": isMitosis ? libName : "Topluluk_Onerisi", // Mitoz ise adını koru ki diller ayrışsın
+            "libraryName": isMitosis ? libName : "Topluluk_Onerisi", 
           });
         }
       }
 
       String jsonString = json.encode(jsonData);
       final dir = await getTemporaryDirectory();
-      String prefix = isMitosis ? "global_mitosis_submission" : "community_submission";
-      final file = File('${dir.path}/${prefix}_${DateTime.now().millisecondsSinceEpoch}.json');
+      
+      // DÜZELTİLDİ: Emojileri ve boşlukları dosya adından siliyoruz
+      String safeName = isMitosis ? "global_mitosis_submission" : "community_submission";
+      final file = File('${dir.path}/${safeName}_${DateTime.now().millisecondsSinceEpoch}.json');
+      
       await file.writeAsString(jsonString);
 
       if (mounted) {
@@ -175,7 +176,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     }
   }
 
-  // ZEKİ SİSTEM 2: Kelime+Anlam (Atomic) Koruyuculu İndirme
   Future<void> _downloadLibrary(String targetUrl, String poolName) async {
     setState(() => _isDownloading = true);
     try {
@@ -196,8 +196,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
         if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(json.decode(parsedJsons.first)['error']), backgroundColor: Colors.red));
         } else {
-           // Mükemmel Çözüm: Artık sadece kelimeye değil, Kelime+Anlam ikilisine (İmza) bakılıyor. 
-           // Böylece "Apple=Elma,Meyve" varken "Apple=Elma" mitoz kartı indirildiğinde silinmiyor!
            Set<String> existingSignatures = {
               ...widget.allWords.map((w) => "${w.word}_${w.meanings.join('-')}"),
               ...widget.learnedWords.map((w) => "${w.word}_${w.meanings.join('-')}"),
@@ -265,7 +263,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     }
   }
 
-  // YENİ: Havuz İndirme Alt Menüsü
   void _showDownloadMenu() {
     showModalBottomSheet(
       context: context,
@@ -315,7 +312,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
   }
 
   void _showLibraryMenu(String libName) {
-    bool isMitosis = libName.startsWith('🧬'); // Menü stili mitoza göre değişir
+    bool isMitosis = libName.startsWith('🧬'); 
 
     showModalBottomSheet(
       context: context,
@@ -393,7 +390,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                     icon: _isDownloading 
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                         : const Icon(Icons.cloud_download, color: Colors.white),
-                    onPressed: _isDownloading ? null : _showDownloadMenu, // DÜZELTİLDİ: Menüyü açar
+                    onPressed: _isDownloading ? null : _showDownloadMenu, 
                                    ),
                  ),
                )
@@ -409,7 +406,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       String libName = libs[index];
-                      bool isMitosis = libName.startsWith('🧬'); // Görselliği değiştirir
+                      bool isMitosis = libName.startsWith('🧬'); 
                       
                       int total = widget.allWords.where((e) => e.libraryName == libName).length +
                                   widget.learnedWords.where((e) => e.libraryName == libName).length +
