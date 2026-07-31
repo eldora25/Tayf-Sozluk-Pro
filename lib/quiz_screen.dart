@@ -103,7 +103,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() => _secondsElapsed++);
+      if (mounted) setState(() => _secondsElapsed++);
     });
   }
 
@@ -150,6 +150,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   }
 
   void _generateQuestion() {
+    if (!mounted) return; // Güvenlik kalkanı
     if (answeredQuestions >= totalQuestions) {
       HapticFeedback.heavyImpact(); 
       setState(() { isQuizFinished = true; _timer?.cancel(); });
@@ -205,7 +206,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
-  // MİTOZ BÖLÜNME İŞLEMİ (Veritabanı Asenkron Kilidi)
+  // MİTOZ BÖLÜNME İŞLEMİ (Veritabanı Asenkron Kilidi - Düzeltildi)
   void _checkAnswer(String option) async {
     if (isAnsweredCorrectly || selectedWrongOptions.contains(option)) return;
     bool isCorrect = (option == correctOption);
@@ -241,26 +242,41 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             targetLanguage: currentWord.targetLanguage,
           );
           
-          if (isMeaning) currentWord.meanings.remove(correctOption);
-          else currentWord.examples.remove(correctOption);
+          // KESİN ÇÖZÜM: Sabit liste (Fixed-length list) hatasını önlemek için List.from() ile yeni liste oluşturuyoruz.
+          if (isMeaning) {
+            currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
+          } else {
+            currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
+          }
           
-          await isar.writeTxn(() async {
-            await isar.wordModels.put(currentWord); // Orijinal kelimenin anlamı eksildi
-            await isar.wordModels.put(splitWord);   // Yepyeni bağımsız kelime doğdu
-          });
+          try {
+            await isar.writeTxn(() async {
+              await isar.wordModels.put(currentWord); // Orijinal kelimenin anlamı eksildi
+              await isar.wordModels.put(splitWord);   // Yepyeni bağımsız kelime doğdu
+            });
+          } catch (e) {
+            debugPrint("DB Hata (Doğru): $e");
+          }
           
           currentWord = splitWord; // Arayüzü yeni kelimeye kilitler
           if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
         } else {
           // Zaten tek anlamı varsa normal arttır
           currentWord.correctCount++;
-          await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+          try {
+            await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+          } catch (e) {
+            debugPrint("DB Hata (Normal Artış): $e");
+          }
           if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
         }
       }
       
       _speakFeedback(true);
-      Future.delayed(const Duration(milliseconds: 1500), _generateQuestion);
+      // GÜVENLİK: Timer tetiklenirken ekran değişmişse çökmemesi için eklendi.
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) _generateQuestion();
+      });
       
     } else {
       setState(() {
@@ -292,19 +308,31 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             targetLanguage: currentWord.targetLanguage,
           );
           
-          if (isMeaning) currentWord.meanings.remove(correctOption);
-          else currentWord.examples.remove(correctOption);
+          // KESİN ÇÖZÜM (Yanlış Cevap): Sabit liste (Fixed-length list) hatasını önlemek için List.from() kullanıldı.
+          if (isMeaning) {
+            currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
+          } else {
+            currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
+          }
           
-          await isar.writeTxn(() async {
-            await isar.wordModels.put(currentWord);
-            await isar.wordModels.put(splitWord);
-          });
+          try {
+            await isar.writeTxn(() async {
+              await isar.wordModels.put(currentWord);
+              await isar.wordModels.put(splitWord);
+            });
+          } catch (e) {
+            debugPrint("DB Hata (Yanlış): $e");
+          }
           
           currentWord = splitWord;
           widget.onWrongWord(splitWord);
         } else {
           currentWord.wrongCount++;
-          await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+          try {
+            await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+          } catch (e) {
+            debugPrint("DB Hata (Yanlış Normal Artış): $e");
+          }
           widget.onWrongWord(currentWord);
         }
       }
@@ -474,7 +502,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(16),
                   onTap: () => _checkAnswer(option),
                   child: Padding(
-                    // EKRANDAN TAŞMAYI VE ÇİRKİN GÖRÜNTÜYÜ ENGELLEYEN YAPI:
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     child: Row(
                       children: [
