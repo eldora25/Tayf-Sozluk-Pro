@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // YENİ: Titreşim (HapticFeedback) donanım erişimi için eklendi
+import 'package:flutter/services.dart'; 
 
 class SettingsScreen extends StatefulWidget {
   final int currentGoal;
@@ -38,22 +38,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _level;
 
   final List<Color> _themeColors = [
-    Colors.grey.shade900,         // 0: Koyu Mod
-    Colors.grey.shade300,         // 1: Aydınlık Mod
-    Colors.blue,                  // 2: Pastel Mavi
-    Colors.teal,                  // 3: Pastel Yeşil
-    Colors.deepPurpleAccent,      // 4: Canlı Mor
-    Colors.deepOrangeAccent,      // 5: Sıcak Turuncu
-    Colors.pinkAccent,            // 6: Şeker Pembe
-    Colors.cyan,                  // 7: Rengarenk
-    const Color(0xFF2C3E50),      // 8: Koyu Gri / Gece
-    const Color(0xFFB0BEC5),      // 9: Açık Gri / Gümüş
-    const Color(0xFFF4ECD8),      // 10: Sıcak Kağıt (Sepya)
-    const Color(0xFFE8F4F8),      // 11: Soğuk Kağıt (Buzul)
-    const Color(0xFFF5F5DC),      // 12: Krem Kağıt (Nötr)
-    const Color(0xFF4E342E),      // 13: Kahve / Çikolata
-    const Color(0xFF37474F),      // 14: Kömür Karası
-    const Color(0xFF558B2F),      // 15: Mat Doğal Yeşil
+    Colors.grey.shade900,         
+    Colors.grey.shade300,         
+    Colors.blue,                  
+    Colors.teal,                  
+    Colors.deepPurpleAccent,      
+    Colors.deepOrangeAccent,      
+    Colors.pinkAccent,            
+    Colors.cyan,                  
+    const Color(0xFF2C3E50),      
+    const Color(0xFFB0BEC5),      
+    const Color(0xFFF4ECD8),      
+    const Color(0xFFE8F4F8),      
+    const Color(0xFFF5F5DC),      
+    const Color(0xFF4E342E),      
+    const Color(0xFF37474F),      
+    const Color(0xFF558B2F),      
   ];
 
   final List<String> _themeNames = [
@@ -149,11 +149,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Text("Tema Rengi Seçimi", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             _themeNames[_themeIndex], 
                             textAlign: TextAlign.right,
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                            maxLines: 2, 
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
