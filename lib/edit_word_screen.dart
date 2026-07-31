@@ -33,8 +33,14 @@ class _EditWordScreenState extends State<EditWordScreen> {
   void initState() {
     super.initState();
     _wordText = widget.word.word;
-    _level = widget.word.level;
     _library = widget.word.libraryName;
+    
+    // DÜZELTİLDİ: "Free KH" gibi dışarıdan gelen kelimelerin seviyesi hatalıysa çökmemesi için güvenlik eklendi
+    _level = widget.word.level;
+    List<String> validLevels = ['A1','A2','B1','B2','C1','C2','Genel'];
+    if (!validLevels.contains(_level)) {
+      _level = 'Genel'; 
+    }
 
     _currentLibraries = widget.availableLibraries.where((lib) => lib != 'Tekrarlanması Gerekenler').toList();
     if (!_currentLibraries.contains('+ Yeni Kütüphane Oluştur')) {
@@ -156,7 +162,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             onPressed: () {
-              Navigator.pop(context); // Dialogu kapat
+              Navigator.pop(context);
               _submitAction(EditAction.delete);
             },
             child: const Text("SİL", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -291,7 +297,6 @@ class _EditWordScreenState extends State<EditWordScreen> {
             ),
           ),
 
-          // YENİ: Yüzen Lüks Buton Alanı (Güncelle, Kopyala, Taşı)
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Container(
