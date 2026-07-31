@@ -36,6 +36,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _library;
   late String _level;
 
+  final List<Color> _themeColors = [
+    Colors.grey.shade900, 
+    Colors.grey.shade300, 
+    Colors.blue, 
+    Colors.teal, 
+    Colors.deepPurpleAccent, 
+    Colors.deepOrangeAccent, 
+    Colors.pinkAccent, 
+    Colors.cyan 
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -53,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -74,146 +85,165 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: Theme.of(context).primaryColor, size: 22),
+          const SizedBox(width: 8),
+          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard({required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Ayarlar & Temalar")),
-      body: ListView(
-        padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0 + MediaQuery.of(context).padding.bottom),
+      appBar: AppBar(title: const Text("Ayarlar & Temalar", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
+      body: Stack(
         children: [
-          const Text("Görünüm", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<int>(
-            value: _themeIndex,
-            decoration: const InputDecoration(labelText: "Tema Seçimi", border: OutlineInputBorder()),
-            items: const [
-              DropdownMenuItem(value: 0, child: Text("Karanlık Mod (Varsayılan)")),
-              DropdownMenuItem(value: 1, child: Text("Aydınlık Mod")),
-              DropdownMenuItem(value: 2, child: Text("Pastel Mavi (Okuması Kolay)")),
-              DropdownMenuItem(value: 3, child: Text("Pastel Yeşil (Dinlendirici)")),
-              DropdownMenuItem(value: 4, child: Text("Canlı Mor (Enerjik)")),
-              DropdownMenuItem(value: 5, child: Text("Sıcak Turuncu (Canlı)")),
-              DropdownMenuItem(value: 6, child: Text("Şeker Pembe (Tatlı)")), 
-              DropdownMenuItem(value: 7, child: Text("Rengarenk (Eğlenceli)")), 
-            ],
-            onChanged: (v) => setState(() => _themeIndex = v!),
-          ),
-          
-          const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider()),
-
-          const Text("Kütüphane ve Seviye", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            value: _library,
-            decoration: const InputDecoration(labelText: "Aktif Kütüphane Seç", border: OutlineInputBorder()),
-            items: widget.availableLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            onChanged: (v) => setState(() => _library = v!),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _level,
-            decoration: const InputDecoration(labelText: "Seviye Seç", border: OutlineInputBorder()),
-            items: ['A1','A2','B1','B2','C1','C2','Genel'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            onChanged: (v) => setState(() => _level = v!),
-          ),
-          
-          const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider()),
-          
-          Text("Günlük Öğrenme Hedefi: ${_goalValue.toInt()} Kelime", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          Slider(
-            value: _goalValue, min: 5, max: 100, divisions: 19,
-            label: _goalValue.toInt().toString(), activeColor: Colors.deepPurple,
-            onChanged: (val) => setState(() => _goalValue = val),
-          ),
-          const SizedBox(height: 20),
-          Text("Quiz Soru Sayısı: ${_questionCountValue.toInt()} Soru", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const Text("Bir quiz seansında kaç soru çıkacağını belirler.", style: TextStyle(color: Colors.grey, fontSize: 12)),
-          Slider(
-            value: _questionCountValue, min: 5, max: 100, divisions: 19,
-            label: _questionCountValue.toInt().toString(), activeColor: Colors.blue,
-            onChanged: (val) => setState(() => _questionCountValue = val),
-          ),
-          const SizedBox(height: 20),
-          Text("Quiz Ezber Eşiği (Doğru Sayısı): ${_thresholdValue.toInt()}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const Text("Kelimenin 'Öğrenildi' sayılması için gerekli doğru sayısı (Min: 2, Max: 50).", style: TextStyle(color: Colors.grey, fontSize: 12)),
-          Slider(
-            value: _thresholdValue, min: 2, max: 50, divisions: 48,
-            label: _thresholdValue.toInt().toString(), activeColor: Colors.orange,
-            onChanged: (val) => setState(() => _thresholdValue = val),
-          ),
-          
-          const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider()),
-          
-          const Text("Uygulama İçi Hazır Paketler", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
-          const Text("Boyutu büyük paketlerin yüklenmesi birkaç saniye sürebilir, lütfen bekleyin.", style: TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 10),
-          
-          ListTile(
-            tileColor: Colors.indigo.withOpacity(0.1),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            title: const Text("WordNet İngilizce", style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text("Kapsamlı İng-İng Sözlük (JSON)"),
-            trailing: const Icon(Icons.download, color: Colors.indigo),
-            onTap: () { _showWordNetAlert(); },
-          ),
-          const SizedBox(height: 10),
-          ListTile(
-            tileColor: Colors.orange.withOpacity(0.1),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text("Kısa Temel Kelimeler (TXT)"),
-            trailing: const Icon(Icons.download, color: Colors.orange),
-            onTap: () { widget.onAddPackage("assets/EN-TR_tayf.txt", "txt", "Tayf İng-Tr"); },
-          ),
-          const SizedBox(height: 10),
-          ListTile(
-            tileColor: Colors.green.withOpacity(0.1),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            title: const Text("Babylon İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text("Geniş Kapsamlı Sözlük (CSV)"),
-            trailing: const Icon(Icons.download, color: Colors.green),
-            onTap: () { widget.onAddPackage("assets/Babylon_English_Turkish_donustu.csv", "csv", "Babylon İng-Tr"); },
-          ),
-          const SizedBox(height: 10),
-          ListTile(
-            tileColor: Colors.red.withOpacity(0.1),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            title: const Text("Babylon Türkçe-İngilizce", style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text("Geniş Kapsamlı Sözlük (CSV)"),
-            trailing: const Icon(Icons.download, color: Colors.red),
-            onTap: () { widget.onAddPackage("assets/Babylon_Turkish_English_donustu.csv", "csv", "Babylon Tr-İng"); },
-          ),
-          const SizedBox(height: 10),
-          ListTile(
-            tileColor: Colors.blue.withOpacity(0.1),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            title: const Text("Test Paketi", style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text("Örnek cümleli test verisi (JSON)"),
-            trailing: const Icon(Icons.download, color: Colors.blue),
-            onTap: () { widget.onAddPackage("assets/test_paket.json", "json", "Test Paketi"); },
-          ),
-          const SizedBox(height: 10),
-          ListTile(
-            tileColor: Colors.purple.withOpacity(0.1),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            title: const Text("FreeDict İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text("Açık Kaynak Sözlük (TXT)"),
-            trailing: const Icon(Icons.download, color: Colors.purple),
-            onTap: () { widget.onAddPackage("assets/Free-KH.txt", "txt", "Free-KH İng-Tr"); },
-          ),
-
-          const SizedBox(height: 40),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, elevation: 5,
+          ListView(
+            padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0 + MediaQuery.of(context).padding.bottom),
+            children: [
+              _buildSectionTitle("Görünüm & Tema", Icons.palette),
+              _buildCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Tema Rengini Seçin", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 16),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Row(
+                        children: List.generate(_themeColors.length, (index) {
+                          bool isSelected = _themeIndex == index;
+                          return GestureDetector(
+                            onTap: () => setState(() => _themeIndex = index),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOutBack,
+                              margin: const EdgeInsets.only(right: 16),
+                              height: isSelected ? 56 : 48,
+                              width: isSelected ? 56 : 48,
+                              decoration: BoxDecoration(
+                                color: _themeColors[index],
+                                shape: BoxShape.circle,
+                                border: isSelected ? Border.all(color: Theme.of(context).primaryColor, width: 3) : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+                                boxShadow: isSelected ? [BoxShadow(color: _themeColors[index].withOpacity(0.4), blurRadius: 10, spreadRadius: 2)] : [],
+                              ),
+                              child: isSelected ? Icon(Icons.check, color: index == 1 ? Colors.black : Colors.white, size: 28) : null,
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
+                )
               ),
-              onPressed: () {
-                widget.onSaveSettings(_goalValue.toInt(), _thresholdValue.toInt(), _questionCountValue.toInt(), _themeIndex, _library, _level);
-                Navigator.pop(context);
-              },
-              child: const Text("AYARLARI KAYDET", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+
+              _buildSectionTitle("Kütüphane Yönetimi", Icons.library_books),
+              _buildCard(
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _library,
+                      decoration: InputDecoration(labelText: "Aktif Kütüphane", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Theme.of(context).scaffoldBackgroundColor),
+                      items: widget.availableLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      onChanged: (v) => setState(() => _library = v!),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _level,
+                      decoration: InputDecoration(labelText: "Zorluk Seviyesi", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Theme.of(context).scaffoldBackgroundColor),
+                      items: ['A1','A2','B1','B2','C1','C2','Genel'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      onChanged: (v) => setState(() => _level = v!),
+                    ),
+                  ],
+                ),
+              ),
+              
+              _buildSectionTitle("Hedefler ve Öğrenme", Icons.track_changes),
+              _buildCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Günlük Öğrenme Hedefi:", style: TextStyle(fontWeight: FontWeight.bold)), Text("${_goalValue.toInt()} Kelime", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, fontSize: 16))]),
+                    Slider(value: _goalValue, min: 5, max: 100, divisions: 19, activeColor: Theme.of(context).primaryColor, onChanged: (val) => setState(() => _goalValue = val)),
+                    const Divider(height: 30),
+                    
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Quiz Soru Sayısı:", style: TextStyle(fontWeight: FontWeight.bold)), Text("${_questionCountValue.toInt()} Soru", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16))]),
+                    const Text("Bir quiz seansında çıkacak soru sayısı.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Slider(value: _questionCountValue, min: 5, max: 100, divisions: 19, activeColor: Colors.blue, onChanged: (val) => setState(() => _questionCountValue = val)),
+                    const Divider(height: 30),
+
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Quiz Ezber Eşiği:", style: TextStyle(fontWeight: FontWeight.bold)), Text("${_thresholdValue.toInt()} Doğru", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 16))]),
+                    const Text("Bir kelimenin 'Öğrenildi' (Mezun) sayılması için üst üste bilinmesi gereken sayı.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Slider(value: _thresholdValue, min: 2, max: 50, divisions: 48, activeColor: Colors.orange, onChanged: (val) => setState(() => _thresholdValue = val)),
+                  ],
+                )
+              ),
+              
+              _buildSectionTitle("Uygulama İçi Hazır Paketler", Icons.cloud_download),
+              _buildCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Boyutu büyük paketlerin yüklenmesi birkaç saniye sürebilir.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    const SizedBox(height: 16),
+                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet İngilizce", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kapsamlı İng-İng Sözlük"), trailing: const Icon(Icons.download_for_offline, color: Colors.indigo, size: 32), onTap: () { _showWordNetAlert(); }),
+                    const SizedBox(height: 10),
+                    ListTile(tileColor: Colors.orange.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kısa Temel Kelimeler"), trailing: const Icon(Icons.download_for_offline, color: Colors.orange, size: 32), onTap: () { widget.onAddPackage("assets/EN-TR_tayf.txt", "txt", "Tayf İng-Tr"); }),
+                    const SizedBox(height: 10),
+                    ListTile(tileColor: Colors.green.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Babylon İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Geniş Kapsamlı Sözlük"), trailing: const Icon(Icons.download_for_offline, color: Colors.green, size: 32), onTap: () { widget.onAddPackage("assets/Babylon_English_Turkish_donustu.csv", "csv", "Babylon İng-Tr"); }),
+                    const SizedBox(height: 10),
+                    ListTile(tileColor: Colors.red.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Babylon Türkçe-İngilizce", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Geniş Kapsamlı Sözlük"), trailing: const Icon(Icons.download_for_offline, color: Colors.red, size: 32), onTap: () { widget.onAddPackage("assets/Babylon_Turkish_English_donustu.csv", "csv", "Babylon Tr-İng"); }),
+                    const SizedBox(height: 10),
+                    ListTile(tileColor: Colors.blue.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Test Paketi", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Örnek cümleli test verisi"), trailing: const Icon(Icons.download_for_offline, color: Colors.blue, size: 32), onTap: () { widget.onAddPackage("assets/test_paket.json", "json", "Test Paketi"); }),
+                    const SizedBox(height: 10),
+                    ListTile(tileColor: Colors.purple.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("FreeDict İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Açık Kaynak Sözlük"), trailing: const Icon(Icons.download_for_offline, color: Colors.purple, size: 32), onTap: () { widget.onAddPackage("assets/Free-KH.txt", "txt", "Free-KH İng-Tr"); }),
+                  ],
+                )
+              ),
+            ],
+          ),
+
+          // YENİ: Yapışkanlı Sabit Kaydet Butonu (Floating Bottom Bar)
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            child: Container(
+              padding: EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 16 + MediaQuery.of(context).padding.bottom),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -5))]
+              ),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.save_rounded),
+                label: const Text("AYARLARI KAYDET", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18), backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white, elevation: 5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                onPressed: () {
+                  widget.onSaveSettings(_goalValue.toInt(), _thresholdValue.toInt(), _questionCountValue.toInt(), _themeIndex, _library, _level);
+                  Navigator.pop(context);
+                },
+              ),
             ),
           )
         ],
