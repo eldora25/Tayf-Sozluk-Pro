@@ -18,7 +18,7 @@ class MatchGameScreen extends StatefulWidget {
   State<MatchGameScreen> createState() => _MatchGameScreenState();
 }
 
-class _MatchGameScreenState extends State<MatchGameScreen> {
+class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderStateMixin {
   List<WordModel> gameWords = [];
   List<WordModel> leftColumn = [];
   List<WordModel> rightColumn = [];
@@ -38,7 +38,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
   }
 
   void _prepareGame() {
-    // 3 Rauntluk (Maksimum 15 kelime) bir oyun hazırlayalım
     List<WordModel> pool = List.from(widget.words)..shuffle();
     gameWords = pool.take(min(15, pool.length)).toList();
     totalRounds = (gameWords.length / 5).ceil();
@@ -56,9 +55,8 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
       setState(() {
         isGameFinished = true;
       });
-      // Kazanılan Tayf Puanı (TP) hesaplanır (Doğrular - Yanlışlar)
       int earnedPoints = (gameWords.length * 3) - (mistakes * 2);
-      if (earnedPoints < 5) earnedPoints = 5; // En az 5 teselli puanı
+      if (earnedPoints < 5) earnedPoints = 5; 
       widget.onGameFinished(earnedPoints);
       return;
     }
@@ -76,20 +74,17 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
 
   void _handleDrop(WordModel dragged, WordModel target) {
     if (dragged.word == target.word) {
-      // DOĞRU EŞLEŞTİRME
       HapticFeedback.mediumImpact();
       setState(() {
         matchedWords.add(dragged.word);
         score += 10;
       });
 
-      // Raunt bitti mi kontrol et
       if (matchedWords.length == leftColumn.length) {
         currentRound++;
         Future.delayed(const Duration(milliseconds: 600), _loadRound);
       }
     } else {
-      // YANLIŞ EŞLEŞTİRME (Kırmızı Parlama ve Sarsıntı Titreşimi)
       HapticFeedback.heavyImpact();
       setState(() {
         wrongTargetWord = target.word;
@@ -110,83 +105,95 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
   Widget build(BuildContext context) {
     if (widget.words.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Eşleştirme Oyunu")),
+        appBar: AppBar(title: const Text("Eşleştirme Oyunu"), elevation: 0),
         body: const Center(child: Text("Oynamak için yeterli kelime yok.")),
       );
     }
 
     if (isGameFinished) {
+      int finalPoints = (gameWords.length * 3) - (mistakes * 2);
+      if (finalPoints < 5) finalPoints = 5;
+
       return Scaffold(
-        appBar: AppBar(title: const Text("Oyun Bitti")),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text("Mükemmel Eşleşme!", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
-                const SizedBox(height: 10),
-                Lottie.network(
-                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', 
-                  height: 180,
-                  repeat: true,
-                  errorBuilder: (context, error, stackTrace) => const Text("🧩", style: TextStyle(fontSize: 80)), 
-                ),
-                const SizedBox(height: 20),
-                Card(
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      children: [
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Text("Oyun Skoru:", style: TextStyle(fontSize: 20)),
-                          Text("$score", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue)),
-                        ]),
-                        const Divider(height: 30),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Text("Hatalı Sürükleme:", style: TextStyle(fontSize: 20)),
-                          Text("$mistakes", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red)),
-                        ]),
-                        const Divider(height: 30),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Text("Kazanılan 💎:", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          Text("+${(gameWords.length * 3) - (mistakes * 2) < 5 ? 5 : (gameWords.length * 3) - (mistakes * 2)}", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green)),
-                        ]),
-                      ],
+        appBar: AppBar(title: const Text("Oyun Bitti", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
+        body: Container(
+          decoration: BoxDecoration(gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.05), Colors.transparent], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Mükemmel Eşleşme! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+                  const SizedBox(height: 10),
+                  Lottie.network(
+                    'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', 
+                    height: 180,
+                    repeat: true,
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 100, color: Colors.amber), 
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.15), blurRadius: 20, offset: const Offset(0, 10))]),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        children: [
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Text("Oyun Skoru:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                            Text("$score", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.blue)),
+                          ]),
+                          const Divider(height: 30),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Text("Hatalı Sürükleme:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                            Text("$mistakes", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                          ]),
+                          const Divider(height: 30),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Text("Kazanılan Tayf Puanı:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            Row(
+                              children: [
+                                const Icon(Icons.diamond, color: Colors.green, size: 28),
+                                const SizedBox(width: 8),
+                                Text("+$finalPoints", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green)),
+                              ],
+                            ),
+                          ]),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text("TEKRAR OYNA", style: TextStyle(fontSize: 18)),
-                    onPressed: () {
-                      setState(() {
-                        isGameFinished = false;
-                        currentRound = 0;
-                        score = 0;
-                        mistakes = 0;
-                        _prepareGame();
-                      });
-                    },
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(18), backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white, elevation: 8, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                      icon: const Icon(Icons.refresh, size: 24),
+                      label: const Text("YENİDEN OYNA", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        setState(() {
+                          isGameFinished = false;
+                          currentRound = 0;
+                          score = 0;
+                          mistakes = 0;
+                          _prepareGame();
+                        });
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    style: TextButton.styleFrom(padding: const EdgeInsets.all(16)),
-                    icon: const Icon(Icons.home),
-                    label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18)),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                )
-              ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      style: TextButton.styleFrom(padding: const EdgeInsets.all(16)),
+                      icon: const Icon(Icons.home, size: 24),
+                      label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      onPressed: () { HapticFeedback.selectionClick(); Navigator.pop(context); },
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
         ),
@@ -195,58 +202,78 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sürükle ve Eşleştir 🧩"),
+        title: const Text("Sürükle ve Eşleştir 🧩", style: TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
         actions: [
           Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Text("Skor: $score", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            child: Container(
+              margin: const EdgeInsets.only(right: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+              child: Text("Skor: $score", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             ),
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
+      body: Container(
+        decoration: BoxDecoration(gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.05), Colors.transparent], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
         child: Column(
           children: [
-            Text("Raunt: ${currentRound + 1} / $totalRounds", style: const TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
+              child: Text("Raunt: ${currentRound + 1} / $totalRounds", style: TextStyle(fontSize: 16, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+            ),
+            const SizedBox(height: 20),
             Expanded(
               child: Row(
                 children: [
-                  // SOL SÜTUN: İNGİLİZCE KELİMELER (SÜRÜKLENEBİLİR - DRAGGABLE)
+                  // SOL SÜTUN: İNGİLİZCE KELİMELER
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: leftColumn.map((word) {
-                        if (matchedWords.contains(word.word)) {
-                          return const SizedBox(height: 70, child: Center(child: Icon(Icons.check_circle, color: Colors.green, size: 40)));
+                        bool isMatched = matchedWords.contains(word.word);
+                        if (isMatched) {
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOutBack,
+                            height: 70,
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green.withOpacity(0.5), width: 2)),
+                            child: const Center(child: Icon(Icons.check_circle, color: Colors.green, size: 36)),
+                          );
                         }
                         return Draggable<WordModel>(
                           data: word,
                           feedback: Material(
                             color: Colors.transparent,
                             child: Container(
-                              width: MediaQuery.of(context).size.width * 0.4,
-                              height: 70,
+                              width: MediaQuery.of(context).size.width * 0.42,
+                              height: 75,
                               alignment: Alignment.center,
-                              decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.9), borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))]),
-                              child: Text(word.word, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                                borderRadius: BorderRadius.circular(20), 
+                                boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.5), blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 10))]
+                              ),
+                              child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
                             ),
                           ),
                           childWhenDragging: Container(
                             height: 70,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(color: Colors.grey.withOpacity(0.2), borderRadius: BorderRadius.circular(16)),
+                            decoration: BoxDecoration(color: Colors.grey.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid, width: 2)),
                           ),
                           child: Container(
                             height: 70,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2))]
+                              gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.9), Theme.of(context).primaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
                             ),
                             child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                           ),
@@ -255,42 +282,53 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
                     ),
                   ),
                   
-                  // SAĞ SÜTUN: TÜRKÇE ANLAMLAR (HEDEF - DRAG TARGET)
+                  // SAĞ SÜTUN: TÜRKÇE ANLAMLAR
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: rightColumn.map((word) {
-                        if (matchedWords.contains(word.word)) {
-                           return const SizedBox(height: 70, child: Center(child: Icon(Icons.check_circle, color: Colors.green, size: 40)));
+                        bool isMatched = matchedWords.contains(word.word);
+                        if (isMatched) {
+                           return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOutBack,
+                            height: 70,
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green.withOpacity(0.5), width: 2)),
+                            child: const Center(child: Icon(Icons.check_circle, color: Colors.green, size: 36)),
+                          );
                         }
                         
                         bool isWrong = wrongTargetWord == word.word;
                         
                         return DragTarget<WordModel>(
-                          onWillAccept: (data) => true, // Her şeyi kabul et, sonucu onAccept'te değerlendir
+                          onWillAccept: (data) => true, 
                           onAccept: (data) => _handleDrop(data, word),
                           builder: (context, candidateData, rejectedData) {
                             bool isHovered = candidateData.isNotEmpty;
                             return AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              height: 70,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOutBack,
+                              height: isHovered ? 75 : 70, // Hover anında hafifçe büyür
                               margin: const EdgeInsets.symmetric(horizontal: 8),
                               alignment: Alignment.center,
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: isWrong 
-                                    ? Colors.redAccent 
-                                    : (isHovered ? Colors.orangeAccent : Theme.of(context).cardColor),
+                                    ? Colors.redAccent.withOpacity(0.9)
+                                    : (isHovered ? Colors.orangeAccent.withOpacity(0.9) : Theme.of(context).cardColor),
                                 border: Border.all(
-                                  color: isWrong ? Colors.red : (isHovered ? Colors.orange : Theme.of(context).primaryColor),
+                                  color: isWrong ? Colors.red : (isHovered ? Colors.orange : Colors.grey.withOpacity(0.3)),
                                   width: isHovered || isWrong ? 3 : 1
                                 ),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2))]
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: isHovered || isWrong 
+                                    ? [BoxShadow(color: isWrong ? Colors.red.withOpacity(0.4) : Colors.orange.withOpacity(0.4), blurRadius: 15, spreadRadius: 2)] 
+                                    : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]
                               ),
                               child: Text(word.meanings.first, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(
                                 color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                fontSize: 14, fontWeight: FontWeight.bold
+                                fontSize: isHovered ? 15 : 14, fontWeight: FontWeight.bold
                               )),
                             );
                           },
