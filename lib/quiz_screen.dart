@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:lottie/lottie.dart'; 
+import 'package:isar/isar.dart'; // YENİ: Veritabanı sorguları (findAll, filter vb.) için hayati kütüphane eklendi
 import 'models.dart';
 import 'main.dart'; 
 
@@ -246,8 +247,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
 
-          // YENİ: MİTOZ DUPLİKASYON ÇÖZÜMÜ
-          // Orijinal kelimenin (Örn: Apple), bölünen aynı anlama sahip (Örn: Elma) versiyonu Mitoz Havuzunda var mı?
           WordModel? existingMitosisCard;
           try {
             var matchingWords = await isar.wordModels.filter()
@@ -262,7 +261,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           } catch(e) { debugPrint("Arama hatası: $e"); }
 
           if (existingMitosisCard != null) {
-            // Eğer varsa, yeni kart yaratma! Sadece var olan eşsiz kartın seviyesini yükselt!
             existingMitosisCard.correctCount++;
             isar.writeTxn(() async {
               await isar.wordModels.putAll([currentWord, existingMitosisCard!]);
@@ -270,7 +268,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord = existingMitosisCard;
             if (existingMitosisCard.correctCount >= widget.threshold) widget.onWordMastered(existingMitosisCard);
           } else {
-            // Yoksa yeni tertemiz, eşsiz bir mitoz kart oluştur.
             WordModel splitWord = WordModel(
               word: currentWord.word,
               meanings: isMeaning ? [correctOption] : [],
@@ -324,7 +321,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
 
-          // YENİ: MİTOZ DUPLİKASYON ÇÖZÜMÜ (Yanlış Cevap Senaryosu)
           WordModel? existingMitosisCard;
           try {
             var matchingWords = await isar.wordModels.filter()
