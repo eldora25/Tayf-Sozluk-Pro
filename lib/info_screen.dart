@@ -64,7 +64,7 @@ class InfoScreen extends StatelessWidget {
           
           const SizedBox(height: 16),
 
-          // YENİ VE PREMİUM: TOPLULUK & EKOSİSTEM BÖLÜMÜ
+          // TOPLULUK & EKOSİSTEM BÖLÜMÜ
           Container(
             margin: const EdgeInsets.only(bottom: 24),
             decoration: BoxDecoration(
@@ -88,7 +88,7 @@ class InfoScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Text(
-                          "🌍 Topluluk Kütüphanesi",
+                          "🌍 Topluluk & 🧬 Mitoz Havuzu",
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent),
                         ),
                       ),
@@ -105,24 +105,32 @@ class InfoScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "Tayf Sözlük Pro artık yaşayan, devasa bir ekosistem! Kendi hazırladığınız sözlükleri diğer kullanıcılarla paylaşabilir ve sürekli büyüyen topluluk havuzundan faydalanabilirsiniz.",
+                    "Tayf Sözlük Pro artık yaşayan, devasa bir veri madenciliği ekosistemi! Kendi hazırladığınız sözlükleri toplulukla paylaşabilir veya quizlerde oluşturduğunuz 'Saf Kartları' global havuza gönderebilirsiniz.",
                     style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
                   ),
                   const SizedBox(height: 20),
                   _buildSubFeatureRow(
                     context, 
+                    Icons.biotech, 
+                    Colors.purple, 
+                    "Mitoz Bölünme (Saf Kartlar):", 
+                    "Siz quiz çözerken, çok anlamlı kelimeler (Örn: Apple = Elma, Meyve) doğru bilindikçe otomatik bölünür ve 'Mitoz' kütüphanenize tek anlamlı (Apple = Elma) kusursuz bilgi kartları (flashcards) olarak düşer."
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSubFeatureRow(
+                    context, 
                     Icons.share, 
                     Colors.green, 
                     "Topluluğa Öner (Gönder):", 
-                    "Kütüphane Yönetimi ekranında kütüphanenizin adına tıklayarak 'Topluluğa Öner' seçeneğini seçin. Listeniz incelenmek ve ana havuza katılmak üzere tek tuşla gönderilecektir."
+                    "Kütüphane Yönetimi ekranından herhangi bir listenizi (özellikle Mitoz listelerinizi) 'Topluluğa Öner' diyerek gönderebilirsiniz. Sistem, gönderilen saf kartları global havuzda tekrarsız bir şekilde birleştirir."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
                     context, 
                     Icons.cloud_download, 
                     Colors.blue, 
-                    "Havuzdan İndir (Çek):", 
-                    "Kütüphane Yönetimi ekranının sağ üst köşesindeki 'Bulut İndirme' ikonuna basarak, sürekli güncellenen ve tekrarlardan arındırılmış devasa Topluluk Kütüphanesini anında telefonunuza çekebilirsiniz."
+                    "Buluttan İndir (Çek):", 
+                    "Kütüphane Yönetimi ekranındaki Bulut ikonuna basarak ister karmaşık Standart Topluluk Listesini, isterseniz de %100 saf ve eşsiz kartlardan oluşan Global Mitoz Havuzunu indirebilirsiniz."
                   ),
                 ],
               ),
@@ -132,7 +140,6 @@ class InfoScreen extends StatelessWidget {
           const Divider(thickness: 2),
           const SizedBox(height: 24),
 
-          // MEVCUT KODLAR AYNEN KORUNDU
           Container(
             padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.only(bottom: 24),
@@ -243,7 +250,6 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
     );
   }
 
-  // MEVCUT KART OLUŞTURUCU
   Widget _buildFeatureCard(BuildContext context, {required IconData icon, required Color color, required String title, required String description}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -280,7 +286,6 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
     );
   }
 
-  // YENİ: TOPLULUK MODÜLÜ İÇİN ALT SATIR OLUŞTURUCU
   Widget _buildSubFeatureRow(BuildContext context, IconData icon, Color color, String title, String desc) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
@@ -305,7 +310,6 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
     );
   }
 
-  // MEVCUT FORMAT KARTI OLUŞTURUCU
   Widget _buildFormatCard(BuildContext context, {required String title, required String extension, required Color color, required String explanation, required String exampleCode}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
