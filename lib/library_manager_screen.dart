@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
-import 'main.dart'; // parseLibraryDataInBackground fonksiyonuna erişim için
+import 'main.dart'; 
 
 class LibraryManagerScreen extends StatefulWidget {
   final List<WordModel> allWords;
@@ -104,24 +104,22 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 
-  // DÜZELTİLDİ: Dışa aktarma işlemi senkronizasyon hatalarına karşı güçlendirildi
   Future<void> _handleExport(String libName) async {
-    Navigator.pop(context); // Önce menüyü kapat
-    
-    // UI'ın rahatlaması için ufak bir bekleme
+    Navigator.pop(context); 
     await Future.delayed(const Duration(milliseconds: 300));
-    
     if (!mounted) return;
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("$libName dışa aktarılıyor, bekleyin..."), duration: const Duration(seconds: 2))
     );
-    
     await widget.onExport(libName);
   }
 
+  // ZEKİ SİSTEM 1: Mitoz Dedektörlü Topluluk Önerisi
   Future<void> _submitToCommunity(String libName) async {
     try {
+      bool isMitosis = libName.startsWith('🧬'); // Mitoz kontrolü
+
       List<WordModel> wordsToExport = [
         ...widget.allWords.where((w) => w.libraryName == libName),
         ...widget.learningWords.where((w) => w.libraryName == libName),
@@ -134,18 +132,29 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
         return;
       }
 
-      List<Map<String, dynamic>> jsonData = wordsToExport.map((w) => {
-        "word": w.word,
-        "meanings": w.meanings,
-        "examples": w.examples,
-        "level": w.level,
-        "libraryName": "Topluluk_Onerisi", // DÜZELTİLDİ: Karışmaması için standartlaştırıldı
-      }).toList();
+      // Eşsizliği Kelime+Anlam bazında garantile
+      Set<String> uniqueSignatures = {};
+      List<Map<String, dynamic>> jsonData = [];
+
+      for (var w in wordsToExport) {
+        String sig = isMitosis ? "${w.word}_${w.meanings.join('-')}" : w.word;
+        
+        if (!uniqueSignatures.contains(sig)) {
+          uniqueSignatures.add(sig);
+          jsonData.add({
+            "word": w.word,
+            "meanings": w.meanings,
+            "examples": w.examples,
+            "level": w.level,
+            "libraryName": isMitosis ? libName : "Topluluk_Onerisi", // Mitoz ise adını koru ki diller ayrışsın
+          });
+        }
+      }
 
       String jsonString = json.encode(jsonData);
-
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/community_submission_${DateTime.now().millisecondsSinceEpoch}.json');
+      String prefix = isMitosis ? "global_mitosis_submission" : "community_submission";
+      final file = File('${dir.path}/${prefix}_${DateTime.now().millisecondsSinceEpoch}.json');
       await file.writeAsString(jsonString);
 
       if (mounted) {
@@ -155,67 +164,65 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
         );
       }
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: "Merhaba Tayfun,\n\nEkte hazırladığım sözlük kütüphanesini 'Topluluk Kütüphanesi' havuzuna eklenmesi için gönderiyorum.\n\nKütüphane Adı: $libName\nKelime Sayısı: ${wordsToExport.length}",
-        subject: "Yeni Topluluk Kütüphanesi Önerisi"
-      );
+      String subject = isMitosis ? "Yeni Global Mitoz Havuzu Önerisi 🧬" : "Yeni Topluluk Kütüphanesi Önerisi";
+      String bodyText = isMitosis 
+          ? "Merhaba Tayfun,\n\nEkte hazırladığım, quizlerimde bölünen %100 saf ve eşsiz kartlardan oluşan kütüphaneyi 'Global Mitoz Havuzu'na eklenmesi için gönderiyorum.\n\nHavuz Adı: $libName\nSaf Kart Sayısı: ${jsonData.length}"
+          : "Merhaba Tayfun,\n\nEkte hazırladığım sözlük kütüphanesini 'Topluluk Kütüphanesi' havuzuna eklenmesi için gönderiyorum.\n\nKütüphane Adı: $libName\nKelime Sayısı: ${jsonData.length}";
+
+      await Share.shareXFiles([XFile(file.path)], text: bodyText, subject: subject);
     } catch (e) {
        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e"), backgroundColor: Colors.red));
     }
   }
 
-  // DÜZELTİLDİ: Dosya indirildikten sonra gerçek içe aktarma (parse) işlemi eklendi!
-  Future<void> _downloadCommunityLibrary() async {
+  // ZEKİ SİSTEM 2: Kelime+Anlam (Atomic) Koruyuculu İndirme
+  Future<void> _downloadLibrary(String targetUrl, String poolName) async {
     setState(() => _isDownloading = true);
     try {
-      final String rawUrl = 'https://raw.githubusercontent.com/eldora25/Tayf-Sozluk-Pro/main/assets/user_recommended_library.json'; 
-      
-      final response = await http.get(Uri.parse(rawUrl));
+      final response = await http.get(Uri.parse(targetUrl));
 
       if (response.statusCode == 200) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İndirme başarılı! İçerik çözümleniyor..."), backgroundColor: Colors.blue));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İndirme başarılı! $poolName çözümleniyor..."), backgroundColor: Colors.blue));
 
-        // GERÇEK İÇE AKTARMA İŞLEMİ BURADA BAŞLIYOR
         String content = utf8.decode(response.bodyBytes);
-        String customLibraryName = "Topluluk Kütüphanesi";
         
         final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {
           'content': content, 
           'extension': 'json', 
-          'libraryName': customLibraryName, 
-          'originalFileName': 'user_recommended_library.json'
+          'libraryName': poolName, 
+          'originalFileName': 'downloaded_pool.json'
         });
         
         if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(json.decode(parsedJsons.first)['error']), backgroundColor: Colors.red));
         } else {
-           // Mevcut kelimeleri mükerrer olmaması için al
-           Set<String> existingWords = {
-              ...widget.allWords.map((w) => w.word),
-              ...widget.learnedWords.map((w) => w.word),
-              ...widget.toRepeatWords.map((w) => w.word),
-              ...widget.learningWords.map((w) => w.word),
+           // Mükemmel Çözüm: Artık sadece kelimeye değil, Kelime+Anlam ikilisine (İmza) bakılıyor. 
+           // Böylece "Apple=Elma,Meyve" varken "Apple=Elma" mitoz kartı indirildiğinde silinmiyor!
+           Set<String> existingSignatures = {
+              ...widget.allWords.map((w) => "${w.word}_${w.meanings.join('-')}"),
+              ...widget.learnedWords.map((w) => "${w.word}_${w.meanings.join('-')}"),
+              ...widget.toRepeatWords.map((w) => "${w.word}_${w.meanings.join('-')}"),
+              ...widget.learningWords.map((w) => "${w.word}_${w.meanings.join('-')}"),
            };
 
            List<WordModel> newWords = [];
            for (var jsonStr in parsedJsons) {
               try {
                 var w = WordModel.fromJson(jsonStr)..listType = 'all';
-                if (!existingWords.contains(w.word)) {
+                String sig = "${w.word}_${w.meanings.join('-')}";
+                
+                if (!existingSignatures.contains(sig)) {
                    newWords.add(w);
-                   existingWords.add(w.word); 
+                   existingSignatures.add(sig); 
                 }
               } catch(e) { continue; }
            }
 
-           // Veritabanına Yaz
            if (newWords.isNotEmpty) {
              await isar.writeTxn(() async { 
                 await isar.wordModels.putAll(newWords); 
              });
              
-             // Arayüzü güncelle (Geri bildirimi ana sayfaya yansıtmak için listeye ekliyoruz)
              setState(() {
                 widget.allWords.addAll(newWords);
              });
@@ -228,16 +235,16 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                    content: Column(
                      mainAxisSize: MainAxisSize.min,
                      children: [
-                       const Icon(Icons.cloud_done, color: Colors.green, size: 70),
+                       Icon(poolName.contains("Mitoz") ? Icons.biotech : Icons.cloud_done, color: poolName.contains("Mitoz") ? Colors.purple : Colors.green, size: 70),
                        const SizedBox(height: 16),
                        const Text("Harika Haber!", textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
                        const SizedBox(height: 12),
-                       Text("Topluluk Kütüphanesi başarıyla yüklendi.\n\nSisteme tam ${newWords.length} yeni kelime eklendi!", textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.4)),
+                       Text("$poolName başarıyla yüklendi.\n\nSisteme tam ${newWords.length} adet benzersiz kelime/kart eklendi!", textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.4)),
                        const SizedBox(height: 24),
                        ElevatedButton(
-                         style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                         style: ElevatedButton.styleFrom(backgroundColor: poolName.contains("Mitoz") ? Colors.purple : Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                          onPressed: () => Navigator.pop(ctx),
-                         child: const Text("Tamam", style: TextStyle(fontWeight: FontWeight.bold))
+                         child: const Text("Mükemmel", style: TextStyle(fontWeight: FontWeight.bold))
                        )
                      ]
                    )
@@ -245,7 +252,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                );
              }
            } else {
-             if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sözlük zaten güncel. Yeni kelime bulunamadı."), backgroundColor: Colors.orange));
+             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$poolName zaten güncel. Yeni eşsiz kart bulunamadı."), backgroundColor: Colors.orange));
            }
         }
       } else {
@@ -258,8 +265,8 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     }
   }
 
-
-  void _showLibraryMenu(String libName) {
+  // YENİ: Havuz İndirme Alt Menüsü
+  void _showDownloadMenu() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -278,7 +285,57 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Text("'$libName' için Seçenekler", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  child: Text("Buluttan Havuz İndir", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+                ),
+                ListTile(
+                  leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.public, color: Colors.blue)),
+                  title: const Text("🌍 Standart Topluluk Havuzu", style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text("Kullanıcıların oluşturduğu karma listeler", style: TextStyle(fontSize: 12)),
+                  onTap: () { 
+                    Navigator.pop(context); 
+                    _downloadLibrary('https://raw.githubusercontent.com/eldora25/Tayf-Sozluk-Pro/main/assets/user_recommended_library.json', 'Standart Topluluk Kütüphanesi'); 
+                  },
+                ),
+                ListTile(
+                  leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.biotech, color: Colors.purple)),
+                  title: const Text("🧬 Global Mitoz Havuzu", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
+                  subtitle: const Text("Sadece tek anlamlı, saf ve eşsiz bilgi kartları", style: TextStyle(fontSize: 12)),
+                  onTap: () { 
+                    Navigator.pop(context); 
+                    _downloadLibrary('https://raw.githubusercontent.com/eldora25/Tayf-Sozluk-Pro/main/assets/global_mitosis_pool.json', 'Global Mitoz Havuzu'); 
+                  },
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLibraryMenu(String libName) {
+    bool isMitosis = libName.startsWith('🧬'); // Menü stili mitoza göre değişir
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, -5))]
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Wrap(
+              children: [
+                Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10)))),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text("'$libName' Seçenekleri", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
                 ),
                 ListTile(
                   leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.edit, color: Colors.blue)),
@@ -291,9 +348,9 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                   onTap: () => _handleExport(libName),
                 ),
                 ListTile(
-                  leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.deepPurple.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.public, color: Colors.deepPurple)),
-                  title: const Text("Topluluğa Öner", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple)),
-                  subtitle: const Text("Bu kütüphaneyi ana havuza gönder"),
+                  leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isMitosis ? Colors.purple.withOpacity(0.1) : Colors.deepPurple.withOpacity(0.1), shape: BoxShape.circle), child: Icon(isMitosis ? Icons.biotech : Icons.public, color: isMitosis ? Colors.purple : Colors.deepPurple)),
+                  title: Text(isMitosis ? "Saf Kartları Topluluğa Gönder" : "Topluluğa Öner", style: TextStyle(fontWeight: FontWeight.bold, color: isMitosis ? Colors.purple : Colors.deepPurple)),
+                  subtitle: Text(isMitosis ? "Bu saf havuzu Global Mitoza ekle" : "Bu kütüphaneyi ana havuza gönder", style: const TextStyle(fontSize: 12)),
                   onTap: () => _submitToCommunity(libName),
                 ),
                 ListTile(
@@ -332,11 +389,11 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                  child: Container(
                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
                    child: IconButton(
-                    tooltip: "Topluluk Kütüphanesini İndir",
+                    tooltip: "Buluttan Havuz İndir",
                     icon: _isDownloading 
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                         : const Icon(Icons.cloud_download, color: Colors.white),
-                    onPressed: _isDownloading ? null : _downloadCommunityLibrary,
+                    onPressed: _isDownloading ? null : _showDownloadMenu, // DÜZELTİLDİ: Menüyü açar
                                    ),
                  ),
                )
@@ -352,6 +409,8 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       String libName = libs[index];
+                      bool isMitosis = libName.startsWith('🧬'); // Görselliği değiştirir
+                      
                       int total = widget.allWords.where((e) => e.libraryName == libName).length +
                                   widget.learnedWords.where((e) => e.libraryName == libName).length +
                                   widget.learningWords.where((e) => e.libraryName == libName).length +
@@ -365,10 +424,10 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
+                          color: isMitosis ? Colors.purpleAccent.withOpacity(0.05) : Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
-                          border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1.5)
+                          boxShadow: [BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.1) : Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
+                          border: Border.all(color: isMitosis ? Colors.purpleAccent.withOpacity(0.3) : Colors.grey.withOpacity(0.1), width: 1.5)
                         ),
                         child: Material(
                           color: Colors.transparent,
@@ -386,9 +445,9 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                                       Expanded(
                                         child: Row(
                                           children: [
-                                            const Icon(Icons.menu_book, color: Colors.deepPurple, size: 24),
+                                            Icon(isMitosis ? Icons.biotech : Icons.menu_book, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple, size: 24),
                                             const SizedBox(width: 10),
-                                            Expanded(child: Text(libName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple), overflow: TextOverflow.ellipsis)),
+                                            Expanded(child: Text(libName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple), overflow: TextOverflow.ellipsis)),
                                           ],
                                         ),
                                       ),
@@ -416,7 +475,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                                     child: LinearProgressIndicator(
                                       value: progress,
                                       backgroundColor: Colors.grey.withOpacity(0.2),
-                                      color: Colors.greenAccent.shade400,
+                                      color: isMitosis ? Colors.purpleAccent : Colors.greenAccent.shade400,
                                       minHeight: 6,
                                     ),
                                   ),
