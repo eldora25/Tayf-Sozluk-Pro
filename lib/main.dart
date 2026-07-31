@@ -212,7 +212,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
-    final PageTransitionsTheme smoothTransitions = PageTransitionsTheme(
+    final PageTransitionsTheme smoothTransitions = const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
         TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
         TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
@@ -259,6 +259,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _flipAnimation;
   late AnimationController _glowController;
   late Animation<double> _glowAnimation;
+  late AnimationController _bgGradientController; // YENİ: Başlık arka planı için
 
   List<WordModel> allWords = [];
   List<WordModel> learningWords = []; 
@@ -282,6 +283,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _flipAnimation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _flipController, curve: Curves.easeInOut));
     _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
+    _bgGradientController = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true); // YENİ
     NotificationService.requestPermission();
     _loadData();
   }
@@ -290,6 +292,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _flipController.dispose();
     _glowController.dispose();
+    _bgGradientController.dispose(); // YENİ
     globalTts.stop();
     super.dispose();
   }
@@ -1001,32 +1004,49 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: ListView(
                   padding: EdgeInsets.zero,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary], begin: Alignment.topLeft, end: Alignment.bottomRight)
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 10),
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))],
-                              image: const DecorationImage(
-                                image: AssetImage('assets/ic_launcher.png'),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
+                    // YENİ: PREMIUM ANİMASYONLU DRAWER BAŞLIĞI
+                    AnimatedBuilder(
+                      animation: _bgGradientController,
+                      builder: (context, child) {
+                        return Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).primaryColor, 
+                                Theme.of(context).colorScheme.secondary,
+                                Colors.indigoAccent
+                              ],
+                              stops: [
+                                0.0,
+                                _bgGradientController.value,
+                                1.0
+                              ],
+                              begin: Alignment.topLeft, 
+                              end: Alignment.bottomRight
+                            )
                           ),
-                          const SizedBox(height: 14),
-                          const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                          Text("Build v1.0.$buildNo", style: const TextStyle(color: Colors.white70))
-                        ],
-                      ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 10),
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+                                  image: const DecorationImage(image: AssetImage('assets/ic_launcher.png'), fit: BoxFit.cover),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                              Text("Build v1.0.$buildNo", style: const TextStyle(color: Colors.white70, fontSize: 13))
+                            ],
+                          ),
+                        );
+                      }
                     ),
                     ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (50 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
                     const Divider(),
@@ -1228,30 +1248,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ? Center(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                  child: Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, spreadRadius: 5)]
+              child: AnimatedBuilder(
+                animation: _glowAnimation,
+                builder: (context, child) {
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                      child: Container(
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: Colors.amberAccent.withOpacity(0.5), width: 2.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.amberAccent.withOpacity((0.3 * _glowAnimation.value).clamp(0.0, 1.0)), 
+                              blurRadius: 30 * _glowAnimation.value, 
+                              spreadRadius: 10 * _glowAnimation.value
+                            )
+                          ]
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Icon(Icons.star, color: Colors.amberAccent.withOpacity(0.3), size: 100 * _glowAnimation.value),
+                                const Icon(Icons.workspace_premium_rounded, color: Colors.amberAccent, size: 70),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            const Text("Mükemmel İş Çıkardın!", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                            const SizedBox(height: 8),
+                            const Text("Bu filtredeki tüm kelimelerle çalıştın.\nGünün hedefini başarıyla tamamladın! 🎉", textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Colors.grey, height: 1.5)),
+                          ],
+                        ),
+                      ),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.verified_user_rounded, color: Colors.greenAccent, size: 70),
-                        const SizedBox(height: 16),
-                        const Text("Harika İş Çıkardın!", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                        const SizedBox(height: 8),
-                        const Text("Bu filtrede çalışılacak başka kelime kalmadı. Günün hedefi başarıyla tamamlandı! 🎉", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.4)),
-                      ],
-                    ),
-                  ),
-                ),
+                  );
+                }
               ),
             ),
           )
