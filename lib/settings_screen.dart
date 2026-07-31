@@ -36,15 +36,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _library;
   late String _level;
 
+  // YENİ: Toplam 16 Premium Tema Rengi
   final List<Color> _themeColors = [
-    Colors.grey.shade900, 
-    Colors.grey.shade300, 
-    Colors.blue, 
-    Colors.teal, 
-    Colors.deepPurpleAccent, 
-    Colors.deepOrangeAccent, 
-    Colors.pinkAccent, 
-    Colors.cyan 
+    Colors.grey.shade900,         // 0: Koyu Mod
+    Colors.grey.shade300,         // 1: Aydınlık Mod
+    Colors.blue,                  // 2: Pastel Mavi
+    Colors.teal,                  // 3: Pastel Yeşil
+    Colors.deepPurpleAccent,      // 4: Canlı Mor
+    Colors.deepOrangeAccent,      // 5: Sıcak Turuncu
+    Colors.pinkAccent,            // 6: Şeker Pembe
+    Colors.cyan,                  // 7: Rengarenk
+    const Color(0xFF2C3E50),      // 8: Koyu Gri / Gece
+    const Color(0xFFB0BEC5),      // 9: Açık Gri / Gümüş
+    const Color(0xFFF4ECD8),      // 10: Sıcak Kağıt (Sepya - Göz Yormayan)
+    const Color(0xFFE8F4F8),      // 11: Soğuk Kağıt (Buzul - Göz Yormayan)
+    const Color(0xFFF5F5DC),      // 12: Krem Kağıt (Nötr - Göz Yormayan)
+    const Color(0xFF4E342E),      // 13: Kahve / Çikolata
+    const Color(0xFF37474F),      // 14: Kömür Karası
+    const Color(0xFF558B2F),      // 15: Mat Doğal Yeşil
   ];
 
   @override
@@ -130,31 +139,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text("Tema Rengini Seçin", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 16),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: Row(
-                        children: List.generate(_themeColors.length, (index) {
-                          bool isSelected = _themeIndex == index;
-                          return GestureDetector(
-                            onTap: () => setState(() => _themeIndex = index),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOutBack,
-                              margin: const EdgeInsets.only(right: 16),
-                              height: isSelected ? 56 : 48,
-                              width: isSelected ? 56 : 48,
-                              decoration: BoxDecoration(
-                                color: _themeColors[index],
-                                shape: BoxShape.circle,
-                                border: isSelected ? Border.all(color: Theme.of(context).primaryColor, width: 3) : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
-                                boxShadow: isSelected ? [BoxShadow(color: _themeColors[index].withOpacity(0.4), blurRadius: 10, spreadRadius: 2)] : [],
-                              ),
-                              child: isSelected ? Icon(Icons.check, color: index == 1 ? Colors.black : Colors.white, size: 28) : null,
+                    // YENİ: Wrap yapısı ile 16 tema ekrana düzgünce sığdırıldı
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: List.generate(_themeColors.length, (index) {
+                        bool isSelected = _themeIndex == index;
+                        return GestureDetector(
+                          onTap: () => setState(() => _themeIndex = index),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOutBack,
+                            height: isSelected ? 50 : 42,
+                            width: isSelected ? 50 : 42,
+                            decoration: BoxDecoration(
+                              color: _themeColors[index],
+                              shape: BoxShape.circle,
+                              border: isSelected ? Border.all(color: Theme.of(context).primaryColor, width: 3) : Border.all(color: Colors.grey.withOpacity(0.4), width: 1),
+                              boxShadow: isSelected ? [BoxShadow(color: _themeColors[index].withOpacity(0.5), blurRadius: 10, spreadRadius: 2)] : [],
                             ),
-                          );
-                        }),
-                      ),
+                            child: isSelected ? Icon(Icons.check, color: (index == 1 || index >= 9 && index <= 12) ? Colors.black : Colors.white, size: 26) : null,
+                          ),
+                        );
+                      }),
                     ),
                   ],
                 )
@@ -165,13 +172,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     DropdownButtonFormField<String>(
+                      isExpanded: true, // DÜZELTİLDİ: Taşma Hatası için eklendi
                       value: _library,
                       decoration: InputDecoration(labelText: "Aktif Kütüphane", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Theme.of(context).scaffoldBackgroundColor),
-                      items: widget.availableLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      items: widget.availableLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis))).toList(),
                       onChanged: (v) => setState(() => _library = v!),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
+                      isExpanded: true, // DÜZELTİLDİ: Taşma Hatası için eklendi
                       value: _level,
                       decoration: InputDecoration(labelText: "Zorluk Seviyesi", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Theme.of(context).scaffoldBackgroundColor),
                       items: ['A1','A2','B1','B2','C1','C2','Genel'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
@@ -186,7 +195,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // DÜZELTİLDİ: Taşmaları engellemek için metinler Expanded içine alındı
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween, 
                       children: [
@@ -198,7 +206,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Slider(value: _goalValue, min: 5, max: 100, divisions: 19, activeColor: Theme.of(context).primaryColor, onChanged: (val) => setState(() => _goalValue = val)),
                     const Divider(height: 30),
                     
-                    // DÜZELTİLDİ: Taşmaları engellemek için metinler Expanded içine alındı
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween, 
                       children: [
@@ -211,7 +218,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Slider(value: _questionCountValue, min: 5, max: 100, divisions: 19, activeColor: Colors.blue, onChanged: (val) => setState(() => _questionCountValue = val)),
                     const Divider(height: 30),
 
-                    // DÜZELTİLDİ: Taşmaları engellemek için metinler Expanded içine alındı
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween, 
                       children: [
