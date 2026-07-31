@@ -212,7 +212,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
-    // KESİN ÇÖZÜM: Flutter'ın yerleşik ve her sürümde %100 desteklenen FadeUpwardsPageTransitionsBuilder sınıfı kullanıldı.
     final PageTransitionsTheme smoothTransitions = PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
         TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -1011,7 +1010,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 10),
-                          // YENİ: DÜNYA SİMGESİ YERİNE ASSETS İÇİNDEKİ İKON GETİRİLDİ
                           Container(
                             width: 60,
                             height: 60,
@@ -1320,4 +1318,3 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 }
-]
