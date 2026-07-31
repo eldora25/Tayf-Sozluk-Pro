@@ -63,12 +63,12 @@ class StatisticsScreen extends StatelessWidget {
     }).length;
   }
 
-  List<FlSpot> _getChartData() {
+  List<FlSpot> _getChartData(List<String> timestamps) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     Map<int, int> counts = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}; 
 
-    for (var ts in learnedWordTimestamps) {
+    for (var ts in timestamps) {
       final date = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
       final itemDate = DateTime(date.year, date.month, date.day);
       final diff = today.difference(itemDate).inDays;
@@ -212,6 +212,9 @@ class StatisticsScreen extends StatelessWidget {
     double graduationSpeed = learnedWords.length / daysUsed; 
     double activitySpeed = learnedWordTimestamps.length / daysUsed; 
 
+    // YENİ: Mezun edilen kelimelerin zamanlarını tespit etme (Öğrenme Grafiği için)
+    List<String> trueGraduationTimestamps = learnedWords.map((w) => w.nextReviewDate.toString()).toList();
+
     int totalMitosisCount = [
       ...allWords,
       ...learnedWords,
@@ -223,7 +226,8 @@ class StatisticsScreen extends StatelessWidget {
     final List<int> streakMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300];
     final List<int> wordMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 500, 600, 700, 1000, 1500, 2000, 2500, 3000, 5000, 7000, 10000];
     
-    final chartData = _getChartData();
+    final activityChartData = _getChartData(learnedWordTimestamps);
+    final graduationChartData = _getChartData(trueGraduationTimestamps); // YENİ: Gerçek Öğrenme Grafiği Verisi
     final primaryColor = Theme.of(context).primaryColor;
 
     return DefaultTabController(
@@ -308,7 +312,6 @@ class StatisticsScreen extends StatelessWidget {
                               child: const Icon(Icons.school, color: Colors.white, size: 24),
                             ),
                             const SizedBox(width: 12),
-                            // DÜZELTİLDİ: Metin taşmaması için Expanded eklendi
                             const Expanded(child: Text("Gerçek Öğrenme (Mezun) Hızı", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
                           ],
                         ),
@@ -333,19 +336,20 @@ class StatisticsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-
+                  
+                  // YENİ: Haftalık Mezuniyet (Gerçek Öğrenme) Grafiği
+                  const SizedBox(height: 16),
                   Container(
-                    decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))]),
+                    decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))]),
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(children: [Icon(Icons.show_chart, color: primaryColor), const SizedBox(width: 8), const Text("Haftalık Çalışma Eğrisi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+                          Row(children: [const Icon(Icons.auto_graph, color: Colors.green), const SizedBox(width: 8), const Text("Haftalık Mezuniyet Eğrisi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
                           const SizedBox(height: 30),
                           SizedBox(
-                            height: 220,
+                            height: 150,
                             child: LineChart(
                               LineChartData(
                                 gridData: const FlGridData(show: false),
@@ -358,12 +362,56 @@ class StatisticsScreen extends StatelessWidget {
                                 borderData: FlBorderData(show: false),
                                 lineBarsData: [
                                   LineChartBarData(
-                                    spots: chartData,
+                                    spots: graduationChartData,
+                                    isCurved: true,
+                                    color: Colors.green,
+                                    barWidth: 4,
+                                    isStrokeCapRound: true,
+                                    dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 4, color: Colors.white, strokeWidth: 2, strokeColor: Colors.green)),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      gradient: LinearGradient(colors: [Colors.green.withOpacity(0.5), Colors.green.withOpacity(0.0)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  Container(
+                    decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))]),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [Icon(Icons.show_chart, color: primaryColor), const SizedBox(width: 8), const Text("Haftalık Aktivite Eğrisi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+                          const SizedBox(height: 30),
+                          SizedBox(
+                            height: 150,
+                            child: LineChart(
+                              LineChartData(
+                                gridData: const FlGridData(show: false),
+                                titlesData: const FlTitlesData(
+                                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 22)),
+                                ),
+                                borderData: FlBorderData(show: false),
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: activityChartData,
                                     isCurved: true,
                                     color: primaryColor,
-                                    barWidth: 5,
+                                    barWidth: 4,
                                     isStrokeCapRound: true,
-                                    dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 4, color: Colors.white, strokeWidth: 3, strokeColor: primaryColor)),
+                                    dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 4, color: Colors.white, strokeWidth: 2, strokeColor: primaryColor)),
                                     belowBarData: BarAreaData(
                                       show: true,
                                       gradient: LinearGradient(colors: [primaryColor.withOpacity(0.5), primaryColor.withOpacity(0.0)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
