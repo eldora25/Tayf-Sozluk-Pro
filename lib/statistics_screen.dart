@@ -118,7 +118,6 @@ class StatisticsScreen extends StatelessWidget {
               ],
             ),
             const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
-            // METİN DÜZELTİLDİ
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Doğru Bilinen:", style: TextStyle(fontWeight: FontWeight.w500)), _buildAnimatedNumber(learned, const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 16))]),
             const SizedBox(height: 8),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Tamamlanan Quiz:", style: TextStyle(fontWeight: FontWeight.w500)), _buildAnimatedNumber(quizzes, const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))]),
@@ -209,7 +208,11 @@ class StatisticsScreen extends StatelessWidget {
     DateTime firstUse = DateTime.fromMillisecondsSinceEpoch(firstUseTimestamp);
     int daysUsed = DateTime.now().difference(firstUse).inDays;
     if (daysUsed < 1) daysUsed = 1; 
-    double wordsPerDay = learnedWordTimestamps.length / daysUsed; // DÜZELTİLDİ: Grafikle eşleşmesi için
+    
+    // YENİ: Gerçek Mezun Hızı (Mezun Kelimeler / Kullanılan Gün)
+    double graduationSpeed = learnedWords.length / daysUsed; 
+    // Aktivite Hızı (Biliyorum'a basma / Kullanılan Gün)
+    double activitySpeed = learnedWordTimestamps.length / daysUsed; 
 
     int totalMitosisCount = [
       ...allWords,
@@ -239,8 +242,7 @@ class StatisticsScreen extends StatelessWidget {
             tabs: const [
               Tab(text: "Başarılar", icon: Icon(Icons.emoji_events)),
               Tab(text: "Genel Özet", icon: Icon(Icons.pie_chart)),
-              // METİN DÜZELTİLDİ
-              Tab(text: "Çalışma Eğrisi", icon: Icon(Icons.auto_graph)), 
+              Tab(text: "Öğrenme Grafiği", icon: Icon(Icons.auto_graph)), 
               Tab(text: "Quiz", icon: Icon(Icons.psychology)),
               Tab(text: "Kütüphaneler", icon: Icon(Icons.library_books)),
             ],
@@ -252,6 +254,7 @@ class StatisticsScreen extends StatelessWidget {
           ),
           child: TabBarView(
             children: [
+              // 1. SEKME: BAŞARILAR
               ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
@@ -274,6 +277,7 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
 
+              // 2. SEKME: GENEL ÖZET
               ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
@@ -287,9 +291,56 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
               
+              // 3. SEKME: ÖĞRENME GRAFİĞİ VE HIZ
               ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
+                  // YENİ: MEZUNİYET (GERÇEK ÖĞRENME) HIZI KARTI (En Üstte, Çok Şık)
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [Colors.teal.shade500, Colors.green.shade600], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 10))]
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                              child: const Icon(Icons.school, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text("Gerçek Öğrenme (Mezun) Hızınız", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(graduationSpeed.toStringAsFixed(1), style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0)),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 6.0, left: 8.0),
+                              child: Text("Kelime / Gün", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white70)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(color: Colors.black.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                          child: Text("Toplam Mezun Kelime: ${learnedWords.length}  |  Kullanım: $daysUsed Gün", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // HAFTALIK AKTİVİTE GRAFİĞİ
                   Container(
                     decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))]),
                     child: Padding(
@@ -297,7 +348,7 @@ class StatisticsScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(children: [Icon(Icons.show_chart, color: primaryColor), const SizedBox(width: 8), const Text("Haftalık Çalışma Eğrisi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]), // METİN DÜZELTİLDİ
+                          Row(children: [Icon(Icons.show_chart, color: primaryColor), const SizedBox(width: 8), const Text("Haftalık Çalışma Eğrisi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
                           const SizedBox(height: 30),
                           SizedBox(
                             height: 220,
@@ -333,20 +384,23 @@ class StatisticsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  
+                  // ORTALAMA AKTİVİTE HIZI (Biliyorum'a Basma)
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(gradient: LinearGradient(colors: [primaryColor, primaryColor.withOpacity(0.8)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))]),
                     child: Column(
                       children: [
-                        const Text("Ortalama Çalışma Hızınız", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white70)),
+                        const Text("Ortalama Aktivite Hızınız", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white70)),
                         const SizedBox(height: 8),
-                        Text("${wordsPerDay.toStringAsFixed(1)} Kart / Gün", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
+                        Text("${activitySpeed.toStringAsFixed(1)} İşlem / Gün", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
                         const SizedBox(height: 8),
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(20)), child: Text("Uygulama Kullanımı: $daysUsed Gün", style: const TextStyle(color: Colors.white, fontSize: 12))),
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(20)), child: const Text("Doğru bilme ve tekrar sıklığı", style: TextStyle(color: Colors.white, fontSize: 12))),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
+
                   _buildSpeedCard(context, "Günlük (Son 24 Saat)", const Duration(days: 1), Colors.blue),
                   _buildSpeedCard(context, "Haftalık (Son 7 Gün)", const Duration(days: 7), Colors.orange),
                   _buildSpeedCard(context, "Aylık (Son 30 Gün)", const Duration(days: 30), Colors.purple),
@@ -355,6 +409,7 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
 
+              // 4. SEKME: QUİZ
               ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
@@ -365,6 +420,7 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
               
+              // 5. SEKME: KÜTÜPHANELER
               ListView.builder(
                 padding: const EdgeInsets.all(20),
                 itemCount: availableLibraries.length,
