@@ -150,7 +150,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   }
 
   void _generateQuestion() {
-    if (!mounted) return; // Güvenlik kalkanı
+    if (!mounted) return; 
     if (answeredQuestions >= totalQuestions) {
       HapticFeedback.heavyImpact(); 
       setState(() { isQuizFinished = true; _timer?.cancel(); });
@@ -167,14 +167,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
-    // ZEKİ SORU: Sadece 1 Anlam Seç!
     List<String> correctPool = [...currentWord.meanings, ...currentWord.examples];
     correctOption = correctPool.isNotEmpty ? correctPool[random.nextInt(correctPool.length)] : currentWord.word;
 
     Set<String> wrongOptions = {};
     int loopCounter = 0;
     
-    // ZEKİ ÇELDİRİCİ: Asla mevcut kelimenin diğer anlamlarını kullanma! Başka kelimeden sadece TEK bir anlam seç.
     while (wrongOptions.length < 3 && loopCounter < 150) {
       loopCounter++;
       WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
@@ -206,7 +204,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
-  // MİTOZ BÖLÜNME İŞLEMİ (Veritabanı Asenkron Kilidi - Düzeltildi)
   void _checkAnswer(String option) async {
     if (isAnsweredCorrectly || selectedWrongOptions.contains(option)) return;
     bool isCorrect = (option == correctOption);
@@ -222,7 +219,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (selectedWrongOptions.isEmpty) { 
         correctAnswers++; 
         
-        // EĞER KELİMENİN BİRDEN FAZLA ANLAMI VARSA, SORULAN ANLAMI KOPAR VE YENİ KART YAP!
         int totalOptions = currentWord.meanings.length + currentWord.examples.length;
         if (totalOptions > 1) {
           bool isMeaning = currentWord.meanings.contains(correctOption);
@@ -242,7 +238,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             targetLanguage: currentWord.targetLanguage,
           );
           
-          // KESİN ÇÖZÜM: Sabit liste (Fixed-length list) hatasını önlemek için List.from() ile yeni liste oluşturuyoruz.
           if (isMeaning) {
             currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
           } else {
@@ -251,17 +246,16 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           
           try {
             await isar.writeTxn(() async {
-              await isar.wordModels.put(currentWord); // Orijinal kelimenin anlamı eksildi
-              await isar.wordModels.put(splitWord);   // Yepyeni bağımsız kelime doğdu
+              await isar.wordModels.put(currentWord); 
+              await isar.wordModels.put(splitWord);   
             });
           } catch (e) {
             debugPrint("DB Hata (Doğru): $e");
           }
           
-          currentWord = splitWord; // Arayüzü yeni kelimeye kilitler
+          currentWord = splitWord; 
           if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
         } else {
-          // Zaten tek anlamı varsa normal arttır
           currentWord.correctCount++;
           try {
             await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
@@ -273,7 +267,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       }
       
       _speakFeedback(true);
-      // GÜVENLİK: Timer tetiklenirken ekran değişmişse çökmemesi için eklendi.
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) _generateQuestion();
       });
@@ -288,7 +281,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       });
 
       if (selectedWrongOptions.length == 1) { 
-        // Yanlış bilince de aynı Mitoz Bölünmeyi yap ki o kelimenin o anlamı tek başına SRS'ye "yanlış" olarak düşsün
         int totalOptions = currentWord.meanings.length + currentWord.examples.length;
         if (totalOptions > 1) {
           bool isMeaning = currentWord.meanings.contains(correctOption);
@@ -308,7 +300,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             targetLanguage: currentWord.targetLanguage,
           );
           
-          // KESİN ÇÖZÜM (Yanlış Cevap): Sabit liste (Fixed-length list) hatasını önlemek için List.from() kullanıldı.
           if (isMeaning) {
             currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
           } else {
@@ -430,7 +421,14 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 10),
-          Text("Soru: ${answeredQuestions + 1} / $totalQuestions", textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          
+          // DÜZELTİLDİ: Sayaç hatasını engellemek için limit (min) konuldu
+          Text(
+            "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
+            textAlign: TextAlign.center, 
+            style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)
+          ),
+          
           const SizedBox(height: 8),
           LinearProgressIndicator(value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0, backgroundColor: Colors.grey[300], color: Theme.of(context).primaryColor, minHeight: 8, borderRadius: BorderRadius.circular(10)),
           const SizedBox(height: 30),
