@@ -80,7 +80,6 @@ class StatisticsScreen extends StatelessWidget {
     return counts.entries.map((e) => FlSpot(e.key.toDouble(), e.value.toDouble())).toList();
   }
 
-  // YENİ: Animasyonlu Rakam Sayacı (Count-up efekti)
   Widget _buildAnimatedNumber(int number, TextStyle style) {
     return TweenAnimationBuilder<int>(
       tween: IntTween(begin: 0, end: number),
@@ -165,6 +164,43 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
+  // YENİ: MİTOZ HAVUZU KARTI
+  Widget _buildMitosisCard(BuildContext context, int count) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Colors.purpleAccent.shade700, Colors.pinkAccent.shade400]),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+              child: const Icon(Icons.biotech, color: Colors.white, size: 32),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text("🧬 Mitoz Havuzu", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 4),
+                  Text("Quizlerde bölünerek saf, eşsiz ve tek anlamlı hale gelen toplam kart sayısı.", style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildAnimatedNumber(count, const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + toSRSRepeatWords.length + learningWords.length;
@@ -174,6 +210,15 @@ class StatisticsScreen extends StatelessWidget {
     int daysUsed = DateTime.now().difference(firstUse).inDays;
     if (daysUsed < 1) daysUsed = 1; 
     double wordsPerDay = learnedWords.length / daysUsed;
+
+    // YENİ: MİTOZ KARTLARI HESAPLAMASI
+    int totalMitosisCount = [
+      ...allWords,
+      ...learnedWords,
+      ...learningWords,
+      ...toRepeatWords,
+      ...toSRSRepeatWords
+    ].where((w) => w.libraryName.startsWith('🧬 Mitoz')).length;
 
     final List<int> streakMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300];
     final List<int> wordMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 500, 600, 700, 1000, 1500, 2000, 2500, 3000, 5000, 7000, 10000];
@@ -232,6 +277,7 @@ class StatisticsScreen extends StatelessWidget {
               ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
+                  _buildMitosisCard(context, totalMitosisCount), // YENİ: Mitoz Havuzu Kartı
                   _buildStatCard(context, "Mevcut Tayf Puan (TP)", tayfPoints, Icons.diamond, Colors.blueAccent),
                   _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1), Icons.my_library_books, Colors.deepPurple),
                   _buildStatCard(context, "Toplam Kelime", totalSystemWords, Icons.format_list_bulleted, Colors.cyan),
