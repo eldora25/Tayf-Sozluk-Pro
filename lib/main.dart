@@ -425,19 +425,109 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {}
   }
 
+  // YENİ VE PREMIUM: Puan Kazanıldığında Havaya Uçan Lüks Efektler
+  void _showFlyingParticle(IconData icon, Color color) {
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) {
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 1500),
+          curve: Curves.easeInOutBack,
+          onEnd: () {
+            overlayEntry?.remove();
+          },
+          builder: (context, value, child) {
+            return Positioned(
+              left: MediaQuery.of(context).size.width / 2 - 20,
+              bottom: 100 + (MediaQuery.of(context).size.height * 0.7 * value),
+              child: Opacity(
+                opacity: 1.0 - value,
+                child: Transform.scale(
+                  scale: 1.0 + (value * 2),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [BoxShadow(color: color.withOpacity(0.8), blurRadius: 20, spreadRadius: 5)]
+                    ),
+                    child: Icon(icon, color: color, size: 40)
+                  )
+                )
+              ),
+            );
+          }
+        );
+      }
+    );
+    Overlay.of(context).insert(overlayEntry);
+  }
+
   void _recordActivity(int pointsEarned) {
+    if (pointsEarned > 0) {
+      _showFlyingParticle(Icons.diamond, Colors.lightBlueAccent);
+      if (pointsEarned > 1) {
+        Future.delayed(const Duration(milliseconds: 200), () => _showFlyingParticle(Icons.diamond, Colors.lightBlueAccent));
+      }
+    }
     setState(() => tayfPoints += pointsEarned);
     _saveData();
   }
 
+  // YENİ VE PREMIUM: Kalkan Alımında Merkezden Patlayan Lüks Dialog
   void _buyFreeze() {
-    HapticFeedback.mediumImpact(); 
+    HapticFeedback.heavyImpact(); 
     if (tayfPoints >= 50) {
       setState(() { tayfPoints -= 50; streakFreezes++; });
       _saveData();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Buz Kalkanı satın alındı! ❄️"), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating));
+      
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: "Kapat",
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (context, a1, a2) => const SizedBox(),
+        transitionBuilder: (context, a1, a2, child) {
+          return Transform.scale(
+            scale: Curves.easeOutBack.transform(a1.value),
+            child: AlertDialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              content: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 200, height: 200,
+                    decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.6), blurRadius: 50, spreadRadius: 20)]),
+                  ),
+                  const Icon(Icons.ac_unit, size: 100, color: Colors.white),
+                  const Positioned(
+                    bottom: 0, 
+                    child: Text("KALKAN ALINDI!", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, shadows: [Shadow(blurRadius: 10, color: Colors.blueAccent)]))
+                  )
+                ],
+              )
+            ),
+          );
+        }
+      );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yetersiz Tayf Puanı (TP)."), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: "Kapat",
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (context, a1, a2) => const SizedBox(),
+        transitionBuilder: (context, a1, a2, child) {
+          return Transform.scale(
+            scale: Curves.easeOutBack.transform(a1.value),
+            child: AlertDialog(
+              backgroundColor: Colors.redAccent.withOpacity(0.9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Center(child: Icon(Icons.warning, color: Colors.white, size: 50)),
+              content: const Text("Yetersiz Tayf Puanı (TP). Kalkan için 50 TP gereklidir.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          );
+        }
+      );
     }
   }
 
@@ -870,7 +960,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: pieces);
   }
 
-  // YENİ VE MÜKEMMELİYETÇİ: İç cam efekti ve Mitoz parlama kombinasyonu
   BoxDecoration _getPremiumCardDecoration(BuildContext context, bool isDark, {bool isMitosis = false}) {
     return BoxDecoration(
       gradient: LinearGradient(
@@ -894,11 +983,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  // YENİ: Mitoz kartların yazılarını okunabilir yapan kontrast düzenleyici
+  Color _getTextColor(BuildContext context, bool isDark, bool isMitosis) {
+    if (isMitosis) {
+      return isDark ? Colors.white : Colors.purple.shade900;
+    }
+    return Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
+  }
+
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    bool isMitosis = word.libraryName.startsWith('🧬'); // YENİ: Mitoz Tespiti
+    bool isMitosis = word.libraryName.startsWith('🧬'); 
     List<Color> distinctColors = const [Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)];
 
     return RepaintBoundary(
@@ -907,7 +1004,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         builder: (context, child) {
           Widget cardContent = Container(
             width: 290, height: 320, 
-            decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), // YENİ: İç Renk Ataması
+            decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), 
             child: Column(
               children: [
                 if (isPremium) 
@@ -927,7 +1024,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // YENİ: Mitoz ise biyolojik ikon ekler
                             if (isMitosis) const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: Colors.purpleAccent)),
                             Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
                             const SizedBox(width: 8),
@@ -940,9 +1036,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Expanded(
                   child: Stack(
                     children: [
-                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w800))))), 
-                      Positioned(right: 5, top: 5, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: false))), 
-                      Positioned(left: 5, top: 5, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))
+                      // YENİ: Okunabilirlik Kontrastı Eklendi
+                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: _getTextColor(context, isDark, isMitosis)))))), 
+                      Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: false))), 
+                      Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word)))
                     ]
                   )
                 )
@@ -969,7 +1066,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
              current = Container(
                padding: const EdgeInsets.all(3),
                decoration: BoxDecoration(
-                 color: isMitosis ? Colors.purpleAccent : Theme.of(context).primaryColor, // YENİ: 0 Seviye Mitoz dış rengi
+                 color: isMitosis ? Colors.purpleAccent : Theme.of(context).primaryColor,
                  borderRadius: BorderRadius.circular(26), 
                  boxShadow: [BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Theme.of(context).primaryColor.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))]
                ),
@@ -986,7 +1083,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    bool isMitosis = word.libraryName.startsWith('🧬'); // YENİ: Mitoz Tespiti
+    bool isMitosis = word.libraryName.startsWith('🧬'); 
     List<Color> distinctColors = const [Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)];
 
     return RepaintBoundary(
@@ -995,7 +1092,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         builder: (context, child) {
           Widget cardContent = Container(
             width: 290, height: 320,
-            decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), // YENİ: İç Renk Ataması
+            decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), 
             child: Column(
               children: [
                 if (isPremium) 
@@ -1015,7 +1112,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // YENİ: Mitoz ise biyolojik ikon ekler
                             if (isMitosis) const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: Colors.purpleAccent)),
                             Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
                             const SizedBox(width: 8),
@@ -1035,21 +1131,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Center(child: Text(word.word, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold))), 
-                              const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider()), 
-                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• $m", style: const TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600)))),
+                              Center(child: Text(word.word, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
+                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: _getTextColor(context, isDark, isMitosis).withOpacity(0.3))), 
+                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• $m", style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
                               if (word.examples.isNotEmpty) ...[
                                 const SizedBox(height: 16),
-                                Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.secondary)),
+                                Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isMitosis ? Colors.pinkAccent : Theme.of(context).colorScheme.secondary)),
                                 const SizedBox(height: 6),
-                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» $e", style: const TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4)))),
+                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» $e", style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis))))),
                               ]
                             ]
                           )
                         )
                       ), 
-                      Positioned(right: 5, top: 0, child: IconButton(icon: const Icon(Icons.volume_up, size: 30), onPressed: () => _speakWord(word, isMeaning: true))), 
-                      Positioned(left: 5, top: 0, child: IconButton(icon: const Icon(Icons.settings, size: 28, color: Colors.grey), onPressed: () => _openEditScreen(word)))
+                      Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: true))), 
+                      Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word)))
                     ]
                   )
                 )
@@ -1076,7 +1172,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
              current = Container(
                padding: const EdgeInsets.all(3),
                decoration: BoxDecoration(
-                 color: isMitosis ? Colors.purpleAccent : Colors.green, // YENİ: 0 Seviye Mitoz dış rengi
+                 color: isMitosis ? Colors.purpleAccent : Colors.green, 
                  borderRadius: BorderRadius.circular(26), 
                  boxShadow: [BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Colors.green.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))]
                ),
@@ -1308,16 +1404,48 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // YENİ VE PREMIUM: Dinamik Neon Ateş Serisi ve Kalkan Eklentisi
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.8), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.orangeAccent, width: 2), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]), 
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 24), const SizedBox(width: 6), Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))])
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.8), 
+                      borderRadius: BorderRadius.circular(30), 
+                      border: Border.all(color: Colors.orangeAccent, width: 2), 
+                      boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: (currentStreak * 2.0).clamp(8.0, 30.0), spreadRadius: 1)] // Ateş arttıkça neon güçlenir
+                    ), 
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, 
+                      children: [
+                        const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 24), 
+                        const SizedBox(width: 6), 
+                        Text("$currentStreak", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white)),
+                        if (streakFreezes > 0) ...[
+                          const SizedBox(width: 8),
+                          Icon(Icons.ac_unit, color: Colors.blueAccent.shade100, size: 16),
+                          const SizedBox(width: 4),
+                          Text("$streakFreezes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueAccent.shade100)),
+                        ]
+                      ]
+                    )
                   ),
                   const SizedBox(width: 20),
+                  // YENİ VE PREMIUM: Dinamik Neon Tayf Puanı (TP)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.8), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.lightBlueAccent, width: 2), boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.6), blurRadius: 8, spreadRadius: 1)]), 
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 24), const SizedBox(width: 6), Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))])
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.8), 
+                      borderRadius: BorderRadius.circular(30), 
+                      border: Border.all(color: Colors.lightBlueAccent, width: 2), 
+                      boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.8), blurRadius: (tayfPoints * 0.2).clamp(8.0, 30.0), spreadRadius: 1)] // TP arttıkça neon güçlenir
+                    ), 
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, 
+                      children: [
+                        const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 24), 
+                        const SizedBox(width: 6), 
+                        Text("$tayfPoints", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white))
+                      ]
+                    )
                   ),
                 ],
               ),
