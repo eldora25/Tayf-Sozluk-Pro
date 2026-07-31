@@ -114,7 +114,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
-    // DÜZELTİLDİ: Çıkış yapılsa bile quiz istatistiklerini hesaplar ve kaydeder
     if (!_isStatsSaved && answeredQuestions > 0) {
       widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers);
     }
@@ -262,8 +261,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
           
-          // DÜZELTİLDİ: DB kayıt işlemi asenkron yapıldı (UI donmalarını sıfırlar)
-          isar.writeTxn((isar) async {
+          isar.writeTxn(() async {
             await isar.wordModels.putAll([currentWord, splitWord]);   
           });
           
@@ -271,8 +269,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
         } else {
           currentWord.correctCount++;
-          // DÜZELTİLDİ: UI donmalarını önlemek için asenkron çağrı
-          isar.writeTxn((isar) async { await isar.wordModels.put(currentWord); });
+          isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
           
           if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
         }
@@ -318,7 +315,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
           
-          isar.writeTxn((isar) async {
+          isar.writeTxn(() async {
             await isar.wordModels.putAll([currentWord, splitWord]);
           });
           
@@ -326,7 +323,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           widget.onWrongWord(splitWord);
         } else {
           currentWord.wrongCount++;
-          isar.writeTxn((isar) async { await isar.wordModels.put(currentWord); });
+          isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
           widget.onWrongWord(currentWord);
         }
       }
