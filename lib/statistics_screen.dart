@@ -209,9 +209,7 @@ class StatisticsScreen extends StatelessWidget {
     int daysUsed = DateTime.now().difference(firstUse).inDays;
     if (daysUsed < 1) daysUsed = 1; 
     
-    // YENİ: Gerçek Mezun Hızı (Mezun Kelimeler / Kullanılan Gün)
     double graduationSpeed = learnedWords.length / daysUsed; 
-    // Aktivite Hızı (Biliyorum'a basma / Kullanılan Gün)
     double activitySpeed = learnedWordTimestamps.length / daysUsed; 
 
     int totalMitosisCount = [
@@ -254,7 +252,6 @@ class StatisticsScreen extends StatelessWidget {
           ),
           child: TabBarView(
             children: [
-              // 1. SEKME: BAŞARILAR
               ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
@@ -277,7 +274,6 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
 
-              // 2. SEKME: GENEL ÖZET
               ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
@@ -291,11 +287,9 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
               
-              // 3. SEKME: ÖĞRENME GRAFİĞİ VE HIZ
               ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  // YENİ: MEZUNİYET (GERÇEK ÖĞRENME) HIZI KARTI (En Üstte, Çok Şık)
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -314,7 +308,8 @@ class StatisticsScreen extends StatelessWidget {
                               child: const Icon(Icons.school, color: Colors.white, size: 24),
                             ),
                             const SizedBox(width: 12),
-                            const Text("Gerçek Öğrenme (Mezun) Hızınız", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                            // DÜZELTİLDİ: Metin taşmaması için Expanded eklendi
+                            const Expanded(child: Text("Gerçek Öğrenme (Mezun) Hızı", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -340,7 +335,6 @@ class StatisticsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // HAFTALIK AKTİVİTE GRAFİĞİ
                   Container(
                     decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))]),
                     child: Padding(
@@ -385,7 +379,6 @@ class StatisticsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   
-                  // ORTALAMA AKTİVİTE HIZI (Biliyorum'a Basma)
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(gradient: LinearGradient(colors: [primaryColor, primaryColor.withOpacity(0.8)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))]),
@@ -409,7 +402,6 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
 
-              // 4. SEKME: QUİZ
               ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
@@ -420,7 +412,6 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
               
-              // 5. SEKME: KÜTÜPHANELER
               ListView.builder(
                 padding: const EdgeInsets.all(20),
                 itemCount: availableLibraries.length,
