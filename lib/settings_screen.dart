@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // YENİ: Titreşim (HapticFeedback) donanım erişimi için eklendi
 
 class SettingsScreen extends StatefulWidget {
   final int currentGoal;
@@ -55,7 +56,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     const Color(0xFF558B2F),      // 15: Mat Doğal Yeşil
   ];
 
-  // YENİ VE PREMIUM: Tema İsimleri Listesi (Seçildiğinde Başlık Olarak Görünecek)
   final List<String> _themeNames = [
     "Gece Siyahı (Koyu)", "Sade Aydınlık (Açık)", "Deniz Mavisi", "Nane Yeşili",
     "Canlı Mor", "Sıcak Turuncu", "Şeker Pembe", "Okyanus Esintisi",
@@ -144,7 +144,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // YENİ VE PREMIUM: Seçilen temanın adını başlık olarak gösterir
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
