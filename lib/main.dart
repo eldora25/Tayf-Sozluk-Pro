@@ -386,7 +386,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {}
   }
 
-  // DÜZELTİLDİ: Tüm kelimeleri kaydetmek yerine sadece istatistikleri kaydeder. (Quiz'deki 20 sn donmayı engeller)
   Future<void> _savePreferencesOnly() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -433,7 +432,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               left: MediaQuery.of(context).size.width / 2 - 20,
               bottom: 100 + (MediaQuery.of(context).size.height * 0.7 * value),
               child: Opacity(
-                opacity: 1.0 - value,
+                opacity: (1.0 - value).clamp(0.0, 1.0), 
                 child: Transform.scale(
                   scale: 1.0 + (value * 2),
                   child: Container(
@@ -644,7 +643,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    // DÜZELTİLDİ: Sadece bu kelimeyi DB'ye yazar. Quizdeki devasa donmayı çözer!
     isar.writeTxn(() async { await isar.wordModels.put(word); });
 
     if (!fromQuiz) _nextCard(increment: false); 
@@ -675,7 +673,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    // DÜZELTİLDİ: Sadece bu kelimeyi DB'ye yazar.
     isar.writeTxn(() async { await isar.wordModels.put(word); });
 
     if (!fromQuiz) _nextCard(increment: true);
@@ -856,7 +853,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _savePreferencesOnly();
   }
 
-  // DÜZELTİLDİ: Kütüphaneler ve kelimeler artık veritabanından kalıcı olarak silinir.
   void _deleteLibrary(String libName) {
     setState(() {
       allWords.removeWhere((w) => w.libraryName == libName);
@@ -886,7 +882,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     
     try {
       final dir = await getTemporaryDirectory();
-      // DÜZELTİLDİ: Dosya adındaki emoji ve özel karakterler temizlendi
       String safeName = libName.replaceAll(RegExp(r'[<>:"/\\|?*🧬 ]'), '_');
       final file = File('${dir.path}/$safeName.csv');
       await file.writeAsString(const ListToCsvConverter().convert(rows));
@@ -913,7 +908,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             learningWords.removeWhere((w) => w.id == word.id);
             wrongWords.removeWhere((w) => w.id == word.id);
             learnedWords.removeWhere((w) => w.id == word.id);
-            // DÜZELTİLDİ: Edit ekranından silinen kelime kalıcı silinir
             isar.writeTxn(() async { await isar.wordModels.delete(word.id); });
           } else if (action == EditAction.update || action == EditAction.move) {
             allWords.removeWhere((w) => w.id == word.id);
@@ -1030,27 +1024,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), 
             child: Column(
               children: [
-                if (isPremium) 
+                // YENİ: Mitoz kartları seviye 0 olsa bile (öğrenme aşamasında) başlığa ve biyolojik logoya sahip olur
+                if (isPremium || isMitosis) 
                   Container(
                     width: double.infinity, 
                     padding: const EdgeInsets.symmetric(vertical: 8), 
                     decoration: BoxDecoration(
-                      color: distinctColors[level - 1].withOpacity(0.15), 
+                      color: isPremium ? distinctColors[level - 1].withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.15), 
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
-                      border: Border(bottom: BorderSide(color: distinctColors[level - 1].withOpacity(0.5), width: 2))
+                      border: Border(bottom: BorderSide(color: isPremium ? distinctColors[level - 1].withOpacity(0.5) : Colors.purpleAccent.withOpacity(0.5), width: 2))
                     ), 
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildCrown(level), 
-                        const SizedBox(height: 4),
+                        if (isPremium) _buildCrown(level), 
+                        if (isPremium) const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (isMitosis) const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: Colors.purpleAccent)),
-                            Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
-                            const SizedBox(width: 8),
-                            Text(isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5", style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)),
+                            if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
+                            if (isPremium) const SizedBox(width: 8),
+                            Text(
+                              isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
+                              style: TextStyle(
+                                color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, 
+                                fontWeight: FontWeight.bold, 
+                                fontSize: 14, 
+                                letterSpacing: 1.5
+                              )
+                            ),
                           ],
                         ),
                       ],
@@ -1117,27 +1120,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), 
             child: Column(
               children: [
-                if (isPremium) 
+                if (isPremium || isMitosis) 
                   Container(
                     width: double.infinity, 
                     padding: const EdgeInsets.symmetric(vertical: 8), 
                     decoration: BoxDecoration(
-                      color: distinctColors[level - 1].withOpacity(0.15), 
+                      color: isPremium ? distinctColors[level - 1].withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.15), 
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
-                      border: Border(bottom: BorderSide(color: distinctColors[level - 1].withOpacity(0.5), width: 2))
+                      border: Border(bottom: BorderSide(color: isPremium ? distinctColors[level - 1].withOpacity(0.5) : Colors.purpleAccent.withOpacity(0.5), width: 2))
                     ), 
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildCrown(level), 
-                        const SizedBox(height: 4),
+                        if (isPremium) _buildCrown(level), 
+                        if (isPremium) const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (isMitosis) const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: Colors.purpleAccent)),
-                            Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
-                            const SizedBox(width: 8),
-                            Text(isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5", style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)),
+                            if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
+                            if (isPremium) const SizedBox(width: 8),
+                            Text(
+                              isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
+                              style: TextStyle(
+                                color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, 
+                                fontWeight: FontWeight.bold, 
+                                fontSize: 14, 
+                                letterSpacing: 1.5
+                              )
+                            ),
                           ],
                         ),
                       ],
