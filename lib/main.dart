@@ -209,7 +209,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   void _loadTheme() async { final prefs = await SharedPreferences.getInstance(); setState(() => themeIndex = prefs.getInt('themeIndex') ?? 0); }
   void _toggleTheme(int value) async { final prefs = await SharedPreferences.getInstance(); setState(() => themeIndex = value); prefs.setInt('themeIndex', value); }
 
-  // YENİ: Toplam 16 Tema için Gelişmiş Tema Yöneticisi
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
@@ -229,14 +228,14 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       case 5: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: const Color(0xFFFBE9E7), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 6: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: const Color(0xFFFCE4EC), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 7: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.cyan, primaryColor: Colors.cyan[700], scaffoldBackgroundColor: const Color(0xFFE0F7FA), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.cyan, secondary: Colors.cyanAccent), appBarTheme: AppBarTheme(backgroundColor: Colors.cyan[700], foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
-      case 8: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: const Color(0xFF2C3E50), scaffoldBackgroundColor: const Color(0xFF1E272E), colorScheme: const ColorScheme.dark(primary: Color(0xFF2C3E50), secondary: Color(0xFF546E7A)), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions); // Koyu Gri
-      case 9: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF607D8B), scaffoldBackgroundColor: const Color(0xFFECEFF1), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Color(0xFF607D8B), secondary: Color(0xFF90A4AE)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF607D8B), elevation: 0), pageTransitionsTheme: smoothTransitions); // Açık Gri
-      case 10: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF8D6E63), scaffoldBackgroundColor: const Color(0xFFF4ECD8), cardColor: const Color(0xFFFDFBF7), colorScheme: const ColorScheme.light(primary: Color(0xFF8D6E63), secondary: Color(0xFFA1887F)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF8D6E63), elevation: 0), pageTransitionsTheme: smoothTransitions); // Sıcak Kağıt
-      case 11: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF5C6BC0), scaffoldBackgroundColor: const Color(0xFFE8F4F8), cardColor: const Color(0xFFF5FAFD), colorScheme: const ColorScheme.light(primary: Color(0xFF5C6BC0), secondary: Color(0xFF7986CB)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF5C6BC0), elevation: 0), pageTransitionsTheme: smoothTransitions); // Soğuk Kağıt
-      case 12: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF9E9D24), scaffoldBackgroundColor: const Color(0xFFF5F5DC), cardColor: const Color(0xFFFCFDF2), colorScheme: const ColorScheme.light(primary: Color(0xFF9E9D24), secondary: Color(0xFFAED581)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF9E9D24), elevation: 0), pageTransitionsTheme: smoothTransitions); // Krem Kağıt
-      case 13: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: const Color(0xFF4E342E), scaffoldBackgroundColor: const Color(0xFF3E2723), colorScheme: const ColorScheme.dark(primary: Color(0xFF4E342E), secondary: Color(0xFF8D6E63)), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions); // Kahve
-      case 14: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: const Color(0xFF263238), scaffoldBackgroundColor: const Color(0xFF101416), colorScheme: const ColorScheme.dark(primary: Color(0xFF263238), secondary: Color(0xFF455A64)), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions); // Kömür Karası
-      case 15: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF33691E), scaffoldBackgroundColor: const Color(0xFFF1F8E9), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Color(0xFF33691E), secondary: Color(0xFF558B2F)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF33691E), elevation: 0), pageTransitionsTheme: smoothTransitions); // Mat Yeşil
+      case 8: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: const Color(0xFF2C3E50), scaffoldBackgroundColor: const Color(0xFF1E272E), colorScheme: const ColorScheme.dark(primary: Color(0xFF2C3E50), secondary: Color(0xFF546E7A)), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions); 
+      case 9: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF607D8B), scaffoldBackgroundColor: const Color(0xFFECEFF1), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Color(0xFF607D8B), secondary: Color(0xFF90A4AE)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF607D8B), elevation: 0), pageTransitionsTheme: smoothTransitions); 
+      case 10: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF8D6E63), scaffoldBackgroundColor: const Color(0xFFF4ECD8), cardColor: const Color(0xFFFDFBF7), colorScheme: const ColorScheme.light(primary: Color(0xFF8D6E63), secondary: Color(0xFFA1887F)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF8D6E63), elevation: 0), pageTransitionsTheme: smoothTransitions); 
+      case 11: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF5C6BC0), scaffoldBackgroundColor: const Color(0xFFE8F4F8), cardColor: const Color(0xFFF5FAFD), colorScheme: const ColorScheme.light(primary: Color(0xFF5C6BC0), secondary: Color(0xFF7986CB)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF5C6BC0), elevation: 0), pageTransitionsTheme: smoothTransitions); 
+      case 12: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF9E9D24), scaffoldBackgroundColor: const Color(0xFFF5F5DC), cardColor: const Color(0xFFFCFDF2), colorScheme: const ColorScheme.light(primary: Color(0xFF9E9D24), secondary: Color(0xFFAED581)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF9E9D24), elevation: 0), pageTransitionsTheme: smoothTransitions); 
+      case 13: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: const Color(0xFF4E342E), scaffoldBackgroundColor: const Color(0xFF3E2723), colorScheme: const ColorScheme.dark(primary: Color(0xFF4E342E), secondary: Color(0xFF8D6E63)), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions); 
+      case 14: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: const Color(0xFF263238), scaffoldBackgroundColor: const Color(0xFF101416), colorScheme: const ColorScheme.dark(primary: Color(0xFF263238), secondary: Color(0xFF455A64)), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions); 
+      case 15: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: const Color(0xFF33691E), scaffoldBackgroundColor: const Color(0xFFF1F8E9), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Color(0xFF33691E), secondary: Color(0xFF558B2F)), appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF33691E), elevation: 0), pageTransitionsTheme: smoothTransitions); 
       default: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), pageTransitionsTheme: smoothTransitions);
     }
   }
@@ -502,14 +501,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {}
   }
 
-  void _nextCard() {
+  void _nextCard({bool increment = false}) {
     HapticFeedback.lightImpact(); 
     globalTts.stop();
     setState(() {
       isFlipped = false;
       _flipController.reset();
-      currentCardIndex++;
+      if (increment) {
+        currentCardIndex++;
+      }
     });
+    
     _saveData();
     var deck = activeDeck;
     if (deck.isNotEmpty) {
@@ -559,10 +561,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
         toSRSRepeatWords.removeWhere((w) => w.id == word.id);
       }
-      
-      if (!fromQuiz) _nextCard(); 
-      else _saveData(); 
     });
+
+    if (!fromQuiz) _nextCard(increment: false); 
+    else _saveData(); 
   }
 
   void _markAsToRepeat(WordModel word, {bool fromQuiz = false}) {
@@ -587,10 +589,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (!toRepeatWords.any((w) => w.id == word.id)) toRepeatWords.add(word);
         allWords.removeWhere((w) => w.id == word.id);
       }
-      
-      if (!fromQuiz) _nextCard();
-      else _saveData();
     });
+
+    if (!fromQuiz) _nextCard(increment: true);
+    else _saveData();
   }
 
   Future<void> _importFile() async {
@@ -868,20 +870,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: pieces);
   }
 
-  // YENİ: Kart İçi (İç Bölge) Degrade Tasarım Fonksiyonu
-  BoxDecoration _getPremiumCardDecoration(BuildContext context, bool isDark) {
+  // YENİ VE MÜKEMMELİYETÇİ: İç cam efekti ve Mitoz parlama kombinasyonu
+  BoxDecoration _getPremiumCardDecoration(BuildContext context, bool isDark, {bool isMitosis = false}) {
     return BoxDecoration(
       gradient: LinearGradient(
         colors: isDark 
-            ? [Theme.of(context).cardColor, Theme.of(context).cardColor.withOpacity(0.8)]
-            : [Colors.white, Theme.of(context).scaffoldBackgroundColor],
+            ? [
+                isMitosis ? Colors.purpleAccent.shade400.withOpacity(0.15) : Theme.of(context).cardColor, 
+                Theme.of(context).cardColor.withOpacity(0.8)
+              ]
+            : [
+                isMitosis ? Colors.purpleAccent.shade100.withOpacity(0.1) : Colors.white, 
+                Theme.of(context).scaffoldBackgroundColor
+              ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
       borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3), width: 1.5),
+      border: Border.all(color: isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Theme.of(context).primaryColor.withOpacity(0.3), width: 1.5),
       boxShadow: [
-        BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.15), blurRadius: 25, offset: const Offset(0, 10))
+        BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.1) : Theme.of(context).primaryColor.withOpacity(0.15), blurRadius: 25, offset: const Offset(0, 10))
       ]
     );
   }
@@ -890,6 +898,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
+    bool isMitosis = word.libraryName.startsWith('🧬'); // YENİ: Mitoz Tespiti
     List<Color> distinctColors = const [Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)];
 
     return RepaintBoundary(
@@ -898,7 +907,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         builder: (context, child) {
           Widget cardContent = Container(
             width: 290, height: 320, 
-            decoration: _getPremiumCardDecoration(context, isDark),
+            decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), // YENİ: İç Renk Ataması
             child: Column(
               children: [
                 if (isPremium) 
@@ -918,9 +927,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            // YENİ: Mitoz ise biyolojik ikon ekler
+                            if (isMitosis) const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: Colors.purpleAccent)),
                             Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
                             const SizedBox(width: 8),
-                            Text("SRS Seviye: $level / 5", style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)),
+                            Text(isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5", style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)),
                           ],
                         ),
                       ],
@@ -958,9 +969,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
              current = Container(
                padding: const EdgeInsets.all(3),
                decoration: BoxDecoration(
-                 color: Theme.of(context).primaryColor, 
+                 color: isMitosis ? Colors.purpleAccent : Theme.of(context).primaryColor, // YENİ: 0 Seviye Mitoz dış rengi
                  borderRadius: BorderRadius.circular(26), 
-                 boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))]
+                 boxShadow: [BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Theme.of(context).primaryColor.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))]
                ),
                child: current,
              );
@@ -975,6 +986,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
+    bool isMitosis = word.libraryName.startsWith('🧬'); // YENİ: Mitoz Tespiti
     List<Color> distinctColors = const [Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)];
 
     return RepaintBoundary(
@@ -983,7 +995,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         builder: (context, child) {
           Widget cardContent = Container(
             width: 290, height: 320,
-            decoration: _getPremiumCardDecoration(context, isDark),
+            decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), // YENİ: İç Renk Ataması
             child: Column(
               children: [
                 if (isPremium) 
@@ -1003,9 +1015,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            // YENİ: Mitoz ise biyolojik ikon ekler
+                            if (isMitosis) const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: Colors.purpleAccent)),
                             Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
                             const SizedBox(width: 8),
-                            Text("SRS Seviye: $level / 5", style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)),
+                            Text(isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5", style: TextStyle(color: distinctColors[level - 1], fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)),
                           ],
                         ),
                       ],
@@ -1062,9 +1076,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
              current = Container(
                padding: const EdgeInsets.all(3),
                decoration: BoxDecoration(
-                 color: Colors.green, 
+                 color: isMitosis ? Colors.purpleAccent : Colors.green, // YENİ: 0 Seviye Mitoz dış rengi
                  borderRadius: BorderRadius.circular(26), 
-                 boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))]
+                 boxShadow: [BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Colors.green.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))]
                ),
                child: current,
              );
@@ -1154,7 +1168,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       onTap: () { 
                         HapticFeedback.lightImpact();
                         Navigator.pop(context); 
-                        // DÜZELTİLDİ: Derleme hatasına sebep olan 'themeIndex' yerine 'widget.themeIndex' eklendi
                         Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
                           currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
                           onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
@@ -1334,7 +1347,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
       drawer: _buildDrawer(),
-      // YENİ: Dış Alan (Scaffold Body) Göz Yormayan Şık Tasarımı
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
