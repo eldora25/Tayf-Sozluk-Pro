@@ -273,7 +273,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int dailyGoal = 10, quizThreshold = 10, quizQuestionCount = 10, currentCardIndex = 0;
   bool isFlipped = false;
   
-  // İSTATİSTİK DEĞİŞKENLERİ
   int totalCompletedQuizzes = 0, totalQuizTimeSeconds = 0, totalQuizQuestions = 0, totalQuizWrong = 0;
   List<String> learnedWordTimestamps = [], completedQuizTimestamps = [], viewedCardTimestamps = [], wrongAnswerTimestamps = [];
   int firstUseTimestamp = 0, currentStreak = 0, bestStreak = 0, tayfPoints = 0, streakFreezes = 0;
@@ -310,14 +309,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         quizQuestionCount = prefs.getInt('quizQuestionCount') ?? 10;
         currentCardIndex = prefs.getInt('currentCardIndex') ?? 0;
         
-        // 20665 GÜN HATASI DÜZELTİLDİ: Başlangıç tarihi kontrolü ve koruması eklendi
         firstUseTimestamp = prefs.getInt('firstUseTimestamp') ?? 0;
-        if (firstUseTimestamp < 1600000000000) { // Eski (0) veya hatalı tarihleri sıfırla
+        if (firstUseTimestamp < 1600000000000) { 
           firstUseTimestamp = DateTime.now().millisecondsSinceEpoch;
           prefs.setInt('firstUseTimestamp', firstUseTimestamp);
         }
 
-        // İSTATİSTİK ZIRHI: Kaybolan veriler kalıcı bellekten yükleniyor
         currentStreak = prefs.getInt('currentStreak') ?? 0;
         bestStreak = prefs.getInt('bestStreak') ?? 0;
         streakFreezes = prefs.getInt('streakFreezes') ?? 0;
@@ -385,13 +382,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       final prefs = await SharedPreferences.getInstance();
       
-      // Performans Koruması: Listeler 5000 elemanı geçerse eskileri siler, hafızayı şişirmez
       if (learnedWordTimestamps.length > 5000) learnedWordTimestamps.removeRange(0, learnedWordTimestamps.length - 5000);
       if (completedQuizTimestamps.length > 5000) completedQuizTimestamps.removeRange(0, completedQuizTimestamps.length - 5000);
       if (viewedCardTimestamps.length > 5000) viewedCardTimestamps.removeRange(0, viewedCardTimestamps.length - 5000);
       if (wrongAnswerTimestamps.length > 5000) wrongAnswerTimestamps.removeRange(0, wrongAnswerTimestamps.length - 5000);
 
-      // İSTATİSTİK ZIRHI: Tüm veriler kalıcı belleğe mühürleniyor
       prefs.setString('selectedLibrary', selectedLibrary);
       prefs.setString('selectedLevel', selectedLevel);
       prefs.setInt('quizThreshold', quizThreshold);
@@ -522,7 +517,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } else { 
       _flipController.forward(); 
       _speakWord(word, isMeaning: true); 
-      // STATS FIX: Bakılan kartları kalıcı kaydet
       viewedCardTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
       _saveData();
     }
@@ -534,7 +528,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       HapticFeedback.heavyImpact(); 
       _recordActivity(1); 
     }
-    // STATS FIX: Öğrenilen kelimeyi istatistiklere kalıcı kaydet
     learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     
     setState(() {
@@ -568,7 +561,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       HapticFeedback.mediumImpact(); 
       _recordActivity(0); 
     }
-    // STATS FIX: Yanlış bilinen kelimeyi istatistiklere kalıcı kaydet
     wrongAnswerTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     
     setState(() {
@@ -1125,8 +1117,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       onTap: () { 
                         HapticFeedback.lightImpact();
                         Navigator.pop(context); 
+                        // DÜZELTİLDİ: currentThemeIndex: widget.themeIndex olarak değiştirildi
                         Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
+                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
                           onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
                             setState(() { dailyGoal = nG; quizThreshold = nT; quizQuestionCount = nQC; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
                             _saveData(); 
@@ -1169,7 +1162,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             totalQuizTimeSeconds += t; 
                             totalQuizQuestions += a; 
                             totalQuizWrong += w; 
-                            // STATS FIX: Quiz tamamlanma zamanı eklendi
                             completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
                           });
                           _saveData(); 
