@@ -204,10 +204,26 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
+  // YENİ: Dilleri okunabilir formata çeviren yardımcı fonksiyon
+  String _getReadableLang(String code) {
+    if (code.contains('en')) return 'İng';
+    if (code.contains('tr')) return 'Tr';
+    if (code.contains('de')) return 'Alm';
+    if (code.contains('fr')) return 'Fra';
+    if (code.contains('es')) return 'İsp';
+    if (code.contains('ru')) return 'Rus';
+    return code.split('-').first.toUpperCase();
+  }
+
   void _checkAnswer(String option) async {
     if (isAnsweredCorrectly || selectedWrongOptions.contains(option)) return;
     bool isCorrect = (option == correctOption);
     
+    // YENİ: MİTOZ HAVUZU İÇİN DİL ANALİZİ VE İSİMLENDİRME
+    String srcCode = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
+    String tgtCode = getSmartTargetLanguage(currentWord.libraryName, correctOption);
+    String mitosisLibName = "🧬 Mitoz (${_getReadableLang(srcCode)}-${_getReadableLang(tgtCode)})";
+
     if (isCorrect) {
       setState(() {
         isAnsweredCorrectly = true;
@@ -227,7 +243,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             word: currentWord.word,
             meanings: isMeaning ? [correctOption] : [],
             examples: !isMeaning ? [correctOption] : [],
-            libraryName: currentWord.libraryName,
+            libraryName: mitosisLibName, // YENİ: Özel Mitoz Kütüphanesine Atandı
             level: currentWord.level,
             correctCount: currentWord.correctCount + 1, 
             wrongCount: currentWord.wrongCount,
@@ -289,7 +305,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             word: currentWord.word,
             meanings: isMeaning ? [correctOption] : [],
             examples: !isMeaning ? [correctOption] : [],
-            libraryName: currentWord.libraryName,
+            libraryName: mitosisLibName, // YENİ: Özel Mitoz Kütüphanesine Atandı
             level: currentWord.level,
             correctCount: currentWord.correctCount,
             wrongCount: currentWord.wrongCount + 1,
@@ -422,7 +438,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 10),
           
-          // DÜZELTİLDİ: Sayaç hatasını engellemek için limit (min) konuldu
           Text(
             "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
             textAlign: TextAlign.center, 
