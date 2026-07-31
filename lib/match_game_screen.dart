@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'dart:ui'; // YENİ: Cam efekti (Blur) için eklendi
+import 'dart:ui'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
@@ -102,59 +102,75 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     }
   }
 
-  // YENİ VE PREMIUM: Uzun metinleri okumak için cam efektli detay penceresi
+  // YENİ VE PREMIUM: Yavaşça Yayılarak Açılan Neon Pencere
   void _showPremiumTextDialog(BuildContext context, String text, String type) {
     HapticFeedback.selectionClick();
-    showDialog(
+    
+    Color neonColor = type.contains('Hedef') ? Theme.of(context).primaryColor : Colors.orangeAccent;
+    
+    showGeneralDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        contentPadding: EdgeInsets.zero,
-        content: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor.withOpacity(0.9),
+      barrierDismissible: true,
+      barrierLabel: "Kapat",
+      barrierColor: Colors.black.withOpacity(0.4),
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (context, anim1, anim2) => const SizedBox(),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return Transform.scale(
+          scale: Curves.easeOutBack.transform(anim1.value),
+          child: FadeTransition(
+            opacity: anim1,
+            child: AlertDialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              contentPadding: EdgeInsets.zero,
+              content: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.4), width: 2),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))]
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(type.contains('İngilizce') ? Icons.language : Icons.g_translate, color: Theme.of(context).primaryColor, size: 40),
-                  const SizedBox(height: 12),
-                  Text(type, style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                  const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
-                  SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Text(text, textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color, height: 1.4)),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 5
-                      ),
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text("Kapat", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: neonColor.withOpacity(0.6), width: 2.5),
+                      boxShadow: [BoxShadow(color: neonColor.withOpacity(0.3), blurRadius: 30, spreadRadius: 5)]
                     ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(type.contains('Hedef') ? Icons.language : Icons.g_translate, color: neonColor, size: 48),
+                        const SizedBox(height: 12),
+                        Text(type, style: TextStyle(fontSize: 14, color: Colors.grey.shade500, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                        const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider()),
+                        SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Text(text, textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Theme.of(context).textTheme.bodyLarge?.color, height: 1.4)),
+                        ),
+                        const SizedBox(height: 30),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: neonColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 8
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Kapat", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.0))
+                          ),
+                        )
+                      ]
+                    )
                   )
-                ]
+                )
               )
-            )
-          )
-        )
-      )
+            ),
+          ),
+        );
+      }
     );
   }
 
@@ -283,13 +299,12 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
               child: Text("Raunt: ${currentRound + 1} / $totalRounds", style: TextStyle(fontSize: 16, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
             ),
             const SizedBox(height: 8),
-            // YENİ: Bilgilendirme Metni
             Text("Metinleri tam okumak için kartlara basılı tutun.", style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
             const SizedBox(height: 12),
             Expanded(
               child: Row(
                 children: [
-                  // SOL SÜTUN: İNGİLİZCE KELİMELER
+                  // SOL SÜTUN
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -326,7 +341,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                             decoration: BoxDecoration(color: Colors.grey.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid, width: 2)),
                           ),
-                          // YENİ: Basılı tutunca metin okuma ekranını aç (Sol Sütun)
                           child: GestureDetector(
                             onLongPress: () => _showPremiumTextDialog(context, word.word, "Hedef Kelime"),
                             child: Container(
@@ -346,7 +360,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                     ),
                   ),
                   
-                  // SAĞ SÜTUN: TÜRKÇE ANLAMLAR
+                  // SAĞ SÜTUN
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -370,7 +384,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                           onAccept: (data) => _handleDrop(data, word),
                           builder: (context, candidateData, rejectedData) {
                             bool isHovered = candidateData.isNotEmpty;
-                            // YENİ: Basılı tutunca metin okuma ekranını aç (Sağ Sütun)
                             return GestureDetector(
                               onLongPress: () => _showPremiumTextDialog(context, word.meanings.first, "Kartın Anlamı"),
                               child: AnimatedContainer(
