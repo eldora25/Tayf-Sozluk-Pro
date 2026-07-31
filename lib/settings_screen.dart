@@ -186,16 +186,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Günlük Öğrenme Hedefi:", style: TextStyle(fontWeight: FontWeight.bold)), Text("${_goalValue.toInt()} Kelime", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, fontSize: 16))]),
+                    // DÜZELTİLDİ: Taşmaları engellemek için metinler Expanded içine alındı
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                      children: [
+                        const Expanded(child: Text("Günlük Öğrenme Hedefi:", style: TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)), 
+                        const SizedBox(width: 8),
+                        Text("${_goalValue.toInt()} Kelime", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, fontSize: 16))
+                      ]
+                    ),
                     Slider(value: _goalValue, min: 5, max: 100, divisions: 19, activeColor: Theme.of(context).primaryColor, onChanged: (val) => setState(() => _goalValue = val)),
                     const Divider(height: 30),
                     
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Quiz Soru Sayısı:", style: TextStyle(fontWeight: FontWeight.bold)), Text("${_questionCountValue.toInt()} Soru", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16))]),
+                    // DÜZELTİLDİ: Taşmaları engellemek için metinler Expanded içine alındı
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                      children: [
+                        const Expanded(child: Text("Quiz Soru Sayısı:", style: TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)), 
+                        const SizedBox(width: 8),
+                        Text("${_questionCountValue.toInt()} Soru", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16))
+                      ]
+                    ),
                     const Text("Bir quiz seansında çıkacak soru sayısı.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                     Slider(value: _questionCountValue, min: 5, max: 100, divisions: 19, activeColor: Colors.blue, onChanged: (val) => setState(() => _questionCountValue = val)),
                     const Divider(height: 30),
 
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Quiz Ezber Eşiği:", style: TextStyle(fontWeight: FontWeight.bold)), Text("${_thresholdValue.toInt()} Doğru", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 16))]),
+                    // DÜZELTİLDİ: Taşmaları engellemek için metinler Expanded içine alındı
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                      children: [
+                        const Expanded(child: Text("Quiz Ezber Eşiği:", style: TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)), 
+                        const SizedBox(width: 8),
+                        Text("${_thresholdValue.toInt()} Doğru", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 16))
+                      ]
+                    ),
                     const Text("Bir kelimenin 'Öğrenildi' (Mezun) sayılması için üst üste bilinmesi gereken sayı.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                     Slider(value: _thresholdValue, min: 2, max: 50, divisions: 48, activeColor: Colors.orange, onChanged: (val) => setState(() => _thresholdValue = val)),
                   ],
@@ -226,7 +250,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
 
-          // YENİ: Yapışkanlı Sabit Kaydet Butonu (Floating Bottom Bar)
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Container(
