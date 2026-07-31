@@ -23,6 +23,7 @@ class PronunciationScreen extends StatefulWidget {
 class _PronunciationScreenState extends State<PronunciationScreen> with TickerProviderStateMixin {
   late stt.SpeechToText _speech;
   bool _isListening = false;
+  bool _isSpeechInitialized = false; // YENİ: Başlatılma kontrolü
   String _text = 'Mikrofona basılı tut ve kelimeyi oku...';
   
   List<WordModel> gameWords = [];
@@ -38,6 +39,7 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
+    _initSpeech(); // YENİ: Sayfa açıldığında bir kez başlatılır
     _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: false);
 
     List<WordModel> pool = List.from(widget.words)..shuffle();
@@ -48,6 +50,14 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
     } else {
       isFinished = true;
     }
+  }
+
+  // YENİ: Motoru sadece bir kez başlatan güvenli fonksiyon
+  Future<void> _initSpeech() async {
+    _isSpeechInitialized = await _speech.initialize(
+      onStatus: (val) => debugPrint('onStatus: $val'),
+      onError: (val) => debugPrint('onError: $val'),
+    );
   }
 
   @override
@@ -65,12 +75,12 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
         return;
       }
 
-      bool available = await _speech.initialize(
-        onStatus: (val) => debugPrint('onStatus: $val'),
-        onError: (val) => debugPrint('onError: $val'),
-      );
+      // Eğer daha önce başlatılamadıysa tekrar dene
+      if (!_isSpeechInitialized) {
+        await _initSpeech();
+      }
 
-      if (available) {
+      if (_isSpeechInitialized) {
         setState(() {
           _isListening = true;
           _isSuccessAnim = false;
@@ -89,6 +99,8 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
             }
           },
         );
+      } else {
+         setState(() => _text = "Mikrofon başlatılamadı!");
       }
     }
   }
@@ -136,7 +148,6 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
     }
   }
 
-  // YENİ: Siri benzeri yayılan dalga (Ripple) efekti oluşturan Widget
   Widget _buildRippleEffect() {
     return AnimatedBuilder(
       animation: _pulseController,
@@ -253,7 +264,6 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                 ),
                 const SizedBox(height: 40),
                 
-                // YENİ: Başarı durumunda yeşile dönen, büyüyen hedef kelime kartı
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeOutBack,
@@ -278,7 +288,6 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                 const Text("Canlı Algılama:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
                 const SizedBox(height: 12),
                 
-                // YENİ: Söylenenleri gösteren şık ekran
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   padding: const EdgeInsets.all(24),
@@ -303,12 +312,11 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                 ),
                 const Spacer(),
                 const Text("Aşağıdaki butona basılı tut ve yukarıdaki kelimeyi İngilizce olarak sesli oku.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.5)),
-                const SizedBox(height: 100), // Mikrofon için boşluk
+                const SizedBox(height: 100), 
               ],
             ),
           ),
           
-          // YENİ: Alt kısma sabitlenmiş gelişmiş mikrofon butonu
           Positioned(
             bottom: 30 + MediaQuery.of(context).padding.bottom,
             left: 0,
