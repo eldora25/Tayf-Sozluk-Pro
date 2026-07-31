@@ -90,7 +90,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
       setState(() {
         wrongTargetWord = target.word;
         mistakes++;
-        score -= 2;
+        // DÜZELTİLDİ: Puan eksilmez, aynı kalır. (Kullanıcı Talebi)
       });
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
@@ -100,78 +100,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
         }
       });
     }
-  }
-
-  // YENİ VE PREMIUM: Yavaşça Yayılarak Açılan Neon Pencere
-  void _showPremiumTextDialog(BuildContext context, String text, String type) {
-    HapticFeedback.selectionClick();
-    
-    Color neonColor = type.contains('Hedef') ? Theme.of(context).primaryColor : Colors.orangeAccent;
-    
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: "Kapat",
-      barrierColor: Colors.black.withOpacity(0.4),
-      transitionDuration: const Duration(milliseconds: 400),
-      pageBuilder: (context, anim1, anim2) => const SizedBox(),
-      transitionBuilder: (context, anim1, anim2, child) {
-        return Transform.scale(
-          scale: Curves.easeOutBack.transform(anim1.value),
-          child: FadeTransition(
-            opacity: anim1,
-            child: AlertDialog(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              contentPadding: EdgeInsets.zero,
-              content: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Container(
-                    padding: const EdgeInsets.all(28),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: neonColor.withOpacity(0.6), width: 2.5),
-                      boxShadow: [BoxShadow(color: neonColor.withOpacity(0.3), blurRadius: 30, spreadRadius: 5)]
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(type.contains('Hedef') ? Icons.language : Icons.g_translate, color: neonColor, size: 48),
-                        const SizedBox(height: 12),
-                        Text(type, style: TextStyle(fontSize: 14, color: Colors.grey.shade500, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                        const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider()),
-                        SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Text(text, textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Theme.of(context).textTheme.bodyLarge?.color, height: 1.4)),
-                        ),
-                        const SizedBox(height: 30),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: neonColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              elevation: 8
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("Kapat", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.0))
-                          ),
-                        )
-                      ]
-                    )
-                  )
-                )
-              )
-            ),
-          ),
-        );
-      }
-    );
   }
 
   @override
@@ -288,140 +216,155 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
           )
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.05), Colors.transparent], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
-              child: Text("Raunt: ${currentRound + 1} / $totalRounds", style: TextStyle(fontSize: 16, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-            ),
-            const SizedBox(height: 8),
-            Text("Metinleri tam okumak için kartlara basılı tutun.", style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
-            const SizedBox(height: 12),
-            Expanded(
-              child: Row(
-                children: [
-                  // SOL SÜTUN
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: leftColumn.map((word) {
-                        bool isMatched = matchedWords.contains(word.word);
-                        if (isMatched) {
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOutBack,
-                            height: 70,
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green.withOpacity(0.5), width: 2)),
-                            child: const Center(child: Icon(Icons.check_circle, color: Colors.green, size: 36)),
-                          );
-                        }
-                        return Draggable<WordModel>(
-                          data: word,
-                          feedback: Material(
-                            color: Colors.transparent,
-                            child: Container(
-                              width: MediaQuery.of(context).size.width * 0.42,
-                              height: 75,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                                borderRadius: BorderRadius.circular(20), 
-                                boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.5), blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 10))]
-                              ),
-                              child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                            ),
-                          ),
-                          childWhenDragging: Container(
-                            height: 70,
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(color: Colors.grey.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid, width: 2)),
-                          ),
-                          child: GestureDetector(
-                            onLongPress: () => _showPremiumTextDialog(context, word.word, "Hedef Kelime"),
-                            child: Container(
-                              height: 70,
-                              margin: const EdgeInsets.symmetric(horizontal: 8),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.9), Theme.of(context).primaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
-                              ),
-                              child: Text(word.word, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  
-                  // SAĞ SÜTUN
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: rightColumn.map((word) {
-                        bool isMatched = matchedWords.contains(word.word);
-                        if (isMatched) {
-                           return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOutBack,
-                            height: 70,
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green.withOpacity(0.5), width: 2)),
-                            child: const Center(child: Icon(Icons.check_circle, color: Colors.green, size: 36)),
-                          );
-                        }
-                        
-                        bool isWrong = wrongTargetWord == word.word;
-                        
-                        return DragTarget<WordModel>(
-                          onWillAccept: (data) => true, 
-                          onAccept: (data) => _handleDrop(data, word),
-                          builder: (context, candidateData, rejectedData) {
-                            bool isHovered = candidateData.isNotEmpty;
-                            return GestureDetector(
-                              onLongPress: () => _showPremiumTextDialog(context, word.meanings.first, "Kartın Anlamı"),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 250),
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.05), Colors.transparent], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
+                  child: Text("Raunt: ${currentRound + 1} / $totalRounds", style: TextStyle(fontSize: 16, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                ),
+                const SizedBox(height: 8),
+                Text("Cevabın üzerindeyken okumak için bekleyin.", style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: Row(
+                    children: [
+                      // SOL SÜTUN
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: leftColumn.map((word) {
+                            bool isMatched = matchedWords.contains(word.word);
+                            if (isMatched) {
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
                                 curve: Curves.easeOutBack,
-                                height: isHovered ? 75 : 70, 
+                                height: 70,
+                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green.withOpacity(0.5), width: 2)),
+                                child: const Center(child: Icon(Icons.check_circle, color: Colors.green, size: 36)),
+                              );
+                            }
+                            return Draggable<WordModel>(
+                              data: word,
+                              feedback: Material(
+                                color: Colors.transparent,
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width * 0.42,
+                                  height: 75,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                                    borderRadius: BorderRadius.circular(20), 
+                                    boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.5), blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 10))]
+                                  ),
+                                  child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                                ),
+                              ),
+                              childWhenDragging: Container(
+                                height: 70,
+                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(color: Colors.grey.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid, width: 2)),
+                              ),
+                              child: Container(
+                                height: 70,
                                 margin: const EdgeInsets.symmetric(horizontal: 8),
                                 alignment: Alignment.center,
-                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: isWrong 
-                                      ? Colors.redAccent.withOpacity(0.9)
-                                      : (isHovered ? Colors.orangeAccent.withOpacity(0.9) : Theme.of(context).cardColor),
-                                  border: Border.all(
-                                    color: isWrong ? Colors.red : (isHovered ? Colors.orange : Colors.grey.withOpacity(0.3)),
-                                    width: isHovered || isWrong ? 3 : 1
-                                  ),
+                                  gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.9), Theme.of(context).primaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
                                   borderRadius: BorderRadius.circular(20),
-                                  boxShadow: isHovered || isWrong 
-                                      ? [BoxShadow(color: isWrong ? Colors.red.withOpacity(0.4) : Colors.orange.withOpacity(0.4), blurRadius: 15, spreadRadius: 2)] 
-                                      : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]
+                                  boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
                                 ),
-                                child: Text(word.meanings.first, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(
-                                  color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                  fontSize: isHovered ? 15 : 14, fontWeight: FontWeight.bold
-                                )),
+                                child: Text(word.word, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                               ),
                             );
-                          },
-                        );
-                      }).toList(),
-                    ),
+                          }).toList(),
+                        ),
+                      ),
+                      
+                      // SAĞ SÜTUN VE HOVER ANİMASYONU
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: rightColumn.map((word) {
+                            bool isMatched = matchedWords.contains(word.word);
+                            if (isMatched) {
+                               return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOutBack,
+                                height: 70,
+                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green.withOpacity(0.5), width: 2)),
+                                child: const Center(child: Icon(Icons.check_circle, color: Colors.green, size: 36)),
+                              );
+                            }
+                            
+                            bool isWrong = wrongTargetWord == word.word;
+                            
+                            return DragTarget<WordModel>(
+                              onWillAccept: (data) => true, 
+                              onAccept: (data) => _handleDrop(data, word),
+                              builder: (context, candidateData, rejectedData) {
+                                bool isHovered = candidateData.isNotEmpty;
+                                
+                                // YENİ: Uzerine gelindiğinde kart cam efektiyle öne doğru genişler ve metin rahatça okunur
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      // Gerçek kart alanı
+                                      AnimatedContainer(
+                                        duration: const Duration(milliseconds: 350),
+                                        curve: Curves.easeOutBack,
+                                        height: isHovered ? 120 : 70, // Hover anında yükseklik artar
+                                        alignment: Alignment.center,
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: isWrong 
+                                              ? Colors.redAccent.withOpacity(0.9)
+                                              : (isHovered ? Colors.orangeAccent.withOpacity(0.95) : Theme.of(context).cardColor),
+                                          border: Border.all(
+                                            color: isWrong ? Colors.red : (isHovered ? Colors.orange : Colors.grey.withOpacity(0.3)),
+                                            width: isHovered || isWrong ? 3 : 1
+                                          ),
+                                          borderRadius: BorderRadius.circular(20),
+                                          boxShadow: isHovered || isWrong 
+                                              ? [BoxShadow(color: isWrong ? Colors.red.withOpacity(0.6) : Colors.orange.withOpacity(0.6), blurRadius: 20, spreadRadius: 4)] 
+                                              : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]
+                                        ),
+                                        child: Text(
+                                          word.meanings.join(', '), 
+                                          textAlign: TextAlign.center, 
+                                          maxLines: isHovered ? 4 : 2, 
+                                          overflow: TextOverflow.ellipsis, 
+                                          style: TextStyle(
+                                            color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+                                            fontSize: isHovered ? 15 : 14, 
+                                            fontWeight: FontWeight.bold
+                                          )
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
