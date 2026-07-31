@@ -62,11 +62,77 @@ class InfoScreen extends StatelessWidget {
             description: "Kelimeleri ezberlemek için %40 zorlu kelimeler, %60 yeni kelimelerle harmanlanmış, zamana karşı yarışılan çoktan seçmeli zeki quiz modlarını kullanabilirsiniz.",
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
+
+          // YENİ VE PREMİUM: TOPLULUK & EKOSİSTEM BÖLÜMÜ
+          Container(
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [isDark ? Colors.deepPurple.shade900.withOpacity(0.5) : Colors.purple.shade50, isDark ? Colors.indigo.shade900.withOpacity(0.5) : Colors.indigo.shade50],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.deepPurpleAccent.withOpacity(0.5), width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.deepPurpleAccent.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 6))],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.public, color: Colors.deepPurpleAccent, size: 28),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          "🌍 Topluluk Kütüphanesi",
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Colors.orangeAccent, Colors.deepOrange]),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.4), blurRadius: 4)]
+                        ),
+                        child: const Text("YENİ", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Tayf Sözlük Pro artık yaşayan, devasa bir ekosistem! Kendi hazırladığınız sözlükleri diğer kullanıcılarla paylaşabilir ve sürekli büyüyen topluluk havuzundan faydalanabilirsiniz.",
+                    style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSubFeatureRow(
+                    context, 
+                    Icons.share, 
+                    Colors.green, 
+                    "Topluluğa Öner (Gönder):", 
+                    "Kütüphane Yönetimi ekranında kütüphanenizin adına tıklayarak 'Topluluğa Öner' seçeneğini seçin. Listeniz incelenmek ve ana havuza katılmak üzere tek tuşla gönderilecektir."
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSubFeatureRow(
+                    context, 
+                    Icons.cloud_download, 
+                    Colors.blue, 
+                    "Havuzdan İndir (Çek):", 
+                    "Kütüphane Yönetimi ekranının sağ üst köşesindeki 'Bulut İndirme' ikonuna basarak, sürekli güncellenen ve tekrarlardan arındırılmış devasa Topluluk Kütüphanesini anında telefonunuza çekebilirsiniz."
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
           const Divider(thickness: 2),
           const SizedBox(height: 24),
 
-          // DÜZELTİLDİ: TAŞMA YAPAN BAŞLIK EXPANDED İLE SARMALANDI
+          // MEVCUT KODLAR AYNEN KORUNDU
           Container(
             padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.only(bottom: 24),
@@ -177,6 +243,7 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
     );
   }
 
+  // MEVCUT KART OLUŞTURUCU
   Widget _buildFeatureCard(BuildContext context, {required IconData icon, required Color color, required String title, required String description}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -213,6 +280,32 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
     );
   }
 
+  // YENİ: TOPLULUK MODÜLÜ İÇİN ALT SATIR OLUŞTURUCU
+  Widget _buildSubFeatureRow(BuildContext context, IconData icon, Color color, String title, String desc) {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 2),
+          child: Icon(icon, color: color, size: 20)
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
+              const SizedBox(height: 4),
+              Text(desc, style: TextStyle(fontSize: 13.5, height: 1.4, color: isDark ? Colors.grey.shade300 : Colors.grey.shade800)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // MEVCUT FORMAT KARTI OLUŞTURUCU
   Widget _buildFormatCard(BuildContext context, {required String title, required String extension, required Color color, required String explanation, required String exampleCode}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
