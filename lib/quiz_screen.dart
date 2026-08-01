@@ -14,7 +14,6 @@ class QuizScreen extends StatefulWidget {
   final int questionCount;
   final Function(WordModel) onWordMastered;
   final Function(WordModel) onWrongWord;
-  // ZIRHLI MANTIK: TP kopyalama parametresi
   final Function(int timeElapsed, int answered, int wrong, int earnedTP) onQuizFinished;
 
   const QuizScreen({
@@ -180,8 +179,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             return Positioned(
               left: currentX,
               top: currentY,
+              // DÜZELTİLDİ: Opaklık değerinin negatiflere (-x) inmesi engellenerek Kırmızı Ekran hatası yok edildi!
               child: Opacity(
-                opacity: 1.0 - value, 
+                opacity: (1.0 - value).clamp(0.0, 1.0), 
                 child: Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
@@ -205,7 +205,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       setState(() { isQuizFinished = true; _timer?.cancel(); });
       if (!_isStatsSaved) {
         _isStatsSaved = true;
-        // ZIRHLI MANTIK: TP AKTARILIYOR
         widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP);
       }
       _speakText("Congratulations", "en-US");
@@ -295,7 +294,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
 
-          // ZIRHLI MANTIK (HAYALET KART KATİLİ): Eğer kopan anlamdan sonra orijinal kart tamamen boşalırsa DB'den silinir
           bool isGhostCard = currentWord.meanings.isEmpty && currentWord.examples.isEmpty;
 
           WordModel? existingMitosisCard;
