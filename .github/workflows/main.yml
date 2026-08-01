@@ -23,7 +23,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5' # Dart 3.4+ gereksinimini karşılayan kararlı sürüm
+          flutter-version: '3.24.5' # Kararlı Flutter SDK sürümü
           channel: 'stable'
           cache: true
 
@@ -33,12 +33,11 @@ jobs:
       - name: Regenerate Android Project
         run: |
           rm -rf android
-          # Klasör adını yoksayması için proje adını zorla veriyoruz
+          # Proje adını tayf_sozluk_pro olarak zorlayarak bağımlılık kural hatasını önlüyoruz
           flutter create --platforms=android --project-name tayf_sozluk_pro .
           
-          # 1. KOTLIN VERSİYON ZORLAMASI (flutter_tts hatasını çözer)
-          # settings.gradle içinde org.jetbrains.kotlin.android eklenti versiyonunu 1.9.23'e kilitliyoruz.
-          sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.23"/' android/settings.gradle
+          # 1. KOTLIN SÜRÜMÜNÜ VE DERLEME PARAMETRELERİNİ DÜZENLEME (flutter_tts hatasını çözer)
+          sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           
           # 2. ANA PROJE İÇİN API 36 ZORLAMASI
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
@@ -48,10 +47,10 @@ jobs:
           sed -i '/compileOptions {/a \        coreLibraryDesugaringEnabled true' android/app/build.gradle
           echo "dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4' }" >> android/app/build.gradle
 
-          # 4. UYGULAMA ADINI "Lexis Eldora" OLARAK SABİTLEME
+          # 4. LAUNCHER UYGULAMA ADINI "Lexis Eldora" YAPMA
           sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-          # 5. GÜVENLİ NAMESPACE ENJEKTÖRÜ (isar_flutter_libs ve eski paketler için)
+          # 5. GELİŞMİŞ NAMESPACE ENJEKTÖRÜ VE KOTLIN UYUMLULUK PARAMETRELERİ
           cat <<EOF >> android/build.gradle
           
           subprojects {
@@ -60,6 +59,14 @@ jobs:
                       if (namespace == null) {
                           namespace project.group
                       }
+                  }
+              }
+              
+              // Tüm alt projelerin Kotlin derleme süreçlerine uyumluluk parametrelerini enjekte ediyoruz
+              tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                  kotlinOptions {
+                      freeCompilerArgs += ["-Xskip-metadata-version-check", "-Xallow-jvm-ir-dependencies"]
+                      jvmTarget = "17"
                   }
               }
           }
