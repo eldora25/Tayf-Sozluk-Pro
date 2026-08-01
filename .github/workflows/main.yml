@@ -36,7 +36,7 @@ jobs:
           # Klasör adını yoksayması için proje adını zorla veriyoruz
           flutter create --platforms=android --project-name tayf_sozluk_pro .
           
-          # ANA PROJE İÇİN API 36 ZORLAMASI
+          # ANA PROJE İÇİN API 36 ZORLAMASI (Groovy - build.gradle üzerinden)
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle
           
@@ -47,16 +47,14 @@ jobs:
           # UYGULAMA ADINI "Lexis Eldora" OLARAK SABİTLEME
           sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-          # YENİ: ESKİ PAKETLER İÇİN OTOMATİK NAMESPACE ENJEKTÖRÜ (isar_flutter_libs hatası çözümü)
+          # YENİ GÜVENLİ NAMESPACE ENJEKTÖRÜ (isar_flutter_libs ve benzeri paketler için)
           cat <<EOF >> android/build.gradle
           
           subprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
-                      project.android {
-                          if (namespace == null) {
-                              namespace project.group
-                          }
+              project.pluginManager.withPlugin('com.android.library') {
+                  android {
+                      if (namespace == null) {
+                          namespace project.group
                       }
                   }
               }
