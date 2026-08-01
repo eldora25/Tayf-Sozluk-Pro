@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'main.dart'; 
+import 'firebase_sync_service.dart'; // YENİ: Firebase Sync Servisi Eklendi
 
 class LibraryManagerScreen extends StatefulWidget {
   final List<WordModel> allWords;
@@ -48,7 +49,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     return libs.toList();
   }
 
-  // YENİ: Kademeli (Staggered) Premium Liste Animasyonu
   Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -413,6 +413,49 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
               centerTitle: false,
             ),
             actions: [
+               // YENİ: Firebase Bulut Senkronizasyon (Gönder) Butonu
+               Padding(
+                 padding: const EdgeInsets.only(right: 8.0),
+                 child: Container(
+                   decoration: BoxDecoration(color: Colors.purpleAccent.withOpacity(0.2), shape: BoxShape.circle),
+                   child: IconButton(
+                    tooltip: "Buluta Senkronize Et (Gönder)",
+                    icon: const Icon(Icons.cloud_upload_rounded, color: Colors.purpleAccent),
+                    onPressed: () async {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => const AlertDialog(
+                          content: Row(
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(width: 20),
+                              Expanded(child: Text("Mitoz kartlar güvenli buluta aktarılıyor..."))
+                            ],
+                          ),
+                        ),
+                      );
+
+                      int sentCount = await FirebaseSyncService.syncMitosisCardsToCloud([
+                        ...widget.allWords,
+                        ...widget.learningWords,
+                        ...widget.toRepeatWords,
+                        ...widget.learnedWords,
+                      ]);
+
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Başarıyla Topluluğa Katkıda Bulunuldu! ($sentCount kart senkronize edildi) +50 TP 🎉"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    },
+                   ),
+                 ),
+               ),
                Padding(
                  padding: const EdgeInsets.only(right: 8.0),
                  child: Container(
@@ -423,7 +466,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                         : const Icon(Icons.cloud_download, color: Colors.white),
                     onPressed: _isDownloading ? null : _showDownloadMenu, 
-                                   ),
+                   ),
                  ),
                )
             ],
