@@ -91,6 +91,25 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
+  // YENİ: Kademeli Giriş Animasyonu Wrapper'ı
+  Widget _buildStaggeredWrapper(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index.clamp(0, 10) * 80)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - value)),
+          child: Opacity(
+            opacity: value.clamp(0.0, 1.0),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   Widget _buildSpeedCard(BuildContext context, String title, Duration period, Color color) {
     int learned = _countInPeriod(learnedWordTimestamps, period);
     int quizzes = _countInPeriod(completedQuizTimestamps, period);
@@ -212,7 +231,6 @@ class StatisticsScreen extends StatelessWidget {
     double graduationSpeed = learnedWords.length / daysUsed; 
     double activitySpeed = learnedWordTimestamps.length / daysUsed; 
 
-    // YENİ: Mezun edilen kelimelerin zamanlarını tespit etme (Öğrenme Grafiği için)
     List<String> trueGraduationTimestamps = learnedWords.map((w) => w.nextReviewDate.toString()).toList();
 
     int totalMitosisCount = [
@@ -227,7 +245,7 @@ class StatisticsScreen extends StatelessWidget {
     final List<int> wordMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 500, 600, 700, 1000, 1500, 2000, 2500, 3000, 5000, 7000, 10000];
     
     final activityChartData = _getChartData(learnedWordTimestamps);
-    final graduationChartData = _getChartData(trueGraduationTimestamps); // YENİ: Gerçek Öğrenme Grafiği Verisi
+    final graduationChartData = _getChartData(trueGraduationTimestamps);
     final primaryColor = Theme.of(context).primaryColor;
 
     return DefaultTabController(
@@ -255,27 +273,27 @@ class StatisticsScreen extends StatelessWidget {
             gradient: LinearGradient(colors: [primaryColor.withOpacity(0.05), Colors.transparent], begin: Alignment.topCenter, end: Alignment.bottomCenter)
           ),
           child: TabBarView(
-            physics: const BouncingScrollPhysics(), // YENİ: Sekmeler arası yaylanma
+            physics: const BouncingScrollPhysics(),
             children: [
               ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
-                  Container(
+                  _buildStaggeredWrapper(0, Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: Colors.deepOrange.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
                     child: Row(children: [const Icon(Icons.local_fire_department, color: Colors.deepOrange, size: 36), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [Text("Ateşli Seri Rozetleri", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepOrange)), Text("Uygulamaya aralıksız girerek kazanılır.", style: TextStyle(color: Colors.grey, fontSize: 12))]))]),
-                  ),
+                  )),
                   const SizedBox(height: 20),
-                  _buildBadgeGrid(streakMilestones, bestStreak, Icons.local_fire_department, Colors.deepOrange, "Gün"),
+                  _buildStaggeredWrapper(1, _buildBadgeGrid(streakMilestones, bestStreak, Icons.local_fire_department, Colors.deepOrange, "Gün")),
                   const SizedBox(height: 40),
-                  Container(
+                  _buildStaggeredWrapper(2, Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
                     child: Row(children: [const Icon(Icons.military_tech, color: Colors.blue, size: 36), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [Text("Kelime Ustası Rozetleri", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)), Text("Öğrenilen (Mezun) kelime sayısına göre kazanılır.", style: TextStyle(color: Colors.grey, fontSize: 12))]))]),
-                  ),
+                  )),
                   const SizedBox(height: 20),
-                  _buildBadgeGrid(wordMilestones, learnedWords.length, Icons.military_tech, Colors.blue, "Kelime"),
+                  _buildStaggeredWrapper(3, _buildBadgeGrid(wordMilestones, learnedWords.length, Icons.military_tech, Colors.blue, "Kelime")),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -284,13 +302,13 @@ class StatisticsScreen extends StatelessWidget {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
-                  _buildMitosisCard(context, totalMitosisCount), 
-                  _buildStatCard(context, "Mevcut Tayf Puan (TP)", tayfPoints, Icons.diamond, Colors.blueAccent),
-                  _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1), Icons.my_library_books, Colors.deepPurple),
-                  _buildStatCard(context, "Toplam Kelime", totalSystemWords, Icons.format_list_bulleted, Colors.cyan),
-                  _buildStatCard(context, "Öğrenilen (Mezun)", learnedWords.length, Icons.workspace_premium, Colors.green),
-                  _buildStatCard(context, "Eğitimde (SRS)", (learningWords.length + toSRSRepeatWords.length), Icons.psychology, Colors.orange), 
-                  _buildStatCard(context, "Toplam Yanlış", totalWrongCount, Icons.gpp_bad, Colors.redAccent),
+                  _buildStaggeredWrapper(0, _buildMitosisCard(context, totalMitosisCount)), 
+                  _buildStaggeredWrapper(1, _buildStatCard(context, "Mevcut Tayf Puan (TP)", tayfPoints, Icons.diamond, Colors.blueAccent)),
+                  _buildStaggeredWrapper(2, _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1), Icons.my_library_books, Colors.deepPurple)),
+                  _buildStaggeredWrapper(3, _buildStatCard(context, "Toplam Kelime", totalSystemWords, Icons.format_list_bulleted, Colors.cyan)),
+                  _buildStaggeredWrapper(4, _buildStatCard(context, "Öğrenilen (Mezun)", learnedWords.length, Icons.workspace_premium, Colors.green)),
+                  _buildStaggeredWrapper(5, _buildStatCard(context, "Eğitimde (SRS)", (learningWords.length + toSRSRepeatWords.length), Icons.psychology, Colors.orange)), 
+                  _buildStaggeredWrapper(6, _buildStatCard(context, "Toplam Yanlış", totalWrongCount, Icons.gpp_bad, Colors.redAccent)),
                 ],
               ),
               
@@ -298,7 +316,7 @@ class StatisticsScreen extends StatelessWidget {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
-                  Container(
+                  _buildStaggeredWrapper(0, Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(colors: [Colors.teal.shade500, Colors.green.shade600], begin: Alignment.topLeft, end: Alignment.bottomRight),
@@ -316,7 +334,6 @@ class StatisticsScreen extends StatelessWidget {
                               child: const Icon(Icons.school, color: Colors.white, size: 24),
                             ),
                             const SizedBox(width: 12),
-                            // DÜZELTİLDİ: Metin taşmaması için Expanded eklendi
                             const Expanded(child: Text("Gerçek Öğrenme (Mezun) Hızı", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
                           ],
                         ),
@@ -340,11 +357,10 @@ class StatisticsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
+                  )),
                   
-                  // YENİ: Haftalık Mezuniyet (Gerçek Öğrenme) Grafiği eklendi
                   const SizedBox(height: 16),
-                  Container(
+                  _buildStaggeredWrapper(1, Container(
                     decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))]),
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
@@ -385,10 +401,10 @@ class StatisticsScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                  ),
+                  )),
                   const SizedBox(height: 24),
 
-                  Container(
+                  _buildStaggeredWrapper(2, Container(
                     decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))]),
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
@@ -429,10 +445,10 @@ class StatisticsScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                  ),
+                  )),
                   const SizedBox(height: 24),
                   
-                  Container(
+                  _buildStaggeredWrapper(3, Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(gradient: LinearGradient(colors: [primaryColor, primaryColor.withOpacity(0.8)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))]),
                     child: Column(
@@ -444,13 +460,13 @@ class StatisticsScreen extends StatelessWidget {
                         Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(20)), child: const Text("Doğru bilme ve tekrar sıklığı", style: TextStyle(color: Colors.white, fontSize: 12))),
                       ],
                     ),
-                  ),
+                  )),
                   const SizedBox(height: 24),
 
-                  _buildSpeedCard(context, "Günlük (Son 24 Saat)", const Duration(days: 1), Colors.blue),
-                  _buildSpeedCard(context, "Haftalık (Son 7 Gün)", const Duration(days: 7), Colors.orange),
-                  _buildSpeedCard(context, "Aylık (Son 30 Gün)", const Duration(days: 30), Colors.purple),
-                  _buildSpeedCard(context, "Yıllık (Son 365 Gün)", const Duration(days: 365), Colors.redAccent),
+                  _buildStaggeredWrapper(4, _buildSpeedCard(context, "Günlük (Son 24 Saat)", const Duration(days: 1), Colors.blue)),
+                  _buildStaggeredWrapper(5, _buildSpeedCard(context, "Haftalık (Son 7 Gün)", const Duration(days: 7), Colors.orange)),
+                  _buildStaggeredWrapper(6, _buildSpeedCard(context, "Aylık (Son 30 Gün)", const Duration(days: 30), Colors.purple)),
+                  _buildStaggeredWrapper(7, _buildSpeedCard(context, "Yıllık (Son 365 Gün)", const Duration(days: 365), Colors.redAccent)),
                   const SizedBox(height: 80), 
                 ],
               ),
@@ -459,10 +475,10 @@ class StatisticsScreen extends StatelessWidget {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
-                  _buildStatCard(context, "Tamamlanan Quiz", totalCompletedQuizzes, Icons.done_all, Colors.orange),
-                  _buildTextStatCard(context, "Toplam Quiz Süresi", _formatTime(totalQuizTimeSeconds), Icons.timer, Colors.teal),
-                  _buildStatCard(context, "Cevaplanan Soru", totalQuizQuestions, Icons.question_answer, Colors.blueAccent),
-                  _buildStatCard(context, "Quiz Yanlışları", totalQuizWrong, Icons.error_outline, Colors.redAccent),
+                  _buildStaggeredWrapper(0, _buildStatCard(context, "Tamamlanan Quiz", totalCompletedQuizzes, Icons.done_all, Colors.orange)),
+                  _buildStaggeredWrapper(1, _buildTextStatCard(context, "Toplam Quiz Süresi", _formatTime(totalQuizTimeSeconds), Icons.timer, Colors.teal)),
+                  _buildStaggeredWrapper(2, _buildStatCard(context, "Cevaplanan Soru", totalQuizQuestions, Icons.question_answer, Colors.blueAccent)),
+                  _buildStaggeredWrapper(3, _buildStatCard(context, "Quiz Yanlışları", totalQuizWrong, Icons.error_outline, Colors.redAccent)),
                 ],
               ),
               
@@ -484,7 +500,7 @@ class StatisticsScreen extends StatelessWidget {
                   int wrong = wrongWords.where((e) => e.libraryName == libName).fold(0, (a, b) => a + b.wrongCount);
                   double progress = total > 0 ? (learned / total) : 0;
 
-                  return Container(
+                  return _buildStaggeredWrapper(index, Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.1)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))]),
                     child: Padding(
@@ -519,7 +535,7 @@ class StatisticsScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                  );
+                  ));
                 },
               ),
             ],
