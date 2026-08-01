@@ -36,12 +36,14 @@ jobs:
           # Proje adını tayf_sozluk_pro olarak zorlayarak bağımlılık kural hatasını önlüyoruz
           flutter create --platforms=android --project-name tayf_sozluk_pro .
           
-          # 1. KOTLIN SÜRÜMÜNÜ VE DERLEME PARAMETRELERİNİ DÜZENLEME (flutter_tts hatasını çözer)
+          # 1. KOTLIN SÜRÜMÜNÜ DÜZENLEME
           sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           
-          # 2. ANA PROJE İÇİN API 36 ZORLAMASI
+          # 2. ANA PROJE İÇİN API 36 ZORLAMASI VE ESKİ JAVA SÜRÜMLERİNİ GÜNCELLEME
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle
+          sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_17/g' android/app/build.gradle
+          sed -i 's/JavaVersion.VERSION_11/JavaVersion.VERSION_17/g' android/app/build.gradle
           
           # 3. DESUGARING AKTİVASYONU
           sed -i '/compileOptions {/a \        coreLibraryDesugaringEnabled true' android/app/build.gradle
@@ -50,7 +52,7 @@ jobs:
           # 4. LAUNCHER UYGULAMA ADINI "Lexis Eldora" YAPMA
           sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-          # 5. GELİŞMİŞ NAMESPACE ENJEKTÖRÜ VE KOTLIN UYUMLULUK PARAMETRELERİ
+          # 5. GÜVENLİ NAMESPACE ENJEKTÖRÜ VE TAM JVM (JAVA/KOTLIN) EŞİTLEYİCİ
           cat <<EOF >> android/build.gradle
           
           subprojects {
@@ -59,13 +61,17 @@ jobs:
                       if (namespace == null) {
                           namespace project.group
                       }
+                      // Java ile Kotlin sürümlerini eşitliyoruz (JVM 17)
+                      compileOptions {
+                          sourceCompatibility JavaVersion.VERSION_17
+                          targetCompatibility JavaVersion.VERSION_17
+                      }
                   }
               }
               
-              // Tüm alt projelerin Kotlin derleme süreçlerine uyumluluk parametrelerini enjekte ediyoruz
               tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
                   kotlinOptions {
-                      freeCompilerArgs += ["-Xskip-metadata-version-check", "-Xallow-jvm-ir-dependencies"]
+                      freeCompilerArgs += ["-Xskip-metadata-version-check"]
                       jvmTarget = "17"
                   }
               }
