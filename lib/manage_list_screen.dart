@@ -101,7 +101,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
     }
   }
 
-  // YENİ: Kademeli (Staggered) Premium Liste Animasyonu
   Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -231,23 +230,52 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                   children: [
                                     const SizedBox(height: 4),
                                     Text(item.meanings.join(', '), style: const TextStyle(fontWeight: FontWeight.w500)),
+                                    // DÜZELTİLDİ: Listelerde İlaç Kapsülü İkonlu DNA Damgası
                                     if (isMitosis) ...[
                                       const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black87,
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 12),
-                                            const SizedBox(width: 4),
-                                            Text("DNA-${item.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                                          ],
-                                        ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black,
+                                              borderRadius: BorderRadius.circular(30),
+                                              border: Border.all(color: Colors.white30, width: 0.5),
+                                              boxShadow: [
+                                                BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(-2, 0)),
+                                                BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
+                                              ]
+                                            ),
+                                            child: const Text(
+                                              "🧬", 
+                                              style: TextStyle(
+                                                fontSize: 10, 
+                                                shadows: [
+                                                  Shadow(color: Colors.orangeAccent, blurRadius: 10),
+                                                  Shadow(color: Colors.purpleAccent, blurRadius: 10),
+                                                ]
+                                              )
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black87,
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
+                                                const SizedBox(width: 4),
+                                                Text("DNA-${item.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       )
                                     ]
                                   ],
