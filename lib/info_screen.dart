@@ -32,7 +32,7 @@ class InfoScreen extends StatelessWidget {
               children: const [
                 Icon(Icons.menu_book_rounded, size: 64, color: Colors.white),
                 SizedBox(height: 16),
-                Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2)),
+                Text("Lexis Eldora", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2)),
                 SizedBox(height: 8),
                 Text("Akıllı Kelime Öğrenme & Aralıklı Tekrar Sistemi", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontStyle: FontStyle.italic, fontSize: 14)),
               ],
@@ -64,7 +64,6 @@ class InfoScreen extends StatelessWidget {
           
           const SizedBox(height: 16),
 
-          // TOPLULUK & EKOSİSTEM BÖLÜMÜ
           Container(
             margin: const EdgeInsets.only(bottom: 24),
             decoration: BoxDecoration(
@@ -105,7 +104,7 @@ class InfoScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "Tayf Sözlük Pro artık yaşayan, devasa bir veri madenciliği ekosistemi! Kendi hazırladığınız sözlükleri toplulukla paylaşabilir veya quizlerde oluşturduğunuz 'Saf Kartları' global havuza gönderebilirsiniz.",
+                    "Lexis Eldora artık yaşayan, devasa bir veri madenciliği ekosistemi! Kendi hazırladığınız sözlükleri toplulukla paylaşabilir veya quizlerde oluşturduğunuz 'Saf Kartları' global havuza gönderebilirsiniz.",
                     style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
                   ),
                   const SizedBox(height: 20),
@@ -114,7 +113,7 @@ class InfoScreen extends StatelessWidget {
                     Icons.biotech, 
                     Colors.purple, 
                     "Mitoz Bölünme (Saf Kartlar):", 
-                    "Siz quiz çözerken, çok anlamlı kelimeler (Örn: Apple = Elma, Meyve) doğru bilindikçe otomatik bölünür ve 'Mitoz' kütüphanenize tek anlamlı (Apple = Elma) kusursuz bilgi kartları (flashcards) olarak düşer."
+                    "Siz quiz çözerken, çok anlamlı kelimeler (Örn: Apple = Elma, Meyve) doğru bilindikçe otomatik bölünür ve 'Mitoz' kütüphanenize tek anlamlı (Apple = Elma) kusursuz bilgi kartları (flashcards) olarak eşsiz DNA damgasıyla düşer."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
@@ -130,7 +129,7 @@ class InfoScreen extends StatelessWidget {
                     Icons.cloud_download, 
                     Colors.blue, 
                     "Buluttan İndir (Çek):", 
-                    "Kütüphane Yönetimi ekranındaki Bulut ikonuna basarak ister karmaşık Standart Topluluk Listesini, isterseniz de %100 saf ve eşsiz kartlardan oluşan Global Mitoz Havuzunu indirebilirsiniz."
+                    "Kütüphane Yönetimi ekranındaki Bulut ikonuna basarak isterseniz karmaşık Standart Topluluk Listesini, isterseniz de %100 saf ve eşsiz kartlardan oluşan Global Mitoz Havuzunu indirebilirsiniz."
                   ),
                 ],
               ),
