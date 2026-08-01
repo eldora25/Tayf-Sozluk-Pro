@@ -230,7 +230,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                   children: [
                                     const SizedBox(height: 4),
                                     Text(item.meanings.join(', '), style: const TextStyle(fontWeight: FontWeight.w500)),
-                                    // DÜZELTİLDİ: Listelerde İlaç Kapsülü İkonlu DNA Damgası
+                                    // DÜZELTİLDİ: Sözdizimi hatalarını önlemek için güvenli format
                                     if (isMitosis) ...[
                                       const SizedBox(height: 8),
                                       Row(
@@ -245,17 +245,17 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                               boxShadow: [
                                                 BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(-2, 0)),
                                                 BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
-                                              ]
+                                              ],
                                             ),
                                             child: const Text(
                                               "🧬", 
                                               style: TextStyle(
                                                 fontSize: 10, 
-                                                shadows: [
+                                                shadows: <Shadow>[
                                                   Shadow(color: Colors.orangeAccent, blurRadius: 10),
                                                   Shadow(color: Colors.purpleAccent, blurRadius: 10),
-                                                ]
-                                              )
+                                                ],
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(width: 6),
@@ -276,8 +276,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                             ),
                                           ),
                                         ],
-                                      )
-                                    ]
+                                      ),
+                                    ],
                                   ],
                                 ),
                                 trailing: Row(
@@ -295,7 +295,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                         margin: const EdgeInsets.only(right: 8),
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
-                                        child: Text("${_getSrsDayText(item.srsLevel)}", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
+                                        child: Text(_getSrsDayText(item.srsLevel), style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
                                       ),
                               
                                     if (widget.onEdit != null)
