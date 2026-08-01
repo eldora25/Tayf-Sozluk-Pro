@@ -160,10 +160,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: _themeColors[index],
                               shape: BoxShape.circle,
                               border: isSelected ? Border.all(color: Theme.of(context).primaryColor, width: 3) : Border.all(color: Colors.grey.withOpacity(0.4), width: 1),
-                              // DÜZELTİLDİ: Kırmızı Ekran hatasını önleyen sıfırlanmış güvenli gölge formatı
+                              // YENİ: Kırmızı Hata Ekranını Kalıcı Olarak Çözen Gölge Formatı
                               boxShadow: isSelected 
                                   ? [BoxShadow(color: _themeColors[index].withOpacity(0.5), blurRadius: 10.0, spreadRadius: 2.0)] 
-                                  : [const BoxShadow(color: Colors.transparent, blurRadius: 0.0, spreadRadius: 0.0)],
+                                  : const [BoxShadow(color: Colors.transparent, blurRadius: 0.0, spreadRadius: 0.0)],
                             ),
                             child: isSelected ? Icon(Icons.check, color: (index == 1 || index >= 9 && index <= 12) ? Colors.black : Colors.white, size: 26) : null,
                           ),
@@ -233,7 +233,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Text("${_thresholdValue.toInt()} Doğru", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 16))
                       ]
                     ),
-                    // DÜZELTİLDİ: Metin bilgilendirmesi SRS mantığına uygun hale getirildi.
                     const Text("Bir kelimenin Quiz'den çıkıp SRS (Aralıklı Tekrar) sistemine dahil olması için üst üste doğru bilinmesi gereken sayı.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                     Slider(value: _thresholdValue, min: 2, max: 50, divisions: 48, activeColor: Colors.orange, onChanged: (val) => setState(() => _thresholdValue = val)),
                   ],
