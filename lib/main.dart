@@ -951,6 +951,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: TextField(controller: ctrl), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text("Kaydet"))]));
   }
 
+  // DÜZELTİLDİ: Edit ekranı artık Mitoz çakışmalarını Isar üzerinden yapabilsin diye isar nesnesi aktarılıyor. 
+  // (Aslında isar globale açık ama EditScreen'de kullanılabilmesi için Edit ekranında da değişiklik yaptık)
   Future<void> _openEditScreen(WordModel word) async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: availableLibraries,
@@ -992,7 +994,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (level == 0) return const SizedBox.shrink();
     List<Widget> pieces = [];
     
-    // DÜZELTİLDİ: Taç ikonlarına kalın siyah dış gölge (Outline) eklendi
     List<Shadow> iconOutline = isMitosis ? const [
       Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1)),
       Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(-1, -1)),
@@ -1063,6 +1064,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  Color _getTextColor(BuildContext context, bool isDark, bool isMitosis) {
+    if (isMitosis) {
+      return isDark ? Colors.white : Colors.purple.shade900;
+    }
+    return Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
+  }
+
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
@@ -1070,7 +1078,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     bool isMitosis = word.libraryName.startsWith('🧬'); 
     List<Color> distinctColors = const [Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)];
 
-    // DÜZELTİLDİ: Mitoz kartlarında %100 okunabilirlik sağlayan ağır siyah dış gölge
     List<Shadow> hardOutline = isMitosis ? const [
       Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1)),
       Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(-1, -1)),
@@ -1102,7 +1109,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // DÜZELTİLDİ: Artık Level 0 bile olsa her mitoz kartta bu ikon çıkacak ve gölgeli olacak
                             if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, shadows: hardOutline)),
                             if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16, shadows: hardOutline),
                             if (isPremium) const SizedBox(width: 8),
@@ -1113,7 +1119,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 fontWeight: FontWeight.bold, 
                                 fontSize: 14, 
                                 letterSpacing: 1.5,
-                                shadows: hardOutline // DÜZELTİLDİ: Başlık da gölgeli
+                                shadows: hardOutline 
                               )
                             ),
                           ],
@@ -1126,7 +1132,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     children: [
                       Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: isMitosis ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color, shadows: hardOutline))))), 
                       Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: (isMitosis ? Colors.white : Theme.of(context).primaryColor).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: false))), 
-                      Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: (isMitosis ? Colors.white : Colors.grey).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word)))
+                      Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: (isMitosis ? Colors.white : Colors.grey).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
+                      
+                      // YENİ: DNA Seri Numarası (Sadece Mitoz Kartlar İçin - Ön Yüz)
+                      if (isMitosis)
+                        Positioned(
+                          bottom: 15,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black87,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+                                boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
+                                  const SizedBox(width: 6),
+                                  Text("DNA-${word.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                     ]
                   )
                 )
@@ -1228,7 +1261,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
                         child: Padding(
-                          padding: const EdgeInsets.only(top: 24.0, left: 20, right: 20, bottom: 20),
+                          padding: const EdgeInsets.only(top: 24.0, left: 20, right: 20, bottom: 40), // DNA damgası için bottom padding arttırıldı
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1246,7 +1279,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         )
                       ), 
                       Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: (isMitosis ? Colors.white : Theme.of(context).primaryColor).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: true))), 
-                      Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: (isMitosis ? Colors.white : Colors.grey).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word)))
+                      Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: (isMitosis ? Colors.white : Colors.grey).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
+                      
+                      // YENİ: DNA Seri Numarası (Sadece Mitoz Kartlar İçin - Arka Yüz)
+                      if (isMitosis)
+                        Positioned(
+                          bottom: 15,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black87,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+                                boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
+                                  const SizedBox(width: 6),
+                                  Text("DNA-${word.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                     ]
                   )
                 )
@@ -1468,7 +1528,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // DÜZELTİLDİ: max(0.0, ...) kalkanı eklendiği için artık eksi değer çökmesi yaşanmayacak!
   Widget _buildNeonBadge(IconData icon, String value, Color color, int count, AnimationController? flashController) {
     return AnimatedBuilder(
       animation: Listenable.merge([_neonPulseController, if (flashController != null) flashController]),
@@ -1488,8 +1547,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             boxShadow: [
               BoxShadow(
                 color: color.withOpacity(flashOpacity),
-                blurRadius: max(0.0, (baseSpread * 1.5) + flashSpread), // Hata Buradan Çözüldü
-                spreadRadius: max(0.0, pulseSpread + flashSpread),       // Hata Buradan Çözüldü
+                blurRadius: max(0.0, (baseSpread * 1.5) + flashSpread), 
+                spreadRadius: max(0.0, pulseSpread + flashSpread),       
               )
             ]
           ),
@@ -1498,7 +1557,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               Icon(icon, color: color, size: 20 + (flashValue * 8)),
               const SizedBox(width: 6),
-              Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16 + (flashValue * 4), color: Colors.white, shadows: [Shadow(color: color, blurRadius: max(0.0, flashValue * 15))])), // Hata Buradan Çözüldü
+              Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16 + (flashValue * 4), color: Colors.white, shadows: [Shadow(color: color, blurRadius: max(0.0, flashValue * 15))])), 
             ]
           )
         );
