@@ -15,6 +15,25 @@ class WordListScreen extends StatefulWidget {
 class _WordListScreenState extends State<WordListScreen> {
   String searchQuery = '';
 
+  // YENİ: Kademeli (Staggered) Premium Liste Animasyonu
+  Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index.clamp(0, 20) * 50)), 
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 50 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var filteredList = widget.words.where((w) => 
@@ -24,6 +43,7 @@ class _WordListScreenState extends State<WordListScreen> {
 
     return Scaffold(
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
           const SliverAppBar(
             floating: true,
@@ -39,10 +59,12 @@ class _WordListScreenState extends State<WordListScreen> {
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: TextField(
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Kelime veya Anlam Ara...",
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  filled: true,
+                  fillColor: Theme.of(context).primaryColor.withOpacity(0.05),
                 ),
                 onChanged: (val) => setState(() => searchQuery = val),
               ),
@@ -56,75 +78,114 @@ class _WordListScreenState extends State<WordListScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final item = filteredList[index];
+                      bool isMitosis = item.libraryName.startsWith('🧬');
                       
-                      return RepaintBoundary(
-                        child: Dismissible(
-                          key: Key('${item.word}_$index'),
-                          direction: widget.onLearned != null 
-                              ? DismissDirection.horizontal 
-                              : DismissDirection.endToStart,
-                          background: Container(
-                            color: Colors.green,
-                            alignment: Alignment.centerLeft,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
-                          ),
-                          secondaryBackground: Container(
-                            color: Colors.redAccent,
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: const Icon(Icons.delete, color: Colors.white, size: 30),
-                          ),
-                          onDismissed: (direction) {
-                            setState(() {
-                              widget.words.remove(item);
-                            });
-                            if (direction == DismissDirection.endToStart) {
-                              widget.onDelete(item);
-                            } else if (direction == DismissDirection.startToEnd) {
-                              if (widget.onLearned != null) widget.onLearned!(item);
-                            }
-                          },
-                          child: Card(
-                            elevation: 2,
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: ExpansionTile(
-                              title: Hero(
-                                tag: 'hero_word_${item.word}',
-                                child: Material(
-                                  type: MaterialType.transparency,
-                                  child: Text(item.word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
-                                ),
+                      return _buildAnimatedItem(
+                        context, 
+                        index,
+                        RepaintBoundary(
+                          child: Dismissible(
+                            key: Key('${item.word}_$index'),
+                            direction: widget.onLearned != null 
+                                ? DismissDirection.horizontal 
+                                : DismissDirection.endToStart,
+                            background: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12)),
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
+                            ),
+                            secondaryBackground: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(12)),
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: const Icon(Icons.delete, color: Colors.white, size: 30),
+                            ),
+                            onDismissed: (direction) {
+                              setState(() {
+                                widget.words.remove(item);
+                              });
+                              if (direction == DismissDirection.endToStart) {
+                                widget.onDelete(item);
+                              } else if (direction == DismissDirection.startToEnd) {
+                                if (widget.onLearned != null) widget.onLearned!(item);
+                              }
+                            },
+                            child: Card(
+                              elevation: 2,
+                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: isMitosis ? BorderSide(color: Colors.purpleAccent.withOpacity(0.3), width: 1.5) : BorderSide.none
                               ),
-                              subtitle: Text("${item.libraryName} / ${item.level}"),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.redAccent),
-                                onPressed: () {
-                                  widget.onDelete(item);
-                                  setState(() {});
-                                },
-                              ),
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  width: double.infinity,
-                                  color: Theme.of(context).primaryColor.withOpacity(0.05),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text("Anlamlar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-                                      ...item.meanings.map((m) => Text("• $m")),
-                                      const SizedBox(height: 8),
-                                      if (item.examples.isNotEmpty) const Text("Örnekler:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
-                                      ...item.examples.map((e) => Text("» $e")),
-                                    ],
+                              color: isMitosis ? Colors.purpleAccent.withOpacity(0.05) : Theme.of(context).cardColor,
+                              child: ExpansionTile(
+                                title: Hero(
+                                  tag: 'hero_word_${item.word}',
+                                  child: Material(
+                                    type: MaterialType.transparency,
+                                    child: Text(item.word, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple)),
                                   ),
-                                )
-                              ],
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text("${item.libraryName} / ${item.level}"),
+                                    if (isMitosis) ...[
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black87,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 12),
+                                            const SizedBox(width: 4),
+                                            Text("DNA-${item.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                                          ],
+                                        ),
+                                      )
+                                    ]
+                                  ],
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                  onPressed: () {
+                                    widget.onDelete(item);
+                                    setState(() {});
+                                  },
+                                ),
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).primaryColor.withOpacity(0.05),
+                                      borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16))
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text("Anlamlar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                                        ...item.meanings.map((m) => Text("• $m", style: const TextStyle(fontWeight: FontWeight.w600, height: 1.4))),
+                                        const SizedBox(height: 8),
+                                        if (item.examples.isNotEmpty) const Text("Örnekler:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                                        ...item.examples.map((e) => Text("» $e", style: const TextStyle(fontStyle: FontStyle.italic, height: 1.4))),
+                                      ],
+                                    ),
+                                  )
+                                ],
+                              ),
                             ),
                           ),
-                        ),
+                        )
                       );
                     },
                     childCount: filteredList.length,
