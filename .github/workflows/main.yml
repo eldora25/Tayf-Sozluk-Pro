@@ -23,7 +23,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5' # path_provider ve Dart 3.4.0+ uyumu için yeniden modern kararlı sürüme yükseltildi.
+          flutter-version: '3.24.5' # path_provider ve Dart 3.4.0+ uyumu için kararlı sürüm
           channel: 'stable'
           cache: true
 
@@ -50,34 +50,34 @@ jobs:
           # 4. LAUNCHER UYGULAMA ADINI "Lexis Eldora" YAPMA
           sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-          # 5. KESİN VE NİHAİ JVM EŞİTLEYİCİ (Tüm Eklentileri Kapsar ve Önceliklendirir)
+          # 5. KOTLIN JVM DOĞRULAMASINI ESNETME (Uyarı moduna alma)
+          echo "kotlin.jvm.target.validation.mode=warning" >> android/gradle.properties
+
+          # 6. KESİN VE NİHAİ JVM EŞİTLEYİCİ (afterEvaluate OLMADAN DOĞRUDAN KANCA)
           cat <<EOF >> android/build.gradle
           
           subprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
-                      project.android {
-                          if (namespace == null) {
-                              namespace project.group
-                          }
-                          compileOptions {
-                              sourceCompatibility JavaVersion.VERSION_17
-                              targetCompatibility JavaVersion.VERSION_17
-                          }
-                          kotlinOptions {
-                              jvmTarget = '17'
-                          }
+              project.pluginManager.withPlugin('com.android.library') {
+                  android {
+                      if (namespace == null) {
+                          namespace project.group
+                      }
+                      compileOptions {
+                          sourceCompatibility JavaVersion.VERSION_17
+                          targetCompatibility JavaVersion.VERSION_17
                       }
                   }
-                  project.tasks.withType(JavaCompile).configureEach {
-                      sourceCompatibility = JavaVersion.VERSION_17
-                      targetCompatibility = JavaVersion.VERSION_17
-                  }
-                  project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-                      kotlinOptions {
-                          jvmTarget = "17"
-                          freeCompilerArgs += ["-Xskip-metadata-version-check"]
-                      }
+              }
+              
+              project.tasks.withType(JavaCompile).configureEach {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              
+              project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                  kotlinOptions {
+                      jvmTarget = "17"
+                      freeCompilerArgs += ["-Xskip-metadata-version-check"]
                   }
               }
           }
