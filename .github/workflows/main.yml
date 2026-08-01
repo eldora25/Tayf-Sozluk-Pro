@@ -23,7 +23,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5' # Kararlı Flutter SDK sürümü
+          flutter-version: '3.19.6' # UYUMSUZLUKLARI KÖKTEN ÇÖZEN KARARLI SÜRÜM (flutter_tts & isar uyumlu)
           channel: 'stable'
           cache: true
 
@@ -36,10 +36,11 @@ jobs:
           # Proje adını tayf_sozluk_pro olarak zorlayarak bağımlılık kural hatasını önlüyoruz
           flutter create --platforms=android --project-name tayf_sozluk_pro .
           
-          # 1. KOTLIN SÜRÜMÜNÜ DÜZENLEME
-          sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
+          # 1. KOTLIN SÜRÜMÜNÜ STABİLİZE ETME
+          sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.8.22"/' android/settings.gradle
+          sed -i 's/ext.kotlin_version = '\''[^'\'']*'\''/ext.kotlin_version = '\''1.8.22'\''/' android/build.gradle
           
-          # 2. ANA PROJE İÇİN API 36 ZORLAMASI
+          # 2. ANA PROJE İÇİN API 34-36 ZORLAMASI
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle
           
@@ -50,10 +51,7 @@ jobs:
           # 4. LAUNCHER UYGULAMA ADINI "Lexis Eldora" YAPMA
           sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-          # 5. KOTLIN JVM DOĞRULAMASINI ESNETME (flutter_tts Hatasının Kesin Çözümü)
-          echo "kotlin.jvm.target.validation.mode=warning" >> android/gradle.properties
-
-          # 6. GÜVENLİ NAMESPACE ENJEKTÖRÜ
+          # 5. GÜVENLİ NAMESPACE ENJEKTÖRÜ (isar_flutter_libs için)
           cat <<EOF >> android/build.gradle
           
           subprojects {
