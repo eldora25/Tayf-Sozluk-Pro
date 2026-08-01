@@ -69,12 +69,13 @@ class _ManageListScreenState extends State<ManageListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Tümünü Sil", style: TextStyle(color: Colors.red)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Tümünü Sil", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
         content: const Text("Bu listedeki tüm kelimeleri çıkarmak istediğinize emin misiniz?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal")),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal", style: TextStyle(fontWeight: FontWeight.bold))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             onPressed: () {
               widget.onClearAll();
               Navigator.pop(context);
@@ -82,7 +83,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                 _filteredList = widget.words;
               });
             },
-            child: const Text("TÜMÜNÜ ÇIKAR"),
+            child: const Text("TÜMÜNÜ ÇIKAR", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -100,6 +101,25 @@ class _ManageListScreenState extends State<ManageListScreen> {
     }
   }
 
+  // YENİ: Kademeli (Staggered) Premium Liste Animasyonu
+  Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index.clamp(0, 20) * 50)), 
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 50 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (searchQuery.isEmpty && _filteredList.length != widget.words.length) {
@@ -108,6 +128,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
 
     return Scaffold(
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
             floating: true,
@@ -130,10 +151,12 @@ class _ManageListScreenState extends State<ManageListScreen> {
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: TextField(
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Kelime veya Anlam Ara...",
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  filled: true,
+                  fillColor: Theme.of(context).primaryColor.withOpacity(0.05),
                 ),
                 onChanged: _onSearchChanged,
               ),
@@ -147,97 +170,139 @@ class _ManageListScreenState extends State<ManageListScreen> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final item = _filteredList[index];
+                    bool isMitosis = item.libraryName.startsWith('🧬');
                     
-                    return RepaintBoundary(
-                      child: Dismissible(
-                        key: Key('${item.id}_$index'),
-                        direction: widget.onLearned != null 
-                            ? DismissDirection.horizontal 
-                            : DismissDirection.endToStart,
-                        background: Container(
-                          color: Colors.green,
-                          alignment: Alignment.centerLeft,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
-                        ),
-                        secondaryBackground: Container(
-                          color: Colors.redAccent,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: const Icon(Icons.delete, color: Colors.white, size: 30),
-                        ),
-                        onDismissed: (direction) {
-                          setState(() {
-                            widget.words.remove(item);
-                            _filteredList.remove(item);
-                          });
-                          if (direction == DismissDirection.endToStart) {
-                            widget.onDelete(item);
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime silindi."), duration: Duration(seconds: 1)));
-                          } else if (direction == DismissDirection.startToEnd) {
-                            if (widget.onLearned != null) widget.onLearned!(item);
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime öğrenildi! ✅"), backgroundColor: Colors.green, duration: Duration(seconds: 1)));
-                          }
-                        },
-                        child: Card(
-                          elevation: 2,
-                          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            title: Hero(
-                              tag: 'hero_word_list_${item.id}',
-                              child: Material(
-                                type: MaterialType.transparency,
-                                child: Text(item.word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.deepPurple)),
+                    return _buildAnimatedItem(
+                      context, 
+                      index,
+                      RepaintBoundary(
+                        child: Dismissible(
+                          key: Key('${item.id}_$index'),
+                          direction: widget.onLearned != null 
+                              ? DismissDirection.horizontal 
+                              : DismissDirection.endToStart,
+                          background: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(16)),
+                            alignment: Alignment.centerLeft,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
+                          ),
+                          secondaryBackground: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(16)),
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(Icons.delete, color: Colors.white, size: 30),
+                          ),
+                          onDismissed: (direction) {
+                            setState(() {
+                              widget.words.remove(item);
+                              _filteredList.remove(item);
+                            });
+                            if (direction == DismissDirection.endToStart) {
+                              widget.onDelete(item);
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime silindi."), duration: Duration(seconds: 1)));
+                            } else if (direction == DismissDirection.startToEnd) {
+                              if (widget.onLearned != null) widget.onLearned!(item);
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime öğrenildi! ✅"), backgroundColor: Colors.green, duration: Duration(seconds: 1)));
+                            }
+                          },
+                          child: Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: isMitosis ? BorderSide(color: Colors.purpleAccent.withOpacity(0.3), width: 1.5) : BorderSide.none
+                            ),
+                            color: isMitosis ? Colors.purpleAccent.withOpacity(0.05) : Theme.of(context).cardColor,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4.0),
+                              child: ListTile(
+                                title: Hero(
+                                  tag: 'hero_word_list_${item.id}',
+                                  child: Material(
+                                    type: MaterialType.transparency,
+                                    child: Text(item.word, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple)),
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text(item.meanings.join(', '), style: const TextStyle(fontWeight: FontWeight.w500)),
+                                    if (isMitosis) ...[
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black87,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 12),
+                                            const SizedBox(width: 4),
+                                            Text("DNA-${item.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                                          ],
+                                        ),
+                                      )
+                                    ]
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (widget.showWrongCount)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                                        child: Text("Hata: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
+                                      ),
+                                    
+                                    if (widget.showSrsLevel && item.srsLevel > 0)
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 8),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                                        child: Text("${_getSrsDayText(item.srsLevel)}", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
+                                      ),
+                              
+                                    if (widget.onEdit != null)
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                                        tooltip: 'Düzenle',
+                                        onPressed: () async {
+                                          await widget.onEdit!(item);
+                                          setState(() {
+                                            _filteredList = widget.words;
+                                          });
+                                        },
+                                      ),
+                              
+                                    IconButton(
+                                      icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+                                      tooltip: 'Listeden Çıkar',
+                                      onPressed: () {
+                                        widget.onDelete(item);
+                                        setState(() {
+                                          _filteredList.remove(item);
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            subtitle: Text(item.meanings.join(', ')),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (widget.showWrongCount)
-                                  Text("Yanlış: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                                
-                                if (widget.showSrsLevel && item.srsLevel > 0)
-                                  Container(
-                                    margin: const EdgeInsets.only(right: 8),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                                    child: Text("${_getSrsDayText(item.srsLevel)} Tekrarı", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
-                                  ),
-
-                                if (widget.onEdit != null)
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                                    tooltip: 'Düzenle',
-                                    onPressed: () async {
-                                      await widget.onEdit!(item);
-                                      setState(() {
-                                        _filteredList = widget.words;
-                                      });
-                                    },
-                                  ),
-
-                                IconButton(
-                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
-                                  tooltip: 'Listeden Çıkar',
-                                  onPressed: () {
-                                    widget.onDelete(item);
-                                    setState(() {
-                                      _filteredList.remove(item);
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                  childCount: _filteredList.length,
+                        )
+                      );
+                    },
+                    childCount: _filteredList.length,
+                  ),
                 ),
-              ),
         ],
       ),
     );
