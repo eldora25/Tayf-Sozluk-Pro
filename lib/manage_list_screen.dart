@@ -169,15 +169,21 @@ class _ManageListScreenState extends State<ManageListScreen> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final item = _filteredList[index];
-                    bool isMitosis = item.libraryName.startsWith('🧬');
                     
+                    // ZIRHLI FORMAT: Tüm hesaplamalar Widget ağacının dışında, tertemiz yapılıyor.
+                    final bool isMitosis = item.libraryName.startsWith('🧬');
+                    final String dismissKey = item.id.toString() + '_' + index.toString();
+                    final String heroTag = 'hero_word_list_' + item.id.toString();
+                    final String dnaCode = "DNA-" + item.id.toString().padLeft(6, '0');
+                    final String errorText = "Hata: " + item.wrongCount.toString();
+                    final String srsText = _getSrsDayText(item.srsLevel);
+
                     return _buildAnimatedItem(
                       context, 
                       index,
                       RepaintBoundary(
                         child: Dismissible(
-                          // DÜZELTİLDİ: Eski derleyicinin çökmesini engellemek için + ile metin birleştirildi
-                          key: Key(item.id.toString() + '_' + index.toString()),
+                          key: Key(dismissKey),
                           direction: widget.onLearned != null 
                               ? DismissDirection.horizontal 
                               : DismissDirection.endToStart,
@@ -204,7 +210,11 @@ class _ManageListScreenState extends State<ManageListScreen> {
                               widget.onDelete(item);
                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime silindi."), duration: Duration(seconds: 1)));
                             } else if (direction == DismissDirection.startToEnd) {
-                              if (widget.onLearned != null) widget.onLearned!(item);
+                              // ZIRHLI FORMAT: Null check fonksiyon çağrısı
+                              final learnCb = widget.onLearned;
+                              if (learnCb != null) {
+                                learnCb(item);
+                              }
                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime öğrenildi! ✅"), backgroundColor: Colors.green, duration: Duration(seconds: 1)));
                             }
                           },
@@ -220,8 +230,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 4.0),
                               child: ListTile(
                                 title: Hero(
-                                  // DÜZELTİLDİ: Güvenli + formatı
-                                  tag: 'hero_word_list_' + item.id.toString(),
+                                  tag: heroTag,
                                   child: Material(
                                     type: MaterialType.transparency,
                                     child: Text(item.word, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple)),
@@ -251,14 +260,14 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                                     BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
                                                   ],
                                                 ),
-                                                child: const Text(
+                                                child: Text(
                                                   "🧬", 
                                                   style: TextStyle(
                                                     fontSize: 10, 
                                                     shadows: [
                                                       Shadow(color: Colors.orangeAccent, blurRadius: 10),
-                                                      Shadow(color: Colors.purpleAccent, blurRadius: 10),
-                                                    ],
+                                                      Shadow(color: Colors.purpleAccent, blurRadius: 10)
+                                                    ]
                                                   ),
                                                 ),
                                               ),
@@ -275,9 +284,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                                   children: [
                                                     const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
                                                     const SizedBox(width: 4),
-                                                    // DÜZELTİLDİ: Analizer hatasını engelleyen Zırhlı Concatenation Formatı (+)
                                                     Text(
-                                                      "DNA-" + item.id.toString().padLeft(6, '0'), 
+                                                      dnaCode, 
                                                       style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)
                                                     ),
                                                   ],
@@ -296,8 +304,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                                        // DÜZELTİLDİ: Güvenli + formatı
-                                        child: Text("Hata: " + item.wrongCount.toString(), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
+                                        child: Text(errorText, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
                                       ),
                                     
                                     if (widget.showSrsLevel && item.srsLevel > 0)
@@ -305,8 +312,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                         margin: const EdgeInsets.only(right: 8),
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
-                                        // DÜZELTİLDİ: Sadece fonksiyon çağrısı
-                                        child: Text(_getSrsDayText(item.srsLevel), style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
+                                        child: Text(srsText, style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
                                       ),
                               
                                     if (widget.onEdit != null)
@@ -314,10 +320,14 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                         icon: const Icon(Icons.edit, color: Colors.blueAccent),
                                         tooltip: 'Düzenle',
                                         onPressed: () async {
-                                          await widget.onEdit!(item);
-                                          setState(() {
-                                            _filteredList = widget.words;
-                                          });
+                                          // ZIRHLI FORMAT: ! operatörü kaldırıldı
+                                          final editCb = widget.onEdit;
+                                          if (editCb != null) {
+                                            await editCb(item);
+                                            setState(() {
+                                              _filteredList = widget.words;
+                                            });
+                                          }
                                         },
                                       ),
                               
