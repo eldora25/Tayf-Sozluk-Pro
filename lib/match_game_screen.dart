@@ -32,13 +32,21 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   int score = 0;
   int mistakes = 0;
   
-  // YENİ: Sürükleme anını takip eden akıllı durum değişkeni
   bool isDragging = false; 
+  
+  // YENİ: Sürüklenen objenin altındaki kartı hissedip tamamen görünmez olmasını sağlayan State yöneticisi
+  final ValueNotifier<bool> _isHoveringTarget = ValueNotifier(false);
 
   @override
   void initState() {
     super.initState();
     _prepareGame();
+  }
+  
+  @override
+  void dispose() {
+    _isHoveringTarget.dispose();
+    super.dispose();
   }
 
   void _prepareGame() {
@@ -74,11 +82,13 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     rightColumn = List.from(roundWords)..shuffle();
     matchedWords.clear();
     isDragging = false;
+    _isHoveringTarget.value = false;
 
     setState(() {});
   }
 
   void _handleDrop(WordModel dragged, WordModel target) {
+    _isHoveringTarget.value = false;
     setState(() => isDragging = false);
     if (dragged.word == target.word) {
       HapticFeedback.mediumImpact();
@@ -290,27 +300,42 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                               idx, 
                               Draggable<WordModel>(
                                 data: word,
-                                // YENİ: Sürükleme anını takip eder
                                 onDragStarted: () => setState(() => isDragging = true),
-                                onDragEnd: (details) => setState(() => isDragging = false),
-                                onDraggableCanceled: (v, o) => setState(() => isDragging = false),
-                                feedback: Material(
-                                  color: Colors.transparent,
-                                  child: Container(
-                                    width: MediaQuery.of(context).size.width * 0.42,
-                                    height: 75,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                                      borderRadius: BorderRadius.circular(20), 
-                                      boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.5), blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 10))]
-                                    ),
-                                    child: Center(
-                                      child: SingleChildScrollView(
-                                        physics: const BouncingScrollPhysics(),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                                onDragEnd: (details) {
+                                  _isHoveringTarget.value = false;
+                                  setState(() => isDragging = false);
+                                },
+                                onDraggableCanceled: (v, o) {
+                                  _isHoveringTarget.value = false;
+                                  setState(() => isDragging = false);
+                                },
+                                // YENİ: Kartın üzerine gelindiğinde sürüklenen obje "Tamamen Şeffaf" (0.0) oluyor!
+                                feedback: ValueListenableBuilder<bool>(
+                                  valueListenable: _isHoveringTarget,
+                                  builder: (context, isHovering, child) {
+                                    return Opacity(
+                                      opacity: isHovering ? 0.0 : 0.9, 
+                                      child: child,
+                                    );
+                                  },
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: Container(
+                                      width: MediaQuery.of(context).size.width * 0.42,
+                                      height: 75,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                                        borderRadius: BorderRadius.circular(20), 
+                                        boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.5), blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 10))]
+                                      ),
+                                      child: Center(
+                                        child: SingleChildScrollView(
+                                          physics: const BouncingScrollPhysics(),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -346,7 +371,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                         ),
                       ),
                       
-                      // SAĞ SÜTUN VE AKILLI KATLANAN ANİMASYON
+                      // SAĞ SÜTUN VE YUKARI KAYARAK AÇILAN KARTLAR
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -371,15 +396,33 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                             return _buildStaggeredItem(
                               idx, 
                               DragTarget<WordModel>(
-                                onWillAccept: (data) => true, 
-                                onAccept: (data) => _handleDrop(data, word),
+                                // YENİ: Sürüklenen objenin altındaki kartı hissetmesi sağlandı
+                                onWillAccept: (data) {
+                                  _isHoveringTarget.value = true;
+                                  return true;
+                                },
+                                onLeave: (data) {
+                                  _isHoveringTarget.value = false;
+                                },
+                                onAccept: (data) {
+                                  _isHoveringTarget.value = false;
+                                  _handleDrop(data, word);
+                                },
                                 builder: (context, candidateData, rejectedData) {
                                   bool isHovered = candidateData.isNotEmpty;
                                   
-                                  // YENİ: Sürükleme başladığında 100px açılır, hedefin üzerindeyken 150px tam boyuta ulaşır.
+                                  // YENİ: Hedef kart sürükleme anında biraz (90), üzerine gelindiğinde tam açılır (160)
+                                  // Ayrıca Matrix4 kullanılarak kart yukarı doğru kayar (translateY) ve hafifçe büyür.
                                   double dynamicHeight = 70.0;
-                                  if (isHovered) dynamicHeight = 150.0;
-                                  else if (isDragging) dynamicHeight = 100.0;
+                                  Matrix4 transformMatrix = Matrix4.identity();
+                                  
+                                  if (isHovered) {
+                                    dynamicHeight = 160.0;
+                                    transformMatrix.translate(0.0, -30.0, 0.0); // 30 piksel yukarı kaydırır
+                                    transformMatrix.scale(1.05); // Hafifçe büyütür
+                                  } else if (isDragging) {
+                                    dynamicHeight = 90.0;
+                                  }
 
                                   return Container(
                                     margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -390,6 +433,8 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                           duration: const Duration(milliseconds: 350),
                                           curve: Curves.easeOutBack,
                                           height: dynamicHeight, 
+                                          transform: transformMatrix,
+                                          transformAlignment: Alignment.center,
                                           alignment: Alignment.center,
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
@@ -405,7 +450,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                                 ? [BoxShadow(color: isWrong ? Colors.red.withOpacity(0.6) : Colors.orange.withOpacity(0.6), blurRadius: 20, spreadRadius: 4)] 
                                                 : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]
                                           ),
-                                          // YENİ: SingleChildScrollView ile metin ne kadar uzun olursa olsun taşmaz, kaydırılabilir.
                                           child: Center(
                                             child: SingleChildScrollView(
                                               physics: const BouncingScrollPhysics(),
