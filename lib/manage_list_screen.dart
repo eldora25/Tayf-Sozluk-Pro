@@ -1,6 +1,8 @@
 import 'dart:async'; 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'models.dart';
+import 'main.dart'; // isar nesnesi için
 
 class ManageListScreen extends StatefulWidget {
   final String title;
@@ -91,6 +93,23 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
+  // YENİ: Listeden kartı koparıp "İncelenecekler" havuzuna atar
+  void _moveToReview(WordModel word) {
+    HapticFeedback.heavyImpact();
+    setState(() {
+      word.libraryName = 'İncelenecek Kelimeler';
+      word.listType = 'all';
+      widget.words.remove(word);
+      _filteredList.remove(word);
+    });
+
+    isar.writeTxn(() async { await isar.wordModels.put(word); });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("⚠️ Kelime incelenmek üzere ayrıldı!", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
+    );
+  }
+
   String _getSrsDayText(int level) {
     switch (level) {
       case 1: return "1. Gün";
@@ -120,7 +139,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
-  // ZIRHLI FORMAT: Arayüz derinliğini azaltmak için dışarı çıkarıldı
   Widget _buildMitosisBadge(WordModel item) {
     final String dnaCode = "DNA-" + item.id.toString().padLeft(6, '0');
     return Column(
@@ -130,25 +148,32 @@ class _ManageListScreenState extends State<ManageListScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white30, width: 0.5),
-                boxShadow: [
-                  BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(-2, 0)),
-                  BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
-                ],
-              ),
-              child: const Text(
-                "🧬", 
-                style: TextStyle(
-                  fontSize: 10, 
-                  shadows: [
-                    Shadow(color: Colors.orangeAccent, blurRadius: 10),
-                    Shadow(color: Colors.purpleAccent, blurRadius: 10),
+            // YENİ: Kapsül yatık, içindeki DNA düz ve neon glow artırıldı!
+            Transform.rotate(
+              angle: -0.5,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.white30, width: 1),
+                  boxShadow: [
+                    BoxShadow(color: Colors.orangeAccent.withOpacity(0.9), blurRadius: 12, spreadRadius: 2, offset: const Offset(-2, 0)),
+                    BoxShadow(color: Colors.purpleAccent.withOpacity(0.9), blurRadius: 12, spreadRadius: 2, offset: const Offset(2, 0)),
                   ],
+                ),
+                child: Transform.rotate(
+                  angle: 0.5, // Sarmalı kapsüle göre tekrar düzeltir
+                  child: const Text(
+                    "\u{1F9EC}", 
+                    style: TextStyle(
+                      fontSize: 12, 
+                      shadows: [
+                        Shadow(color: Colors.orangeAccent, blurRadius: 15),
+                        Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -175,7 +200,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
-  // ZIRHLI FORMAT: Arayüz derinliğini azaltmak için dışarı çıkarıldı
   Widget _buildTrailingActions(WordModel item) {
     final String errorText = "Hata: " + item.wrongCount.toString();
     final String srsText = _getSrsDayText(item.srsLevel);
@@ -213,6 +237,13 @@ class _ManageListScreenState extends State<ManageListScreen> {
             },
           ),
   
+        // YENİ EKLENDİ: Listeden inceleneceklere gönderme butonu
+        IconButton(
+          icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+          tooltip: 'İnceleneceklere Taşı',
+          onPressed: () => _moveToReview(item),
+        ),
+
         IconButton(
           icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
           tooltip: 'Listeden Çıkar',
@@ -227,10 +258,9 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
-  // ZIRHLI FORMAT: Liste öğesi tamamen dışarı çıkarıldı (AST derinliği azaltıldı)
   Widget _buildListItem(BuildContext context, int index) {
     final WordModel item = _filteredList[index];
-    final bool isMitosis = item.libraryName.startsWith('🧬');
+    final bool isMitosis = item.libraryName.startsWith('\u{1F9EC}');
     final String dismissKey = item.id.toString() + '_' + index.toString();
     final String heroTag = 'hero_word_list_' + item.id.toString();
 
@@ -353,7 +383,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
                 child: Center(child: Text("Bu liste şu an boş.", style: TextStyle(fontSize: 16, color: Colors.grey))),
               )
             : SliverList(
-                // ZIRHLI FORMAT: İzole edilmiş metot çağrısı yapıldı
                 delegate: SliverChildBuilderDelegate(
                   _buildListItem,
                   childCount: _filteredList.length,
