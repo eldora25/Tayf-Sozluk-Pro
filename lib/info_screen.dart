@@ -61,6 +61,13 @@ class InfoScreen extends StatelessWidget {
             title: "Dinamik Quiz Modu",
             description: "Kelimeleri ezberlemek için %40 zorlu kelimeler, %60 yeni kelimelerle harmanlanmış, zamana karşı yarışılan çoktan seçmeli zeki quiz modlarını kullanabilirsiniz.",
           ),
+          _buildFeatureCard(
+            context,
+            icon: Icons.warning_amber_rounded,
+            color: Colors.amber,
+            title: "İncelenecekler (Karantina)",
+            description: "Ana ekranda çalışırken hatalı olduğunu düşündüğünüz bir karta denk gelirseniz, '!' (Sarı Ünlem) butonuna basarak onu anında eski havuzundan koparıp İncelenecekler listesine atabilirsiniz.",
+          ),
           
           const SizedBox(height: 16),
 
@@ -113,7 +120,7 @@ class InfoScreen extends StatelessWidget {
                     Icons.biotech, 
                     Colors.purple, 
                     "Mitoz Bölünme (Saf Kartlar):", 
-                    "Siz quiz çözerken, çok anlamlı kelimeler (Örn: Apple = Elma, Meyve) doğru bilindikçe otomatik bölünür ve 'Mitoz' kütüphanenize tek anlamlı (Apple = Elma) kusursuz bilgi kartları (flashcards) olarak eşsiz DNA damgasıyla düşer."
+                    "Siz quiz çözerken, çok anlamlı kelimeler (Örn: Apple = Elma, Meyve) doğru bilindikçe otomatik bölünür ve 'Mitoz' kütüphanenize tek anlamlı (Apple = Elma) kusursuz bilgi kartları olarak eşsiz DNA damgasıyla düşer."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
