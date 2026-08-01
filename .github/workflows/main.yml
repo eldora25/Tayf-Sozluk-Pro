@@ -103,17 +103,17 @@ jobs:
       - name: Build Debug APK
         run: flutter build apk --debug --dart-define=BUILD_NUMBER=${{ github.run_number }}
 
-      # YENİ: Lexis Eldora V2.0 olarak isimlendiriliyor (Boşluk hatasını önlemek için tırnak içine alındı)
+      # YENİ: Boşluksuz (Tireli) İsimlendirme Formülü
       - name: Rename APK Dynamically
         run: |
-          mv build/app/outputs/flutter-apk/app-debug.apk "build/app/outputs/flutter-apk/Lexis Eldora-V2.0.${{ github.run_number }}-debug.apk"
+          mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/Lexis-Eldora-V2.0.${{ github.run_number }}-debug.apk
 
-      # YENİ: Yeni isme göre Artifact yükleme kuralı güncellendi
+      # YENİ: Tireli İsimlendirme Artifact Yükleyicisi
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Dynamic-Debug-APK
-          path: "build/app/outputs/flutter-apk/Lexis Eldora-V2.0.*-debug.apk"
+          path: build/app/outputs/flutter-apk/Lexis-Eldora-V2.0.*-debug.apk
 
       - name: Backup Source Files with Build & Commit Info
         if: success()
