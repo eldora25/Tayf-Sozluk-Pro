@@ -33,6 +33,61 @@ class _WordListScreenState extends State<WordListScreen> {
     );
   }
 
+  // ZIRHLI FORMAT: Derleyicinin AST derinliğinde çökmemesi için Mitoz Rozeti dışarı aktarıldı
+  Widget _buildMitosisBadge(WordModel item) {
+    final String dnaCode = "DNA-" + item.id.toString().padLeft(6, '0');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.white30, width: 0.5),
+                boxShadow: [
+                  BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(-2, 0)),
+                  BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
+                ],
+              ),
+              child: const Text(
+                "\u{1F9EC}", 
+                style: TextStyle(
+                  fontSize: 10, 
+                  shadows: [
+                    Shadow(color: Colors.orangeAccent, blurRadius: 10),
+                    Shadow(color: Colors.purpleAccent, blurRadius: 10),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
+                  const SizedBox(width: 4),
+                  Text(dnaCode, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var filteredList = widget.words.where((w) => 
@@ -78,13 +133,11 @@ class _WordListScreenState extends State<WordListScreen> {
                     (context, index) {
                       final item = filteredList[index];
                       
-                      // ZIRHLI FORMAT: Tüm hesaplamalar Widget ağacının dışında, tertemiz yapılıyor.
-                      final bool isMitosis = item.libraryName.startsWith('🧬');
-                      final String dismissKey = item.id.toString() + '_' + index.toString();
+                      final bool isMitosis = item.libraryName.startsWith('\u{1F9EC}');
+                      final String dismissKey = item.word + '_' + index.toString();
                       final String heroTag = 'hero_word_' + item.word;
-                      final String dnaCode = "DNA-" + item.id.toString().padLeft(6, '0');
                       final String subtitleText = item.libraryName + " / " + item.level;
-
+                      
                       return _buildAnimatedItem(
                         context, 
                         index,
@@ -115,11 +168,8 @@ class _WordListScreenState extends State<WordListScreen> {
                               if (direction == DismissDirection.endToStart) {
                                 widget.onDelete(item);
                               } else if (direction == DismissDirection.startToEnd) {
-                                // ZIRHLI FORMAT: Null check fonksiyon çağrısı
                                 final learnCb = widget.onLearned;
-                                if (learnCb != null) {
-                                  learnCb(item);
-                                }
+                                if (learnCb != null) learnCb(item);
                               }
                             },
                             child: Card(
@@ -143,60 +193,7 @@ class _WordListScreenState extends State<WordListScreen> {
                                   children: [
                                     const SizedBox(height: 4),
                                     Text(subtitleText),
-                                    if (isMitosis)
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black,
-                                                  borderRadius: BorderRadius.circular(30),
-                                                  border: Border.all(color: Colors.white30, width: 0.5),
-                                                  boxShadow: [
-                                                    BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(-2, 0)),
-                                                    BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
-                                                  ]
-                                                ),
-                                                child: Text(
-                                                  "🧬", 
-                                                  style: TextStyle(
-                                                    fontSize: 10, 
-                                                    shadows: [
-                                                      Shadow(color: Colors.orangeAccent, blurRadius: 10),
-                                                      Shadow(color: Colors.purpleAccent, blurRadius: 10)
-                                                    ]
-                                                  )
-                                                ),
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black87,
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      dnaCode, 
-                                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      )
+                                    if (isMitosis) _buildMitosisBadge(item), // ZIRHLI ÇAĞRI
                                   ],
                                 ),
                                 trailing: IconButton(
