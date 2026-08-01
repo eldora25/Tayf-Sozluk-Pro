@@ -267,7 +267,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _flipAnimation;
   late AnimationController _glowController;
   late Animation<double> _glowAnimation;
-  late AnimationController _bgGradientController; 
+  
+  // YENİ: Aurora (Nefes Alan Dinamik Arka Plan) Kontrolcüsü
+  late AnimationController _auroraController; 
 
   late AnimationController _neonPulseController;
   late Animation<double> _neonPulseAnim;
@@ -298,7 +300,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _flipAnimation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _flipController, curve: Curves.easeInOut));
     _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
-    _bgGradientController = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true); 
+    
+    // YENİ: Aurora Arka Plan 10 Saniyelik Nefes Alış
+    _auroraController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat(reverse: true); 
     
     _neonPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat(reverse: true);
     _neonPulseAnim = Tween<double>(begin: 0.6, end: 1.4).animate(CurvedAnimation(parent: _neonPulseController, curve: Curves.easeInOutCubic));
@@ -315,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _flipController.dispose();
     _glowController.dispose();
-    _bgGradientController.dispose(); 
+    _auroraController.dispose(); 
     _neonPulseController.dispose();
     _tpFlashController.dispose();
     _freezeFlashController.dispose();
@@ -434,28 +438,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {}
   }
 
-  void _showFlyingParticle(IconData icon, Color color, VoidCallback onArrived, {int targetIndex = 2}) {
+  // YENİ: Seviye 5 Olduğunda Patlayan Konfeti (Ödül Şöleni)
+  void _triggerLevel5Celebration() {
+    for (int i = 0; i < 15; i++) {
+      Future.delayed(Duration(milliseconds: i * 80), () {
+        List<Color> confettiColors = [Colors.redAccent, Colors.greenAccent, Colors.blueAccent, Colors.yellowAccent, Colors.purpleAccent];
+        Color randomColor = confettiColors[Random().nextInt(confettiColors.length)];
+        
+        _showFlyingParticle(Icons.star, randomColor, () {
+          HapticFeedback.lightImpact();
+        }, targetIndex: Random().nextInt(3), isConfetti: true);
+      });
+    }
+  }
+
+  void _showFlyingParticle(IconData icon, Color color, VoidCallback onArrived, {int targetIndex = 2, bool isConfetti = false}) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
       builder: (context) {
         return TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 1000), 
-          curve: Curves.easeInOutCubic,
+          duration: Duration(milliseconds: isConfetti ? 800 + Random().nextInt(400) : 1000), 
+          curve: isConfetti ? Curves.easeOutCirc : Curves.easeInOutCubic,
           onEnd: () {
             overlayEntry?.remove();
             onArrived(); 
           },
           builder: (context, value, child) {
-            double startX = MediaQuery.of(context).size.width / 2 - 20;
-            double startY = MediaQuery.of(context).size.height / 2;
+            double startX = MediaQuery.of(context).size.width / 2 - 20 + (isConfetti ? (Random().nextDouble() * 100 - 50) : 0);
+            double startY = MediaQuery.of(context).size.height / 2 + (isConfetti ? (Random().nextDouble() * 100 - 50) : 0);
             
             double endX;
-            if (targetIndex == 0) endX = MediaQuery.of(context).size.width * 0.2;
-            else if (targetIndex == 1) endX = MediaQuery.of(context).size.width * 0.5 - 20;
-            else endX = MediaQuery.of(context).size.width * 0.8;
+            if (isConfetti) {
+              endX = startX + (Random().nextDouble() * 200 - 100);
+            } else {
+              if (targetIndex == 0) endX = MediaQuery.of(context).size.width * 0.2;
+              else if (targetIndex == 1) endX = MediaQuery.of(context).size.width * 0.5 - 20;
+              else endX = MediaQuery.of(context).size.width * 0.8;
+            }
             
-            double endY = MediaQuery.of(context).padding.top + 40.0; 
+            double endY = isConfetti ? MediaQuery.of(context).size.height + 50 : (MediaQuery.of(context).padding.top + 40.0); 
 
             double currentX = startX + (endX - startX) * value;
             double currentY = startY + (endY - startY) * value;
@@ -464,15 +486,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               left: currentX,
               top: currentY,
               child: Opacity(
-                opacity: value < 0.8 ? 1.0 : (1.0 - ((value - 0.8) * 5)).clamp(0.0, 1.0), 
+                opacity: isConfetti ? (1.0 - value).clamp(0.0, 1.0) : (value < 0.8 ? 1.0 : (1.0 - ((value - 0.8) * 5)).clamp(0.0, 1.0)), 
                 child: Transform.scale(
-                  scale: 1.0 + (sin(value * pi) * 1.5), 
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: color.withOpacity(0.9), blurRadius: 25, spreadRadius: 5)]
+                  scale: isConfetti ? (1.0 - (value * 0.5)) : (1.0 + (sin(value * pi) * 1.5)), 
+                  child: Transform.rotate(
+                    angle: isConfetti ? value * pi * 4 : 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: color.withOpacity(0.9), blurRadius: 25, spreadRadius: 5)]
+                      ),
+                      child: Icon(icon, color: color, size: isConfetti ? 20 : 30)
                     ),
-                    child: Icon(icon, color: color, size: 30)
                   )
                 )
               ),
@@ -686,6 +711,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         toRepeatWords.removeWhere((w) => w.id == word.id);
       } else {
         word.srsLevel++;
+        
+        // YENİ: Sürüklemede 5. Seviyeye ulaşırsa Şölen patlar!
+        if (word.srsLevel == 5 && !fromQuiz) {
+          _triggerLevel5Celebration();
+        }
+
         if (word.srsLevel > 5) {
           word.listType = 'learned';
           if (!learnedWords.any((w) => w.id == word.id)) learnedWords.add(word);
@@ -951,8 +982,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: TextField(controller: ctrl), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text("Kaydet"))]));
   }
 
-  // DÜZELTİLDİ: Edit ekranı artık Mitoz çakışmalarını Isar üzerinden yapabilsin diye isar nesnesi aktarılıyor. 
-  // (Aslında isar globale açık ama EditScreen'de kullanılabilmesi için Edit ekranında da değişiklik yaptık)
   Future<void> _openEditScreen(WordModel word) async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: availableLibraries,
@@ -1130,11 +1159,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Expanded(
                   child: Stack(
                     children: [
-                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: isMitosis ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color, shadows: hardOutline))))), 
-                      Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: (isMitosis ? Colors.white : Theme.of(context).primaryColor).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: false))), 
-                      Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: (isMitosis ? Colors.white : Colors.grey).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
+                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline))))), 
+                      Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: false))), 
+                      Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
                       
-                      // YENİ: DNA Seri Numarası (Sadece Mitoz Kartlar İçin - Ön Yüz)
                       if (isMitosis)
                         Positioned(
                           bottom: 15,
@@ -1261,27 +1289,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
                         child: Padding(
-                          padding: const EdgeInsets.only(top: 24.0, left: 20, right: 20, bottom: 40), // DNA damgası için bottom padding arttırıldı
+                          padding: const EdgeInsets.only(top: 24.0, left: 20, right: 20, bottom: 40), 
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Center(child: Text(word.word, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: isMitosis ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color, shadows: hardOutline))), 
-                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (isMitosis ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color)!.withOpacity(0.3))), 
-                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• $m", style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: isMitosis ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color, shadows: hardOutline)))),
+                              Center(child: Text(word.word, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline))), 
+                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: _getTextColor(context, isDark, isMitosis).withOpacity(0.3))), 
+                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• $m", style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline)))),
                               if (word.examples.isNotEmpty) ...[
                                 const SizedBox(height: 16),
                                 Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isMitosis ? Colors.pinkAccent : Theme.of(context).colorScheme.secondary, shadows: hardOutline)),
                                 const SizedBox(height: 6),
-                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» $e", style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4, color: isMitosis ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color, shadows: hardOutline)))),
+                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» $e", style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline)))),
                               ]
                             ]
                           )
                         )
                       ), 
-                      Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: (isMitosis ? Colors.white : Theme.of(context).primaryColor).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: true))), 
-                      Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: (isMitosis ? Colors.white : Colors.grey).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
+                      Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: true))), 
+                      Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
                       
-                      // YENİ: DNA Seri Numarası (Sadece Mitoz Kartlar İçin - Arka Yüz)
                       if (isMitosis)
                         Positioned(
                           bottom: 15,
@@ -1499,26 +1526,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.only(top: 16, left: 20, right: 20, bottom: 16 + MediaQuery.of(context).padding.bottom), 
-                decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.08), border: Border(top: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1))),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // YENİ: Buzlu Cam Derinlik Efekti
+              ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.only(top: 16, left: 20, right: 20, bottom: 16 + MediaQuery.of(context).padding.bottom), 
+                    decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.08), border: Border(top: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1))),
+                    child: Column(
                       children: [
-                        Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-                        Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                            Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                          decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.deepPurple]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)]),
+                          child: const Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                      decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.deepPurple]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)]),
-                      child: const Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
-                    ),
-                  ],
+                  ),
                 ),
               )
             ],
@@ -1582,11 +1615,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     double bottomHeight = selectedLibrary != 'Tekrarlanması Gerekenler' ? 90.0 : 60.0;
 
     return Scaffold(
+      extendBodyBehindAppBar: true, // YENİ: Kartların menünün altından kayması için
       appBar: AppBar(
         toolbarHeight: 60,
         centerTitle: false,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+        backgroundColor: Colors.transparent, // YENİ: Cam efekti için şeffaf
+        elevation: 0,
+        // YENİ: Buzlu Cam Derinlik Efekti
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              decoration: BoxDecoration(gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.7), Theme.of(context).colorScheme.secondary.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+            ),
+          ),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1633,13 +1675,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
       drawer: _buildDrawer(),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Theme.of(context).primaryColor.withOpacity(0.05), Colors.transparent], 
-            begin: Alignment.topCenter, end: Alignment.bottomCenter
-          )
-        ),
+      body: AnimatedBuilder(
+        animation: _auroraController,
+        builder: (context, child) {
+          // YENİ: Nefes Alan Dinamik Aurora Arka Plan
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Theme.of(context).primaryColor.withOpacity(0.1), Theme.of(context).primaryColor.withOpacity(0.01)], 
+                begin: Alignment(-1.0 + (_auroraController.value * 2), -1.0), 
+                end: Alignment(1.0 - (_auroraController.value * 2), 1.0)
+              )
+            ),
+            child: child,
+          );
+        },
         child: currentWord == null 
           ? Center(
               child: Padding(
@@ -1689,9 +1739,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             )
           : SafeArea(
+              bottom: false, // YENİ: Kartların alt menüye kadar uzanması için
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(minHeight: constraints.maxHeight),
                       child: IntrinsicHeight(
@@ -1704,8 +1756,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               child: Dismissible(
                                 key: ValueKey('${currentWord.word}_${DateTime.now()}'), 
                                 direction: isFlipped ? DismissDirection.horizontal : DismissDirection.none,
-                                background: Row(mainAxisAlignment: MainAxisAlignment.start, children: const [SizedBox(width: 30), Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.check_circle, color: Colors.green, size: 50), Text("BİLİYORUM", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16))])]),
-                                secondaryBackground: Row(mainAxisAlignment: MainAxisAlignment.end, children: const [Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.repeat, color: Colors.redAccent, size: 50), Text("TEKRAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16))]), SizedBox(width: 30)]),
+                                // YENİ: Dismissible arka planları da Cam Efekti ile yapıldı
+                                background: ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                    child: Container(
+                                      color: Colors.green.withOpacity(0.8),
+                                      alignment: Alignment.centerLeft,
+                                      padding: const EdgeInsets.symmetric(horizontal: 30),
+                                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.check_circle, color: Colors.white, size: 50), Text("BİLİYORUM", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))]),
+                                    ),
+                                  ),
+                                ),
+                                secondaryBackground: ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                    child: Container(
+                                      color: Colors.redAccent.withOpacity(0.8),
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.symmetric(horizontal: 30),
+                                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.repeat, color: Colors.white, size: 50), Text("TEKRAR", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))]),
+                                    ),
+                                  ),
+                                ),
                                 onDismissed: (direction) { if (direction == DismissDirection.startToEnd) _markAsLearned(currentWord); else if (direction == DismissDirection.endToStart) _markAsToRepeat(currentWord); },
                                 child: GestureDetector(
                                   onTap: () => _flipCard(currentWord), 
@@ -1722,22 +1797,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             const SizedBox(height: 30),
                             if (isFlipped) Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.repeat), label: const Text("Tekrar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsToRepeat(currentWord)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.check), label: const Text("Biliyorum", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsLearned(currentWord))]),
                             const Spacer(),
-                            Container(
-                              padding: EdgeInsets.only(top: 16, bottom: 16 + MediaQuery.of(context).padding.bottom),
-                              width: double.infinity,
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                            
+                            // YENİ: Alt alan da Buzlu Cam yapıldı
+                            ClipRRect(
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: Container(
+                                  padding: EdgeInsets.only(top: 16, bottom: 16 + MediaQuery.of(context).padding.bottom),
+                                  width: double.infinity,
+                                  color: Theme.of(context).primaryColor.withOpacity(0.05),
+                                  child: Column(
                                     children: [
-                                      Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
-                                      const SizedBox(width: 16),
-                                      Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                          const SizedBox(width: 16),
+                                          Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor.withOpacity(0.5))),
                                     ],
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor.withOpacity(0.5))),
-                                ],
+                                ),
                               ),
                             )
                           ],
