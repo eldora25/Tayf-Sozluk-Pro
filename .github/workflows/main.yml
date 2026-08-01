@@ -36,18 +36,22 @@ jobs:
           # Klasör adını yoksayması için proje adını zorla veriyoruz
           flutter create --platforms=android --project-name tayf_sozluk_pro .
           
-          # ANA PROJE İÇİN API 36 ZORLAMASI (Groovy - build.gradle üzerinden)
+          # 1. KOTLIN VERSİYON ZORLAMASI (flutter_tts hatasını çözer)
+          # settings.gradle içinde org.jetbrains.kotlin.android eklenti versiyonunu 1.9.23'e kilitliyoruz.
+          sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.23"/' android/settings.gradle
+          
+          # 2. ANA PROJE İÇİN API 36 ZORLAMASI
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle
           
-          # DESUGARING AKTİVASYONU
+          # 3. DESUGARING AKTİVASYONU
           sed -i '/compileOptions {/a \        coreLibraryDesugaringEnabled true' android/app/build.gradle
           echo "dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4' }" >> android/app/build.gradle
 
-          # UYGULAMA ADINI "Lexis Eldora" OLARAK SABİTLEME
+          # 4. UYGULAMA ADINI "Lexis Eldora" OLARAK SABİTLEME
           sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-          # YENİ GÜVENLİ NAMESPACE ENJEKTÖRÜ (isar_flutter_libs ve benzeri paketler için)
+          # 5. GÜVENLİ NAMESPACE ENJEKTÖRÜ (isar_flutter_libs ve eski paketler için)
           cat <<EOF >> android/build.gradle
           
           subprojects {
