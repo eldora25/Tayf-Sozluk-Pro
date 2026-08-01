@@ -243,7 +243,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Lexis Eldora', // YENİ İSİM
+      title: 'Lexis Eldora',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
       themeAnimationDuration: const Duration(milliseconds: 600), 
@@ -292,6 +292,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int totalCompletedQuizzes = 0, totalQuizTimeSeconds = 0, totalQuizQuestions = 0, totalQuizWrong = 0;
   List<String> learnedWordTimestamps = [], completedQuizTimestamps = [], viewedCardTimestamps = [], wrongAnswerTimestamps = [];
   int firstUseTimestamp = 0, currentStreak = 0, bestStreak = 0, tayfPoints = 0, streakFreezes = 0;
+
+  // ÇÖZÜM: Renk listesi doğrudan State sınıfının bir üyesi yapıldı.
+  final List<Color> distinctColors = const [
+    Color(0xFFFFEA00), 
+    Color(0xFFD500F9), 
+    Color(0xFF00E5FF), 
+    Color(0xFFFF3D00), 
+    Color(0xFF00E676)
+  ];
 
   @override
   void initState() {
@@ -1104,7 +1113,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isMitosis = word.libraryName.startsWith('🧬'); 
-    List<Color> distinctColors = const [Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)];
 
     List<Shadow> hardOutline = isMitosis ? const [
       Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1)),
