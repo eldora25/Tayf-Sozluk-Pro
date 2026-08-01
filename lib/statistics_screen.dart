@@ -255,8 +255,10 @@ class StatisticsScreen extends StatelessWidget {
             gradient: LinearGradient(colors: [primaryColor.withOpacity(0.05), Colors.transparent], begin: Alignment.topCenter, end: Alignment.bottomCenter)
           ),
           child: TabBarView(
+            physics: const BouncingScrollPhysics(), // YENİ: Sekmeler arası yaylanma
             children: [
               ListView(
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
                   Container(
@@ -279,6 +281,7 @@ class StatisticsScreen extends StatelessWidget {
               ),
 
               ListView(
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
                   _buildMitosisCard(context, totalMitosisCount), 
@@ -292,6 +295,7 @@ class StatisticsScreen extends StatelessWidget {
               ),
               
               ListView(
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
                   Container(
@@ -312,6 +316,7 @@ class StatisticsScreen extends StatelessWidget {
                               child: const Icon(Icons.school, color: Colors.white, size: 24),
                             ),
                             const SizedBox(width: 12),
+                            // DÜZELTİLDİ: Metin taşmaması için Expanded eklendi
                             const Expanded(child: Text("Gerçek Öğrenme (Mezun) Hızı", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
                           ],
                         ),
@@ -337,7 +342,7 @@ class StatisticsScreen extends StatelessWidget {
                     ),
                   ),
                   
-                  // YENİ: Haftalık Mezuniyet (Gerçek Öğrenme) Grafiği
+                  // YENİ: Haftalık Mezuniyet (Gerçek Öğrenme) Grafiği eklendi
                   const SizedBox(height: 16),
                   Container(
                     decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))]),
@@ -451,6 +456,7 @@ class StatisticsScreen extends StatelessWidget {
               ),
 
               ListView(
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
                   _buildStatCard(context, "Tamamlanan Quiz", totalCompletedQuizzes, Icons.done_all, Colors.orange),
@@ -461,6 +467,7 @@ class StatisticsScreen extends StatelessWidget {
               ),
               
               ListView.builder(
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 itemCount: availableLibraries.length,
                 itemBuilder: (context, index) {
