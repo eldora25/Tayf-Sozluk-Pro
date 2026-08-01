@@ -51,7 +51,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   bool isAudioEnabled = true;
   bool _isStatsSaved = false;
   
-  // YENİ: Anlık TP Ekonomisi
   int _sessionEarnedTP = 0; 
 
   String _questionSubtext = "";
@@ -156,7 +155,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _speakText(text, lang);
   }
   
-  // YENİ: Ekranda Elmas Uçurma Efekti
   void _flyDiamondAnimation() {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
@@ -172,7 +170,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             double startX = MediaQuery.of(context).size.width / 2 - 15;
             double startY = MediaQuery.of(context).size.height / 2;
             
-            double endX = MediaQuery.of(context).size.width / 2; // Yukarıdaki yıldıza/TP'ye doğru
+            double endX = MediaQuery.of(context).size.width / 2; 
             double endY = MediaQuery.of(context).padding.top + 80; 
 
             double currentX = startX + (endX - startX) * value;
@@ -270,7 +268,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     String srcCode = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String tgtCode = getSmartTargetLanguage(currentWord.libraryName, correctOption);
-    String mitosisLibName = "\u{1F9EC} Mitoz (${_getReadableLang(srcCode)}-${_getReadableLang(tgtCode)})"; // Emoji düzeltildi
+    String mitosisLibName = "\u{1F9EC} Mitoz (${_getReadableLang(srcCode)}-${_getReadableLang(tgtCode)})";
 
     if (isCorrect) {
       setState(() {
@@ -278,7 +276,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         answeredQuestions++;
         HapticFeedback.mediumImpact(); 
         _scaleController.forward(from: 0.0); 
-        _sessionEarnedTP += 3; // Doğru cevapta anında TP artar
+        _sessionEarnedTP += 3; 
       });
       _flyDiamondAnimation();
 
@@ -297,7 +295,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
           WordModel? existingMitosisCard;
           try {
-            // DÜZELTİLDİ: Büyük/Küçük harf duyarsız Eşsizlik Koruması (Critical Bug Fix)
             var matchingWords = await isar.wordModels.filter()
                 .wordEqualTo(currentWord.word, caseSensitive: false)
                 .libraryNameEqualTo(mitosisLibName)
@@ -361,7 +358,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         HapticFeedback.heavyImpact(); 
         _lastWrongOption = option; 
         _shakeController.forward(from: 0.0); 
-        _sessionEarnedTP = max(0, _sessionEarnedTP - 1); // Yanlışta kazanılan TP azalır (Cezalı Sistem)
+        _sessionEarnedTP = max(0, _sessionEarnedTP - 1); 
       });
 
       if (selectedWrongOptions.length == 1) { 
@@ -449,7 +446,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (isQuizFinished) {
       return Scaffold(
         appBar: AppBar(title: const Text("Lexis Eldora | Quiz İstatistikleri", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
-        // YENİ: Kaydırılabilir Ekran (Sanal tuş sorununu çözer)
         body: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
@@ -479,7 +475,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                         const Divider(height: 30),
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Geçen Süre:", style: TextStyle(fontSize: 20)), Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue))]),
                         const Divider(height: 30),
-                        // YENİ: TP Ekonomisi Raporu Eklendi
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                           const Text("Kazanılan TP:", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), 
                           Row(
@@ -551,7 +546,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 10),
             
-            // YENİ: Soru bilgisinin yanına TP Kapsülü Eklendi
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
