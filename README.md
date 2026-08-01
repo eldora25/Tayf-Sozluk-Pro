@@ -48,10 +48,53 @@ Kullanıcıyı öğrenmeye teşvik eden dinamik ve hiyerarşik görsel ödül si
 * **Ses Motoru:** Flutter TTS
 * **Sistem Mimarisi:** Zırhlı AST (Derleyiciyi boğmayan izole metot yapısı)
 
-***********************************************
-**Geliştirici: Tayfun YAMAK (Eldora)**
+---
 
-**Sürüm: V1.0.x**
+## 📂 Önerilen İçe Aktarma (Import) Formatları
 
-**Motto: Mükemmelleşmiş arayüz, zırhlı altyapı.**
-***********************************************
+Uygulamaya kendi kelime listelerinizi (TXT, CSV veya JSON) hatasız, kayıpsız ve en verimli şekilde aktarabilmek için dosyalarınızı aşağıdaki ideal formatlara göre düzenlemeniz önerilir. Sistemin TTS (Seslendirme) dilini otonom tanıması için dosyalarınızın ilk satırına `#tts:ing-tr` (veya hedeflenen dil) parametresini ekleyebilirsiniz.
+
+### 1. TXT Formatı (Önerilen Basit Format)
+Kelime ile anlamı ayırmak için İki Nokta (`:`), birden fazla anlamı birbirinden ayırmak için Noktalı Virgül (`;`) kullanmalısınız.
+
+```text
+#tts:ing-tr
+elma : meyve ; kırmızı veya yeşil renkli tatlı meyve
+araba : taşıt ; motorlu araç
+book : kitap ; ayırtmak ; rezervasyon yapmak
+```
+### 2. CSV Formatı (Excel Tarzı Gelişmiş Format)
+Sütunlar virgül (,) ile ayrılır. Sırasıyla: Kelime, Anlamlar, Örnekler, Seviye. Bir hücrenin içinde birden fazla anlam veya örnek varsa bunları Üç Boru (|||) ile ayırabilirsiniz.
+```
+#tts:ing-tr
+Word,Meaning,Example,Level
+apple,elma ||| meyve,I ate an apple.,Başlangıç
+abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İleri
+```
+### 3. JSON Formatı (Programcı Formatı)
+Dosyanız bir liste (array) içinde JSON objelerinden oluşmalıdır. word kelimeyi, meanings anlamları (dizi olarak), examples örnekleri belirtir.
+```
+[
+  {
+    "tts_language": "ing-tr",
+    "word": "resilient",
+    "meanings": ["dirençli", "çabuk iyileşen"],
+    "examples": ["She is a resilient person."],
+    "level": "İleri"
+  },
+  {
+    "word": "apple",
+    "meanings": ["elma"],
+    "examples": [],
+    "level": "Başlangıç"
+  }
+]
+```
+*********************************************************
+### Geliştirici: Tayfun YAMAK (Eldora)
+
+### Sürüm: V1.0.x
+
+### Motto: Mükemmelleşmiş arayüz, zırhlı altyapı.
+********************************************************
+
