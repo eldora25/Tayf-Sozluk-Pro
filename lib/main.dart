@@ -267,8 +267,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _flipAnimation;
   late AnimationController _glowController;
   late Animation<double> _glowAnimation;
-  
-  // YENİ: Aurora (Nefes Alan Dinamik Arka Plan) Kontrolcüsü
+  late AnimationController _bgGradientController; 
+
   late AnimationController _auroraController; 
 
   late AnimationController _neonPulseController;
@@ -300,8 +300,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _flipAnimation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _flipController, curve: Curves.easeInOut));
     _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
+    _bgGradientController = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true); 
     
-    // YENİ: Aurora Arka Plan 10 Saniyelik Nefes Alış
     _auroraController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat(reverse: true); 
     
     _neonPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat(reverse: true);
@@ -319,6 +319,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _flipController.dispose();
     _glowController.dispose();
+    _bgGradientController.dispose(); 
     _auroraController.dispose(); 
     _neonPulseController.dispose();
     _tpFlashController.dispose();
@@ -438,7 +439,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {}
   }
 
-  // YENİ: Seviye 5 Olduğunda Patlayan Konfeti (Ödül Şöleni)
   void _triggerLevel5Celebration() {
     for (int i = 0; i < 15; i++) {
       Future.delayed(Duration(milliseconds: i * 80), () {
@@ -712,7 +712,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       } else {
         word.srsLevel++;
         
-        // YENİ: Sürüklemede 5. Seviyeye ulaşırsa Şölen patlar!
         if (word.srsLevel == 5 && !fromQuiz) {
           _triggerLevel5Celebration();
         }
@@ -1163,28 +1162,59 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: false))), 
                       Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
                       
+                      // DÜZELTİLDİ: Eşsiz İlaç Kapsülü İkonlu DNA Damgası (Ön Yüz)
                       if (isMitosis)
                         Positioned(
                           bottom: 15,
                           left: 0,
                           right: 0,
                           child: Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.black87,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
-                                boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
-                                  const SizedBox(width: 6),
-                                  Text("DNA-${word.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
-                                ],
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // 1. İlaç Kapsülü (DNA Sarmalı)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black,
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(color: Colors.white30, width: 1),
+                                    boxShadow: [
+                                      BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 10, spreadRadius: 1, offset: const Offset(-3, 0)),
+                                      BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 10, spreadRadius: 1, offset: const Offset(3, 0)),
+                                    ]
+                                  ),
+                                  child: const Text(
+                                    "🧬", 
+                                    style: TextStyle(
+                                      fontSize: 16, 
+                                      shadows: [
+                                        Shadow(color: Colors.orangeAccent, blurRadius: 15),
+                                        Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                                      ]
+                                    )
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // 2. Mevcut DNA Damgası
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black87,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+                                    boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
+                                      const SizedBox(width: 6),
+                                      Text("DNA-${word.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -1294,7 +1324,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Center(child: Text(word.word, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline))), 
-                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: _getTextColor(context, isDark, isMitosis).withOpacity(0.3))), 
+                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (isMitosis ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color)!.withOpacity(0.3))), 
                               ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• $m", style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline)))),
                               if (word.examples.isNotEmpty) ...[
                                 const SizedBox(height: 16),
@@ -1309,28 +1339,59 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: true))), 
                       Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
                       
+                      // DÜZELTİLDİ: Eşsiz İlaç Kapsülü İkonlu DNA Damgası (Arka Yüz)
                       if (isMitosis)
                         Positioned(
                           bottom: 15,
                           left: 0,
                           right: 0,
                           child: Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.black87,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
-                                boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
-                                  const SizedBox(width: 6),
-                                  Text("DNA-${word.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
-                                ],
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // 1. İlaç Kapsülü (DNA Sarmalı)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black,
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(color: Colors.white30, width: 1),
+                                    boxShadow: [
+                                      BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 10, spreadRadius: 1, offset: const Offset(-3, 0)),
+                                      BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 10, spreadRadius: 1, offset: const Offset(3, 0)),
+                                    ]
+                                  ),
+                                  child: const Text(
+                                    "🧬", 
+                                    style: TextStyle(
+                                      fontSize: 16, 
+                                      shadows: [
+                                        Shadow(color: Colors.orangeAccent, blurRadius: 15),
+                                        Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                                      ]
+                                    )
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // 2. Mevcut DNA Damgası
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black87,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+                                    boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
+                                      const SizedBox(width: 6),
+                                      Text("DNA-${word.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -1526,7 +1587,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               
-              // YENİ: Buzlu Cam Derinlik Efekti
               ClipRRect(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -1615,13 +1675,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     double bottomHeight = selectedLibrary != 'Tekrarlanması Gerekenler' ? 90.0 : 60.0;
 
     return Scaffold(
-      extendBodyBehindAppBar: true, // YENİ: Kartların menünün altından kayması için
+      extendBodyBehindAppBar: true, 
       appBar: AppBar(
         toolbarHeight: 60,
         centerTitle: false,
-        backgroundColor: Colors.transparent, // YENİ: Cam efekti için şeffaf
+        backgroundColor: Colors.transparent, 
         elevation: 0,
-        // YENİ: Buzlu Cam Derinlik Efekti
         flexibleSpace: ClipRRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
@@ -1678,7 +1737,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       body: AnimatedBuilder(
         animation: _auroraController,
         builder: (context, child) {
-          // YENİ: Nefes Alan Dinamik Aurora Arka Plan
           return Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -1739,7 +1797,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             )
           : SafeArea(
-              bottom: false, // YENİ: Kartların alt menüye kadar uzanması için
+              bottom: false, 
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
@@ -1756,7 +1814,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               child: Dismissible(
                                 key: ValueKey('${currentWord.word}_${DateTime.now()}'), 
                                 direction: isFlipped ? DismissDirection.horizontal : DismissDirection.none,
-                                // YENİ: Dismissible arka planları da Cam Efekti ile yapıldı
                                 background: ClipRRect(
                                   borderRadius: BorderRadius.circular(24),
                                   child: BackdropFilter(
@@ -1798,7 +1855,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             if (isFlipped) Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.repeat), label: const Text("Tekrar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsToRepeat(currentWord)), ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), icon: const Icon(Icons.check), label: const Text("Biliyorum", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), onPressed: () => _markAsLearned(currentWord))]),
                             const Spacer(),
                             
-                            // YENİ: Alt alan da Buzlu Cam yapıldı
                             ClipRRect(
                               child: BackdropFilter(
                                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
