@@ -134,14 +134,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text("Tema Rengi Seçimi", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    // ZIRHLI MANTIK: Kırmızı Ekran çökmesini önleyen sabit ve zararsız gölge
+                    // ZIRHLI MANTIK: Kırmızı ekran hatasını önlemek için gölge tamamen temizlendi
                     Text(
                       _themeNames[_themeIndex], 
                       style: TextStyle(
                         fontSize: 15, 
                         fontWeight: FontWeight.bold, 
                         color: Theme.of(context).primaryColor,
-                        shadows: const [Shadow(color: Colors.transparent, blurRadius: 0)], 
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -168,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               border: isSelected ? Border.all(color: Theme.of(context).primaryColor, width: 3) : Border.all(color: Colors.grey.withOpacity(0.4), width: 1),
                               boxShadow: isSelected 
                                   ? [BoxShadow(color: _themeColors[index].withOpacity(0.5), blurRadius: 10.0, spreadRadius: 2.0)] 
-                                  : const [BoxShadow(color: Colors.transparent, blurRadius: 0.0, spreadRadius: 0.0)],
+                                  : const [],
                             ),
                             child: isSelected ? Icon(Icons.check, color: (index == 1 || index >= 9 && index <= 12) ? Colors.black : Colors.white, size: 26) : null,
                           ),
