@@ -23,7 +23,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6' # UYUMSUZLUKLARI KÖKTEN ÇÖZEN KARARLI SÜRÜM (flutter_tts & isar uyumlu)
+          flutter-version: '3.24.5' # path_provider ve Dart 3.4.0+ uyumu için yeniden modern kararlı sürüme yükseltildi.
           channel: 'stable'
           cache: true
 
@@ -36,11 +36,10 @@ jobs:
           # Proje adını tayf_sozluk_pro olarak zorlayarak bağımlılık kural hatasını önlüyoruz
           flutter create --platforms=android --project-name tayf_sozluk_pro .
           
-          # 1. KOTLIN SÜRÜMÜNÜ STABİLİZE ETME
-          sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.8.22"/' android/settings.gradle
-          sed -i 's/ext.kotlin_version = '\''[^'\'']*'\''/ext.kotlin_version = '\''1.8.22'\''/' android/build.gradle
+          # 1. KOTLIN SÜRÜMÜNÜ GÜNCELLEME VE SABİTLEME
+          sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           
-          # 2. ANA PROJE İÇİN API 34-36 ZORLAMASI
+          # 2. ANA PROJE İÇİN API 36 ZORLAMASI
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle
           
@@ -51,14 +50,33 @@ jobs:
           # 4. LAUNCHER UYGULAMA ADINI "Lexis Eldora" YAPMA
           sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-          # 5. GÜVENLİ NAMESPACE ENJEKTÖRÜ (isar_flutter_libs için)
+          # 5. KESİN VE NİHAİ JVM EŞİTLEYİCİ (Tüm Eklentileri Kapsar ve Önceliklendirir)
           cat <<EOF >> android/build.gradle
           
           subprojects {
-              project.pluginManager.withPlugin('com.android.library') {
-                  android {
-                      if (namespace == null) {
-                          namespace project.group
+              afterEvaluate { project ->
+                  if (project.hasProperty('android')) {
+                      project.android {
+                          if (namespace == null) {
+                              namespace project.group
+                          }
+                          compileOptions {
+                              sourceCompatibility JavaVersion.VERSION_17
+                              targetCompatibility JavaVersion.VERSION_17
+                          }
+                          kotlinOptions {
+                              jvmTarget = '17'
+                          }
+                      }
+                  }
+                  project.tasks.withType(JavaCompile).configureEach {
+                      sourceCompatibility = JavaVersion.VERSION_17
+                      targetCompatibility = JavaVersion.VERSION_17
+                  }
+                  project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                      kotlinOptions {
+                          jvmTarget = "17"
+                          freeCompilerArgs += ["-Xskip-metadata-version-check"]
                       }
                   }
               }
