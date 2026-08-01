@@ -27,9 +27,19 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Fix Pubspec Name for Flutter Create
+      - name: Overwrite Pubspec Name Safely
         run: |
-          sed -i 's/^name:.*/name: tayf_sozluk_pro/g' pubspec.yaml
+          # Gizli karakterleri önlemek için pubspec.yaml ismini doğrudan otonom olarak yeniden yazıyoruz
+          python3 -c '
+          with open("pubspec.yaml", "r", encoding="utf-8") as f:
+              lines = f.readlines()
+          with open("pubspec.yaml", "w", encoding="utf-8") as f:
+              for line in lines:
+                  if line.startswith("name:"):
+                      f.write("name: tayf_sozluk_pro\n")
+                  else:
+                      f.write(line)
+          '
 
       - name: Install Dependencies
         run: flutter pub get
