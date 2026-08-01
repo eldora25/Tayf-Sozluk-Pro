@@ -50,21 +50,8 @@ jobs:
           # 4. LAUNCHER UYGULAMA ADINI "Lexis Eldora" YAPMA
           sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-          # 5. GÜVENLİ NAMESPACE ENJEKTÖRÜ VE GLOBAL JVM (JAVA/KOTLIN) EŞİTLEYİCİ
+          # 5. KESİN GÖREV (TASK) SEVİYESİNDE JVM EŞİTLEYİCİ VE NAMESPACE ENJEKTÖRÜ
           cat <<EOF >> android/build.gradle
-          
-          allprojects {
-              tasks.withType(JavaCompile).configureEach {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
-              tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-                  kotlinOptions {
-                      jvmTarget = "17"
-                      freeCompilerArgs += ["-Xskip-metadata-version-check"]
-                  }
-              }
-          }
           
           subprojects {
               project.pluginManager.withPlugin('com.android.library') {
@@ -72,6 +59,22 @@ jobs:
                       if (namespace == null) {
                           namespace project.group
                       }
+                      compileOptions {
+                          sourceCompatibility JavaVersion.VERSION_17
+                          targetCompatibility JavaVersion.VERSION_17
+                      }
+                  }
+              }
+              
+              project.tasks.withType(JavaCompile).configureEach {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              
+              project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                  kotlinOptions {
+                      jvmTarget = "17"
+                      freeCompilerArgs += ["-Xskip-metadata-version-check"]
                   }
               }
           }
