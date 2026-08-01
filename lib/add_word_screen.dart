@@ -139,6 +139,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
             child: Form(
               key: _formKey,
               child: ListView(
+                physics: const BouncingScrollPhysics(), // YENİ: Yaylanma efekti
                 padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120 + MediaQuery.of(context).padding.bottom),
                 children: [
                   TextFormField(
@@ -271,7 +272,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
                   const SizedBox(height: 20),
                   // DÜZELTİLDİ: Taşma sorununu çözmek için isExpanded: true eklendi
                   DropdownButtonFormField<String>(
-                    isExpanded: true,
+                    isExpanded: true, 
                     value: _level,
                     decoration: _buildInputDeco("Zorluk Seviyesi", icon: Icons.bar_chart),
                     items: ['A1','A2','B1','B2','C1','C2','Genel','WordNet'].map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontWeight: FontWeight.bold)))).toList(),
@@ -284,12 +285,12 @@ class _AddWordScreenState extends State<AddWordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
-                        // DÜZELTİLDİ: Taşma sorununu çözmek için isExpanded: true eklendi
+                        // DÜZELTİLDİ: Taşma sorununu çözmek için isExpanded: true eklendi ve metin korumaya alındı
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
                           value: _currentLibraries.contains(_library) ? _library : _currentLibraries.first,
                           decoration: _buildInputDeco("Kayıt Kütüphanesi", icon: Icons.library_books),
-                          items: _currentLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontWeight: FontWeight.bold)))).toList(),
+                          items: _currentLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis))).toList(),
                           onChanged: (v) {
                             setState(() => _library = v!);
                             if (_word.isNotEmpty) _checkExistingWord(_word);
