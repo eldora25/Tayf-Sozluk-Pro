@@ -274,7 +274,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _tpFlashController;
   late AnimationController _freezeFlashController;
   late AnimationController _streakFlashController;
-  
   late AnimationController _warningPulseController;
 
   List<WordModel> allWords = [];
@@ -283,7 +282,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<WordModel> toRepeatWords = [];
   List<WordModel> toSRSRepeatWords = []; 
   List<WordModel> wrongWords = []; 
-  
   List<WordModel> reviewWordsPool = []; 
 
   String selectedLibrary = 'Varsayılan';
@@ -296,11 +294,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int firstUseTimestamp = 0, currentStreak = 0, bestStreak = 0, tayfPoints = 0, streakFreezes = 0;
 
   final List<Color> distinctColors = const [
-    Color(0xFFFFEA00), 
-    Color(0xFFD500F9), 
-    Color(0xFF00E5FF), 
-    Color(0xFFFF3D00), 
-    Color(0xFF00E676)
+    Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)
   ];
 
   @override
@@ -312,14 +306,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _glowAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
     _bgGradientController = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true); 
     _auroraController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat(reverse: true); 
-    
     _neonPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat(reverse: true);
     _neonPulseAnim = Tween<double>(begin: 0.6, end: 1.4).animate(CurvedAnimation(parent: _neonPulseController, curve: Curves.easeInOutCubic));
-    
     _tpFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _freezeFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _streakFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
-    
     _warningPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat(reverse: true);
 
     NotificationService.requestPermission();
@@ -385,7 +376,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       toSRSRepeatWords = [...directSrs, ...tempToRepeat.where((w) => w.srsLevel > 0)]; 
 
       wrongWords = await isar.wordModels.filter().wrongCountGreaterThan(0).findAll();
-      
       reviewWordsPool = await isar.wordModels.filter().libraryNameEqualTo('İncelenecek Kelimeler').findAll();
 
       allWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
@@ -461,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _triggerLevel5Celebration() {
-    for (int i = 0; i < 40; i++) { // DÜZELTİLDİ: Konfeti sayısı artırıldı
+    for (int i = 0; i < 40; i++) { 
       Future.delayed(Duration(milliseconds: i * 50), () {
         List<Color> confettiColors = [Colors.redAccent, Colors.greenAccent, Colors.blueAccent, Colors.yellowAccent, Colors.purpleAccent, Colors.pinkAccent, Colors.orangeAccent];
         Color randomColor = confettiColors[Random().nextInt(confettiColors.length)];
@@ -479,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (context) {
         return TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: isConfetti ? 1200 + Random().nextInt(600) : 1000), // DÜZELTİLDİ: Süre uzatıldı
+          duration: Duration(milliseconds: isConfetti ? 1200 + Random().nextInt(600) : 1000), 
           curve: isConfetti ? Curves.easeOutCirc : Curves.easeInOutCubic,
           onEnd: () {
             overlayEntry?.remove();
@@ -733,8 +723,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       } else {
         word.srsLevel++;
         
+        // ZIRHLI MANTIK: Mezuniyet Bonusu Eklendi (+10 TP)
         if (word.srsLevel == 5 && !fromQuiz) {
           _triggerLevel5Celebration();
+          _recordActivity(10); // Bonus 10 TP
         }
 
         if (word.srsLevel > 5) {
@@ -1596,6 +1588,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
                     ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
                     
+                    // ZIRHLI MANTIK: Quiz Ekranından TP Geri Aktarımı Köprüsü Kuruldu
                     ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
                       HapticFeedback.lightImpact();
                       Navigator.pop(context); 
@@ -1604,17 +1597,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, 
                         onWordMastered: (w) => _markAsLearned(w, fromQuiz: true), 
                         onWrongWord: (w) => _markAsToRepeat(w, fromQuiz: true), 
-                        onQuizFinished: (t, a, w) { 
+                        onQuizFinished: (t, a, w, tp) { 
                           setState(() { 
                             totalCompletedQuizzes++; 
                             totalQuizTimeSeconds += t; 
                             totalQuizQuestions += a; 
                             totalQuizWrong += w; 
+                            tayfPoints += tp; // KASAYA EKLENDİ
                             completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
                           });
                           _savePreferencesOnly(); 
                         }
-                      ))); 
+                      ))).then((_) => _loadData()); // ZIRHLI MANTIK: Geri dönüldüğünde hayalet kartlar temizlenir
                     }),
                     
                     ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
