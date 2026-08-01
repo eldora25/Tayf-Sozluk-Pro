@@ -275,7 +275,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _freezeFlashController;
   late AnimationController _streakFlashController;
   
-  // YENİ: İncelenecekler Ünlem Butonu Animasyonu
   late AnimationController _warningPulseController;
 
   List<WordModel> allWords = [];
@@ -285,7 +284,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<WordModel> toSRSRepeatWords = []; 
   List<WordModel> wrongWords = []; 
   
-  // YENİ: İncelenecek Kelimeler Havuzu
   List<WordModel> reviewWordsPool = []; 
 
   String selectedLibrary = 'Varsayılan';
@@ -322,7 +320,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _freezeFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _streakFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     
-    // YENİ
     _warningPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat(reverse: true);
 
     NotificationService.requestPermission();
@@ -389,10 +386,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       wrongWords = await isar.wordModels.filter().wrongCountGreaterThan(0).findAll();
       
-      // YENİ: İncelenecek kelimeleri sistemden tamamen ayırıp hafızaya alıyoruz
       reviewWordsPool = await isar.wordModels.filter().libraryNameEqualTo('İncelenecek Kelimeler').findAll();
 
-      // Havuzlarda 'İncelenecek Kelimeler' varsa temizle ki normal destede çıkmasın
       allWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
       learningWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
       learnedWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
@@ -465,9 +460,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (e) {}
   }
 
-  // YENİ: Mezuniyet şöleni daha uzun ve bol konfetili hale getirildi
   void _triggerLevel5Celebration() {
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 40; i++) { // DÜZELTİLDİ: Konfeti sayısı artırıldı
       Future.delayed(Duration(milliseconds: i * 50), () {
         List<Color> confettiColors = [Colors.redAccent, Colors.greenAccent, Colors.blueAccent, Colors.yellowAccent, Colors.purpleAccent, Colors.pinkAccent, Colors.orangeAccent];
         Color randomColor = confettiColors[Random().nextInt(confettiColors.length)];
@@ -485,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (context) {
         return TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: isConfetti ? 1200 + Random().nextInt(600) : 1000), 
+          duration: Duration(milliseconds: isConfetti ? 1200 + Random().nextInt(600) : 1000), // DÜZELTİLDİ: Süre uzatıldı
           curve: isConfetti ? Curves.easeOutCirc : Curves.easeInOutCubic,
           onEnd: () {
             overlayEntry?.remove();
@@ -558,7 +552,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // YENİ: Kalkan Ekonomisi Zorlaştırıldı (Fiyat 100 TP)
   void _buyFreeze() {
     HapticFeedback.heavyImpact(); 
     if (tayfPoints >= 100) {
@@ -792,15 +785,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     else _savePreferencesOnly();
   }
 
-  // YENİ: İncelenecek Kelimelere Taşıma Metodu
   void _moveToReview(WordModel word) {
     HapticFeedback.heavyImpact();
     setState(() {
-      // Kelimenin özelliklerini güncelliyoruz
       word.libraryName = 'İncelenecek Kelimeler';
       word.listType = 'all';
 
-      // Eski listelerden temizliyoruz
       allWords.removeWhere((w) => w.id == word.id);
       learningWords.removeWhere((w) => w.id == word.id);
       toRepeatWords.removeWhere((w) => w.id == word.id);
@@ -808,7 +798,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       wrongWords.removeWhere((w) => w.id == word.id);
       learnedWords.removeWhere((w) => w.id == word.id);
       
-      // Yeni havuza ekliyoruz
       reviewWordsPool.add(word);
     });
 
@@ -984,7 +973,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       for (var w in toSRSRepeatWords) { if (w.libraryName == oldName) w.libraryName = newName; }
       for (var w in learningWords) { if (w.libraryName == oldName) w.libraryName = newName; }
       for (var w in wrongWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in reviewWordsPool) { if (w.libraryName == oldName) w.libraryName = newName; } // İncelenecekler koruması
+      for (var w in reviewWordsPool) { if (w.libraryName == oldName) w.libraryName = newName; } 
       if (selectedLibrary == oldName) selectedLibrary = newName;
     });
     
@@ -1027,7 +1016,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     
     try {
       final dir = await getTemporaryDirectory();
-      String safeName = libName.replaceAll(RegExp(r'[<>:"/\\|?*🧬 ]'), '_');
+      String safeName = libName.replaceAll(RegExp(r'[<>:"/\\|?*\u{1F9EC} ]'), '_');
       final file = File('${dir.path}/$safeName.csv');
       await file.writeAsString(const ListToCsvConverter().convert(rows));
       await Share.shareXFiles([XFile(file.path, mimeType: 'text/csv')], subject: '$libName Yedeği');
@@ -1225,7 +1214,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // YENİ: Kapsül de sarmalın duruşuyla birlikte hafif yatık (-0.5 radyan) hale getirildi
                                 Transform.rotate(
                                   angle: -0.5,
                                   child: Container(
@@ -1239,15 +1227,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0)),
                                       ]
                                     ),
-                                    child: const Text(
-                                      "\u{1F9EC}", 
-                                      style: TextStyle(
-                                        fontSize: 16, 
-                                        shadows: [
-                                          Shadow(color: Colors.orangeAccent, blurRadius: 15),
-                                          Shadow(color: Colors.purpleAccent, blurRadius: 15),
-                                        ]
-                                      )
+                                    child: Transform.rotate(
+                                      angle: 0.5,
+                                      child: const Text(
+                                        "\u{1F9EC}", 
+                                        style: TextStyle(
+                                          fontSize: 16, 
+                                          shadows: [
+                                            Shadow(color: Colors.orangeAccent, blurRadius: 15),
+                                            Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                                          ]
+                                        )
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1409,15 +1400,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0)),
                                       ]
                                     ),
-                                    child: const Text(
-                                      "\u{1F9EC}", 
-                                      style: TextStyle(
-                                        fontSize: 16, 
-                                        shadows: [
-                                          Shadow(color: Colors.orangeAccent, blurRadius: 15),
-                                          Shadow(color: Colors.purpleAccent, blurRadius: 15),
-                                        ]
-                                      )
+                                    child: Transform.rotate(
+                                      angle: 0.5,
+                                      child: const Text(
+                                        "\u{1F9EC}", 
+                                        style: TextStyle(
+                                          fontSize: 16, 
+                                          shadows: [
+                                            Shadow(color: Colors.orangeAccent, blurRadius: 15),
+                                            Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                                          ]
+                                        )
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1586,7 +1580,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => wrongWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     
-                    // YENİ: İncelenecek Kelimeler Menüsü Eklendi
                     ListTile(
                       leading: const Icon(Icons.saved_search, color: Colors.amber), 
                       title: const Text("İncelenecek Kelimeler"), 
@@ -1660,7 +1653,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-                            // DÜZELTİLDİ: Yazılımcı bilgisi aslına döndürüldü
                             Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
                           ],
                         ),
@@ -1668,7 +1660,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                           decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.deepPurple]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)]),
-                          // DÜZELTİLDİ: Yazılımcı bilgisi aslına döndürüldü
                           child: const Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
                         ),
                       ],
@@ -1914,7 +1905,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                             ),
                             const SizedBox(height: 30),
-                            // YENİ: Tekrar, İncele(Ünlem) ve Biliyorum butonlarının tasarımı yenilendi.
                             if (isFlipped) 
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1983,7 +1973,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         children: [
                                           Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
                                           const SizedBox(width: 16),
-                                          // DÜZELTİLDİ: Yazılımcı bilgisi aslına döndürüldü
                                           Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
                                         ],
                                       ),
