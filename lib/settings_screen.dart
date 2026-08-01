@@ -134,9 +134,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text("Tema Rengi Seçimi", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
+                    // ZIRHLI MANTIK: Kırmızı Ekran çökmesini önleyen sabit ve zararsız gölge
                     Text(
                       _themeNames[_themeIndex], 
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                      style: TextStyle(
+                        fontSize: 15, 
+                        fontWeight: FontWeight.bold, 
+                        color: Theme.of(context).primaryColor,
+                        shadows: const [Shadow(color: Colors.transparent, blurRadius: 0)], 
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider()),
@@ -160,7 +166,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: _themeColors[index],
                               shape: BoxShape.circle,
                               border: isSelected ? Border.all(color: Theme.of(context).primaryColor, width: 3) : Border.all(color: Colors.grey.withOpacity(0.4), width: 1),
-                              // YENİ: Kırmızı Hata Ekranını Kalıcı Olarak Çözen Gölge Formatı
                               boxShadow: isSelected 
                                   ? [BoxShadow(color: _themeColors[index].withOpacity(0.5), blurRadius: 10.0, spreadRadius: 2.0)] 
                                   : const [BoxShadow(color: Colors.transparent, blurRadius: 0.0, spreadRadius: 0.0)],
