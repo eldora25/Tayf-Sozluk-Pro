@@ -12,7 +12,6 @@ class FirebaseSyncService {
     int lastSync = prefs.getInt('last_sync_time') ?? 0;
     int currentTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-    // Sadece yeni veya güncellenmiş mitoz/saf kartları filtrele
     var cardsToSend = localWords.where((w) {
       bool isMitosis = w.libraryName.startsWith('🧬') || w.libraryName.startsWith('User_Recommended');
       return isMitosis;
@@ -20,7 +19,6 @@ class FirebaseSyncService {
 
     if (cardsToSend.isEmpty) return 0;
 
-    // 50'li veya 100'lü paketler halinde (Batch) gönderim için bölme
     int syncedCount = 0;
     const int batchSize = 50;
 
@@ -29,7 +27,6 @@ class FirebaseSyncService {
       WriteBatch batch = _firestore.batch();
 
       for (var word in chunk) {
-        // Kompozit Anahtar (Composite Key): Kelime + İlk Anlam + Kütüphane eşsizliği
         String safeWord = word.word.trim().toLowerCase();
         String safeMeaning = word.meanings.isNotEmpty ? word.meanings.first.trim().toLowerCase() : "";
         String docId = base64Url.encode(utf8.encode("${safeWord}_${safeMeaning}_${word.libraryName}"));
@@ -43,8 +40,8 @@ class FirebaseSyncService {
           "examples": word.examples,
           "level": word.level,
           "libraryName": word.libraryName,
-          "trust_score": 100, // Başlangıç Güven Skoru
-          "frequency": FieldValue.increment(1), // Popülarite skoru artışı
+          "trust_score": 100,
+          "frequency": FieldValue.increment(1),
           "last_updated": FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
 
@@ -54,7 +51,6 @@ class FirebaseSyncService {
       await batch.commit();
     }
 
-    // Zaman damgasını güncelle
     await prefs.setInt('last_sync_time', currentTimestamp);
     return syncedCount;
   }
@@ -64,7 +60,7 @@ class FirebaseSyncService {
     try {
       QuerySnapshot snapshot = await _firestore
           .collection('global_mitosis_pool')
-          .where('trust_score', isGreaterThan: 90) // Kalite Filtresi
+          .where('trust_score', isGreaterThan: 90)
           .orderBy('trust_score', descending: true)
           .limit(500)
           .get();
@@ -97,12 +93,10 @@ class FirebaseSyncService {
 
       DocumentReference docRef = _firestore.collection('global_mitosis_pool').doc(docId);
       
-      // Güven skorunu 15 puan düşür
       await docRef.update({
         "trust_score": FieldValue.increment(-15),
       });
 
-      // Otonom İnfaz: Eğer skor sıfırın altına inerse buluttan otomatik silinir
       DocumentSnapshot snapshot = await docRef.get();
       if (snapshot.exists) {
         var data = snapshot.data() as Map<String, dynamic>;
