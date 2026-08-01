@@ -176,8 +176,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                       index,
                       RepaintBoundary(
                         child: Dismissible(
-                          // DÜZELTİLDİ: Metin birleştirme kullanıldı (Syntax Error Çözümü)
-                          key: Key(item.id.toString() + '_' + index.toString()),
+                          key: Key('${item.id}_$index'),
                           direction: widget.onLearned != null 
                               ? DismissDirection.horizontal 
                               : DismissDirection.endToStart,
@@ -220,8 +219,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 4.0),
                               child: ListTile(
                                 title: Hero(
-                                  // DÜZELTİLDİ: Metin birleştirme
-                                  tag: 'hero_word_list_' + item.id.toString(),
+                                  tag: 'hero_word_list_${item.id}',
                                   child: Material(
                                     type: MaterialType.transparency,
                                     child: Text(item.word, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple)),
@@ -248,11 +246,12 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                                 BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
                                               ],
                                             ),
+                                            // DÜZELTİLDİ: Analyzer çökmesini önlemek için <Shadow> ibaresi kaldırıldı ve salt liste kullanıldı
                                             child: const Text(
                                               "🧬", 
                                               style: TextStyle(
                                                 fontSize: 10, 
-                                                shadows: <Shadow>[
+                                                shadows: [
                                                   Shadow(color: Colors.orangeAccent, blurRadius: 10),
                                                   Shadow(color: Colors.purpleAccent, blurRadius: 10),
                                                 ],
@@ -272,9 +271,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                               children: [
                                                 const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
                                                 const SizedBox(width: 4),
-                                                // DÜZELTİLDİ: Analyzer çökmesini engelleyen güvenli metin birleştirme
                                                 Text(
-                                                  "DNA-" + (item.id.toString()).padLeft(6, '0'), 
+                                                  "DNA-${item.id.toString().padLeft(6, '0')}", 
                                                   style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)
                                                 ),
                                               ],
@@ -292,8 +290,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                                        // DÜZELTİLDİ: Güvenli metin birleştirme
-                                        child: Text("Hata: " + item.wrongCount.toString(), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
+                                        child: Text("Hata: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
                                       ),
                                     
                                     if (widget.showSrsLevel && item.srsLevel > 0)
