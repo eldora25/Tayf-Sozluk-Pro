@@ -50,6 +50,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   bool isQuizFinished = false;
   bool isAudioEnabled = true;
   bool _isStatsSaved = false;
+  
+  // YENİ: Anlık TP Ekonomisi
+  int _sessionEarnedTP = 0; 
 
   String _questionSubtext = "";
 
@@ -126,7 +129,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     int h = (totalSeconds % (24 * 3600)) ~/ 3600;
     int m = (totalSeconds % 3600) ~/ 60;
     int s = totalSeconds % 60;
-    return '${d > 0 ? '${d.toString().padLeft(2, '0')}:' : ''}${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    return '${d > 0 ? d.toString().padLeft(2, '0') + ':' : ''}${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   Future<void> _speakText(String text, String languageCode) async {
@@ -151,6 +154,49 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     else if (lang == 'tr-TR') text = isCorrect ? "Doğru" : "Yanlış";
     else text = isCorrect ? "Correct" : "Wrong";
     _speakText(text, lang);
+  }
+  
+  // YENİ: Ekranda Elmas Uçurma Efekti
+  void _flyDiamondAnimation() {
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) {
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 1000), 
+          curve: Curves.easeInBack,
+          onEnd: () {
+            overlayEntry?.remove();
+          },
+          builder: (context, value, child) {
+            double startX = MediaQuery.of(context).size.width / 2 - 15;
+            double startY = MediaQuery.of(context).size.height / 2;
+            
+            double endX = MediaQuery.of(context).size.width / 2; // Yukarıdaki yıldıza/TP'ye doğru
+            double endY = MediaQuery.of(context).padding.top + 80; 
+
+            double currentX = startX + (endX - startX) * value;
+            double currentY = startY + (endY - startY) * value;
+
+            return Positioned(
+              left: currentX,
+              top: currentY,
+              child: Opacity(
+                opacity: 1.0 - value, 
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.8), blurRadius: 20, spreadRadius: 4)]
+                  ),
+                  child: const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 30)
+                )
+              ),
+            );
+          }
+        );
+      }
+    );
+    Overlay.of(context).insert(overlayEntry);
   }
 
   void _generateQuestion() {
@@ -224,7 +270,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     String srcCode = getSmartSourceLanguage(currentWord.libraryName, currentWord.word);
     String tgtCode = getSmartTargetLanguage(currentWord.libraryName, correctOption);
-    String mitosisLibName = "🧬 Mitoz (${_getReadableLang(srcCode)}-${_getReadableLang(tgtCode)})";
+    String mitosisLibName = "\u{1F9EC} Mitoz (${_getReadableLang(srcCode)}-${_getReadableLang(tgtCode)})"; // Emoji düzeltildi
 
     if (isCorrect) {
       setState(() {
@@ -232,7 +278,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         answeredQuestions++;
         HapticFeedback.mediumImpact(); 
         _scaleController.forward(from: 0.0); 
+        _sessionEarnedTP += 3; // Doğru cevapta anında TP artar
       });
+      _flyDiamondAnimation();
 
       if (selectedWrongOptions.isEmpty) { 
         correctAnswers++; 
@@ -249,14 +297,19 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
           WordModel? existingMitosisCard;
           try {
+            // DÜZELTİLDİ: Büyük/Küçük harf duyarsız Eşsizlik Koruması (Critical Bug Fix)
             var matchingWords = await isar.wordModels.filter()
-                .wordEqualTo(currentWord.word)
+                .wordEqualTo(currentWord.word, caseSensitive: false)
                 .libraryNameEqualTo(mitosisLibName)
                 .findAll();
             
+            String safeCorrect = correctOption.toLowerCase().trim();
             for (var mWord in matchingWords) {
-              if (isMeaning && mWord.meanings.contains(correctOption)) existingMitosisCard = mWord;
-              else if (!isMeaning && mWord.examples.contains(correctOption)) existingMitosisCard = mWord;
+              if (isMeaning && mWord.meanings.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
+                 existingMitosisCard = mWord; break;
+              } else if (!isMeaning && mWord.examples.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
+                 existingMitosisCard = mWord; break;
+              }
             }
           } catch(e) { debugPrint("Arama hatası: $e"); }
 
@@ -308,6 +361,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         HapticFeedback.heavyImpact(); 
         _lastWrongOption = option; 
         _shakeController.forward(from: 0.0); 
+        _sessionEarnedTP = max(0, _sessionEarnedTP - 1); // Yanlışta kazanılan TP azalır (Cezalı Sistem)
       });
 
       if (selectedWrongOptions.length == 1) { 
@@ -324,13 +378,17 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           WordModel? existingMitosisCard;
           try {
             var matchingWords = await isar.wordModels.filter()
-                .wordEqualTo(currentWord.word)
+                .wordEqualTo(currentWord.word, caseSensitive: false)
                 .libraryNameEqualTo(mitosisLibName)
                 .findAll();
             
+            String safeCorrect = correctOption.toLowerCase().trim();
             for (var mWord in matchingWords) {
-              if (isMeaning && mWord.meanings.contains(correctOption)) existingMitosisCard = mWord;
-              else if (!isMeaning && mWord.examples.contains(correctOption)) existingMitosisCard = mWord;
+              if (isMeaning && mWord.meanings.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
+                 existingMitosisCard = mWord; break;
+              } else if (!isMeaning && mWord.examples.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
+                 existingMitosisCard = mWord; break;
+              }
             }
           } catch(e) {}
 
@@ -375,7 +433,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   void _resetQuiz() {
     HapticFeedback.lightImpact();
     setState(() {
-      correctAnswers = 0; wrongAnswers = 0; answeredQuestions = 0; _secondsElapsed = 0;
+      correctAnswers = 0; wrongAnswers = 0; answeredQuestions = 0; _secondsElapsed = 0; _sessionEarnedTP = 0;
       isQuizFinished = false; _isStatsSaved = false;
       List<WordModel> pool = List.from(widget.words)..shuffle();
       quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
@@ -391,9 +449,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (isQuizFinished) {
       return Scaffold(
         appBar: AppBar(title: const Text("Lexis Eldora | Quiz İstatistikleri", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
-        body: Center(
+        // YENİ: Kaydırılabilir Ekran (Sanal tuş sorununu çözer)
+        body: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -418,6 +478,18 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Yanlış Sayısı:", style: TextStyle(fontSize: 20)), Text("$wrongAnswers", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red))]),
                         const Divider(height: 30),
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Geçen Süre:", style: TextStyle(fontSize: 20)), Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue))]),
+                        const Divider(height: 30),
+                        // YENİ: TP Ekonomisi Raporu Eklendi
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                          const Text("Kazanılan TP:", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), 
+                          Row(
+                            children: [
+                              const Icon(Icons.diamond, color: Colors.green, size: 24),
+                              const SizedBox(width: 6),
+                              Text("+$_sessionEarnedTP", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.green)),
+                            ],
+                          )
+                        ]),
                       ],
                     ),
                   ),
@@ -425,7 +497,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 const SizedBox(height: 40),
                 SizedBox(width: double.infinity, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 5), icon: const Icon(Icons.refresh), label: const Text("YENİ QUİZ BAŞLAT", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: _resetQuiz)),
                 const SizedBox(height: 16),
-                SizedBox(width: double.infinity, child: TextButton.icon(style: TextButton.styleFrom(padding: const EdgeInsets.all(16)), icon: const Icon(Icons.home), label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: () { HapticFeedback.lightImpact(); Navigator.pop(context); }))
+                SizedBox(width: double.infinity, child: TextButton.icon(style: TextButton.styleFrom(padding: const EdgeInsets.all(16)), icon: const Icon(Icons.home), label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: () { HapticFeedback.lightImpact(); Navigator.pop(context); })),
+                const SizedBox(height: 40), 
               ],
             ),
           ),
@@ -437,7 +510,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
 
     return Scaffold(
-      extendBodyBehindAppBar: true, // YENİ: AppBar'ın arkasında cam efekti için
+      extendBodyBehindAppBar: true, 
       appBar: AppBar(
         title: const Text("Lexis Eldora | Quiz", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)), 
         backgroundColor: Colors.transparent,
@@ -466,7 +539,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           )
         ),
         child: ListView(
-          padding: EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 16), // YENİ: Top padding artırıldı (Cam efekti nedeniyle)
+          padding: EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 16), 
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -478,10 +551,32 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 10),
             
-            Text(
-              "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
-              textAlign: TextAlign.center, 
-              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)
+            // YENİ: Soru bilgisinin yanına TP Kapsülü Eklendi
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
+                  style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)
+                ),
+                const SizedBox(width: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.lightBlueAccent.withOpacity(0.5)),
+                    boxShadow: [BoxShadow(color: Colors.lightBlueAccent.withOpacity(0.2), blurRadius: 8)]
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 14),
+                      const SizedBox(width: 4),
+                      Text("$_sessionEarnedTP", style: const TextStyle(color: Colors.lightBlueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                )
+              ],
             ),
             
             const SizedBox(height: 8),
@@ -575,10 +670,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               if (isWrongSelected && option == _lastWrongOption) tile = AnimatedBuilder(animation: _shakeController, builder: (c, ch) => Transform.translate(offset: Offset(sin(_shakeController.value * pi * 6) * 10, 0), child: ch), child: tile);
               if (isAnsweredCorrectly && isCorrect) tile = AnimatedBuilder(animation: _scaleController, builder: (c, ch) => Transform.scale(scale: 1.0 + (_scaleController.value * 0.05), child: ch), child: tile);
 
-              // YENİ: Şıkların ekranlara kademeli (staggered) giriş yapması sağlandı
               return TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
-                duration: Duration(milliseconds: 400 + (index * 150)), // Kademeli bekleme
+                duration: Duration(milliseconds: 400 + (index * 150)), 
                 curve: Curves.easeOutCubic,
                 builder: (context, value, child) {
                   return Transform.translate(
