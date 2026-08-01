@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'models.dart';
-import 'main.dart'; // isar nesnesi için
+import 'main.dart'; 
 
 class ManageListScreen extends StatefulWidget {
   final String title;
@@ -93,7 +93,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
-  // YENİ: Listeden kartı koparıp "İncelenecekler" havuzuna atar
   void _moveToReview(WordModel word) {
     HapticFeedback.heavyImpact();
     setState(() {
@@ -148,7 +147,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // YENİ: Kapsül yatık, içindeki DNA düz ve neon glow artırıldı!
             Transform.rotate(
               angle: -0.5,
               child: Container(
@@ -163,7 +161,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                   ],
                 ),
                 child: Transform.rotate(
-                  angle: 0.5, // Sarmalı kapsüle göre tekrar düzeltir
+                  angle: 0.5, 
                   child: const Text(
                     "\u{1F9EC}", 
                     style: TextStyle(
@@ -237,7 +235,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
             },
           ),
   
-        // YENİ EKLENDİ: Listeden inceleneceklere gönderme butonu
         IconButton(
           icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
           tooltip: 'İnceleneceklere Taşı',
