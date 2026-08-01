@@ -169,15 +169,15 @@ class _ManageListScreenState extends State<ManageListScreen> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final item = _filteredList[index];
-                    // DÜZELTİLDİ: Emoji güvenliği eklendi
-                    bool isMitosis = item.libraryName.startsWith('\u{1F9EC}');
+                    bool isMitosis = item.libraryName.startsWith('🧬');
                     
                     return _buildAnimatedItem(
                       context, 
                       index,
                       RepaintBoundary(
                         child: Dismissible(
-                          key: Key('${item.id}_$index'),
+                          // DÜZELTİLDİ: Eski derleyicinin çökmesini engellemek için + ile metin birleştirildi
+                          key: Key(item.id.toString() + '_' + index.toString()),
                           direction: widget.onLearned != null 
                               ? DismissDirection.horizontal 
                               : DismissDirection.endToStart,
@@ -220,7 +220,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 4.0),
                               child: ListTile(
                                 title: Hero(
-                                  tag: 'hero_word_list_${item.id}',
+                                  // DÜZELTİLDİ: Güvenli + formatı
+                                  tag: 'hero_word_list_' + item.id.toString(),
                                   child: Material(
                                     type: MaterialType.transparency,
                                     child: Text(item.word, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple)),
@@ -231,7 +232,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                   children: [
                                     const SizedBox(height: 4),
                                     Text(item.meanings.join(', '), style: const TextStyle(fontWeight: FontWeight.w500)),
-                                    // DÜZELTİLDİ: Analyzer çökmesini önlemek için Spread Operator (...) kaldırıldı
                                     if (isMitosis)
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,9 +251,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                                     BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
                                                   ],
                                                 ),
-                                                // DÜZELTİLDİ: Emoji şifrelendi, const uyumu sağlandı
                                                 child: const Text(
-                                                  "\u{1F9EC}", 
+                                                  "🧬", 
                                                   style: TextStyle(
                                                     fontSize: 10, 
                                                     shadows: [
@@ -276,8 +275,9 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                                   children: [
                                                     const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
                                                     const SizedBox(width: 4),
+                                                    // DÜZELTİLDİ: Analizer hatasını engelleyen Zırhlı Concatenation Formatı (+)
                                                     Text(
-                                                      "DNA-${item.id.toString().padLeft(6, '0')}", 
+                                                      "DNA-" + item.id.toString().padLeft(6, '0'), 
                                                       style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)
                                                     ),
                                                   ],
@@ -296,7 +296,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                                        child: Text("Hata: ${item.wrongCount}", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
+                                        // DÜZELTİLDİ: Güvenli + formatı
+                                        child: Text("Hata: " + item.wrongCount.toString(), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
                                       ),
                                     
                                     if (widget.showSrsLevel && item.srsLevel > 0)
@@ -304,6 +305,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                                         margin: const EdgeInsets.only(right: 8),
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                                        // DÜZELTİLDİ: Sadece fonksiyon çağrısı
                                         child: Text(_getSrsDayText(item.srsLevel), style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
                                       ),
                               
