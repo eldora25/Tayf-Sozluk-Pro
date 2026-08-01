@@ -31,6 +31,9 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   bool isGameFinished = false;
   int score = 0;
   int mistakes = 0;
+  
+  // YENİ: Sürükleme anını takip eden akıllı durum değişkeni
+  bool isDragging = false; 
 
   @override
   void initState() {
@@ -56,7 +59,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
       setState(() {
         isGameFinished = true;
       });
-      // DÜZELTİLDİ: Oyun zorlaştırıldı, hatasızlara en az 5, hatalılara sıfıra kadar inen TP sistemi.
       int earnedPoints = (gameWords.length * 3) - (mistakes * 3);
       if (earnedPoints < 0) earnedPoints = 0; 
       if (earnedPoints < 5 && mistakes == 0) earnedPoints = 5; 
@@ -71,11 +73,13 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     leftColumn = List.from(roundWords)..shuffle();
     rightColumn = List.from(roundWords)..shuffle();
     matchedWords.clear();
+    isDragging = false;
 
     setState(() {});
   }
 
   void _handleDrop(WordModel dragged, WordModel target) {
+    setState(() => isDragging = false);
     if (dragged.word == target.word) {
       HapticFeedback.mediumImpact();
       setState(() {
@@ -92,7 +96,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
       setState(() {
         wrongTargetWord = target.word;
         mistakes++;
-        score -= 5; // YENİ: Hata yaptıkça Eksi Skor (-5) yazar
+        score -= 5; 
       });
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
@@ -263,6 +267,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                 Expanded(
                   child: Row(
                     children: [
+                      // SOL SÜTUN
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -285,6 +290,10 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                               idx, 
                               Draggable<WordModel>(
                                 data: word,
+                                // YENİ: Sürükleme anını takip eder
+                                onDragStarted: () => setState(() => isDragging = true),
+                                onDragEnd: (details) => setState(() => isDragging = false),
+                                onDraggableCanceled: (v, o) => setState(() => isDragging = false),
                                 feedback: Material(
                                   color: Colors.transparent,
                                   child: Container(
@@ -296,7 +305,15 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                       borderRadius: BorderRadius.circular(20), 
                                       boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.5), blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 10))]
                                     ),
-                                    child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                                    child: Center(
+                                      child: SingleChildScrollView(
+                                        physics: const BouncingScrollPhysics(),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 childWhenDragging: Container(
@@ -313,7 +330,15 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                     borderRadius: BorderRadius.circular(20),
                                     boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
                                   ),
-                                  child: Text(word.word, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                  child: Center(
+                                    child: SingleChildScrollView(
+                                      physics: const BouncingScrollPhysics(),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               )
                             );
@@ -321,6 +346,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                         ),
                       ),
                       
+                      // SAĞ SÜTUN VE AKILLI KATLANAN ANİMASYON
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -350,6 +376,11 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                 builder: (context, candidateData, rejectedData) {
                                   bool isHovered = candidateData.isNotEmpty;
                                   
+                                  // YENİ: Sürükleme başladığında 100px açılır, hedefin üzerindeyken 150px tam boyuta ulaşır.
+                                  double dynamicHeight = 70.0;
+                                  if (isHovered) dynamicHeight = 150.0;
+                                  else if (isDragging) dynamicHeight = 100.0;
+
                                   return Container(
                                     margin: const EdgeInsets.symmetric(horizontal: 8),
                                     child: Stack(
@@ -358,9 +389,9 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                         AnimatedContainer(
                                           duration: const Duration(milliseconds: 350),
                                           curve: Curves.easeOutBack,
-                                          height: isHovered ? 120 : 70, 
+                                          height: dynamicHeight, 
                                           alignment: Alignment.center,
-                                          padding: const EdgeInsets.all(12),
+                                          padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
                                             color: isWrong 
                                                 ? Colors.redAccent.withOpacity(0.9)
@@ -374,16 +405,20 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                                 ? [BoxShadow(color: isWrong ? Colors.red.withOpacity(0.6) : Colors.orange.withOpacity(0.6), blurRadius: 20, spreadRadius: 4)] 
                                                 : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]
                                           ),
-                                          child: Text(
-                                            word.meanings.join(', '), 
-                                            textAlign: TextAlign.center, 
-                                            maxLines: isHovered ? 4 : 2, 
-                                            overflow: TextOverflow.ellipsis, 
-                                            style: TextStyle(
-                                              color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                              fontSize: isHovered ? 15 : 14, 
-                                              fontWeight: FontWeight.bold
-                                            )
+                                          // YENİ: SingleChildScrollView ile metin ne kadar uzun olursa olsun taşmaz, kaydırılabilir.
+                                          child: Center(
+                                            child: SingleChildScrollView(
+                                              physics: const BouncingScrollPhysics(),
+                                              child: Text(
+                                                word.meanings.join(', '), 
+                                                textAlign: TextAlign.center, 
+                                                style: TextStyle(
+                                                  color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+                                                  fontSize: isHovered ? 15 : 13, 
+                                                  fontWeight: FontWeight.bold
+                                                )
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
