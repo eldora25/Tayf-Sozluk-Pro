@@ -91,7 +91,6 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
-  // YENİ: Kademeli Giriş Animasyonu Wrapper'ı
   Widget _buildStaggeredWrapper(int index, Widget child) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -231,6 +230,9 @@ class StatisticsScreen extends StatelessWidget {
     double graduationSpeed = learnedWords.length / daysUsed; 
     double activitySpeed = learnedWordTimestamps.length / daysUsed; 
 
+    // YENİ: Soru Hızı Hesaplaması (Soru/Dk)
+    double quizSpeed = totalQuizTimeSeconds > 0 ? (totalQuizQuestions / (totalQuizTimeSeconds / 60)) : 0.0;
+
     List<String> trueGraduationTimestamps = learnedWords.map((w) => w.nextReviewDate.toString()).toList();
 
     int totalMitosisCount = [
@@ -239,7 +241,7 @@ class StatisticsScreen extends StatelessWidget {
       ...learningWords,
       ...toRepeatWords,
       ...toSRSRepeatWords
-    ].where((w) => w.libraryName.startsWith('🧬 Mitoz')).length;
+    ].where((w) => w.libraryName.startsWith('\u{1F9EC} Mitoz')).length; // Güvenli Mitoz Kontrolü
 
     final List<int> streakMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300];
     final List<int> wordMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 500, 600, 700, 1000, 1500, 2000, 2500, 3000, 5000, 7000, 10000];
@@ -252,7 +254,7 @@ class StatisticsScreen extends StatelessWidget {
       length: 5,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("İstatistikler & Rozetler", style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text("Lexis Eldora | Rozetler", style: TextStyle(fontWeight: FontWeight.bold)),
           elevation: 0,
           bottom: TabBar(
             isScrollable: true,
@@ -479,6 +481,8 @@ class StatisticsScreen extends StatelessWidget {
                   _buildStaggeredWrapper(1, _buildTextStatCard(context, "Toplam Quiz Süresi", _formatTime(totalQuizTimeSeconds), Icons.timer, Colors.teal)),
                   _buildStaggeredWrapper(2, _buildStatCard(context, "Cevaplanan Soru", totalQuizQuestions, Icons.question_answer, Colors.blueAccent)),
                   _buildStaggeredWrapper(3, _buildStatCard(context, "Quiz Yanlışları", totalQuizWrong, Icons.error_outline, Colors.redAccent)),
+                  // YENİ EKLENEN HIZ KARTI
+                  _buildStaggeredWrapper(4, _buildTextStatCard(context, "Soru Çözme Hızı", "${quizSpeed.toStringAsFixed(1)} Soru / Dk", Icons.speed, Colors.purpleAccent)),
                 ],
               ),
               
