@@ -23,14 +23,9 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.3'
+          flutter-version: '3.19.0'
           channel: 'stable'
           cache: true
-
-      - name: Fix Pubspec Name Safely
-        run: |
-          # pubspec.yaml dosyasındaki paket adını güvenli bir şekilde küçük harfe sabitliyoruz
-          sed -i 's/^name:.*/name: tayf_sozluk_pro/g' pubspec.yaml
 
       - name: Install Dependencies
         run: flutter pub get
@@ -61,7 +56,7 @@ jobs:
           BUILD_NUM=${{ github.run_number }}
           mkdir -p build/outputs/apk/release
           if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
-            cp build/app/outputs/flutter-apk/app-release.apk build/outputs/apk/release/Lexis-Eldora-V2.0.$BUILD_NUM-debug.apk
+            cp build/app/outputs/flutter-apk/app-release.apk build/outputs/apk/release/Lexis-Eldora-V2.0.$BUILD_NUM.apk
           fi
 
       - name: Upload APK Artifact
