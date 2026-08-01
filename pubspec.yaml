@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+    
   # YENİ: Firebase Paketleri
   firebase_core: 
   cloud_firestore: 
