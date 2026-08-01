@@ -6,32 +6,48 @@ import 'models.dart';
 class FirebaseSyncService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // 1. Topluluğa Gönder (Batch Upload & Composite Key Idempotency)
-  static Future<int> syncMitosisCardsToCloud(List<WordModel> localWords) async {
-    final prefs = await SharedPreferences.getInstance();
-    int lastSync = prefs.getInt('last_sync_time') ?? 0;
-    int currentTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-    var cardsToSend = localWords.where((w) {
+  // 1. Seçimli ve 50 Kart Sınırı Denetimli Topluluğa Gönderim
+  static Future<Map<String, dynamic>> syncCardsToCloud(List<WordModel> localWords, {required bool isMitosisPool}) async {
+    // Mitoz havuzu seçildiyse en az 50 saf kart olmalı
+    var targetCards = localWords.where((w) {
       bool isMitosis = w.libraryName.startsWith('🧬') || w.libraryName.startsWith('User_Recommended');
       return isMitosis;
     }).toList();
 
-    if (cardsToSend.isEmpty) return 0;
+    if (isMitosisPool && targetCards.length < 50) {
+      return {
+        "success": false,
+        "message": "Global Mitoz Havuzuna katkıda bulunmak için en az 50 saf/mitoz kartınız olmalıdır! (Mevcut: ${targetCards.length})"
+      };
+    }
+
+    if (targetCards.isEmpty) {
+      return {
+        "success": false,
+        "message": "Gönderilebilecek uygun mitoz kart bulunamadı."
+      };
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    int currentTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    String collectionName = isMitosisPool ? 'global_mitosis_pool' : 'community_standard_pool';
 
     int syncedCount = 0;
     const int batchSize = 50;
 
-    for (int i = 0; i < cardsToSend.length; i += batchSize) {
-      var chunk = cardsToSend.skip(i).take(batchSize);
+    for (int i = 0; i < targetCards.length; i += batchSize) {
+      var chunk = targetCards.skip(i).take(batchSize);
       WriteBatch batch = _firestore.batch();
 
       for (var word in chunk) {
         String safeWord = word.word.trim().toLowerCase();
         String safeMeaning = word.meanings.isNotEmpty ? word.meanings.first.trim().toLowerCase() : "";
-        String docId = base64Url.encode(utf8.encode("${safeWord}_${safeMeaning}_${word.libraryName}"));
+        
+        // Güçlendirilmiş Kompozit Anahtar (Hash / Base64)
+        String rawSignature = "${safeWord}_${word.meanings.join('|').toLowerCase()}_${word.libraryName}";
+        String docId = base64Url.encode(utf8.encode(rawSignature));
 
-        DocumentReference docRef = _firestore.collection('global_mitosis_pool').doc(docId);
+        DocumentReference docRef = _firestore.collection(collectionName).doc(docId);
 
         batch.set(docRef, {
           "dna_stamp": "DNA-${word.id.toString().padLeft(6, '0')}",
@@ -52,46 +68,24 @@ class FirebaseSyncService {
     }
 
     await prefs.setInt('last_sync_time', currentTimestamp);
-    return syncedCount;
+    
+    return {
+      "success": true,
+      "count": syncedCount,
+      "message": "Başarıyla Topluluğa Katkıda Bulunuldu! ($syncedCount kart senkronize edildi) +50 TP 🎉"
+    };
   }
 
-  // 2. Buluttan Elit Havuz Verilerini Çekme (Quality Filter: Trust Score > 90)
-  static Future<List<WordModel>> fetchElitePoolFromCloud({bool onlyMitosis = true}) async {
+  // 2. Karantina ve Güven Skoru Düşürme
+  static Future<void> reportCardErrorInCloud(WordModel word, {bool isMitosisPool = true}) async {
     try {
-      QuerySnapshot snapshot = await _firestore
-          .collection('global_mitosis_pool')
-          .where('trust_score', isGreaterThan: 90)
-          .orderBy('trust_score', descending: true)
-          .limit(500)
-          .get();
-
-      List<WordModel> downloadedWords = [];
-      for (var doc in snapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        downloadedWords.add(WordModel(
-          word: data['word'] ?? '',
-          meanings: List<String>.from(data['meanings'] ?? []),
-          examples: List<String>.from(data['examples'] ?? []),
-          level: data['level'] ?? 'Genel',
-          libraryName: data['libraryName'] ?? 'Global Mitoz Havuzu',
-          listType: 'all',
-          srsLevel: 0,
-        ));
-      }
-      return downloadedWords;
-    } catch (e) {
-      return [];
-    }
-  }
-
-  // 3. Otonom İnfaz / Güven Skoru Düşürme (! Karantina Butonu için)
-  static Future<void> reportCardErrorInCloud(WordModel word) async {
-    try {
+      String collectionName = isMitosisPool ? 'global_mitosis_pool' : 'community_standard_pool';
       String safeWord = word.word.trim().toLowerCase();
       String safeMeaning = word.meanings.isNotEmpty ? word.meanings.first.trim().toLowerCase() : "";
-      String docId = base64Url.encode(utf8.encode("${safeWord}_${safeMeaning}_${word.libraryName}"));
+      String rawSignature = "${safeWord}_${word.meanings.join('|').toLowerCase()}_${word.libraryName}";
+      String docId = base64Url.encode(utf8.encode(rawSignature));
 
-      DocumentReference docRef = _firestore.collection('global_mitosis_pool').doc(docId);
+      DocumentReference docRef = _firestore.collection(collectionName).doc(docId);
       
       await docRef.update({
         "trust_score": FieldValue.increment(-15),
