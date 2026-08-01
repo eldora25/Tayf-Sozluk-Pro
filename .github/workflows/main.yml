@@ -49,14 +49,14 @@ jobs:
           # 1. KOTLIN SÜRÜMÜNÜ GÜNCELLEME VE SABİTLEME
           sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           
-          # 2. KARARLI API 34 ZORLAMASI (speech_to_text eksik sınıf hatasının kesin çözümü)
-          sed -i 's/flutter.compileSdkVersion/34/g' android/app/build.gradle
-          sed -i 's/flutter.targetSdkVersion/34/g' android/app/build.gradle
+          # 2. API 36 ZORLAMASI (flutter_tts UYUMU) VE MİNİMUM SDK 24 ZORLAMASI
+          sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
+          sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle
           sed -i 's/flutter.minSdkVersion/24/g' android/app/build.gradle
           
-          # Yedek Güvenlik: local.properties üzerinden de zorluyoruz
-          echo "flutter.compileSdkVersion=34" >> android/local.properties
-          echo "flutter.targetSdkVersion=34" >> android/local.properties
+          # Yedek Güvenlik
+          echo "flutter.compileSdkVersion=36" >> android/local.properties
+          echo "flutter.targetSdkVersion=36" >> android/local.properties
           echo "flutter.minSdkVersion=24" >> android/local.properties
           
           # 3. DESUGARING AKTİVASYONU
@@ -78,7 +78,7 @@ jobs:
                       if (namespace == null) {
                           namespace project.group
                       }
-                      compileSdkVersion 34
+                      compileSdkVersion 36
                       compileOptions {
                           sourceCompatibility JavaVersion.VERSION_17
                           targetCompatibility JavaVersion.VERSION_17
