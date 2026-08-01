@@ -56,8 +56,10 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
       setState(() {
         isGameFinished = true;
       });
-      int earnedPoints = (gameWords.length * 3) - (mistakes * 2);
-      if (earnedPoints < 5) earnedPoints = 5; 
+      // DÜZELTİLDİ: Oyun zorlaştırıldı, hatasızlara en az 5, hatalılara sıfıra kadar inen TP sistemi.
+      int earnedPoints = (gameWords.length * 3) - (mistakes * 3);
+      if (earnedPoints < 0) earnedPoints = 0; 
+      if (earnedPoints < 5 && mistakes == 0) earnedPoints = 5; 
       widget.onGameFinished(earnedPoints);
       return;
     }
@@ -90,7 +92,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
       setState(() {
         wrongTargetWord = target.word;
         mistakes++;
-        // DÜZELTİLDİ: Puan eksilmez, aynı kalır. (Kullanıcı Talebi)
+        score -= 5; // YENİ: Hata yaptıkça Eksi Skor (-5) yazar
       });
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
@@ -102,18 +104,37 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     }
   }
 
+  Widget _buildStaggeredItem(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 100)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - value)),
+          child: Opacity(
+            opacity: value.clamp(0.0, 1.0),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.words.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Eşleştirme Oyunu"), elevation: 0),
+        appBar: AppBar(title: const Text("Lexis Eldora | Eşleştirme"), elevation: 0),
         body: const Center(child: Text("Oynamak için yeterli kelime yok.")),
       );
     }
 
     if (isGameFinished) {
-      int finalPoints = (gameWords.length * 3) - (mistakes * 2);
-      if (finalPoints < 5) finalPoints = 5;
+      int finalPoints = (gameWords.length * 3) - (mistakes * 3);
+      if (finalPoints < 0) finalPoints = 0;
+      if (finalPoints < 5 && mistakes == 0) finalPoints = 5;
 
       return Scaffold(
         appBar: AppBar(title: const Text("Oyun Bitti", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
@@ -142,7 +163,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                         children: [
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                             const Text("Oyun Skoru:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                            Text("$score", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.blue)),
+                            Text("$score", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: score < 0 ? Colors.red : Colors.blue)),
                           ]),
                           const Divider(height: 30),
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -202,16 +223,24 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     }
 
     return Scaffold(
+      extendBodyBehindAppBar: true, 
       appBar: AppBar(
-        title: const Text("Sürükle ve Eşleştir 🧩", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Lexis Eldora | Eşleştirme", style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
+        backgroundColor: Colors.transparent, 
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(color: Theme.of(context).primaryColor.withOpacity(0.8)),
+          ),
+        ),
         actions: [
           Center(
             child: Container(
               margin: const EdgeInsets.only(right: 16.0),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-              child: Text("Skor: $score", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              child: Text("Skor: $score", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: score < 0 ? Colors.redAccent.shade100 : Colors.white)),
             ),
           )
         ],
@@ -219,8 +248,8 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
       body: Stack(
         children: [
           Container(
-            decoration: BoxDecoration(gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.05), Colors.transparent], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+            decoration: BoxDecoration(gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.1), Colors.transparent], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+            padding: const EdgeInsets.only(top: 100, bottom: 16.0, left: 8.0, right: 8.0), 
             child: Column(
               children: [
                 Container(
@@ -234,12 +263,14 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                 Expanded(
                   child: Row(
                     children: [
-                      // SOL SÜTUN
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: leftColumn.map((word) {
+                          children: leftColumn.asMap().entries.map((entry) {
+                            int idx = entry.key;
+                            WordModel word = entry.value;
                             bool isMatched = matchedWords.contains(word.word);
+                            
                             if (isMatched) {
                               return AnimatedContainer(
                                 duration: const Duration(milliseconds: 300),
@@ -250,49 +281,54 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                 child: const Center(child: Icon(Icons.check_circle, color: Colors.green, size: 36)),
                               );
                             }
-                            return Draggable<WordModel>(
-                              data: word,
-                              feedback: Material(
-                                color: Colors.transparent,
+                            return _buildStaggeredItem(
+                              idx, 
+                              Draggable<WordModel>(
+                                data: word,
+                                feedback: Material(
+                                  color: Colors.transparent,
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width * 0.42,
+                                    height: 75,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                                      borderRadius: BorderRadius.circular(20), 
+                                      boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.5), blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 10))]
+                                    ),
+                                    child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                                  ),
+                                ),
+                                childWhenDragging: Container(
+                                  height: 70,
+                                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                                  decoration: BoxDecoration(color: Colors.grey.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid, width: 2)),
+                                ),
                                 child: Container(
-                                  width: MediaQuery.of(context).size.width * 0.42,
-                                  height: 75,
+                                  height: 70,
+                                  margin: const EdgeInsets.symmetric(horizontal: 8),
                                   alignment: Alignment.center,
                                   decoration: BoxDecoration(
-                                    gradient: LinearGradient(colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                                    borderRadius: BorderRadius.circular(20), 
-                                    boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.5), blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 10))]
+                                    gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.9), Theme.of(context).primaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
                                   ),
-                                  child: Text(word.word, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                                  child: Text(word.word, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                                 ),
-                              ),
-                              childWhenDragging: Container(
-                                height: 70,
-                                margin: const EdgeInsets.symmetric(horizontal: 8),
-                                decoration: BoxDecoration(color: Colors.grey.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid, width: 2)),
-                              ),
-                              child: Container(
-                                height: 70,
-                                margin: const EdgeInsets.symmetric(horizontal: 8),
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(colors: [Theme.of(context).primaryColor.withOpacity(0.9), Theme.of(context).primaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
-                                ),
-                                child: Text(word.word, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                              ),
+                              )
                             );
                           }).toList(),
                         ),
                       ),
                       
-                      // SAĞ SÜTUN VE HOVER ANİMASYONU
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: rightColumn.map((word) {
+                          children: rightColumn.asMap().entries.map((entry) {
+                            int idx = entry.key;
+                            WordModel word = entry.value;
                             bool isMatched = matchedWords.contains(word.word);
+                            
                             if (isMatched) {
                                return AnimatedContainer(
                                 duration: const Duration(milliseconds: 300),
@@ -306,54 +342,55 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                             
                             bool isWrong = wrongTargetWord == word.word;
                             
-                            return DragTarget<WordModel>(
-                              onWillAccept: (data) => true, 
-                              onAccept: (data) => _handleDrop(data, word),
-                              builder: (context, candidateData, rejectedData) {
-                                bool isHovered = candidateData.isNotEmpty;
-                                
-                                // YENİ: Uzerine gelindiğinde kart cam efektiyle öne doğru genişler ve metin rahatça okunur
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      // Gerçek kart alanı
-                                      AnimatedContainer(
-                                        duration: const Duration(milliseconds: 350),
-                                        curve: Curves.easeOutBack,
-                                        height: isHovered ? 120 : 70, // Hover anında yükseklik artar
-                                        alignment: Alignment.center,
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: isWrong 
-                                              ? Colors.redAccent.withOpacity(0.9)
-                                              : (isHovered ? Colors.orangeAccent.withOpacity(0.95) : Theme.of(context).cardColor),
-                                          border: Border.all(
-                                            color: isWrong ? Colors.red : (isHovered ? Colors.orange : Colors.grey.withOpacity(0.3)),
-                                            width: isHovered || isWrong ? 3 : 1
+                            return _buildStaggeredItem(
+                              idx, 
+                              DragTarget<WordModel>(
+                                onWillAccept: (data) => true, 
+                                onAccept: (data) => _handleDrop(data, word),
+                                builder: (context, candidateData, rejectedData) {
+                                  bool isHovered = candidateData.isNotEmpty;
+                                  
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        AnimatedContainer(
+                                          duration: const Duration(milliseconds: 350),
+                                          curve: Curves.easeOutBack,
+                                          height: isHovered ? 120 : 70, 
+                                          alignment: Alignment.center,
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: isWrong 
+                                                ? Colors.redAccent.withOpacity(0.9)
+                                                : (isHovered ? Colors.orangeAccent.withOpacity(0.95) : Theme.of(context).cardColor),
+                                            border: Border.all(
+                                              color: isWrong ? Colors.red : (isHovered ? Colors.orange : Colors.grey.withOpacity(0.3)),
+                                              width: isHovered || isWrong ? 3 : 1
+                                            ),
+                                            borderRadius: BorderRadius.circular(20),
+                                            boxShadow: isHovered || isWrong 
+                                                ? [BoxShadow(color: isWrong ? Colors.red.withOpacity(0.6) : Colors.orange.withOpacity(0.6), blurRadius: 20, spreadRadius: 4)] 
+                                                : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]
                                           ),
-                                          borderRadius: BorderRadius.circular(20),
-                                          boxShadow: isHovered || isWrong 
-                                              ? [BoxShadow(color: isWrong ? Colors.red.withOpacity(0.6) : Colors.orange.withOpacity(0.6), blurRadius: 20, spreadRadius: 4)] 
-                                              : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]
+                                          child: Text(
+                                            word.meanings.join(', '), 
+                                            textAlign: TextAlign.center, 
+                                            maxLines: isHovered ? 4 : 2, 
+                                            overflow: TextOverflow.ellipsis, 
+                                            style: TextStyle(
+                                              color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+                                              fontSize: isHovered ? 15 : 14, 
+                                              fontWeight: FontWeight.bold
+                                            )
+                                          ),
                                         ),
-                                        child: Text(
-                                          word.meanings.join(', '), 
-                                          textAlign: TextAlign.center, 
-                                          maxLines: isHovered ? 4 : 2, 
-                                          overflow: TextOverflow.ellipsis, 
-                                          style: TextStyle(
-                                            color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                            fontSize: isHovered ? 15 : 14, 
-                                            fontWeight: FontWeight.bold
-                                          )
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
+                                      ],
+                                    ),
+                                  );
+                                },
+                              )
                             );
                           }).toList(),
                         ),
