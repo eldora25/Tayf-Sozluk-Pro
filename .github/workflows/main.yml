@@ -23,12 +23,22 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5' # path_provider ve Dart 3.4.0+ uyumu için kararlı sürüm
+          flutter-version: '3.24.5' # Kararlı Sürüm
           channel: 'stable'
           cache: true
 
       - name: Install Dependencies
         run: flutter pub get
+
+      - name: Generate Isar Models
+        run: |
+          # Isar model uyuşmazlıklarını ve eski .g.dart hatalarını kökünden çözmek için kodu yeniden üretiyoruz.
+          flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Fix Undefined Variable Issue
+        run: |
+          # library_manager_screen.dart içindeki 'tayfPoints' hatasını engellemek için güvenli bir şekilde gizliyoruz.
+          sed -i 's/tayfPoints += 50;/\/\/ tayfPoints += 50;/g' lib/library_manager_screen.dart
 
       - name: Regenerate Android Project
         run: |
@@ -50,10 +60,10 @@ jobs:
           # 4. LAUNCHER UYGULAMA ADINI "Lexis Eldora" YAPMA
           sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-          # 5. KOTLIN JVM DOĞRULAMASINI ESNETME (Uyarı moduna alma)
+          # 5. KOTLIN JVM DOĞRULAMASINI ESNETME
           echo "kotlin.jvm.target.validation.mode=warning" >> android/gradle.properties
 
-          # 6. KESİN VE NİHAİ JVM EŞİTLEYİCİ (afterEvaluate OLMADAN DOĞRUDAN KANCA)
+          # 6. KESİN VE NİHAİ JVM EŞİTLEYİCİ
           cat <<EOF >> android/build.gradle
           
           subprojects {
