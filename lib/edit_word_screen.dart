@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:isar/isar.dart';
 import 'models.dart';
+import 'main.dart'; // isar nesnesine erişmek için eklendi
 
 enum EditAction { update, delete, copy, move }
 
@@ -35,7 +37,6 @@ class _EditWordScreenState extends State<EditWordScreen> {
     _wordText = widget.word.word;
     _library = widget.word.libraryName;
     
-    // DÜZELTİLDİ: "Free KH" gibi dışarıdan gelen kelimelerin seviyesi hatalıysa çökmemesi için güvenlik eklendi
     _level = widget.word.level;
     List<String> validLevels = ['A1','A2','B1','B2','C1','C2','Genel'];
     if (!validLevels.contains(_level)) {
@@ -133,10 +134,14 @@ class _EditWordScreenState extends State<EditWordScreen> {
       libraryName: _library,
       correctCount: widget.word.correctCount,
       wrongCount: widget.word.wrongCount,
+      listType: widget.word.listType,
+      srsLevel: widget.word.srsLevel,
+      nextReviewDate: widget.word.nextReviewDate,
     );
   }
 
-  void _submitAction(EditAction action) {
+  // YENİ: DNA Eşsizlik ve Çakışma Kalkanı
+  Future<void> _submitAction(EditAction action) async {
     if (action == EditAction.delete) {
       widget.onAction(action, widget.word);
       Navigator.pop(context);
@@ -145,7 +150,68 @@ class _EditWordScreenState extends State<EditWordScreen> {
 
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      widget.onAction(action, _getUpdatedWord());
+      
+      WordModel updatedWord = _getUpdatedWord();
+      bool isMitosis = updatedWord.libraryName.startsWith('🧬');
+
+      if (isMitosis && (action == EditAction.update || action == EditAction.copy || action == EditAction.move)) {
+        try {
+          var existingCards = await isar.wordModels.filter()
+              .libraryNameEqualTo(updatedWord.libraryName)
+              .wordEqualTo(updatedWord.word)
+              .findAll();
+
+          bool hasCollision = false;
+          for (var card in existingCards) {
+            // Güncelleme yaparken kendi ID'siyle çakışma aramasını engelle
+            if (action == EditAction.update && card.id == widget.word.id) continue;
+
+            // Anlamlardan veya örneklerden biri bile aynıysa çakışma var demektir
+            bool meaningOverlap = updatedWord.meanings.any((m) => card.meanings.contains(m));
+            bool exampleOverlap = updatedWord.examples.any((e) => card.examples.contains(e));
+
+            if (meaningOverlap || exampleOverlap) {
+              hasCollision = true;
+              break;
+            }
+          }
+
+          if (hasCollision) {
+            if (mounted) {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: Colors.purple.shade900,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Colors.purpleAccent, width: 2)),
+                  title: Row(
+                    children: const [
+                      Icon(Icons.biotech, color: Colors.purpleAccent, size: 36),
+                      SizedBox(width: 12),
+                      Text("DNA Çakışması!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+                    ],
+                  ),
+                  content: const Text(
+                    "Mitoz havuzu %100 saf ve eşsiz olmalıdır.\n\nGirdiğiniz anlam sistemde, bu kelimeye ait başka bir saf kartta zaten mevcut. Eşsizlik kuralı gereği bu kayıt yapılamaz.\n\nLütfen farklı bir anlam girin veya mevcut kartı silin.",
+                    style: TextStyle(color: Colors.white70, fontSize: 15, height: 1.4),
+                  ),
+                  actions: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.purple.shade900, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text("ANLADIM", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                    )
+                  ],
+                )
+              );
+            }
+            return; // Çakışma varsa işlemi anında durdur
+          }
+        } catch (e) {
+          debugPrint("DNA Kontrol Hatası: $e");
+        }
+      }
+
+      widget.onAction(action, updatedWord);
       Navigator.pop(context);
     }
   }
@@ -258,7 +324,6 @@ class _EditWordScreenState extends State<EditWordScreen> {
                   )),
 
                   const SizedBox(height: 20),
-                  // DÜZELTİLDİ: Taşma sorununu çözmek için isExpanded: true eklendi
                   DropdownButtonFormField<String>(
                     isExpanded: true,
                     value: _level,
@@ -268,7 +333,6 @@ class _EditWordScreenState extends State<EditWordScreen> {
                   ),
                   
                   const SizedBox(height: 20),
-                  // DÜZELTİLDİ: Taşma sorununu çözmek için isExpanded: true eklendi ve metinler korumaya alındı
                   DropdownButtonFormField<String>(
                     isExpanded: true,
                     value: _currentLibraries.contains(_library) ? _library : _currentLibraries.first,
