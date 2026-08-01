@@ -3,13 +3,15 @@ name: CI/CD Dynamic APK Build
 on:
   push:
     branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java
@@ -21,7 +23,12 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.19.0'
           channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
 
       - name: Regenerate Android Project
         run: |
@@ -36,104 +43,24 @@ jobs:
           sed -i '/compileOptions {/a \        isCoreLibraryDesugaringEnabled = true' android/app/build.gradle.kts
           echo 'dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4") }' >> android/app/build.gradle.kts
 
-      - name: Add Android Permissions & TTS Queries
-        run: |
-          # 1. Standart İzinlerin Eklenmesi
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
-          
-          # 2. EN KRİTİK ADIM: ANDROID 11+ TTS ÇALIŞMASI İÇİN ZORUNLU QUERIES EKLENTİSİ (Otomatik Silinmeye Karşı Enjeksiyon)
-          sed -i '/<\/manifest>/i \    <queries>\n        <intent>\n            <action android:name="android.intent.action.TTS_SERVICE" />\n        </intent>\n    </queries>' android/app/src/main/AndroidManifest.xml
+          # UYGULAMA ADINI "Lexis Eldora" OLARAK SABİTLEME
+          sed -i 's/android:label="[^"]*"/android:label="Lexis Eldora"/g' android/app/src/main/AndroidManifest.xml
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Fix Plugin Compatibilities (Isar & SpeechToText)
+      - name: Build APK with Build Number
         run: |
-          find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/android {/android {\n    namespace "dev.isar.isar_flutter_libs"/g' {} +
-          find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/compileSdkVersion 30/compileSdkVersion 36/g' {} +
-          find /home/runner/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android -name "build.gradle" -exec sed -i 's/targetSdkVersion 30/targetSdkVersion 36/g' {} +
-          
-          # SpeechToText jcenter() Hatası Çözümü
-          find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
-          
-          # SpeechToText eklentisini API 36'ya zorlama (AAR Metadata hatası için)
-          find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/compileSdkVersion 33/compileSdkVersion 36/g' {} +
-          find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/targetSdkVersion 33/targetSdkVersion 36/g' {} +
-          find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/compileSdk 33/compileSdk 36/g' {} +
-          find /home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android -name "build.gradle" -exec sed -i 's/targetSdk 33/targetSdk 36/g' {} +
-          
-          # SpeechToText Registrar (Syntax Hatasını Önleyen Sahte Arayüz Enjeksiyonu)
-          python3 -c '
-          import glob
-          paths = glob.glob("/home/runner/.pub-cache/hosted/pub.dev/speech_to_text-*/android/src/main/kotlin/com/csdcorp/speech_to_text/SpeechToTextPlugin.kt")
-          if paths:
-              path = paths[0]
-              with open(path, "r") as f:
-                  content = f.read()
-              
-              content = content.replace("import io.flutter.plugin.common.PluginRegistry.Registrar", "")
-              
-              dummy_interface = "\ninterface Registrar {\n    fun activity(): android.app.Activity?\n    fun context(): android.content.Context\n    fun messenger(): io.flutter.plugin.common.BinaryMessenger\n    fun addRequestPermissionsResultListener(listener: Any?)\n}\n"
-              
-              with open(path, "w") as f:
-                  f.write(content + dummy_interface)
-          '
+          BUILD_NUM=${{ github.run_number }}
+          flutter build apk --release --build-number=$BUILD_NUM --dart-define=BUILD_NUMBER=$BUILD_NUM
 
-      - name: Generate Adaptive App Icons
+      - name: Rename APK for Release
         run: |
-          if [ -f "assets/ic_launcher.png" ] && [ -f "assets/ic_launcher_adaptive_fore.png" ] && [ -f "assets/ic_launcher_adaptive_back.png" ]; then
-            flutter pub add --dev flutter_launcher_icons
-            cat <<EOF > flutter_launcher_icons.yaml
-            flutter_icons:
-              android: true
-              ios: false
-              image_path: "assets/ic_launcher.png"
-              adaptive_icon_background: "assets/ic_launcher_adaptive_back.png"
-              adaptive_icon_foreground: "assets/ic_launcher_adaptive_fore.png"
-          EOF
-            dart run flutter_launcher_icons
-            echo "Modern Adaptive İkonlar başarıyla oluşturuldu ve projeye enjekte edildi!"
-          else
-            echo "UYARI: assets/ klasöründe gerekli ikon dosyaları bulunamadı. Varsayılan Flutter ikonuyla devam ediliyor."
+          BUILD_NUM=${{ github.run_number }}
+          mkdir -p build/outputs/apk/release
+          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
+            cp build/app/outputs/flutter-apk/app-release.apk build/outputs/apk/release/Lexis-Eldora-V2.0.$BUILD_NUM.apk
           fi
 
-      - name: Generate Isar Models
-        run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Build Debug APK
-        run: flutter build apk --debug --dart-define=BUILD_NUMBER=${{ github.run_number }}
-
-      # YENİ: Boşluksuz (Tireli) İsimlendirme Formülü
-      - name: Rename APK Dynamically
-        run: |
-          mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/Lexis-Eldora-V2.0.${{ github.run_number }}-debug.apk
-
-      # YENİ: Tireli İsimlendirme Artifact Yükleyicisi
-      - name: Upload Artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Dynamic-Debug-APK
-          path: build/app/outputs/flutter-apk/Lexis-Eldora-V2.0.*-debug.apk
-
-      - name: Backup Source Files with Build & Commit Info
-        if: success()
-        run: |
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          BUILD_NO=${{ github.run_number }}
-          BACKUP_DIR="backup_source_${BUILD_NO}_${SHORT_SHA}"
-          
-          mkdir -p "$BACKUP_DIR"
-          
-          find . -type f -not -path '*/\.git/*' -not -path '*/build/*' -not -path '*/\.dart_tool/*' -not -path "*/$BACKUP_DIR/*" | while read file; do
-            dir=$(dirname "$file")
-            filename=$(basename "$file")
-            mkdir -p "$BACKUP_DIR/$dir"
-            cp "$file" "$BACKUP_DIR/$dir/$filename.$BUILD_NO-$SHORT_SHA"
-          done
-          
-      - name: Upload Source Code Backup
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Source-Backup-Build-${{ github.run_number }}
-          path: backup_source_${{ github.run_number }}_*/
+          name: Lexis-Eldora-APK-V2.0.${{ github.run_number }}
+          path: build/outputs/apk/release/*.apk
