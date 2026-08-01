@@ -24,7 +24,7 @@ class _WordListScreenState extends State<WordListScreen> {
         return Transform.translate(
           offset: Offset(0, 50 * (1 - value)),
           child: Opacity(
-            opacity: value,
+            opacity: value.clamp(0.0, 1.0),
             child: child,
           ),
         );
@@ -77,14 +77,20 @@ class _WordListScreenState extends State<WordListScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final item = filteredList[index];
-                      bool isMitosis = item.libraryName.startsWith('🧬');
                       
+                      // ZIRHLI FORMAT: Tüm hesaplamalar Widget ağacının dışında, tertemiz yapılıyor.
+                      final bool isMitosis = item.libraryName.startsWith('🧬');
+                      final String dismissKey = item.id.toString() + '_' + index.toString();
+                      final String heroTag = 'hero_word_' + item.word;
+                      final String dnaCode = "DNA-" + item.id.toString().padLeft(6, '0');
+                      final String subtitleText = item.libraryName + " / " + item.level;
+
                       return _buildAnimatedItem(
                         context, 
                         index,
                         RepaintBoundary(
                           child: Dismissible(
-                            key: Key('${item.word}_$index'),
+                            key: Key(dismissKey),
                             direction: widget.onLearned != null 
                                 ? DismissDirection.horizontal 
                                 : DismissDirection.endToStart,
@@ -109,7 +115,11 @@ class _WordListScreenState extends State<WordListScreen> {
                               if (direction == DismissDirection.endToStart) {
                                 widget.onDelete(item);
                               } else if (direction == DismissDirection.startToEnd) {
-                                if (widget.onLearned != null) widget.onLearned!(item);
+                                // ZIRHLI FORMAT: Null check fonksiyon çağrısı
+                                final learnCb = widget.onLearned;
+                                if (learnCb != null) {
+                                  learnCb(item);
+                                }
                               }
                             },
                             child: Card(
@@ -122,7 +132,7 @@ class _WordListScreenState extends State<WordListScreen> {
                               color: isMitosis ? Colors.purpleAccent.withOpacity(0.05) : Theme.of(context).cardColor,
                               child: ExpansionTile(
                                 title: Hero(
-                                  tag: 'hero_word_${item.word}',
+                                  tag: heroTag,
                                   child: Material(
                                     type: MaterialType.transparency,
                                     child: Text(item.word, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple)),
@@ -132,54 +142,61 @@ class _WordListScreenState extends State<WordListScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 4),
-                                    Text("${item.libraryName} / ${item.level}"),
-                                    if (isMitosis) ...[
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                    Text(subtitleText),
+                                    if (isMitosis)
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.black,
-                                              borderRadius: BorderRadius.circular(30),
-                                              border: Border.all(color: Colors.white30, width: 0.5),
-                                              boxShadow: [
-                                                BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(-2, 0)),
-                                                BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
-                                              ],
-                                            ),
-                                            child: const Text(
-                                              "🧬", 
-                                              style: TextStyle(
-                                                fontSize: 10, 
-                                                shadows: <Shadow>[
-                                                  Shadow(color: Colors.orangeAccent, blurRadius: 10),
-                                                  Shadow(color: Colors.purpleAccent, blurRadius: 10),
-                                                ],
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black,
+                                                  borderRadius: BorderRadius.circular(30),
+                                                  border: Border.all(color: Colors.white30, width: 0.5),
+                                                  boxShadow: [
+                                                    BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(-2, 0)),
+                                                    BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 6, offset: const Offset(2, 0)),
+                                                  ]
+                                                ),
+                                                child: Text(
+                                                  "🧬", 
+                                                  style: TextStyle(
+                                                    fontSize: 10, 
+                                                    shadows: [
+                                                      Shadow(color: Colors.orangeAccent, blurRadius: 10),
+                                                      Shadow(color: Colors.purpleAccent, blurRadius: 10)
+                                                    ]
+                                                  )
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.black87,
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
-                                                const SizedBox(width: 4),
-                                                Text("DNA-${item.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                                              ],
-                                            ),
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black87,
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      dnaCode, 
+                                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
-                                      ),
-                                    ],
+                                      )
                                   ],
                                 ),
                                 trailing: IconButton(
