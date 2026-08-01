@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:lottie/lottie.dart'; 
-import 'package:isar/isar.dart'; // YENİ: Veritabanı sorguları (findAll, filter vb.) için hayati kütüphane eklendi
+import 'package:isar/isar.dart'; 
 import 'models.dart';
 import 'main.dart'; 
 
@@ -390,7 +390,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
     if (isQuizFinished) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Quiz İstatistikleri", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
+        appBar: AppBar(title: const Text("Lexis Eldora | Quiz İstatistikleri", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -437,9 +437,17 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
 
     return Scaffold(
+      extendBodyBehindAppBar: true, // YENİ: AppBar'ın arkasında cam efekti için
       appBar: AppBar(
-        title: const Text("Quiz Modu", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)), 
+        title: const Text("Lexis Eldora | Quiz", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)), 
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(color: Theme.of(context).primaryColor.withOpacity(0.8)),
+          ),
+        ),
         actions: [
           IconButton(
             icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), 
@@ -450,119 +458,148 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           )
         ]
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(children: [const Icon(Icons.check_circle, color: Colors.green), const SizedBox(width: 5), Text(correctAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
-              Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.blueAccent)),
-              Row(children: [Text(wrongAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red)), const SizedBox(width: 5), const Icon(Icons.cancel, color: Colors.red)]),
-            ],
-          ),
-          const SizedBox(height: 10),
-          
-          Text(
-            "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
-            textAlign: TextAlign.center, 
-            style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)
-          ),
-          
-          const SizedBox(height: 8),
-          LinearProgressIndicator(value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0, backgroundColor: Colors.grey[300], color: Theme.of(context).primaryColor, minHeight: 8, borderRadius: BorderRadius.circular(10)),
-          const SizedBox(height: 30),
-          
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              String readWord = displayWord == "WordNet Kaydı" && currentWord.meanings.isNotEmpty ? currentWord.meanings.first : currentWord.word;
-              _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
-            },
-            child: AnimatedBuilder(
-              animation: _entranceController,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, 50 * (1 - _entranceController.value)),
-                  child: Opacity(
-                    opacity: _entranceController.value,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.08), 
-                            borderRadius: BorderRadius.circular(20), 
-                            border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.4), width: 1.5), 
-                            boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.05), blurRadius: 20, spreadRadius: 5)]
-                          ),
-                          child: Column(
-                            children: [
-                              Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
-                              if (_questionSubtext.isNotEmpty)
-                                Padding(padding: const EdgeInsets.only(top: 12.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.8)))),
-                            ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Theme.of(context).primaryColor.withOpacity(0.1), Colors.transparent], 
+            begin: Alignment.topCenter, end: Alignment.bottomCenter
+          )
+        ),
+        child: ListView(
+          padding: EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 16), // YENİ: Top padding artırıldı (Cam efekti nedeniyle)
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(children: [const Icon(Icons.check_circle, color: Colors.green), const SizedBox(width: 5), Text(correctAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
+                Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.blueAccent)),
+                Row(children: [Text(wrongAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red)), const SizedBox(width: 5), const Icon(Icons.cancel, color: Colors.red)]),
+              ],
+            ),
+            const SizedBox(height: 10),
+            
+            Text(
+              "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
+              textAlign: TextAlign.center, 
+              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)
+            ),
+            
+            const SizedBox(height: 8),
+            LinearProgressIndicator(value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0, backgroundColor: Colors.grey[300], color: Theme.of(context).primaryColor, minHeight: 8, borderRadius: BorderRadius.circular(10)),
+            const SizedBox(height: 30),
+            
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                String readWord = displayWord == "WordNet Kaydı" && currentWord.meanings.isNotEmpty ? currentWord.meanings.first : currentWord.word;
+                _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
+              },
+              child: AnimatedBuilder(
+                animation: _entranceController,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, 50 * (1 - _entranceController.value)),
+                    child: Opacity(
+                      opacity: _entranceController.value,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor.withOpacity(0.08), 
+                              borderRadius: BorderRadius.circular(20), 
+                              border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.4), width: 1.5), 
+                              boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.05), blurRadius: 20, spreadRadius: 5)]
+                            ),
+                            child: Column(
+                              children: [
+                                Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
+                                if (_questionSubtext.isNotEmpty)
+                                  Padding(padding: const EdgeInsets.only(top: 12.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.8)))),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 40),
-          
-          ...List.generate(options.length, (index) {
-            String option = options[index];
-            bool isCorrect = option == correctOption;
-            bool isWrongSelected = selectedWrongOptions.contains(option);
-            
-            Color cardColor = Theme.of(context).cardColor;
-            Widget? trailingIcon;
-            
-            if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.2); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); } 
-            else if (isWrongSelected) { cardColor = Colors.red.withOpacity(0.2); trailingIcon = const Icon(Icons.cancel, color: Colors.red); }
-
-            Widget tile = Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: cardColor, 
-                border: Border.all(color: isAnsweredCorrectly && isCorrect ? Colors.green : (isWrongSelected ? Colors.red : borderColor.withOpacity(0.3)), width: 2), 
-                borderRadius: BorderRadius.circular(16), 
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)]
+                  );
+                },
               ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () => _checkAnswer(option),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500), maxLines: 6, overflow: TextOverflow.ellipsis),
-                        ),
-                        if (trailingIcon != null) ...[
-                          const SizedBox(width: 12),
-                          trailingIcon,
-                        ]
-                      ],
+            ),
+            const SizedBox(height: 40),
+            
+            ...List.generate(options.length, (index) {
+              String option = options[index];
+              bool isCorrect = option == correctOption;
+              bool isWrongSelected = selectedWrongOptions.contains(option);
+              
+              Color cardColor = Theme.of(context).cardColor;
+              Widget? trailingIcon;
+              
+              if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.2); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); } 
+              else if (isWrongSelected) { cardColor = Colors.red.withOpacity(0.2); trailingIcon = const Icon(Icons.cancel, color: Colors.red); }
+
+              Widget tile = Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: cardColor, 
+                  border: Border.all(color: isAnsweredCorrectly && isCorrect ? Colors.green : (isWrongSelected ? Colors.red : borderColor.withOpacity(0.3)), width: 2), 
+                  borderRadius: BorderRadius.circular(16), 
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)]
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => _checkAnswer(option),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500), maxLines: 6, overflow: TextOverflow.ellipsis),
+                          ),
+                          if (trailingIcon != null) ...[
+                            const SizedBox(width: 12),
+                            trailingIcon,
+                          ]
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
+              );
 
-            if (isWrongSelected && option == _lastWrongOption) tile = AnimatedBuilder(animation: _shakeController, builder: (c, ch) => Transform.translate(offset: Offset(sin(_shakeController.value * pi * 6) * 10, 0), child: ch), child: tile);
-            if (isAnsweredCorrectly && isCorrect) tile = AnimatedBuilder(animation: _scaleController, builder: (c, ch) => Transform.scale(scale: 1.0 + (_scaleController.value * 0.05), child: ch), child: tile);
+              if (isWrongSelected && option == _lastWrongOption) tile = AnimatedBuilder(animation: _shakeController, builder: (c, ch) => Transform.translate(offset: Offset(sin(_shakeController.value * pi * 6) * 10, 0), child: ch), child: tile);
+              if (isAnsweredCorrectly && isCorrect) tile = AnimatedBuilder(animation: _scaleController, builder: (c, ch) => Transform.scale(scale: 1.0 + (_scaleController.value * 0.05), child: ch), child: tile);
 
-            return FadeTransition(opacity: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), child: SlideTransition(position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), child: tile));
-          }),
-        ],
+              // YENİ: Şıkların ekranlara kademeli (staggered) giriş yapması sağlandı
+              return TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 400 + (index * 150)), // Kademeli bekleme
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Transform.translate(
+                    offset: Offset(0, 30 * (1 - value)),
+                    child: Opacity(
+                      opacity: value.clamp(0.0, 1.0),
+                      child: child,
+                    ),
+                  );
+                },
+                child: FadeTransition(
+                  opacity: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), 
+                  child: SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), 
+                    child: tile
+                  )
+                )
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
