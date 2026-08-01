@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'models.dart';
-import 'main.dart'; // isar nesnesi için
+import 'main.dart'; 
 
 class WordListScreen extends StatefulWidget {
   final List<WordModel> words;
