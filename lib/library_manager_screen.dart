@@ -8,7 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'main.dart'; 
-import 'firebase_sync_service.dart'; // YENİ: Firebase Sync Servisi Eklendi
+import 'firebase_sync_service.dart';
 
 class LibraryManagerScreen extends StatefulWidget {
   final List<WordModel> allWords;
@@ -282,6 +282,144 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     }
   }
 
+  // YENİ: Buluta Gönderme Seçim Menüsü (Mitoz vs. Standart)
+  void _showUploadMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1))
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Wrap(
+                  children: [
+                    Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.5), borderRadius: BorderRadius.circular(10)))),
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text("Buluta Veri Gönder", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
+                    ),
+                    ListTile(
+                      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.biotech, color: Colors.purple)),
+                      title: const Text("🧬 Global Mitoz Havuzuna Gönder", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
+                      subtitle: const Text("En az 50 saf kart gerektirir (+50 TP ödüllü)", style: TextStyle(fontSize: 12)),
+                      onTap: () { 
+                        Navigator.pop(context); 
+                        _executeCloudUpload(isMitosis: true); 
+                      },
+                    ),
+                    ListTile(
+                      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.public, color: Colors.blue)),
+                      title: const Text("🌍 Standart Topluluk Havuzuna Gönder", style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: const Text("Genel kütüphane ve kelime önerileri", style: TextStyle(fontSize: 12)),
+                      onTap: () { 
+                        Navigator.pop(context); 
+                        _executeCloudUpload(isMitosis: false); 
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // YENİ: Akıllı Gönderim ve Gerçek TP Ödül Yönetimi
+  Future<void> _executeCloudUpload({required bool isMitosis}) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Expanded(child: Text("Veriler güvenli buluta aktarılıyor..."))
+          ],
+        ),
+      ),
+    );
+
+    var allLocalWords = [
+      ...widget.allWords,
+      ...widget.learningWords,
+      ...widget.toRepeatWords,
+      ...widget.learnedWords,
+    ];
+
+    Map<String, dynamic> result = await FirebaseSyncService.syncCardsToCloud(
+      allLocalWords, 
+      isMitosisPool: isMitosis
+    );
+
+    if (mounted) {
+      Navigator.pop(context); // Diyalogu kapat
+
+      bool success = result["success"] ?? false;
+      String message = result["message"] ?? "İşlem tamamlandı.";
+
+      if (success) {
+        // GERÇEK TP ARTIŞI: Sadece başarılı ve kart içeren gönderimde +50 TP kasaya işlenir
+        setState(() {
+          tayfPoints += 50; 
+        });
+        
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.verified, color: Colors.green, size: 70),
+                const SizedBox(height: 16),
+                const Text("Tebrikler!", textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                const SizedBox(height: 12),
+                Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.4)),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("Harika", style: TextStyle(fontWeight: FontWeight.bold))
+                )
+              ]
+            )
+          )
+        );
+      } else {
+        // Yetersiz kart veya hata durumu (TP verilmez)
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(children: [Icon(Icons.warning, color: Colors.orange), SizedBox(width: 8), Text("Uyarı")]),
+            content: Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.4)),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Tamam")
+              )
+            ],
+          )
+        );
+      }
+    }
+  }
+
   void _showDownloadMenu() {
     showModalBottomSheet(
       context: context,
@@ -413,7 +551,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
               centerTitle: false,
             ),
             actions: [
-               // YENİ: Firebase Bulut Senkronizasyon (Gönder) Butonu
+               // YENİ: Seçimli Gönderme Menüsünü Tetikleyen Buton
                Padding(
                  padding: const EdgeInsets.only(right: 8.0),
                  child: Container(
@@ -421,38 +559,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                    child: IconButton(
                     tooltip: "Buluta Senkronize Et (Gönder)",
                     icon: const Icon(Icons.cloud_upload_rounded, color: Colors.purpleAccent),
-                    onPressed: () async {
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) => const AlertDialog(
-                          content: Row(
-                            children: [
-                              CircularProgressIndicator(),
-                              SizedBox(width: 20),
-                              Expanded(child: Text("Mitoz kartlar güvenli buluta aktarılıyor..."))
-                            ],
-                          ),
-                        ),
-                      );
-
-                      int sentCount = await FirebaseSyncService.syncMitosisCardsToCloud([
-                        ...widget.allWords,
-                        ...widget.learningWords,
-                        ...widget.toRepeatWords,
-                        ...widget.learnedWords,
-                      ]);
-
-                      if (mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Başarıyla Topluluğa Katkıda Bulunuldu! ($sentCount kart senkronize edildi) +50 TP 🎉"),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    },
+                    onPressed: _showUploadMenu,
                    ),
                  ),
                ),
@@ -540,7 +647,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                                           const SizedBox(width: 16),
                                           Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
                                           const SizedBox(width: 16),
-                                          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
+                                          Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
                                         ],
                                       ),
                                     ),
