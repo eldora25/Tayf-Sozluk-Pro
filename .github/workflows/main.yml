@@ -27,18 +27,14 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Force Clean Pubspec Name
-        run: |
-          # pubspec.yaml adını gizli karakterlerden arındırarak güvenli küçük harfe zorluyoruz
-          sed -i 's/^name:.*/name: tayf_sozluk_pro/g' pubspec.yaml
-
       - name: Install Dependencies
         run: flutter pub get
 
       - name: Regenerate Android Project
         run: |
           rm -rf android
-          flutter create --platforms=android .
+          # ÇÖZÜM BURADA: Klasör adını yoksayması için proje adını zorla veriyoruz
+          flutter create --platforms=android --project-name tayf_sozluk_pro .
           
           # ANA PROJE İÇİN API 36 ZORLAMASI
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle.kts
