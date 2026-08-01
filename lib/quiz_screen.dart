@@ -14,7 +14,8 @@ class QuizScreen extends StatefulWidget {
   final int questionCount;
   final Function(WordModel) onWordMastered;
   final Function(WordModel) onWrongWord;
-  final Function(int timeElapsed, int answered, int wrong) onQuizFinished;
+  // ZIRHLI MANTIK: TP kopyalama parametresi
+  final Function(int timeElapsed, int answered, int wrong, int earnedTP) onQuizFinished;
 
   const QuizScreen({
     super.key,
@@ -118,7 +119,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _shakeController.dispose();
     _scaleController.dispose();
     if (!_isStatsSaved && answeredQuestions > 0) {
-      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers);
+      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP);
     }
     super.dispose();
   }
@@ -204,7 +205,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       setState(() { isQuizFinished = true; _timer?.cancel(); });
       if (!_isStatsSaved) {
         _isStatsSaved = true;
-        widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers);
+        // ZIRHLI MANTIK: TP AKTARILIYOR
+        widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP);
       }
       _speakText("Congratulations", "en-US");
       return;
@@ -293,6 +295,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
 
+          // ZIRHLI MANTIK (HAYALET KART KATİLİ): Eğer kopan anlamdan sonra orijinal kart tamamen boşalırsa DB'den silinir
+          bool isGhostCard = currentWord.meanings.isEmpty && currentWord.examples.isEmpty;
+
           WordModel? existingMitosisCard;
           try {
             var matchingWords = await isar.wordModels.filter()
@@ -313,7 +318,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           if (existingMitosisCard != null) {
             existingMitosisCard.correctCount++;
             isar.writeTxn(() async {
-              await isar.wordModels.putAll([currentWord, existingMitosisCard!]);
+              if (isGhostCard) {
+                await isar.wordModels.delete(currentWord.id);
+              } else {
+                await isar.wordModels.put(currentWord);
+              }
+              await isar.wordModels.put(existingMitosisCard!);
             });
             currentWord = existingMitosisCard;
             if (existingMitosisCard.correctCount >= widget.threshold) widget.onWordMastered(existingMitosisCard);
@@ -333,7 +343,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               targetLanguage: currentWord.targetLanguage,
             );
             isar.writeTxn(() async {
-              await isar.wordModels.putAll([currentWord, splitWord]);   
+              if (isGhostCard) {
+                await isar.wordModels.delete(currentWord.id);
+              } else {
+                await isar.wordModels.put(currentWord);
+              }
+              await isar.wordModels.put(splitWord);   
             });
             currentWord = splitWord; 
             if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
@@ -372,6 +387,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
           }
 
+          bool isGhostCard = currentWord.meanings.isEmpty && currentWord.examples.isEmpty;
+
           WordModel? existingMitosisCard;
           try {
             var matchingWords = await isar.wordModels.filter()
@@ -392,7 +409,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           if (existingMitosisCard != null) {
             existingMitosisCard.wrongCount++;
             isar.writeTxn(() async {
-              await isar.wordModels.putAll([currentWord, existingMitosisCard!]);
+              if (isGhostCard) {
+                await isar.wordModels.delete(currentWord.id);
+              } else {
+                await isar.wordModels.put(currentWord);
+              }
+              await isar.wordModels.put(existingMitosisCard!);
             });
             currentWord = existingMitosisCard;
             widget.onWrongWord(existingMitosisCard);
@@ -412,7 +434,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               targetLanguage: currentWord.targetLanguage,
             );
             isar.writeTxn(() async {
-              await isar.wordModels.putAll([currentWord, splitWord]);
+              if (isGhostCard) {
+                await isar.wordModels.delete(currentWord.id);
+              } else {
+                await isar.wordModels.put(currentWord);
+              }
+              await isar.wordModels.put(splitWord);
             });
             currentWord = splitWord;
             widget.onWrongWord(splitWord);
