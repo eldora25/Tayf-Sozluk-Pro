@@ -9,6 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # YENİ: Firebase Paketleri
+  firebase_core: 
+  cloud_firestore: 
+  
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.3.2
   flutter_tts: ^4.2.1
@@ -26,7 +30,7 @@ dependencies:
   speech_to_text: ^6.6.0
   permission_handler: ^11.3.0
   image_picker: ^1.1.2
-  http: ^1.2.0 # YENİ: Topluluk kütüphanesini GitHub'dan çekmek için
+  http: ^1.2.0
 
 dependency_overrides:
   flutter_plugin_android_lifecycle: 2.0.20
