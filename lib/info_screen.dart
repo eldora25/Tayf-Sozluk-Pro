@@ -66,7 +66,7 @@ class InfoScreen extends StatelessWidget {
             icon: Icons.warning_amber_rounded,
             color: Colors.amber,
             title: "İncelenecekler (Karantina)",
-            description: "Ana ekranda çalışırken hatalı olduğunu düşündüğünüz bir karta denk gelirseniz, '!' (Sarı Ünlem) butonuna basarak onu anında eski havuzundan koparıp İncelenecekler listesine atabilirsiniz.",
+            description: "Ana ekranda çalışırken hatalı olduğunu düşündüğünüz bir karta denk gelirseniz, '!' (Sarı Ünlem) butonuna basarak onu anında eski havuzundan koparıp İncelenecekler listesine atabilirsiniz. Bu işlem, buluttaki güven skorunu da otonom olarak düşürür.",
           ),
           
           const SizedBox(height: 16),
@@ -94,7 +94,7 @@ class InfoScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Text(
-                          "🌍 Topluluk & 🧬 Mitoz Havuzu",
+                          "🌍 Firebase Topluluk & 🧬 Mitoz Bulut Ekosistemi",
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent),
                         ),
                       ),
@@ -111,7 +111,7 @@ class InfoScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "Lexis Eldora artık yaşayan, devasa bir veri madenciliği ekosistemi! Kendi hazırladığınız sözlükleri toplulukla paylaşabilir veya quizlerde oluşturduğunuz 'Saf Kartları' global havuza gönderebilirsiniz.",
+                    "Lexis Eldora artık e-posta gönderip bekleme devrini kapatarak tamamen otonomleşti! Doğrudan bulut entegrasyonu sayesinde verileriniz anlık olarak senkronize edilir ve kalite filtreden geçer.",
                     style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
                   ),
                   const SizedBox(height: 20),
@@ -120,23 +120,31 @@ class InfoScreen extends StatelessWidget {
                     Icons.biotech, 
                     Colors.purple, 
                     "Mitoz Bölünme (Saf Kartlar):", 
-                    "Siz quiz çözerken, çok anlamlı kelimeler (Örn: Apple = Elma, Meyve) doğru bilindikçe otomatik bölünür ve 'Mitoz' kütüphanenize tek anlamlı (Apple = Elma) kusursuz bilgi kartları olarak eşsiz DNA damgasıyla düşer."
+                    "Quiz çözerken çok anlamlı kelimeler (Örn: Apple = Elma, Meyve) doğru bilindikçe otomatik bölünür ve 'Mitoz' kütüphanenize tek anlamlı kusursuz bilgi kartları olarak eşsiz DNA damgasıyla düşer."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
                     context, 
-                    Icons.share, 
-                    Colors.green, 
-                    "Topluluğa Öner (Gönder):", 
-                    "Kütüphane Yönetimi ekranından herhangi bir listenizi (özellikle Mitoz listelerinizi) 'Topluluğa Öner' diyerek gönderebilirsiniz. Sistem, gönderilen saf kartları global havuzda tekrarsız bir şekilde birleştirir."
+                    Icons.cloud_upload_rounded, 
+                    Colors.purpleAccent, 
+                    "Buluta Senkronize Et (Toplu Batch Gönderim):", 
+                    "Kütüphane Yönetimi ekranındaki mor yükleme butonuna basarak mitoz kartlarınızı saniyeler içinde Firebase bulutuna aktarabilirsiniz. Kompozit anahtar mimarisi (Kelime + Anlam) sayesinde mükerrer kayıtlar engellenir, popülarite skoru artar ve +50 TP kazanırsınız."
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSubFeatureRow(
+                    context, 
+                    Icons.shield_rounded, 
+                    Colors.redAccent, 
+                    "Otonom Karantina ve Kalite Filtresi:", 
+                    "Hatalı olduğunu düşündüğünüz kartlar için '!' karantina butonunu kullandığınızda, sistem buluttaki kartın Güven Skorunu (Trust Score) otonom olarak düşürür. Eksi skora düşen bozuk kartlar havuzdan otomatik olarak imha edilir."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
                     context, 
                     Icons.cloud_download, 
                     Colors.blue, 
-                    "Buluttan İndir (Çek):", 
-                    "Kütüphane Yönetimi ekranındaki Bulut ikonuna basarak isterseniz karmaşık Standart Topluluk Listesini, isterseniz de %100 saf ve eşsiz kartlardan oluşan Global Mitoz Havuzunu indirebilirsiniz."
+                    "Buluttan Havuz İndir (Çek):", 
+                    "Kütüphane Yönetimi ekranındaki Bulut ikonuna dokunarak isterseniz Standart Topluluk Havuzunu, isterseniz de %100 saf kartlardan oluşan Global Mitoz Havuzunu doğrudan güncel olarak indirebilirsiniz."
                   ),
                 ],
               ),
