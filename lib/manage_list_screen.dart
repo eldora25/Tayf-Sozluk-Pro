@@ -55,10 +55,11 @@ class _ManageListScreenState extends State<ManageListScreen> {
           if (query.trim().isEmpty) {
             _filteredList = widget.words;
           } else {
-            _filteredList = widget.words.where((w) => 
-              w.word.toLowerCase().contains(query.toLowerCase()) ||
-              w.meanings.join(' ').toLowerCase().contains(query.toLowerCase())
-            ).toList();
+            String lowerQuery = query.toLowerCase();
+            _filteredList = widget.words.where((w) {
+              return w.word.toLowerCase().contains(lowerQuery) || 
+                     w.meanings.join(' ').toLowerCase().contains(lowerQuery);
+            }).toList();
           }
         });
       }
@@ -119,7 +120,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
-  // ZIRHLI FORMAT: Derleyicinin AST derinliğinde çökmemesi için Mitoz Rozeti dışarı aktarıldı
+  // ZIRHLI FORMAT: Arayüz derinliğini azaltmak için dışarı çıkarıldı
   Widget _buildMitosisBadge(WordModel item) {
     final String dnaCode = "DNA-" + item.id.toString().padLeft(6, '0');
     return Column(
@@ -141,7 +142,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                 ],
               ),
               child: const Text(
-                "\u{1F9EC}", 
+                "🧬", 
                 style: TextStyle(
                   fontSize: 10, 
                   shadows: [
@@ -174,7 +175,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
-  // ZIRHLI FORMAT: Butonların ve istatistiklerin derinliği ayrıştırıldı
+  // ZIRHLI FORMAT: Arayüz derinliğini azaltmak için dışarı çıkarıldı
   Widget _buildTrailingActions(WordModel item) {
     final String errorText = "Hata: " + item.wrongCount.toString();
     final String srsText = _getSrsDayText(item.srsLevel);
@@ -226,6 +227,85 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
+  // ZIRHLI FORMAT: Liste öğesi tamamen dışarı çıkarıldı (AST derinliği azaltıldı)
+  Widget _buildListItem(BuildContext context, int index) {
+    final WordModel item = _filteredList[index];
+    final bool isMitosis = item.libraryName.startsWith('🧬');
+    final String dismissKey = item.id.toString() + '_' + index.toString();
+    final String heroTag = 'hero_word_list_' + item.id.toString();
+
+    return _buildAnimatedItem(
+      context, 
+      index,
+      RepaintBoundary(
+        child: Dismissible(
+          key: Key(dismissKey),
+          direction: widget.onLearned != null ? DismissDirection.horizontal : DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(16)),
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
+          ),
+          secondaryBackground: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(16)),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: const Icon(Icons.delete, color: Colors.white, size: 30),
+          ),
+          onDismissed: (direction) {
+            setState(() {
+              widget.words.remove(item);
+              _filteredList.remove(item);
+            });
+            if (direction == DismissDirection.endToStart) {
+              widget.onDelete(item);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime silindi."), duration: Duration(seconds: 1)));
+            } else if (direction == DismissDirection.startToEnd) {
+              final learnCb = widget.onLearned;
+              if (learnCb != null) {
+                learnCb(item);
+              }
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime öğrenildi! ✅"), backgroundColor: Colors.green, duration: Duration(seconds: 1)));
+            }
+          },
+          child: Card(
+            elevation: 2,
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: isMitosis ? BorderSide(color: Colors.purpleAccent.withOpacity(0.3), width: 1.5) : BorderSide.none,
+            ),
+            color: isMitosis ? Colors.purpleAccent.withOpacity(0.05) : Theme.of(context).cardColor,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: ListTile(
+                title: Hero(
+                  tag: heroTag,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Text(item.word, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple)),
+                  ),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    Text(item.meanings.join(', '), style: const TextStyle(fontWeight: FontWeight.w500)),
+                    if (isMitosis) _buildMitosisBadge(item),
+                  ],
+                ),
+                trailing: _buildTrailingActions(item),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (searchQuery.isEmpty && _filteredList.length != widget.words.length) {
@@ -273,86 +353,12 @@ class _ManageListScreenState extends State<ManageListScreen> {
                 child: Center(child: Text("Bu liste şu an boş.", style: TextStyle(fontSize: 16, color: Colors.grey))),
               )
             : SliverList(
+                // ZIRHLI FORMAT: İzole edilmiş metot çağrısı yapıldı
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = _filteredList[index];
-                    final bool isMitosis = item.libraryName.startsWith('\u{1F9EC}');
-                    final String dismissKey = item.id.toString() + '_' + index.toString();
-                    final String heroTag = 'hero_word_list_' + item.id.toString();
-
-                    return _buildAnimatedItem(
-                      context, 
-                      index,
-                      RepaintBoundary(
-                        child: Dismissible(
-                          key: Key(dismissKey),
-                          direction: widget.onLearned != null 
-                              ? DismissDirection.horizontal 
-                              : DismissDirection.endToStart,
-                          background: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(16)),
-                            alignment: Alignment.centerLeft,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
-                          ),
-                          secondaryBackground: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(16)),
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: const Icon(Icons.delete, color: Colors.white, size: 30),
-                          ),
-                          onDismissed: (direction) {
-                            setState(() {
-                              widget.words.remove(item);
-                              _filteredList.remove(item);
-                            });
-                            if (direction == DismissDirection.endToStart) {
-                              widget.onDelete(item);
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime silindi."), duration: Duration(seconds: 1)));
-                            } else if (direction == DismissDirection.startToEnd) {
-                              final learnCb = widget.onLearned;
-                              if (learnCb != null) learnCb(item);
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime öğrenildi! ✅"), backgroundColor: Colors.green, duration: Duration(seconds: 1)));
-                            }
-                          },
-                          child: Card(
-                            elevation: 2,
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              side: isMitosis ? BorderSide(color: Colors.purpleAccent.withOpacity(0.3), width: 1.5) : BorderSide.none
-                            ),
-                            color: isMitosis ? Colors.purpleAccent.withOpacity(0.05) : Theme.of(context).cardColor,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4.0),
-                              child: ListTile(
-                                title: Hero(
-                                  tag: heroTag,
-                                  child: Material(
-                                    type: MaterialType.transparency,
-                                    child: Text(item.word, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple)),
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 4),
-                                    Text(item.meanings.join(', '), style: const TextStyle(fontWeight: FontWeight.w500)),
-                                    if (isMitosis) _buildMitosisBadge(item), // ZIRHLI ÇAĞRI
-                                  ],
-                                ),
-                                trailing: _buildTrailingActions(item), // ZIRHLI ÇAĞRI
-                              ),
-                            ),
-                          ),
-                        )
-                      );
-                    },
-                    childCount: _filteredList.length,
-                  ),
+                  _buildListItem,
+                  childCount: _filteredList.length,
                 ),
+              ),
         ],
       ),
     );
