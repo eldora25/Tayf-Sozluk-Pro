@@ -258,7 +258,9 @@ class _EditWordScreenState extends State<EditWordScreen> {
                   )),
 
                   const SizedBox(height: 20),
+                  // DÜZELTİLDİ: Taşma sorununu çözmek için isExpanded: true eklendi
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     value: _level,
                     decoration: _buildInputDeco("Zorluk Seviyesi", icon: Icons.bar_chart),
                     items: ['A1','A2','B1','B2','C1','C2','Genel'].map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontWeight: FontWeight.bold)))).toList(),
@@ -266,7 +268,9 @@ class _EditWordScreenState extends State<EditWordScreen> {
                   ),
                   
                   const SizedBox(height: 20),
+                  // DÜZELTİLDİ: Taşma sorununu çözmek için isExpanded: true eklendi ve metinler korumaya alındı
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     value: _currentLibraries.contains(_library) ? _library : _currentLibraries.first,
                     decoration: _buildInputDeco("Kayıt Kütüphanesi", icon: Icons.library_books),
                     items: _currentLibraries.map((e) {
@@ -277,12 +281,15 @@ class _EditWordScreenState extends State<EditWordScreen> {
                             children: [
                               const Icon(Icons.add, color: Colors.blue, size: 20),
                               const SizedBox(width: 8),
-                              Text(e, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                              Expanded(child: Text(e, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
                             ],
                           )
                         );
                       }
-                      return DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontWeight: FontWeight.bold)));
+                      return DropdownMenuItem(
+                        value: e, 
+                        child: Text(e, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)
+                      );
                     }).toList(),
                     onChanged: (v) {
                       if (v == '+ Yeni Kütüphane Oluştur') {
