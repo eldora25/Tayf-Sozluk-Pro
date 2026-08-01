@@ -32,12 +32,12 @@ jobs:
 
       - name: Generate Isar Models
         run: |
-          # Isar model uyuşmazlıklarını ve eski .g.dart hatalarını kökünden çözmek için kodu yeniden üretiyoruz.
+          # Isar model uyuşmazlıklarını çözer
           flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Fix Undefined Variable Issue
         run: |
-          # library_manager_screen.dart içindeki 'tayfPoints' hatasını engellemek için güvenli bir şekilde gizliyoruz.
+          # library_manager_screen.dart içindeki 'tayfPoints' hatasını engellemek için yorum satırına alıyoruz.
           sed -i 's/tayfPoints += 50;/\/\/ tayfPoints += 50;/g' lib/library_manager_screen.dart
 
       - name: Regenerate Android Project
@@ -49,9 +49,10 @@ jobs:
           # 1. KOTLIN SÜRÜMÜNÜ GÜNCELLEME VE SABİTLEME
           sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           
-          # 2. ANA PROJE İÇİN API 36 ZORLAMASI
+          # 2. ANA PROJE İÇİN API 36 ZORLAMASI VE FIREBASE İÇİN MİNİMUM SDK 23 ZORLAMASI
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle
+          sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle
           
           # 3. DESUGARING AKTİVASYONU
           sed -i '/compileOptions {/a \        coreLibraryDesugaringEnabled true' android/app/build.gradle
