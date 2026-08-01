@@ -243,7 +243,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tayf Sözlük Pro',
+      title: 'Lexis Eldora', // YENİ İSİM
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
       themeAnimationDuration: const Duration(milliseconds: 600), 
@@ -1162,7 +1162,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: false))), 
                       Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
                       
-                      // DÜZELTİLDİ: Eşsiz İlaç Kapsülü İkonlu DNA Damgası (Ön Yüz)
                       if (isMitosis)
                         Positioned(
                           bottom: 15,
@@ -1172,7 +1171,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // 1. İlaç Kapsülü (DNA Sarmalı)
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                                   decoration: BoxDecoration(
@@ -1196,7 +1194,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                // 2. Mevcut DNA Damgası
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                   decoration: BoxDecoration(
@@ -1262,7 +1259,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isMitosis = word.libraryName.startsWith('🧬'); 
-    List<Color> distinctColors = const [Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)];
 
     List<Shadow> hardOutline = isMitosis ? const [
       Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1)),
@@ -1324,7 +1320,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Center(child: Text(word.word, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline))), 
-                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (isMitosis ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color)!.withOpacity(0.3))), 
+                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (_getTextColor(context, isDark, isMitosis)).withOpacity(0.3))), 
                               ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• $m", style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline)))),
                               if (word.examples.isNotEmpty) ...[
                                 const SizedBox(height: 16),
@@ -1339,7 +1335,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: true))), 
                       Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
                       
-                      // DÜZELTİLDİ: Eşsiz İlaç Kapsülü İkonlu DNA Damgası (Arka Yüz)
                       if (isMitosis)
                         Positioned(
                           bottom: 15,
@@ -1349,7 +1344,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // 1. İlaç Kapsülü (DNA Sarmalı)
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                                   decoration: BoxDecoration(
@@ -1373,7 +1367,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                // 2. Mevcut DNA Damgası
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                   decoration: BoxDecoration(
@@ -1483,7 +1476,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              const Text("Tayf Sözlük Pro", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                              const Text("Lexis Eldora", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                               Text("Build v1.0.$buildNo", style: const TextStyle(color: Colors.white70, fontSize: 13))
                             ],
                           ),
@@ -1600,14 +1593,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-                            Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                            Text("Lexis Eldora©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
                           ],
                         ),
                         const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                           decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.deepPurple]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)]),
-                          child: const Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
+                          child: const Text("✨ Lexis Eldora ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
                         ),
                       ],
                     ),
@@ -1692,7 +1685,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Tayf Sözlük Pro", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+            const Text("Lexis Eldora", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             Text(isSrsMode ? "SRS Tekrar Modu" : "$selectedLibrary - $selectedLevel (${deck.length})", style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
@@ -1869,11 +1862,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         children: [
                                           Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
                                           const SizedBox(width: 16),
-                                          Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                          Text("Lexis Eldora©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
-                                      Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor.withOpacity(0.5))),
+                                      Text("✨ Lexis Eldora ✨", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor.withOpacity(0.5))),
                                     ],
                                   ),
                                 ),
