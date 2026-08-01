@@ -79,7 +79,6 @@ jobs:
                   f.write(content + dummy_interface)
           '
 
-      # YENİ VE KRİTİK: DİNAMİK ADAPTIVE İKON ÜRETİM MODÜLÜ (Kelime Hatır'daki gibi kusursuz kenarlar için)
       - name: Generate Adaptive App Icons
         run: |
           if [ -f "assets/ic_launcher.png" ] && [ -f "assets/ic_launcher_adaptive_fore.png" ] && [ -f "assets/ic_launcher_adaptive_back.png" ]; then
@@ -104,17 +103,18 @@ jobs:
       - name: Build Debug APK
         run: flutter build apk --debug --dart-define=BUILD_NUMBER=${{ github.run_number }}
 
+      # YENİ: Lexis Eldora V2.0 olarak isimlendiriliyor (Boşluk hatasını önlemek için tırnak içine alındı)
       - name: Rename APK Dynamically
         run: |
-          mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/TY-Sozluk-v1.0.${{ github.run_number }}-debug.apk
+          mv build/app/outputs/flutter-apk/app-debug.apk "build/app/outputs/flutter-apk/Lexis Eldora-V2.0.${{ github.run_number }}-debug.apk"
 
+      # YENİ: Yeni isme göre Artifact yükleme kuralı güncellendi
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Dynamic-Debug-APK
-          path: build/app/outputs/flutter-apk/TY-Sozluk-v1.0.*-debug.apk
+          path: "build/app/outputs/flutter-apk/Lexis Eldora-V2.0.*-debug.apk"
 
-      # BAŞARILI DERLEMEDEN SONRA KAYNAK KODLARIN DİNAMİK İSİMLE YEDEKLENMESİ
       - name: Backup Source Files with Build & Commit Info
         if: success()
         run: |
