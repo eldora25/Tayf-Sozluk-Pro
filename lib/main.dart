@@ -15,7 +15,7 @@ import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 
-// YENİ: Firebase importları eklendi
+// YENİ: Firebase Başlangıç Paketleri Eklendi
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -195,7 +195,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // YENİ: Firebase Başlatma
+  // YENİ: Firebase Başlatma Satırı Eklendi
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -235,7 +235,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       case 2: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.blue, primaryColor: Colors.blue[600], scaffoldBackgroundColor: const Color(0xFFE3F2FD), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.blue), appBarTheme: AppBarTheme(backgroundColor: Colors.blue[600], foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 3: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.teal, primaryColor: Colors.teal[600], scaffoldBackgroundColor: const Color(0xFFE0F2F1), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.teal), appBarTheme: AppBarTheme(backgroundColor: Colors.teal[600], foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 4: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.purple, primaryColor: Colors.deepPurpleAccent, scaffoldBackgroundColor: const Color(0xFFEDE7F6), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepPurpleAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
-      case 5: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: const Color(0xFFFBE9E7), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: const AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
+      case 5: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.deepOrange, primaryColor: Colors.deepOrangeAccent, scaffoldBackgroundColor: const Color(0xFFFBE9E7), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.deepOrangeAccent), appBarTheme: AppBarTheme(backgroundColor: Colors.deepOrangeAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 6: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.pink, primaryColor: Colors.pinkAccent, scaffoldBackgroundColor: const Color(0xFFFCE4EC), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.pinkAccent, secondary: Colors.pink), appBarTheme: const AppBarTheme(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 7: return ThemeData(textTheme: baseTextTheme, primarySwatch: Colors.cyan, primaryColor: Colors.cyan[700], scaffoldBackgroundColor: const Color(0xFFE0F7FA), cardColor: Colors.white, colorScheme: const ColorScheme.light(primary: Colors.cyan, secondary: Colors.cyanAccent), appBarTheme: AppBarTheme(backgroundColor: Colors.cyan[700], foregroundColor: Colors.white, elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 8: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: const Color(0xFF2C3E50), scaffoldBackgroundColor: const Color(0xFF1E272E), colorScheme: const ColorScheme.dark(primary: Color(0xFF2C3E50), secondary: Color(0xFF546E7A)), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions); 
@@ -278,9 +278,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _glowController;
   late Animation<double> _glowAnimation;
   late AnimationController _bgGradientController; 
-
   late AnimationController _auroraController; 
-
   late AnimationController _neonPulseController;
   late Animation<double> _neonPulseAnim;
   late AnimationController _tpFlashController;
@@ -306,11 +304,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int firstUseTimestamp = 0, currentStreak = 0, bestStreak = 0, tayfPoints = 0, streakFreezes = 0;
 
   final List<Color> distinctColors = const [
-    Color(0xFFFFEA00), 
-    Color(0xFFD500F9), 
-    Color(0xFF00E5FF), 
-    Color(0xFFFF3D00), 
-    Color(0xFF00E676)
+    Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)
   ];
 
   @override
@@ -321,12 +315,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
     _bgGradientController = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true); 
-    
     _auroraController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat(reverse: true); 
-    
     _neonPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat(reverse: true);
     _neonPulseAnim = Tween<double>(begin: 0.6, end: 1.4).animate(CurvedAnimation(parent: _neonPulseController, curve: Curves.easeInOutCubic));
-    
     _tpFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _freezeFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _streakFlashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
@@ -795,7 +786,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     else _savePreferencesOnly();
   }
 
-  // YENİ: İzolasyon Sistemi ve Ünlem Butonu Fonksiyonu
   void _moveToReview(WordModel word) {
     HapticFeedback.heavyImpact();
     setState(() {
@@ -1027,7 +1017,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     
     try {
       final dir = await getTemporaryDirectory();
-      String safeName = libName.replaceAll(RegExp(r'[<>:"/\\|?*🧬 ]'), '_');
+      String safeName = libName.replaceAll(RegExp(r'[<>:"/\\|?*\u{1F9EC} ]'), '_');
       final file = File('${dir.path}/$safeName.csv');
       await file.writeAsString(const ListToCsvConverter().convert(rows));
       await Share.shareXFiles([XFile(file.path, mimeType: 'text/csv')], subject: '$libName Yedeği');
@@ -1087,49 +1077,44 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildCrown(int level, bool isMitosis) {
     if (level == 0) return const SizedBox.shrink();
     List<Widget> pieces = [];
-    
-    List<Shadow> iconOutline = isMitosis ? const [
-      Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1)),
-      Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(-1, -1)),
-    ] : [];
 
     if (level == 1) {
-      pieces = [Icon(Icons.change_history, size: 16, color: const Color(0xFFFFEA00), shadows: iconOutline)]; 
+      pieces = [const Icon(Icons.change_history, size: 16, color: Color(0xFFFFEA00))]; 
     } else if (level == 2) {
       pieces = [
-        Icon(Icons.spa, size: 14, color: const Color(0xFFD500F9), shadows: iconOutline),
-        Icon(Icons.keyboard_arrow_up, size: 20, color: const Color(0xFFD500F9), shadows: iconOutline),
-        Icon(Icons.spa, size: 14, color: const Color(0xFFD500F9), shadows: iconOutline),
+        const Icon(Icons.spa, size: 14, color: Color(0xFFD500F9)),
+        const Icon(Icons.keyboard_arrow_up, size: 20, color: Color(0xFFD500F9)),
+        const Icon(Icons.spa, size: 14, color: Color(0xFFD500F9)),
       ];
     } else if (level == 3) {
       pieces = [
-        Icon(Icons.filter_vintage, size: 14, color: const Color(0xFF00E5FF), shadows: iconOutline),
-        Icon(Icons.spa, size: 18, color: const Color(0xFF00E5FF), shadows: iconOutline),
-        Icon(Icons.workspace_premium, size: 24, color: const Color(0xFF00E5FF), shadows: iconOutline),
-        Icon(Icons.spa, size: 18, color: const Color(0xFF00E5FF), shadows: iconOutline),
-        Icon(Icons.filter_vintage, size: 14, color: const Color(0xFF00E5FF), shadows: iconOutline),
+        const Icon(Icons.filter_vintage, size: 14, color: Color(0xFF00E5FF)),
+        const Icon(Icons.spa, size: 18, color: Color(0xFF00E5FF)),
+        const Icon(Icons.workspace_premium, size: 24, color: Color(0xFF00E5FF)),
+        const Icon(Icons.spa, size: 18, color: Color(0xFF00E5FF)),
+        const Icon(Icons.filter_vintage, size: 14, color: Color(0xFF00E5FF)),
       ];
     } else if (level == 4) {
       pieces = [
-        Icon(Icons.ac_unit, size: 14, color: const Color(0xFFFF3D00), shadows: iconOutline),
-        Icon(Icons.filter_vintage, size: 18, color: const Color(0xFFFF3D00), shadows: iconOutline),
-        Icon(Icons.spa, size: 22, color: const Color(0xFFFF3D00), shadows: iconOutline),
-        Icon(Icons.military_tech, size: 28, color: const Color(0xFFFF3D00), shadows: iconOutline),
-        Icon(Icons.spa, size: 22, color: const Color(0xFFFF3D00), shadows: iconOutline),
-        Icon(Icons.filter_vintage, size: 18, color: const Color(0xFFFF3D00), shadows: iconOutline),
-        Icon(Icons.ac_unit, size: 14, color: const Color(0xFFFF3D00), shadows: iconOutline),
+        const Icon(Icons.ac_unit, size: 14, color: Color(0xFFFF3D00)),
+        const Icon(Icons.filter_vintage, size: 18, color: Color(0xFFFF3D00)),
+        const Icon(Icons.spa, size: 22, color: Color(0xFFFF3D00)),
+        const Icon(Icons.military_tech, size: 28, color: Color(0xFFFF3D00)),
+        const Icon(Icons.spa, size: 22, color: Color(0xFFFF3D00)),
+        const Icon(Icons.filter_vintage, size: 18, color: Color(0xFFFF3D00)),
+        const Icon(Icons.ac_unit, size: 14, color: Color(0xFFFF3D00)),
       ];
     } else if (level == 5) {
       pieces = [
-        Icon(Icons.auto_awesome, size: 16, color: const Color(0xFF00E676), shadows: iconOutline),
-        Icon(Icons.ac_unit, size: 18, color: const Color(0xFF00E676), shadows: iconOutline),
-        Icon(Icons.filter_vintage, size: 22, color: const Color(0xFF00E676), shadows: iconOutline),
-        Icon(Icons.spa, size: 26, color: const Color(0xFF00E676), shadows: iconOutline),
-        Icon(Icons.diamond, size: 32, color: Colors.white, shadows: iconOutline),
-        Icon(Icons.spa, size: 26, color: const Color(0xFF00E676), shadows: iconOutline),
-        Icon(Icons.filter_vintage, size: 22, color: const Color(0xFF00E676), shadows: iconOutline),
-        Icon(Icons.ac_unit, size: 18, color: const Color(0xFF00E676), shadows: iconOutline),
-        Icon(Icons.auto_awesome, size: 16, color: const Color(0xFF00E676), shadows: iconOutline),
+        const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF00E676)),
+        const Icon(Icons.ac_unit, size: 18, color: Color(0xFF00E676)),
+        const Icon(Icons.filter_vintage, size: 22, color: Color(0xFF00E676)),
+        const Icon(Icons.spa, size: 26, color: Color(0xFF00E676)),
+        const Icon(Icons.diamond, size: 32, color: Colors.white),
+        const Icon(Icons.spa, size: 26, color: Color(0xFF00E676)),
+        const Icon(Icons.filter_vintage, size: 22, color: Color(0xFF00E676)),
+        const Icon(Icons.ac_unit, size: 18, color: Color(0xFF00E676)),
+        const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF00E676)),
       ];
     }
     return Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: pieces);
@@ -1169,12 +1154,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    bool isMitosis = word.libraryName.startsWith('🧬'); 
-
-    List<Shadow> hardOutline = isMitosis ? const [
-      Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1)),
-      Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(-1, -1)),
-    ] : [];
+    bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
 
     return RepaintBoundary(
       child: AnimatedBuilder(
@@ -1202,8 +1182,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, shadows: hardOutline)),
-                            if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16, shadows: hardOutline),
+                            if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent)),
+                            if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
                             if (isPremium) const SizedBox(width: 8),
                             Text(
                               isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
@@ -1212,7 +1192,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 fontWeight: FontWeight.bold, 
                                 fontSize: 14, 
                                 letterSpacing: 1.5,
-                                shadows: hardOutline 
                               )
                             ),
                           ],
@@ -1223,9 +1202,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Expanded(
                   child: Stack(
                     children: [
-                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline))))), 
-                      Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: false))), 
-                      Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
+                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: _getTextColor(context, isDark, isMitosis)))))), 
+                      Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: false))), 
+                      Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word))),
                       
                       if (isMitosis)
                         Positioned(
@@ -1236,26 +1215,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black,
-                                    borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(color: Colors.white30, width: 1),
-                                    boxShadow: [
-                                      BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 10, spreadRadius: 1, offset: const Offset(-3, 0)),
-                                      BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 10, spreadRadius: 1, offset: const Offset(3, 0)),
-                                    ]
-                                  ),
-                                  child: const Text(
-                                    "🧬", 
-                                    style: TextStyle(
-                                      fontSize: 16, 
-                                      shadows: [
-                                        Shadow(color: Colors.orangeAccent, blurRadius: 15),
-                                        Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                                Transform.rotate(
+                                  angle: -0.5,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      borderRadius: BorderRadius.circular(30),
+                                      border: Border.all(color: Colors.white30, width: 1),
+                                      boxShadow: [
+                                        BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)),
+                                        BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0)),
                                       ]
-                                    )
+                                    ),
+                                    child: Transform.rotate(
+                                      angle: 0.5,
+                                      child: const Text(
+                                        "\u{1F9EC}", 
+                                        style: TextStyle(
+                                          fontSize: 16, 
+                                          shadows: [
+                                            Shadow(color: Colors.orangeAccent, blurRadius: 15),
+                                            Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                                          ]
+                                        )
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -1272,7 +1257,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     children: [
                                       const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
                                       const SizedBox(width: 6),
-                                      Text("DNA-${word.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                                      Text("DNA-" + word.id.toString().padLeft(6, '0'), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
                                     ],
                                   ),
                                 ),
@@ -1323,12 +1308,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    bool isMitosis = word.libraryName.startsWith('🧬'); 
-
-    List<Shadow> hardOutline = isMitosis ? const [
-      Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1)),
-      Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(-1, -1)),
-    ] : [];
+    bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
 
     return RepaintBoundary(
       child: AnimatedBuilder(
@@ -1356,8 +1336,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, shadows: hardOutline)),
-                            if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16, shadows: hardOutline),
+                            if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent)),
+                            if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
                             if (isPremium) const SizedBox(width: 8),
                             Text(
                               isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
@@ -1366,7 +1346,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 fontWeight: FontWeight.bold, 
                                 fontSize: 14, 
                                 letterSpacing: 1.5,
-                                shadows: hardOutline
                               )
                             ),
                           ],
@@ -1384,21 +1363,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Center(child: Text(word.word, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline))), 
+                              Center(child: Text(word.word, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
                               Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (_getTextColor(context, isDark, isMitosis)).withOpacity(0.3))), 
-                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• $m", style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline)))),
+                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• " + m, style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
                               if (word.examples.isNotEmpty) ...[
                                 const SizedBox(height: 16),
-                                Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isMitosis ? Colors.pinkAccent : Theme.of(context).colorScheme.secondary, shadows: hardOutline)),
+                                Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isMitosis ? Colors.pinkAccent : Theme.of(context).colorScheme.secondary)),
                                 const SizedBox(height: 6),
-                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» $e", style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis), shadows: hardOutline)))),
+                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» " + e, style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis))))),
                               ]
                             ]
                           )
                         )
                       ), 
-                      Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7), shadows: hardOutline), onPressed: () => _speakWord(word, isMeaning: true))), 
-                      Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5), shadows: hardOutline), onPressed: () => _openEditScreen(word))),
+                      Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: true))), 
+                      Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word))),
                       
                       if (isMitosis)
                         Positioned(
@@ -1409,26 +1388,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black,
-                                    borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(color: Colors.white30, width: 1),
-                                    boxShadow: [
-                                      BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 10, spreadRadius: 1, offset: const Offset(-3, 0)),
-                                      BoxShadow(color: Colors.purpleAccent.withOpacity(0.6), blurRadius: 10, spreadRadius: 1, offset: const Offset(3, 0)),
-                                    ]
-                                  ),
-                                  child: const Text(
-                                    "🧬", 
-                                    style: TextStyle(
-                                      fontSize: 16, 
-                                      shadows: [
-                                        Shadow(color: Colors.orangeAccent, blurRadius: 15),
-                                        Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                                Transform.rotate(
+                                  angle: -0.5,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      borderRadius: BorderRadius.circular(30),
+                                      border: Border.all(color: Colors.white30, width: 1),
+                                      boxShadow: [
+                                        BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)),
+                                        BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0)),
                                       ]
-                                    )
+                                    ),
+                                    child: Transform.rotate(
+                                      angle: 0.5,
+                                      child: const Text(
+                                        "\u{1F9EC}", 
+                                        style: TextStyle(
+                                          fontSize: 16, 
+                                          shadows: [
+                                            Shadow(color: Colors.orangeAccent, blurRadius: 15),
+                                            Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                                          ]
+                                        )
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -1445,7 +1430,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     children: [
                                       const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
                                       const SizedBox(width: 6),
-                                      Text("DNA-${word.id.toString().padLeft(6, '0')}", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                                      Text("DNA-" + word.id.toString().padLeft(6, '0'), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
                                     ],
                                   ),
                                 ),
@@ -1542,13 +1527,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                               const SizedBox(height: 14),
                               const Text("Lexis Eldora", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                              Text("Build v2.0.$buildNo", style: const TextStyle(color: Colors.white70, fontSize: 13))
+                              Text("Build v1.0.$buildNo", style: const TextStyle(color: Colors.white70, fontSize: 13))
                             ],
                           ),
                         );
                       }
                     ),
-                    ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (50 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
+                    ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (100 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
                     const Divider(),
                     
                     ListTile(
@@ -1596,6 +1581,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => wrongWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     
+                    ListTile(
+                      leading: const Icon(Icons.saved_search, color: Colors.amber), 
+                      title: const Text("İncelenecek Kelimeler"), 
+                      subtitle: Text("${reviewWordsPool.length} kelime"), 
+                      onTap: () { 
+                        HapticFeedback.lightImpact(); 
+                        Navigator.pop(context); 
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "İncelenecek Kelimeler", words: reviewWordsPool, onDelete: (w) { setState(() => reviewWordsPool.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => reviewWordsPool.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); 
+                      }
+                    ),
+
                     const Divider(),
                     ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
                     ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
@@ -1615,12 +1611,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             totalQuizTimeSeconds += t; 
                             totalQuizQuestions += a; 
                             totalQuizWrong += w; 
-                            tayfPoints += tp;
+                            tayfPoints += tp; 
                             completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
                           });
                           _savePreferencesOnly(); 
                         }
-                      ))); 
+                      ))).then((_) => _loadData()); 
                     }),
                     
                     ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
@@ -1658,15 +1654,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("V2.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-                            Text("Lexis Eldora©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                            Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                            Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
                           ],
                         ),
                         const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                           decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.deepPurple]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)]),
-                          child: const Text("✨ Lexis Eldora ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
+                          child: const Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
                         ),
                       ],
                     ),
@@ -1911,8 +1907,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                             ),
                             const SizedBox(height: 30),
-                            
-                            // YENİ UI BİRLEŞTİRME: Sarı Ünlem Butonu ve İzole Mimari eklendi
                             if (isFlipped) 
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1979,13 +1973,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Text("V2.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                          Text("V1.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
                                           const SizedBox(width: 16),
-                                          Text("Lexis Eldora©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                          Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
-                                      Text("✨ Lexis Eldora ✨", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor.withOpacity(0.5))),
+                                      Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor.withOpacity(0.5))),
                                     ],
                                   ),
                                 ),
