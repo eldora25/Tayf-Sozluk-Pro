@@ -27,18 +27,28 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Overwrite Pubspec Name Safely
+      - name: Force Clean Pubspec Name
         run: |
-          # Gizli karakterleri önlemek için pubspec.yaml ismini doğrudan otonom olarak yeniden yazıyoruz
+          # Python ile pubspec.yaml dosyasını okuyup adını kesin olarak tayf_sozluk_pro yapıyoruz
           python3 -c '
-          with open("pubspec.yaml", "r", encoding="utf-8") as f:
-              lines = f.readlines()
-          with open("pubspec.yaml", "w", encoding="utf-8") as f:
+          with open("pubspec.yaml", "r", encoding="utf-8-sig") as f:
+              content = f.read()
+          
+          # Eğer name alanı varsa değiştir, yoksa en üste ekle
+          if "name:" in content:
+              lines = content.splitlines()
+              new_lines = []
               for line in lines:
-                  if line.startswith("name:"):
-                      f.write("name: tayf_sozluk_pro\n")
+                  if line.strip().startswith("name:"):
+                      new_lines.append("name: tayf_sozluk_pro")
                   else:
-                      f.write(line)
+                      new_lines.append(line)
+              content = "\n".join(new_lines)
+          else:
+              content = "name: tayf_sozluk_pro\n" + content
+              
+          with open("pubspec.yaml", "w", encoding="utf-8") as f:
+              f.write(content)
           '
 
       - name: Install Dependencies
