@@ -20,7 +20,7 @@ import 'firebase_options.dart';
 import 'firebase_sync_service.dart';
 
 import 'models.dart';
-import 'wordnet.dart'; // YENİ EKLENDİ
+import 'wordnet.dart'; 
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
 import 'word_list_screen.dart';
@@ -341,6 +341,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _streakFlashController;
   late AnimationController _warningPulseController;
 
+  // YENİ YAPI: Uygulama yükleme durumu
+  bool _isAppLoading = true;
+  String _loadingText = "Uygulama Hazırlanıyor...";
+
   List<WordModel> allWords = [];
   List<WordModel> learningWords = []; 
   List<WordModel> learnedWords = [];
@@ -349,7 +353,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<WordModel> wrongWords = []; 
   List<WordModel> reviewWordsPool = []; 
   
-  // YENİ: Performans için WordNet kelime havuzu
   List<WordModel> _cachedWordNetDeck = [];
 
   String selectedLibrary = 'Varsayılan';
@@ -404,11 +407,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       final prefs = await SharedPreferences.getInstance();
       
-      // YENİ: Uygulama açılışında WordNet Servisini ZIP'ten RAM'e yükle
+      setState(() { _loadingText = "WordNet Veritabanı Çıkarılıyor...\n(Bu işlem ilk açılışta biraz sürebilir)"; });
+      
+      // YENİ YAPI: WordNet servisinin tamamen yüklenmesini bekliyoruz
       await WordNetService().loadWordNetData();
       if (_cachedWordNetDeck.isEmpty) {
         _cachedWordNetDeck = WordNetService().getRandomWords(200);
       }
+
+      setState(() { _loadingText = "Kullanıcı Verileri Yükleniyor..."; });
 
       setState(() {
         selectedLibrary = prefs.getString('selectedLibrary') ?? 'Varsayılan';
@@ -501,9 +508,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           currentCardIndex = 0;
           isFlipped = false;
         }
+        
+        // Yükleme tamamlandı, ana ekranı aç
+        _isAppLoading = false;
       });
     } catch (e) {
       debugPrint("Load Data Error: $e");
+      setState(() { _isAppLoading = false; });
     }
   }
 
@@ -713,7 +724,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       deck.addAll(toSRSRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
       deck.addAll(toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
     } else if (selectedLibrary == 'WordNet Veritabanı') {
-      // YENİ: Seçim WordNet ise cihazı yormadan anlık çekilen belleği karta bas
       deck.addAll(_cachedWordNetDeck);
     } else {
       deck.addAll(toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
@@ -732,7 +742,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     var uniqueLibs = libs.toSet().toList();
     uniqueLibs.add('Tekrarlanması Gerekenler'); 
     
-    // YENİ: ZIP yüklendiyse seçimlere dev WordNet'i ekle
+    // GÜNCELLEME: WordNet hazırsa ayarlar ekranı için listeye ekle
     if (WordNetService().isLoaded) {
       uniqueLibs.add('WordNet Veritabanı');
     }
@@ -1682,7 +1692,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
                       HapticFeedback.lightImpact();
                       Navigator.pop(context); 
-                      // YENİ: Quiz Modunda seçilen WordNet ise cached data gönderilir
                       List<WordModel> fullPool = [];
                       if (selectedLibrary == 'WordNet Veritabanı') {
                         fullPool = _cachedWordNetDeck;
@@ -1803,6 +1812,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // YENİ YAPI: Yükleme Ekranı
+    if (_isAppLoading) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: Theme.of(context).primaryColor,
+                strokeWidth: 4,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                _loadingText, 
+                textAlign: TextAlign.center, 
+                style: TextStyle(
+                  fontSize: 16, 
+                  fontWeight: FontWeight.bold, 
+                  color: Theme.of(context).primaryColor,
+                  height: 1.5
+                )
+              ),
+            ]
+          )
+        )
+      );
+    }
+
     var deck = activeDeck;
     if (currentCardIndex >= deck.length) currentCardIndex = 0;
     WordModel? currentWord = deck.isNotEmpty ? deck[currentCardIndex] : null;
