@@ -224,6 +224,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text("Boyutu büyük paketlerin yüklenmesi birkaç saniye sürebilir.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                     const SizedBox(height: 16),
+                    // YENİ: Eski WordNet JSON Import butonu yerine bilgi kartı
+                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet Veritabanı (Aktif)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), subtitle: const Text("150.000+ kelimelik devasa sözlük ZIP formatında belleğe yüklendi. Yukarıdaki 'Aktif Kütüphane' menüsünden seçebilirsiniz."), trailing: const Icon(Icons.check_circle, color: Colors.indigo, size: 32)),
+                    const SizedBox(height: 10),
                     ListTile(tileColor: Colors.orange.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kısa Temel Kelimeler"), trailing: const Icon(Icons.download_for_offline, color: Colors.orange, size: 32), onTap: () { widget.onAddPackage("assets/EN-TR_tayf.txt", "txt", "Tayf İng-Tr"); }),
                     const SizedBox(height: 10),
                     ListTile(tileColor: Colors.green.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Babylon İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Geniş Kapsamlı Sözlük"), trailing: const Icon(Icons.download_for_offline, color: Colors.green, size: 32), onTap: () { widget.onAddPackage("assets/Babylon_English_Turkish_donustu.csv", "csv", "Babylon İng-Tr"); }),
