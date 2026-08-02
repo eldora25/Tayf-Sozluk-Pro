@@ -38,6 +38,11 @@ class WordModel {
   String sourceLanguage = 'en-US';
   String targetLanguage = 'tr-TR';
 
+  // YENİ: WordNet Entegrasyon Parametreleri (Geriye Dönük Uyumluluk İçin Varsayılan Değerli)
+  String pos = '';
+  List<String> synonyms = [];
+  List<String> antonyms = [];
+
   WordModel({
     required this.word,
     required this.meanings,
@@ -51,6 +56,9 @@ class WordModel {
     this.nextReviewDate = 0,
     this.sourceLanguage = 'en-US',
     this.targetLanguage = 'tr-TR',
+    this.pos = '',
+    this.synonyms = const [],
+    this.antonyms = const [],
   });
 
   factory WordModel.fromJson(String jsonString) {
@@ -68,6 +76,9 @@ class WordModel {
       nextReviewDate: map['nextReviewDate'] ?? 0,
       sourceLanguage: map['sourceLanguage'] ?? 'en-US',
       targetLanguage: map['targetLanguage'] ?? 'tr-TR',
+      pos: map['pos'] ?? '',
+      synonyms: map['synonyms'] != null ? List<String>.from(map['synonyms']) : [],
+      antonyms: map['antonyms'] != null ? List<String>.from(map['antonyms']) : [],
     );
   }
 }
