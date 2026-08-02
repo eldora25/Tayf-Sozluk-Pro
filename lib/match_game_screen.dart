@@ -34,8 +34,11 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   
   bool isDragging = false; 
   
-  // YENİ: Sürüklenen objenin altındaki kartı hissedip tamamen görünmez olmasını sağlayan State yöneticisi
   final ValueNotifier<bool> _isHoveringTarget = ValueNotifier(false);
+  final Random _random = Random();
+  
+  // BÖLÜM 5: Hedef Kutuların Akıllı İçerik Haritası
+  Map<String, String> _targetDisplays = {};
 
   @override
   void initState() {
@@ -83,6 +86,29 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     matchedWords.clear();
     isDragging = false;
     _isHoveringTarget.value = false;
+    
+    // YENİ: WordNet kelimeleri için hedefleri (Target) akıllı atama
+    _targetDisplays.clear();
+    for (var w in rightColumn) {
+       bool isWordNet = w.pos.isNotEmpty || w.synonyms.isNotEmpty || w.antonyms.isNotEmpty;
+       if (isWordNet) {
+          List<int> validOptions = [];
+          if (w.synonyms.isNotEmpty) validOptions.add(0);
+          if (w.antonyms.isNotEmpty) validOptions.add(1);
+          if (w.meanings.isNotEmpty) validOptions.add(2);
+          
+          if (validOptions.isEmpty) {
+            _targetDisplays[w.word] = "Kayıt Boş";
+          } else {
+            int selected = validOptions[_random.nextInt(validOptions.length)];
+            if (selected == 0) _targetDisplays[w.word] = "Eş Anlam:\n${w.synonyms.first}";
+            else if (selected == 1) _targetDisplays[w.word] = "Zıt Anlam:\n${w.antonyms.first}";
+            else _targetDisplays[w.word] = "Tanım:\n${w.meanings.first}";
+          }
+       } else {
+          _targetDisplays[w.word] = w.meanings.join(', ');
+       }
+    }
 
     setState(() {});
   }
@@ -309,7 +335,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                   _isHoveringTarget.value = false;
                                   setState(() => isDragging = false);
                                 },
-                                // YENİ: Kartın üzerine gelindiğinde sürüklenen obje "Tamamen Şeffaf" (0.0) oluyor!
                                 feedback: ValueListenableBuilder<bool>(
                                   valueListenable: _isHoveringTarget,
                                   builder: (context, isHovering, child) {
@@ -396,7 +421,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                             return _buildStaggeredItem(
                               idx, 
                               DragTarget<WordModel>(
-                                // YENİ: Sürüklenen objenin altındaki kartı hissetmesi sağlandı
                                 onWillAccept: (data) {
                                   _isHoveringTarget.value = true;
                                   return true;
@@ -411,15 +435,13 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                 builder: (context, candidateData, rejectedData) {
                                   bool isHovered = candidateData.isNotEmpty;
                                   
-                                  // YENİ: Hedef kart sürükleme anında biraz (90), üzerine gelindiğinde tam açılır (160)
-                                  // Ayrıca Matrix4 kullanılarak kart yukarı doğru kayar (translateY) ve hafifçe büyür.
                                   double dynamicHeight = 70.0;
                                   Matrix4 transformMatrix = Matrix4.identity();
                                   
                                   if (isHovered) {
                                     dynamicHeight = 160.0;
-                                    transformMatrix.translate(0.0, -30.0, 0.0); // 30 piksel yukarı kaydırır
-                                    transformMatrix.scale(1.05); // Hafifçe büyütür
+                                    transformMatrix.translate(0.0, -30.0, 0.0); 
+                                    transformMatrix.scale(1.05); 
                                   } else if (isDragging) {
                                     dynamicHeight = 90.0;
                                   }
@@ -454,11 +476,11 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                                             child: SingleChildScrollView(
                                               physics: const BouncingScrollPhysics(),
                                               child: Text(
-                                                word.meanings.join(', '), 
+                                                _targetDisplays[word.word] ?? word.meanings.join(', '), 
                                                 textAlign: TextAlign.center, 
                                                 style: TextStyle(
                                                   color: isWrong || isHovered ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                                  fontSize: isHovered ? 15 : 13, 
+                                                  fontSize: isHovered ? 14 : 12, 
                                                   fontWeight: FontWeight.bold
                                                 )
                                               ),
