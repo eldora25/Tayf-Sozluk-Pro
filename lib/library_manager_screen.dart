@@ -22,7 +22,7 @@ class LibraryManagerScreen extends StatefulWidget {
   final Function(String) onDelete;
   final Function(String) onExport;
   
-  // YENİ: Buluttan kazanılan TP'yi ana ekrana iletecek köprü
+  // Buluttan kazanılan TP'yi ana ekrana iletecek köprü
   final Function(int)? onPointsEarned;
 
   const LibraryManagerScreen({
@@ -313,6 +313,68 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     }
   }
 
+  // YENİ: Alt Menüden Standart Kütüphane Seçim Ekranı
+  void _showLibrarySelectionForUpload() {
+    var standardLibs = _libraries.where((l) => !l.startsWith('🧬') && l != 'İncelenecek Kelimeler').toList();
+    if (standardLibs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gönderilecek standart kütüphane bulunamadı.")));
+      return;
+    }
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1))
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.5), borderRadius: BorderRadius.circular(10)))),
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text("Hangi kütüphaneyi göndereceksiniz?", textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
+                    ),
+                    const SizedBox(height: 10),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: standardLibs.length,
+                        itemBuilder: (ctx, i) => ListTile(
+                          leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.library_books, color: Colors.blue)),
+                          title: Text(standardLibs[i], style: const TextStyle(fontWeight: FontWeight.bold)),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _executeCloudUpload(isMitosis: false, targetLibraryName: standardLibs[i]);
+                          }
+                        )
+                      )
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showUploadMenu() {
     showModalBottomSheet(
       context: context,
@@ -350,10 +412,10 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                     ListTile(
                       leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.public, color: Colors.blue)),
                       title: const Text("🌍 Standart Topluluk Havuzuna Gönder", style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text("Genel kütüphane ve kelime önerileri", style: TextStyle(fontSize: 12)),
+                      subtitle: const Text("Belirli bir kütüphaneyi topluluğa gönderin", style: TextStyle(fontSize: 12)),
                       onTap: () { 
                         Navigator.pop(context); 
-                        _executeCloudUpload(isMitosis: false); 
+                        _showLibrarySelectionForUpload(); 
                       },
                     ),
                     const SizedBox(height: 10),
@@ -367,7 +429,33 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 
-  Future<void> _executeCloudUpload({required bool isMitosis}) async {
+  Future<void> _executeCloudUpload({required bool isMitosis, String? targetLibraryName}) async {
+    // YENİ: Mitoz için 50 kart var mı diye anında (Lottie açılmadan) ön denetim
+    if (isMitosis) {
+      int count = widget.allWords.where((w) => w.libraryName.startsWith('🧬')).length +
+                  widget.learningWords.where((w) => w.libraryName.startsWith('🧬')).length +
+                  widget.toRepeatWords.where((w) => w.libraryName.startsWith('🧬')).length +
+                  widget.learnedWords.where((w) => w.libraryName.startsWith('🧬')).length;
+      if (count < 50) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(children: [Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 30), SizedBox(width: 8), Text("Yetersiz Saf Kart", style: TextStyle(color: Colors.orange))]),
+            content: Text("Global Mitoz Havuzuna katkıda bulunmak için en az 50 saf/mitoz kartınız olmalıdır!\n\nMevcut saf kart sayınız: $count\nLütfen quiz çözerek mitoz kart üretmeye devam edin.", style: const TextStyle(fontSize: 15, height: 1.4)),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Anladım", style: TextStyle(fontWeight: FontWeight.bold))
+              )
+            ],
+          )
+        );
+        return; // İşlemi anında durdur, yükleme ekranı açılmasın!
+      }
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -401,18 +489,20 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
 
     Map<String, dynamic> result = await FirebaseSyncService.syncCardsToCloud(
       allLocalWords, 
-      isMitosisPool: isMitosis
+      isMitosisPool: isMitosis,
+      targetLibraryName: targetLibraryName
     );
 
     if (mounted) {
-      Navigator.pop(context); 
+      Navigator.pop(context); // Diyalogu kapat
       await _loadLastSyncInfo(); 
 
       bool success = result["success"] ?? false;
+      int syncedCount = result["count"] ?? 0;
       String message = result["message"] ?? "İşlem tamamlandı.";
 
-      if (success) {
-        // YENİ: Başarılı olursa Köprü Callback'ini tetikle
+      if (success && syncedCount > 0) {
+        // YENİ: Başarılı olursa ve gerçekten kart yüklenmişse TP'yi kasaya işlet
         if (widget.onPointsEarned != null) {
           widget.onPointsEarned!(50);
         }
@@ -437,6 +527,23 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                 )
               ]
             )
+          )
+        );
+      } else if (success && syncedCount == 0) {
+        // Zaten güncelse boşuna TP kazandırtma!
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(children: [Icon(Icons.info_outline, color: Colors.blue, size: 30), SizedBox(width: 8), Text("Zaten Güncel", style: TextStyle(color: Colors.blue))]),
+            content: const Text("Tüm kartlarınız bulut ile zaten güncel.\n\nYeni bir kart üretilmediği için ek TP kazanılamadı.", textAlign: TextAlign.center, style: TextStyle(fontSize: 15, height: 1.4)),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Anladım", style: TextStyle(fontWeight: FontWeight.bold))
+              )
+            ],
           )
         );
       } else {
