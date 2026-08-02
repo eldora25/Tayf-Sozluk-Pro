@@ -1,6 +1,7 @@
 import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:isar/isar.dart'; // YENİ: Güvenlik Kilidi için eklendi
 import 'models.dart';
 import 'main.dart'; 
 
@@ -102,7 +103,10 @@ class _ManageListScreenState extends State<ManageListScreen> {
       _filteredList.remove(word);
     });
 
-    isar.writeTxn(() async { await isar.wordModels.put(word); });
+    // YENİ: Isar Güvenlik Kilidi
+    if (word.id != Isar.autoIncrement) {
+      isar.writeTxn(() async { await isar.wordModels.put(word); });
+    }
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("⚠️ Kelime incelenmek üzere ayrıldı!", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
@@ -258,8 +262,10 @@ class _ManageListScreenState extends State<ManageListScreen> {
   Widget _buildListItem(BuildContext context, int index) {
     final WordModel item = _filteredList[index];
     final bool isMitosis = item.libraryName.startsWith('\u{1F9EC}');
-    final String dismissKey = item.id.toString() + '_' + index.toString();
-    final String heroTag = 'hero_word_list_' + item.id.toString();
+    
+    // GÜNCELLEME: WordNet kelimesi ise word ismini, değilse ID'yi kullanarak eşsiz key üret
+    final String dismissKey = item.id == Isar.autoIncrement ? '${item.word}_$index' : '${item.id}_$index';
+    final String heroTag = 'hero_word_list_${item.word}_$index';
 
     return _buildAnimatedItem(
       context, 
