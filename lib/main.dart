@@ -375,7 +375,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         wrongAnswerTimestamps = prefs.getStringList('wrongAnswerTimestamps') ?? [];
       });
 
-      // PERFORMANS OPTİMİZASYONU: Paralel Sorgu Altyapısı (Future.wait)[cite: 4]
       final results = await Future.wait([
         isar.wordModels.filter().listTypeEqualTo('all').findAll(),
         isar.wordModels.filter().listTypeEqualTo('learning').findAll(),
@@ -1597,6 +1596,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => wrongWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     
+                    // Karantina & Hata Havuzu Sekmesi
                     ListTile(
                       leading: const Icon(Icons.warning_amber_rounded, color: Colors.amber), 
                       title: const Text("Karantina & Hata Havuzu", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)), 
@@ -1609,7 +1609,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
 
                     const Divider(),
-                    ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary))); }),
+                    // YENİ: Callback eklendi -> onPointsEarned: (p) => _recordActivity(p)
+                    ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary, onPointsEarned: (points) => _recordActivity(points)))); }),
                     ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
                     ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
                     
