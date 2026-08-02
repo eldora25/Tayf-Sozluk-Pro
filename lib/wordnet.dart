@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data'; // HATA ÇÖZÜMÜ: Eksik olan kütüphane eklendi.
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:archive/archive.dart';
 import 'models.dart';
