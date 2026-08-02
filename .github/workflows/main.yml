@@ -27,17 +27,22 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Install Android SDK Packages (Fix RecognitionListener)
+        run: |
+          # speech_to_text ve flutter_tts için gereken en güncel Android 36 SDK platform ve araçlarını yüklüyoruz
+          echo "y" | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-36" "build-tools;36.0.0" || true
+
       - name: Install Dependencies
         run: flutter pub get
 
       - name: Generate Isar Models
         run: |
-          # Isar model uyuşmazlıklarını ve .g.dart hatalarını kökünden çözer
+          # Isar model uyuşmazlıklarını ve .g.dart hatalarını çözer
           flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Fix Undefined Variable Issue
         run: |
-          # library_manager_screen.dart içindeki tanımsız değişken hatasını yeni isme uyarlayarak askıya alıyoruz
+          # library_manager_screen.dart içindeki tanımsız değişken hatasını yeni konseptimize uygun askıya alıyoruz
           sed -i 's/tayfPoints += 50;/\/\/ lexisPoints += 50;/g' lib/library_manager_screen.dart
 
       - name: Regenerate Android Project
@@ -49,13 +54,11 @@ jobs:
           # 1. KOTLIN SÜRÜMÜNÜ GÜNCELLEME VE SABİTLEME
           sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           
-          # 2. ANA UYGULAMA VE EKLENTİ UYUMU İÇİN KESİN API 36 / MIN 24 ZORLAMASI
-          # (RecognitionListener ve Firebase hatalarının kesin çözümüdür)
+          # 2. API 36 VE MİNİMUM SDK 24 ZORLAMASI
           sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle
           sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/g' android/app/build.gradle
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 24/g' android/app/build.gradle
           
-          # Eski Flutter formatları için yedek güvenlik değiştiricileri
           sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' android/app/build.gradle
           sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 36/g' android/app/build.gradle
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/g' android/app/build.gradle
@@ -70,7 +73,7 @@ jobs:
           # 5. KOTLIN JVM DOĞRULAMASINI ESNETME
           echo "kotlin.jvm.target.validation.mode=warning" >> android/gradle.properties
 
-          # 6. KESİN VE NİHAİ JVM EŞİTLEYİCİ (Alt projelerde SDK çatışmasını önler)
+          # 6. KESİN VE NİHAİ JVM EŞİTLEYİCİ
           cat <<EOF >> android/build.gradle
           
           subprojects {
