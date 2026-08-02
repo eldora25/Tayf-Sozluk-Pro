@@ -127,8 +127,8 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       for (var item in list) {
         if (item is Map) {
-          // BÖLÜM 2: YENİ WORDNET JSON OKUYUCU MANTIĞI
-          bool isWordNet = item.containsKey('pos') || item.containsKey('antonyms');
+          // BÖLÜM 2: YENİ WORDNET JSON OKUYUCU MANTIĞI VE DÜZELTMELER
+          bool isWordNet = item.containsKey('pos') || item.containsKey('antonyms') || item.containsKey('lemmas') || item.containsKey('synonyms');
           
           if (isWordNet) {
              String wordStr = item['word']?.toString().trim() ?? '';
@@ -136,8 +136,23 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
              String defStr = item['definition']?.toString().trim() ?? '';
              
              List<String> examplesList = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
-             List<String> synonymsList = item['synonyms'] is List ? (item['synonyms'] as List).map((e) => e.toString()).toList() : [];
+             
+             // Eş anlamlıları hem 'synonyms' hem de 'lemmas' keylerinden topla
+             List<String> synonymsList = [];
+             if (item['synonyms'] is List) synonymsList.addAll((item['synonyms'] as List).map((e) => e.toString()));
+             if (item['lemmas'] is List) synonymsList.addAll((item['lemmas'] as List).map((e) => e.toString()));
+             synonymsList = synonymsList.toSet().toList(); // Tekrarları kaldır
+             
              List<String> antonymsList = item['antonyms'] is List ? (item['antonyms'] as List).map((e) => e.toString()).toList() : [];
+
+             // Eğer word ID ise (örn: 10102030-n) veya boşsa, ilk eş anlamlıyı kelime olarak ata
+             if (wordStr.isEmpty || RegExp(r'^\d{8}-').hasMatch(wordStr) || wordStr.contains('[ID:')) {
+                 if (synonymsList.isNotEmpty) {
+                     wordStr = synonymsList.first;
+                 } else {
+                     wordStr = "WordNet Term";
+                 }
+             }
 
              if (wordStr.isNotEmpty && defStr.isNotEmpty) {
                 parsedList.add(json.encode({
@@ -723,7 +738,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (combinedList.isEmpty) return;
         rawText = combinedList.join('. '); 
       } else {
-        rawText = word.word;
+        // DÜZELTME: Eğer kelime bir ID içeriyorsa telaffuz etmeden önce gerçek kelimeyi al
+        String wText = word.word;
+        if (RegExp(r'^\d{8}-').hasMatch(wText) || wText.contains('[ID:')) {
+            wText = word.synonyms.isNotEmpty ? word.synonyms.first : (word.meanings.isNotEmpty ? word.meanings.first : wText);
+        }
+        rawText = wText;
       }
 
       if (rawText.isEmpty) return;
@@ -1212,13 +1232,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
   }
 
-  // BÖLÜM 3: WordNet Kart Ön Yüz Tasarımı
+  // BÖLÜM 3: WordNet Kart Ön Yüz Tasarımı (DÜZELTİLDİ: ID yerine kelime)
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
     bool isWordNet = word.pos.isNotEmpty || word.synonyms.isNotEmpty;
+
+    // DÜZELTME: Kelime ID ise asıl kelimeyi bul
+    String displayWord = word.word;
+    if (RegExp(r'^\d{8}-').hasMatch(displayWord) || displayWord.contains('[ID:')) {
+        displayWord = word.synonyms.isNotEmpty ? word.synonyms.first : "WordNet Terimi";
+    }
 
     return RepaintBoundary(
       child: AnimatedBuilder(
@@ -1267,7 +1293,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Expanded(
                   child: Stack(
                     children: [
-                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(word.word, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: _getTextColor(context, isDark, isMitosis)))))), 
+                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: _getTextColor(context, isDark, isMitosis)))))), 
                       Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: false))), 
                       Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word))),
                       
@@ -1344,13 +1370,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // BÖLÜM 3: WordNet Kart Arka Yüz Tasarımı
+  // BÖLÜM 3: WordNet Kart Arka Yüz Tasarımı (DÜZELTİLDİ: ID yerine kelime)
   Widget _buildCardBack(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
     bool isWordNet = word.pos.isNotEmpty || word.synonyms.isNotEmpty;
+
+    // DÜZELTME: Kelime ID ise asıl kelimeyi bul
+    String displayWord = word.word;
+    if (RegExp(r'^\d{8}-').hasMatch(displayWord) || displayWord.contains('[ID:')) {
+        displayWord = word.synonyms.isNotEmpty ? word.synonyms.first : "WordNet Terimi";
+    }
 
     return RepaintBoundary(
       child: AnimatedBuilder(
@@ -1406,7 +1438,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Center(child: Text(word.word, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
+                              Center(child: Text(displayWord, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
                               Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (_getTextColor(context, isDark, isMitosis)).withOpacity(0.3))), 
                               
                               if (isWordNet) ...[
@@ -1581,15 +1613,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (100 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
                     const Divider(),
                     
-                    // BÖLÜM 2: YENİ WORDNET KÜTÜPHANESİ YÜKLEME BUTONU
+                    // BÖLÜM 2 DÜZELTME: Browser Ekranı Yönlendirmesi
                     ListTile(
-                      leading: const Icon(Icons.language, color: Colors.indigo), 
-                      title: const Text("WordNet Yükle", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), 
-                      subtitle: const Text("Gelişmiş İng-İng Sözlük"), 
+                      leading: const Icon(Icons.travel_explore, color: Colors.indigoAccent), 
+                      title: const Text("WordNet Browser", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigoAccent)), 
+                      subtitle: const Text("Gelişmiş İng-İng Sözlük Arama"), 
                       onTap: () { 
                         HapticFeedback.lightImpact(); 
                         Navigator.pop(context); 
-                        _loadPackageFromAssets('assets/tayf_wordnet_optimized.json', 'json', 'WordNet (İng-İng)');
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => WordNetSearchScreen(words: [...allWords, ...learnedWords, ...learningWords, ...toRepeatWords, ...toSRSRepeatWords])));
                       }
                     ),
                     
