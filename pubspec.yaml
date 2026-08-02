@@ -32,6 +32,8 @@ dependencies:
   permission_handler: ^11.3.0
   image_picker: ^1.1.2
   http: ^1.2.0
+  # ZIP dosyalarını bellekte anlık çözmek için eklenen paket:
+  archive: ^3.4.3
 
 dependency_overrides:
   flutter_plugin_android_lifecycle: 2.0.20
@@ -52,4 +54,5 @@ flutter:
     - assets/Babylon_Turkish_English_donustu.csv
     - assets/ic_launcher.png 
     - assets/Free-KH.txt
-    - assets/tayf_wordnet_optimized.json
+    # Yeni eklenen ZIP dosyası:
+    - assets/wordnet/wordnet_data.zip
