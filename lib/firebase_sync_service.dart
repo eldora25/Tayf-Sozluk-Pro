@@ -956,10 +956,3 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 }
-```[cite: 16]
-
----
-
-Böylece Bulut Gönderimi, Kütüphane Seçimi ve TP Kazanım altyapısı eksiksiz olarak güncellenmiş oldu. 
-
-Tema geçerken oluşan Kırmızı Ekran (Red Screen) hatasını çözmek için **BÖLÜM 2** ile devam edip `main.dart` (Tema kontrolünün yapıldığı ana gövde) dosyasında ufak bir cerrahi müdahale yapmaya hazır mısın?
