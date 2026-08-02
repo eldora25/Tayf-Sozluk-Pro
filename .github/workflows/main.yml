@@ -30,21 +30,14 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Patch flutter_tts API Level
-        run: |
-          # flutter_tts eklentisinin gereksiz API 36 zorlamasını, sistemdeki stabil API 34 ile değiştirerek RecognitionListener hatasını kökten çözüyoruz.
-          find ~/.pub-cache/ -type f -name "build.gradle" -path "*/flutter_tts-*/android/build.gradle" -exec sed -i 's/compileSdk 36/compileSdk 34/g' {} +
-          find ~/.pub-cache/ -type f -name "build.gradle" -path "*/flutter_tts-*/android/build.gradle" -exec sed -i 's/compileSdkVersion 36/compileSdkVersion 34/g' {} +
-          find /opt/hostedtoolcache/ -type f -name "build.gradle" -path "*/flutter_tts-*/android/build.gradle" -exec sed -i 's/compileSdk 36/compileSdk 34/g' {} + || true
-
       - name: Generate Isar Models
         run: |
-          # Isar model uyuşmazlıklarını çözer
+          # Isar model uyuşmazlıklarını ve .g.dart hatalarını kökünden çözer
           flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Fix Undefined Variable Issue
         run: |
-          # library_manager_screen.dart içindeki tanımsız değişken hatasını yeni konseptimize uygun şekilde askıya alıyoruz
+          # library_manager_screen.dart içindeki tanımsız değişken hatasını yeni isme uyarlayarak askıya alıyoruz
           sed -i 's/tayfPoints += 50;/\/\/ lexisPoints += 50;/g' lib/library_manager_screen.dart
 
       - name: Regenerate Android Project
@@ -56,15 +49,16 @@ jobs:
           # 1. KOTLIN SÜRÜMÜNÜ GÜNCELLEME VE SABİTLEME
           sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           
-          # 2. KARARLI API 34 ZORLAMASI VE MİNİMUM SDK 24 ZORLAMASI (speech_to_text & Firebase kusursuz uyumu)
-          sed -i 's/flutter.compileSdkVersion/34/g' android/app/build.gradle
-          sed -i 's/flutter.targetSdkVersion/34/g' android/app/build.gradle
-          sed -i 's/flutter.minSdkVersion/24/g' android/app/build.gradle
+          # 2. ANA UYGULAMA VE EKLENTİ UYUMU İÇİN KESİN API 36 / MIN 24 ZORLAMASI
+          # (RecognitionListener ve Firebase hatalarının kesin çözümüdür)
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle
+          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/g' android/app/build.gradle
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 24/g' android/app/build.gradle
           
-          # Yedek Güvenlik
-          echo "flutter.compileSdkVersion=34" >> android/local.properties
-          echo "flutter.targetSdkVersion=34" >> android/local.properties
-          echo "flutter.minSdkVersion=24" >> android/local.properties
+          # Eski Flutter formatları için yedek güvenlik değiştiricileri
+          sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' android/app/build.gradle
+          sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 36/g' android/app/build.gradle
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/g' android/app/build.gradle
           
           # 3. DESUGARING AKTİVASYONU
           sed -i '/compileOptions {/a \        coreLibraryDesugaringEnabled true' android/app/build.gradle
@@ -76,7 +70,7 @@ jobs:
           # 5. KOTLIN JVM DOĞRULAMASINI ESNETME
           echo "kotlin.jvm.target.validation.mode=warning" >> android/gradle.properties
 
-          # 6. KESİN VE NİHAİ JVM / API EŞİTLEYİCİ
+          # 6. KESİN VE NİHAİ JVM EŞİTLEYİCİ (Alt projelerde SDK çatışmasını önler)
           cat <<EOF >> android/build.gradle
           
           subprojects {
@@ -85,7 +79,6 @@ jobs:
                       if (namespace == null) {
                           namespace project.group
                       }
-                      compileSdkVersion 34
                       compileOptions {
                           sourceCompatibility JavaVersion.VERSION_17
                           targetCompatibility JavaVersion.VERSION_17
