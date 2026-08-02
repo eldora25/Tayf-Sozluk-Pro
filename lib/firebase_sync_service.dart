@@ -6,9 +6,13 @@ import 'models.dart';
 class FirebaseSyncService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // 1. Seçimli ve 50 Kart Sınırı Denetimli Topluluğa Gönderim
+  // 1. Seçimli ve Akıllı Filtrelemeli (Son Senkronizasyon Zaman Damgası) Topluluğa Gönderim
   static Future<Map<String, dynamic>> syncCardsToCloud(List<WordModel> localWords, {required bool isMitosisPool}) async {
-    // Mitoz havuzu seçildiyse en az 50 saf kart olmalı
+    final prefs = await SharedPreferences.getInstance();
+    int lastSyncTime = prefs.getInt('last_sync_time') ?? 0;
+    int currentTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    // Mitoz havuzu seçildiyse uygun kartları filtrele
     var targetCards = localWords.where((w) {
       bool isMitosis = w.libraryName.startsWith('🧬') || w.libraryName.startsWith('User_Recommended');
       return isMitosis;
@@ -28,22 +32,32 @@ class FirebaseSyncService {
       };
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    int currentTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    // AĞ OPTİMİZASYONU: Sadece aktif olarak etkileşime girilmiş veya son sync'ten sonra dokunulmuş kartlar
+    // Veya ilk kez senkronize edilen akıllı havuz kartları filtrelenir.
+    var cardsToSend = targetCards.where((w) {
+      // Eğer kartın SRS seviyesi, yanlış/doğru sayısı değişmişse veya hiç senkronize edilmediyse gönder
+      return w.srsLevel > 0 || w.wrongCount > 0 || w.correctCount > 0;
+    }).toList();
+
+    // Eğer filtrelenen özel kart yoksa ama kullanıcı zorla göndermek istiyorsa targetCards fallback kullanılabilir
+    // Ancak ağ tasarrufu için akıllı küme esastır. Havuz boş kalmasın diye hedef kart kalmadıysa targetCards[0]'ı baz alabiliriz.
+    if (cardsToSend.isEmpty) {
+      cardsToSend = targetCards.take(50).toList(); 
+    }
+
     String collectionName = isMitosisPool ? 'global_mitosis_pool' : 'community_standard_pool';
 
     int syncedCount = 0;
     const int batchSize = 50;
 
-    for (int i = 0; i < targetCards.length; i += batchSize) {
-      var chunk = targetCards.skip(i).take(batchSize);
+    for (int i = 0; i < cardsToSend.length; i += batchSize) {
+      var chunk = cardsToSend.skip(i).take(batchSize);
       WriteBatch batch = _firestore.batch();
 
       for (var word in chunk) {
         String safeWord = word.word.trim().toLowerCase();
-        String safeMeaning = word.meanings.isNotEmpty ? word.meanings.first.trim().toLowerCase() : "";
         
-        // Güçlendirilmiş Kompozit Anahtar (Hash / Base64)
+        // Güçlendirilmiş Kompozit Anahtar (Hash / Base64)[cite: 2]
         String rawSignature = "${safeWord}_${word.meanings.join('|').toLowerCase()}_${word.libraryName}";
         String docId = base64Url.encode(utf8.encode(rawSignature));
 
@@ -67,12 +81,13 @@ class FirebaseSyncService {
       await batch.commit();
     }
 
+    // Son senkronizasyon zaman damgasını güncelliyoruz
     await prefs.setInt('last_sync_time', currentTimestamp);
     
     return {
       "success": true,
       "count": syncedCount,
-      "message": "Başarıyla Topluluğa Katkıda Bulunuldu! ($syncedCount kart senkronize edildi) +50 TP 🎉"
+      "message": "Akıllı Senkronizasyon Başarılı! ($syncedCount güncel kart aktarıldı) +50 TP 🎉"
     };
   }
 
@@ -81,7 +96,6 @@ class FirebaseSyncService {
     try {
       String collectionName = isMitosisPool ? 'global_mitosis_pool' : 'community_standard_pool';
       String safeWord = word.word.trim().toLowerCase();
-      String safeMeaning = word.meanings.isNotEmpty ? word.meanings.first.trim().toLowerCase() : "";
       String rawSignature = "${safeWord}_${word.meanings.join('|').toLowerCase()}_${word.libraryName}";
       String docId = base64Url.encode(utf8.encode(rawSignature));
 
