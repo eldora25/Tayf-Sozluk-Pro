@@ -54,11 +54,14 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   int _sessionEarnedTP = 0; 
 
   String _questionSubtext = "";
+  late String _displayWordStr; 
 
   late AnimationController _entranceController; 
   late AnimationController _shakeController;    
   late AnimationController _scaleController;    
   String? _lastWrongOption; 
+  
+  bool _isCurrentWordNet = false;
 
   @override
   void initState() {
@@ -179,7 +182,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             return Positioned(
               left: currentX,
               top: currentY,
-              // DÜZELTİLDİ: Opaklık değerinin negatiflere (-x) inmesi engellenerek Kırmızı Ekran hatası yok edildi!
               child: Opacity(
                 opacity: (1.0 - value).clamp(0.0, 1.0), 
                 child: Container(
@@ -216,40 +218,68 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
-    List<String> correctPool = [...currentWord.meanings, ...currentWord.examples];
-    correctOption = correctPool.isNotEmpty ? correctPool[random.nextInt(correctPool.length)] : currentWord.word;
-
-    Set<String> wrongOptions = {};
-    int loopCounter = 0;
+    // BÖLÜM 4: Akıllı WordNet Quiz Motoru Entegrasyonu
+    _isCurrentWordNet = currentWord.pos.isNotEmpty || currentWord.synonyms.isNotEmpty || currentWord.antonyms.isNotEmpty;
     
-    while (wrongOptions.length < 3 && loopCounter < 150) {
-      loopCounter++;
-      WordModel randomWord = widget.words[random.nextInt(widget.words.length)];
-      
-      if (randomWord.word != currentWord.word) {
-        List<String> wrongPool = [...randomWord.meanings, ...randomWord.examples];
-        if (wrongPool.isNotEmpty) {
-          String randomMeaning = wrongPool[random.nextInt(wrongPool.length)];
-          bool isAlreadyCorrect = currentWord.meanings.contains(randomMeaning) || 
-                                  currentWord.examples.contains(randomMeaning) || 
-                                  randomMeaning == correctOption;
-          
-          if (randomMeaning.isNotEmpty && !isAlreadyCorrect && !wrongOptions.contains(randomMeaning)) {
-            wrongOptions.add(randomMeaning);
-          }
+    List<String> qTypes = ['standard'];
+    if (_isCurrentWordNet) {
+      if (currentWord.meanings.isNotEmpty) qTypes.add('def2word');
+      if (currentWord.synonyms.isNotEmpty) qTypes.add('synonym');
+      if (currentWord.antonyms.isNotEmpty) qTypes.add('antonym');
+    }
+
+    String selectedType = qTypes[random.nextInt(qTypes.length)];
+    
+    if (selectedType == 'def2word') {
+      _questionSubtext = "İngilizce Tanımına Sahip Olan Kelime Hangisidir?";
+      _displayWordStr = currentWord.meanings.first;
+      correctOption = currentWord.word;
+    } else if (selectedType == 'synonym') {
+      _questionSubtext = "Aşağıdakilerden Hangisi Eş Anlamlısıdır (Synonym)?";
+      _displayWordStr = currentWord.word;
+      correctOption = currentWord.synonyms[random.nextInt(currentWord.synonyms.length)];
+    } else if (selectedType == 'antonym') {
+      _questionSubtext = "Aşağıdakilerden Hangisi Zıt Anlamlısıdır (Antonym)?";
+      _displayWordStr = currentWord.word;
+      correctOption = currentWord.antonyms[random.nextInt(currentWord.antonyms.length)];
+    } else {
+      _questionSubtext = "";
+      List<String> correctPool = [...currentWord.meanings, ...currentWord.examples];
+      correctOption = correctPool.isNotEmpty ? correctPool[random.nextInt(correctPool.length)] : currentWord.word;
+      _displayWordStr = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
+    }
+
+    Set<String> wOptions = {};
+    int loops = 0;
+    while(wOptions.length < 3 && loops < 150) {
+      loops++;
+      WordModel rw = widget.words[random.nextInt(widget.words.length)];
+      if (rw.word != currentWord.word) {
+        String wOpt = "";
+        if (selectedType == 'def2word') {
+           wOpt = rw.word;
+        } else if (selectedType == 'synonym') {
+           wOpt = rw.synonyms.isNotEmpty ? rw.synonyms.first : rw.word;
+        } else if (selectedType == 'antonym') {
+           wOpt = rw.antonyms.isNotEmpty ? rw.antonyms.first : rw.word;
+        } else {
+           List<String> wrongPool = [...rw.meanings, ...rw.examples];
+           if (wrongPool.isNotEmpty) wOpt = wrongPool[random.nextInt(wrongPool.length)];
+        }
+        
+        if (wOpt.isNotEmpty && wOpt != correctOption && !wOptions.contains(wOpt)) {
+          wOptions.add(wOpt);
         }
       }
     }
     
-    options = [correctOption, ...wrongOptions];
+    options = [correctOption, ...wOptions];
     options.shuffle();
     setState(() {});
     
     _entranceController.forward(from: 0.0); 
     
-    String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
-    String readWord = displayWord == "WordNet Kaydı" && currentWord.meanings.isNotEmpty ? currentWord.meanings.first : currentWord.word;
-    
+    String readWord = _displayWordStr == "WordNet Kaydı" && currentWord.meanings.isNotEmpty ? currentWord.meanings.first : _displayWordStr;
     _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
   }
 
@@ -284,78 +314,85 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (selectedWrongOptions.isEmpty) { 
         correctAnswers++; 
         
-        int totalOptions = currentWord.meanings.length + currentWord.examples.length;
-        if (totalOptions > 1) {
-          bool isMeaning = currentWord.meanings.contains(correctOption);
-          
-          if (isMeaning) {
-            currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
-          } else {
-            currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
-          }
-
-          bool isGhostCard = currentWord.meanings.isEmpty && currentWord.examples.isEmpty;
-
-          WordModel? existingMitosisCard;
-          try {
-            var matchingWords = await isar.wordModels.filter()
-                .wordEqualTo(currentWord.word, caseSensitive: false)
-                .libraryNameEqualTo(mitosisLibName)
-                .findAll();
-            
-            String safeCorrect = correctOption.toLowerCase().trim();
-            for (var mWord in matchingWords) {
-              if (isMeaning && mWord.meanings.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
-                 existingMitosisCard = mWord; break;
-              } else if (!isMeaning && mWord.examples.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
-                 existingMitosisCard = mWord; break;
-              }
-            }
-          } catch(e) { debugPrint("Arama hatası: $e"); }
-
-          if (existingMitosisCard != null) {
-            existingMitosisCard.correctCount++;
-            isar.writeTxn(() async {
-              if (isGhostCard) {
-                await isar.wordModels.delete(currentWord.id);
-              } else {
-                await isar.wordModels.put(currentWord);
-              }
-              await isar.wordModels.put(existingMitosisCard!);
-            });
-            currentWord = existingMitosisCard;
-            if (existingMitosisCard.correctCount >= widget.threshold) widget.onWordMastered(existingMitosisCard);
-          } else {
-            WordModel splitWord = WordModel(
-              word: currentWord.word,
-              meanings: isMeaning ? [correctOption] : [],
-              examples: !isMeaning ? [correctOption] : [],
-              libraryName: mitosisLibName, 
-              level: currentWord.level,
-              correctCount: currentWord.correctCount + 1, 
-              wrongCount: currentWord.wrongCount,
-              listType: currentWord.listType,
-              srsLevel: currentWord.srsLevel,
-              nextReviewDate: currentWord.nextReviewDate,
-              sourceLanguage: currentWord.sourceLanguage,
-              targetLanguage: currentWord.targetLanguage,
-            );
-            isar.writeTxn(() async {
-              if (isGhostCard) {
-                await isar.wordModels.delete(currentWord.id);
-              } else {
-                await isar.wordModels.put(currentWord);
-              }
-              await isar.wordModels.put(splitWord);   
-            });
-            currentWord = splitWord; 
-            if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
-          }
-        } else {
+        // WordNet Kelimeleri Mitoz İşleminden Muaf Tutularak Bütünlüğü Korunur
+        if (_isCurrentWordNet) {
           currentWord.correctCount++;
           isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
-          
           if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
+        } else {
+          int totalOptions = currentWord.meanings.length + currentWord.examples.length;
+          if (totalOptions > 1) {
+            bool isMeaning = currentWord.meanings.contains(correctOption);
+            
+            if (isMeaning) {
+              currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
+            } else {
+              currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
+            }
+
+            bool isGhostCard = currentWord.meanings.isEmpty && currentWord.examples.isEmpty;
+
+            WordModel? existingMitosisCard;
+            try {
+              var matchingWords = await isar.wordModels.filter()
+                  .wordEqualTo(currentWord.word, caseSensitive: false)
+                  .libraryNameEqualTo(mitosisLibName)
+                  .findAll();
+              
+              String safeCorrect = correctOption.toLowerCase().trim();
+              for (var mWord in matchingWords) {
+                if (isMeaning && mWord.meanings.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
+                   existingMitosisCard = mWord; break;
+                } else if (!isMeaning && mWord.examples.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
+                   existingMitosisCard = mWord; break;
+                }
+              }
+            } catch(e) { debugPrint("Arama hatası: $e"); }
+
+            if (existingMitosisCard != null) {
+              existingMitosisCard.correctCount++;
+              isar.writeTxn(() async {
+                if (isGhostCard) {
+                  await isar.wordModels.delete(currentWord.id);
+                } else {
+                  await isar.wordModels.put(currentWord);
+                }
+                await isar.wordModels.put(existingMitosisCard!);
+              });
+              currentWord = existingMitosisCard;
+              if (existingMitosisCard.correctCount >= widget.threshold) widget.onWordMastered(existingMitosisCard);
+            } else {
+              WordModel splitWord = WordModel(
+                word: currentWord.word,
+                meanings: isMeaning ? [correctOption] : [],
+                examples: !isMeaning ? [correctOption] : [],
+                libraryName: mitosisLibName, 
+                level: currentWord.level,
+                correctCount: currentWord.correctCount + 1, 
+                wrongCount: currentWord.wrongCount,
+                listType: currentWord.listType,
+                srsLevel: currentWord.srsLevel,
+                nextReviewDate: currentWord.nextReviewDate,
+                sourceLanguage: currentWord.sourceLanguage,
+                targetLanguage: currentWord.targetLanguage,
+                pos: '', synonyms: [], antonyms: []
+              );
+              isar.writeTxn(() async {
+                if (isGhostCard) {
+                  await isar.wordModels.delete(currentWord.id);
+                } else {
+                  await isar.wordModels.put(currentWord);
+                }
+                await isar.wordModels.put(splitWord);   
+              });
+              currentWord = splitWord; 
+              if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
+            }
+          } else {
+            currentWord.correctCount++;
+            isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+            if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
+          }
         }
       }
       
@@ -375,77 +412,84 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       });
 
       if (selectedWrongOptions.length == 1) { 
-        int totalOptions = currentWord.meanings.length + currentWord.examples.length;
-        if (totalOptions > 1) {
-          bool isMeaning = currentWord.meanings.contains(correctOption);
-          
-          if (isMeaning) {
-            currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
-          } else {
-            currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
-          }
-
-          bool isGhostCard = currentWord.meanings.isEmpty && currentWord.examples.isEmpty;
-
-          WordModel? existingMitosisCard;
-          try {
-            var matchingWords = await isar.wordModels.filter()
-                .wordEqualTo(currentWord.word, caseSensitive: false)
-                .libraryNameEqualTo(mitosisLibName)
-                .findAll();
-            
-            String safeCorrect = correctOption.toLowerCase().trim();
-            for (var mWord in matchingWords) {
-              if (isMeaning && mWord.meanings.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
-                 existingMitosisCard = mWord; break;
-              } else if (!isMeaning && mWord.examples.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
-                 existingMitosisCard = mWord; break;
-              }
-            }
-          } catch(e) {}
-
-          if (existingMitosisCard != null) {
-            existingMitosisCard.wrongCount++;
-            isar.writeTxn(() async {
-              if (isGhostCard) {
-                await isar.wordModels.delete(currentWord.id);
-              } else {
-                await isar.wordModels.put(currentWord);
-              }
-              await isar.wordModels.put(existingMitosisCard!);
-            });
-            currentWord = existingMitosisCard;
-            widget.onWrongWord(existingMitosisCard);
-          } else {
-            WordModel splitWord = WordModel(
-              word: currentWord.word,
-              meanings: isMeaning ? [correctOption] : [],
-              examples: !isMeaning ? [correctOption] : [],
-              libraryName: mitosisLibName, 
-              level: currentWord.level,
-              correctCount: currentWord.correctCount,
-              wrongCount: currentWord.wrongCount + 1,
-              listType: currentWord.listType,
-              srsLevel: currentWord.srsLevel,
-              nextReviewDate: currentWord.nextReviewDate,
-              sourceLanguage: currentWord.sourceLanguage,
-              targetLanguage: currentWord.targetLanguage,
-            );
-            isar.writeTxn(() async {
-              if (isGhostCard) {
-                await isar.wordModels.delete(currentWord.id);
-              } else {
-                await isar.wordModels.put(currentWord);
-              }
-              await isar.wordModels.put(splitWord);
-            });
-            currentWord = splitWord;
-            widget.onWrongWord(splitWord);
-          }
-        } else {
+        if (_isCurrentWordNet) {
           currentWord.wrongCount++;
           isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
           widget.onWrongWord(currentWord);
+        } else {
+          int totalOptions = currentWord.meanings.length + currentWord.examples.length;
+          if (totalOptions > 1) {
+            bool isMeaning = currentWord.meanings.contains(correctOption);
+            
+            if (isMeaning) {
+              currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
+            } else {
+              currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
+            }
+
+            bool isGhostCard = currentWord.meanings.isEmpty && currentWord.examples.isEmpty;
+
+            WordModel? existingMitosisCard;
+            try {
+              var matchingWords = await isar.wordModels.filter()
+                  .wordEqualTo(currentWord.word, caseSensitive: false)
+                  .libraryNameEqualTo(mitosisLibName)
+                  .findAll();
+              
+              String safeCorrect = correctOption.toLowerCase().trim();
+              for (var mWord in matchingWords) {
+                if (isMeaning && mWord.meanings.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
+                   existingMitosisCard = mWord; break;
+                } else if (!isMeaning && mWord.examples.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
+                   existingMitosisCard = mWord; break;
+                }
+              }
+            } catch(e) {}
+
+            if (existingMitosisCard != null) {
+              existingMitosisCard.wrongCount++;
+              isar.writeTxn(() async {
+                if (isGhostCard) {
+                  await isar.wordModels.delete(currentWord.id);
+                } else {
+                  await isar.wordModels.put(currentWord);
+                }
+                await isar.wordModels.put(existingMitosisCard!);
+              });
+              currentWord = existingMitosisCard;
+              widget.onWrongWord(existingMitosisCard);
+            } else {
+              WordModel splitWord = WordModel(
+                word: currentWord.word,
+                meanings: isMeaning ? [correctOption] : [],
+                examples: !isMeaning ? [correctOption] : [],
+                libraryName: mitosisLibName, 
+                level: currentWord.level,
+                correctCount: currentWord.correctCount,
+                wrongCount: currentWord.wrongCount + 1,
+                listType: currentWord.listType,
+                srsLevel: currentWord.srsLevel,
+                nextReviewDate: currentWord.nextReviewDate,
+                sourceLanguage: currentWord.sourceLanguage,
+                targetLanguage: currentWord.targetLanguage,
+                pos: '', synonyms: [], antonyms: []
+              );
+              isar.writeTxn(() async {
+                if (isGhostCard) {
+                  await isar.wordModels.delete(currentWord.id);
+                } else {
+                  await isar.wordModels.put(currentWord);
+                }
+                await isar.wordModels.put(splitWord);
+              });
+              currentWord = splitWord;
+              widget.onWrongWord(splitWord);
+            }
+          } else {
+            currentWord.wrongCount++;
+            isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+            widget.onWrongWord(currentWord);
+          }
         }
       }
       _speakFeedback(false);
@@ -527,7 +571,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     }
 
     Color borderColor = Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.5);
-    String displayWord = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
 
     return Scaffold(
       extendBodyBehindAppBar: true, 
@@ -605,7 +648,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
-                String readWord = displayWord == "WordNet Kaydı" && currentWord.meanings.isNotEmpty ? currentWord.meanings.first : currentWord.word;
+                String readWord = _displayWordStr == "WordNet Kaydı" && currentWord.meanings.isNotEmpty ? currentWord.meanings.first : _displayWordStr;
                 _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
               },
               child: AnimatedBuilder(
@@ -629,9 +672,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                             ),
                             child: Column(
                               children: [
-                                Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
+                                Text(_displayWordStr, textAlign: TextAlign.center, style: TextStyle(fontSize: _isCurrentWordNet && _questionSubtext.contains("Tanım") ? 22 : 34, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
                                 if (_questionSubtext.isNotEmpty)
-                                  Padding(padding: const EdgeInsets.only(top: 12.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).primaryColor.withOpacity(0.8)))),
+                                  Padding(padding: const EdgeInsets.only(top: 16.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orangeAccent.shade400))),
                               ],
                             ),
                           ),
