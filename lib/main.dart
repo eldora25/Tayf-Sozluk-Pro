@@ -375,18 +375,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         wrongAnswerTimestamps = prefs.getStringList('wrongAnswerTimestamps') ?? [];
       });
 
-      allWords = await isar.wordModels.filter().listTypeEqualTo('all').findAll();
-      learningWords = await isar.wordModels.filter().listTypeEqualTo('learning').findAll();
-      learnedWords = await isar.wordModels.filter().listTypeEqualTo('learned').findAll();
+      // PERFORMANS OPTİMİZASYONU: Paralel Sorgu Altyapısı (Future.wait)
+      final results = await Future.wait([
+        isar.wordModels.filter().listTypeEqualTo('all').findAll(),
+        isar.wordModels.filter().listTypeEqualTo('learning').findAll(),
+        isar.wordModels.filter().listTypeEqualTo('learned').findAll(),
+        isar.wordModels.filter().listTypeEqualTo('toRepeat').findAll(),
+        isar.wordModels.filter().listTypeEqualTo('toSRSRepeat').findAll(),
+        isar.wordModels.filter().wrongCountGreaterThan(0).findAll(),
+        isar.wordModels.filter().libraryNameEqualTo('İncelenecek Kelimeler').findAll(),
+      ]);
+
+      allWords = results[0];
+      learningWords = results[1];
+      learnedWords = results[2];
       
-      List<WordModel> tempToRepeat = await isar.wordModels.filter().listTypeEqualTo('toRepeat').findAll();
+      List<WordModel> tempToRepeat = results[3];
       toRepeatWords = tempToRepeat.where((w) => w.srsLevel == 0).toList();
       
-      List<WordModel> directSrs = await isar.wordModels.filter().listTypeEqualTo('toSRSRepeat').findAll();
+      List<WordModel> directSrs = results[4];
       toSRSRepeatWords = [...directSrs, ...tempToRepeat.where((w) => w.srsLevel > 0)]; 
 
-      wrongWords = await isar.wordModels.filter().wrongCountGreaterThan(0).findAll();
-      reviewWordsPool = await isar.wordModels.filter().libraryNameEqualTo('İncelenecek Kelimeler').findAll();
+      wrongWords = results[5];
+      reviewWordsPool = results[6];
 
       allWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
       learningWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
@@ -408,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
 
       if (needsSave) {
-        isar.writeTxnSync(() { isar.wordModels.putAllSync(toSRSRepeatWords); });
+        await isar.writeTxn(() async { await isar.wordModels.putAll(toSRSRepeatWords); });
       }
 
       if (allWords.isEmpty && learnedWords.isEmpty && toRepeatWords.isEmpty && toSRSRepeatWords.isEmpty && learningWords.isEmpty) {
@@ -427,7 +438,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           isFlipped = false;
         }
       });
-    } catch (e) {}
+    } catch (e) {
+      debugPrint("Load Data Error: $e");
+    }
   }
 
   Future<void> _savePreferencesOnly() async {
@@ -626,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       WordModel(word: 'Apple', meanings: ['Elma', 'Meyve'], examples: ['I ate an apple.'], libraryName: 'Varsayılan (İng-Tr)', level: 'Genel', listType: 'all'),
       WordModel(word: 'Book', meanings: ['Kitap', 'Ayırtmak'], examples: ['Read a book.'], libraryName: 'Varsayılan (İng-Tr)', level: 'Genel', listType: 'all'),
     ];
-    isar.writeTxn(() async { await isar.wordModels.putAll(allWords); });
+    isar.writeTxnSync(() { isar.wordModels.putAllSync(allWords); });
     _savePreferencesOnly();
   }
 
@@ -750,7 +763,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    isar.writeTxn(() async { await isar.wordModels.put(word); });
+    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
 
     if (!fromQuiz) _nextCard(increment: false); 
     else _savePreferencesOnly(); 
@@ -780,17 +793,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    isar.writeTxn(() async { await isar.wordModels.put(word); });
+    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
 
     if (!fromQuiz) _nextCard(increment: true);
     else _savePreferencesOnly();
   }
 
-  // ZIRHLI MANTIK: Karantina (Ünlem) Butonu ile Firebase Güven Skoru Düşürme ve Otonom İnfaz
   void _moveToReview(WordModel word) {
     HapticFeedback.heavyImpact();
     
-    // Buluttaki global havuzda bu kartın güven skorunu düşür ve gerekirse otonom sil
     FirebaseSyncService.reportCardErrorInCloud(word);
 
     setState(() {
@@ -807,7 +818,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       reviewWordsPool.add(word);
     });
 
-    isar.writeTxn(() async { await isar.wordModels.put(word); });
+    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("⚠️ Kelime karantinaya alındı! Bulut güven skoru düşürüldü.", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
@@ -1553,7 +1564,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     
                     ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _savePreferencesOnly(); }))); }),
-                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onLearned: _markAsLearned))); }),
+                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onLearned: _markAsLearned))); }),
                     
                     ListTile(
                       leading: const Icon(Icons.settings), 
@@ -1581,19 +1592,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     
                     const Divider(),
-                    ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => learnedWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
-                    ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
-                    ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
-                    ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => wrongWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
+                    ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => learnedWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
+                    ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
+                    ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
+                    ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => wrongWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     
+                    // Karantina & Hata Havuzu Sekmesi
                     ListTile(
-                      leading: const Icon(Icons.saved_search, color: Colors.amber), 
-                      title: const Text("İncelenecek Kelimeler"), 
-                      subtitle: Text("${reviewWordsPool.length} kelime"), 
+                      leading: const Icon(Icons.warning_amber_rounded, color: Colors.amber), 
+                      title: const Text("Karantina & Hata Havuzu", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)), 
+                      subtitle: Text("${reviewWordsPool.length} kelime (İncelenecek)"), 
                       onTap: () { 
                         HapticFeedback.lightImpact(); 
                         Navigator.pop(context); 
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "İncelenecek Kelimeler", words: reviewWordsPool, onDelete: (w) { setState(() => reviewWordsPool.remove(w)); isar.writeTxn(() async { await isar.wordModels.delete(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => reviewWordsPool.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); 
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Karantina & Hata Havuzu", words: reviewWordsPool, onDelete: (w) { setState(() => reviewWordsPool.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => reviewWordsPool.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); 
                       }
                     ),
 
@@ -1868,7 +1880,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: Column(
                           children: [
                             if (isSrsMode)
-                              Container(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.redAccent.shade100.withOpacity(0.2), Colors.orangeAccent.shade100.withOpacity(0.2)]), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.redAccent.withOpacity(0.5), width: 1.5)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.warning_amber_rounded, color: Colors.redAccent), SizedBox(width: 8), Text("SRS Tekrar Zamanı!", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5))])),
+                              Container(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.redAccent.shade100.withOpacity(0.2), Colors.orangeAccent.shade100.withOpacity(0.2)])), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.warning_amber_rounded, color: Colors.redAccent), SizedBox(width: 8), Text("SRS Tekrar Zamanı!", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5))])),
                             const Spacer(),
                             Center(
                               child: Dismissible(
@@ -2002,3 +2014,4 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 }
+```[cite: 4]
