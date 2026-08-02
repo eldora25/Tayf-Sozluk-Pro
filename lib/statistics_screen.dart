@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; 
 import 'models.dart';
+import 'wordnet.dart'; // YENİ: WordNet Servisi Eklendi
 
 class StatisticsScreen extends StatelessWidget {
   final List<WordModel> allWords;
@@ -220,7 +221,11 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + toSRSRepeatWords.length + learningWords.length;
+    // YENİ: WordNet 150.000+ kelime kapasitesini toplam kelime sayısına yansıtma
+    bool isWordNetLoaded = WordNetService().isLoaded;
+    int wordNetCount = isWordNetLoaded ? 147306 : 0; 
+    
+    int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + toSRSRepeatWords.length + learningWords.length + wordNetCount;
     int totalWrongCount = wrongWords.fold(0, (a, b) => a + b.wrongCount);
 
     DateTime firstUse = DateTime.fromMillisecondsSinceEpoch(firstUseTimestamp);
@@ -230,7 +235,6 @@ class StatisticsScreen extends StatelessWidget {
     double graduationSpeed = learnedWords.length / daysUsed; 
     double activitySpeed = learnedWordTimestamps.length / daysUsed; 
 
-    // YENİ: Soru Hızı Hesaplaması (Soru / Dk)
     double quizSpeed = totalQuizTimeSeconds > 0 ? (totalQuizQuestions / (totalQuizTimeSeconds / 60)) : 0.0;
 
     List<String> trueGraduationTimestamps = learnedWords.map((w) => w.nextReviewDate.toString()).toList();
@@ -481,7 +485,6 @@ class StatisticsScreen extends StatelessWidget {
                   _buildStaggeredWrapper(1, _buildTextStatCard(context, "Toplam Quiz Süresi", _formatTime(totalQuizTimeSeconds), Icons.timer, Colors.teal)),
                   _buildStaggeredWrapper(2, _buildStatCard(context, "Cevaplanan Soru", totalQuizQuestions, Icons.question_answer, Colors.blueAccent)),
                   _buildStaggeredWrapper(3, _buildStatCard(context, "Quiz Yanlışları", totalQuizWrong, Icons.error_outline, Colors.redAccent)),
-                  // YENİ: Hız Kartı Eklendi
                   _buildStaggeredWrapper(4, _buildTextStatCard(context, "Soru Çözme Hızı", "${quizSpeed.toStringAsFixed(1)} Soru / Dk", Icons.speed, Colors.purpleAccent)),
                 ],
               ),
@@ -493,6 +496,57 @@ class StatisticsScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   String libName = availableLibraries[index];
                   if (libName == 'Tekrarlanması Gerekenler') return const SizedBox.shrink();
+
+                  // YENİ: WordNet Veritabanı için devasa istatistik kartı görseli
+                  if (libName == 'WordNet Veritabanı') {
+                     int learned = learnedWords.where((e) => e.libraryName == libName).length;
+                     int wrong = wrongWords.where((e) => e.libraryName == libName).fold(0, (a, b) => a + b.wrongCount);
+                     double progress = 147306 > 0 ? (learned / 147306) : 0;
+
+                     return _buildStaggeredWrapper(index, Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.indigo.withOpacity(0.08), 
+                          borderRadius: BorderRadius.circular(20), 
+                          border: Border.all(color: Colors.indigo.withOpacity(0.3), width: 2), 
+                          boxShadow: [BoxShadow(color: Colors.indigo.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))]
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.language, color: Colors.indigo, size: 28),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: Text("WordNet Veritabanı", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.indigo))),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              const Text("150.000'den fazla kelime içeren devasa bulut sözlük. Bu kütüphaneyi oynarken kelimeler RAM'e dinamik olarak çekilir.", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                              const SizedBox(height: 16),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text("Kapasite: 150.000+", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
+                                    const SizedBox(width: 16),
+                                    Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                                    const SizedBox(width: 16),
+                                    Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(value: progress, color: Colors.indigoAccent, backgroundColor: Colors.indigo.withOpacity(0.1), minHeight: 8)),
+                            ],
+                          ),
+                        ),
+                      ));
+                  }
 
                   int total = allWords.where((e) => e.libraryName == libName).length +
                               learnedWords.where((e) => e.libraryName == libName).length +
