@@ -127,28 +127,75 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       for (var item in list) {
         if (item is Map) {
-          List<String> subWords = [];
-          String w = item['word']?.toString().trim() ?? '';
-          if (!RegExp(r'^\d{8}-').hasMatch(w) && w.isNotEmpty) subWords.add(w);
-          if (item['synonyms'] is List) subWords.addAll((item['synonyms'] as List).map((e) => e.toString()));
-          if (item['lemmas'] is List) subWords.addAll((item['lemmas'] as List).map((e) => e.toString()));
-          String def = item['definition']?.toString() ?? '';
-          List<String> mList = item['meanings'] is List ? (item['meanings'] as List).map((e) => e.toString()).toList() : (def.isNotEmpty ? [def] : []);
-          List<String> eList = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
-          List<String> cleanM = cleanAndSplit(mList.join('|||'));
-          List<String> cleanE = cleanAndSplit(eList.join('|||'));
+          // BÖLÜM 2: YENİ WORDNET JSON OKUYUCU MANTIĞI
+          bool isWordNet = item.containsKey('pos') || item.containsKey('antonyms');
+          
+          if (isWordNet) {
+             String wordStr = item['word']?.toString().trim() ?? '';
+             String posStr = item['pos']?.toString().trim() ?? '';
+             String defStr = item['definition']?.toString().trim() ?? '';
+             
+             List<String> examplesList = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
+             List<String> synonymsList = item['synonyms'] is List ? (item['synonyms'] as List).map((e) => e.toString()).toList() : [];
+             List<String> antonymsList = item['antonyms'] is List ? (item['antonyms'] as List).map((e) => e.toString()).toList() : [];
 
-          for (String sw in subWords) {
-            sw = sw.replaceAll('_', ' ').trim(); 
-            if (sw.length > 1 && cleanM.isNotEmpty) {
-              parsedList.add(json.encode({'word': sw, 'meanings': cleanM, 'examples': cleanE, 'level': item['level']?.toString() ?? 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
-            }
+             if (wordStr.isNotEmpty && defStr.isNotEmpty) {
+                parsedList.add(json.encode({
+                  'word': wordStr,
+                  'meanings': [defStr], 
+                  'examples': examplesList,
+                  'level': 'Genel', 
+                  'libraryName': customLibraryName,
+                  'correctCount': 0,
+                  'wrongCount': 0,
+                  'listType': 'all',
+                  'srsLevel': 0,
+                  'nextReviewDate': 0,
+                  'pos': posStr,
+                  'synonyms': synonymsList,
+                  'antonyms': antonymsList
+                }));
+             }
+          } else {
+             // Eski Klasik JSON Okuyucu
+             List<String> subWords = [];
+             String w = item['word']?.toString().trim() ?? '';
+             if (!RegExp(r'^\d{8}-').hasMatch(w) && w.isNotEmpty) subWords.add(w);
+             if (item['synonyms'] is List) subWords.addAll((item['synonyms'] as List).map((e) => e.toString()));
+             if (item['lemmas'] is List) subWords.addAll((item['lemmas'] as List).map((e) => e.toString()));
+             String def = item['definition']?.toString() ?? '';
+             List<String> mList = item['meanings'] is List ? (item['meanings'] as List).map((e) => e.toString()).toList() : (def.isNotEmpty ? [def] : []);
+             List<String> eList = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
+             List<String> cleanM = cleanAndSplit(mList.join('|||'));
+             List<String> cleanE = cleanAndSplit(eList.join('|||'));
+
+             for (String sw in subWords) {
+               sw = sw.replaceAll('_', ' ').trim(); 
+               if (sw.length > 1 && cleanM.isNotEmpty) {
+                 parsedList.add(json.encode({
+                    'word': sw, 
+                    'meanings': cleanM, 
+                    'examples': cleanE, 
+                    'level': item['level']?.toString() ?? 'Genel', 
+                    'libraryName': customLibraryName, 
+                    'correctCount': 0, 
+                    'wrongCount': 0, 
+                    'listType': 'all', 
+                    'srsLevel': 0, 
+                    'nextReviewDate': 0,
+                    'pos': '',
+                    'synonyms': [],
+                    'antonyms': []
+                 }));
+               }
+             }
           }
         }
       }
       return parsedList;
     }
 
+    // TXT Okuyucu
     if (originalFileName.contains('tayf') && extension == 'txt') {
       List<String> lines = const LineSplitter().convert(content);
       for (String line in lines) {
@@ -159,7 +206,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
           for (String w in subWords) {
             w = w.replaceAll('\"', '').trim();
             if (w.length > 1 && meanings.isNotEmpty) {
-              parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+              parsedList.add(json.encode({'word': w, 'meanings': meanings, 'examples': [], 'level': 'Genel', 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0, 'pos': '', 'synonyms': [], 'antonyms': []}));
             }
           }
         }
@@ -167,6 +214,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       return parsedList;
     }
 
+    // CSV Okuyucu
     List<List<String>> rows = parseCsvMultiline(content);
     for (List<String> row in rows) {
       if (row.length >= 2) {
@@ -181,7 +229,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
             w = w.replaceAll('\"', '').trim();
             w = w.replaceAll(RegExp(r'^[^a-zA-Z0-9çğışöüÇĞIŞÖÜ]+|[^a-zA-Z0-9çğışöüÇĞIŞÖÜ)]+$'), '').trim();
             if (w.length > 1) {
-              parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': eList, 'level': level, 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0}));
+              parsedList.add(json.encode({'word': w, 'meanings': mList, 'examples': eList, 'level': level, 'libraryName': customLibraryName, 'correctCount': 0, 'wrongCount': 0, 'listType': 'all', 'srsLevel': 0, 'nextReviewDate': 0, 'pos': '', 'synonyms': [], 'antonyms': []}));
             }
           }
         }
@@ -256,7 +304,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Lexis Eldora',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
-      // PERFORMANS VE UI DÜZELTMESİ: Tema geçişi sırasındaki Kırmızı Ekran hatasını önler.
       themeAnimationDuration: Duration.zero, 
       home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
     );
@@ -1165,11 +1212,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
   }
 
+  // BÖLÜM 3: WordNet Kart Ön Yüz Tasarımı
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
+    bool isWordNet = word.pos.isNotEmpty || word.synonyms.isNotEmpty;
 
     return RepaintBoundary(
       child: AnimatedBuilder(
@@ -1180,35 +1229,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), 
             child: Column(
               children: [
-                if (isPremium || isMitosis) 
+                if (isPremium || isMitosis || isWordNet) 
                   Container(
                     width: double.infinity, 
                     padding: const EdgeInsets.symmetric(vertical: 8), 
                     decoration: BoxDecoration(
-                      color: isPremium ? distinctColors[level - 1].withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.15), 
+                      color: isWordNet ? Colors.indigo.withOpacity(0.15) : (isPremium ? distinctColors[level - 1].withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.15)), 
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
-                      border: Border(bottom: BorderSide(color: isPremium ? distinctColors[level - 1].withOpacity(0.5) : Colors.purpleAccent.withOpacity(0.5), width: 2))
+                      border: Border(bottom: BorderSide(color: isWordNet ? Colors.indigo.withOpacity(0.5) : (isPremium ? distinctColors[level - 1].withOpacity(0.5) : Colors.purpleAccent.withOpacity(0.5)), width: 2))
                     ), 
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (isPremium) _buildCrown(level, isMitosis), 
-                        if (isPremium) const SizedBox(height: 4),
+                        if (isPremium && !isWordNet) _buildCrown(level, isMitosis), 
+                        if (isPremium && !isWordNet) const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent)),
-                            if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
-                            if (isPremium) const SizedBox(width: 8),
-                            Text(
-                              isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
-                              style: TextStyle(
-                                color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, 
-                                fontWeight: FontWeight.bold, 
-                                fontSize: 14, 
-                                letterSpacing: 1.5,
-                              )
-                            ),
+                            if (isWordNet) ...[
+                              const Icon(Icons.language, size: 16, color: Colors.indigo),
+                              const SizedBox(width: 8),
+                              Text("WordNet [${word.pos.toUpperCase()}]", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+                            ] else ...[
+                              if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent)),
+                              if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
+                              if (isPremium) const SizedBox(width: 8),
+                              Text(
+                                isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
+                                style: TextStyle(color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)
+                              ),
+                            ]
                           ],
                         ),
                       ],
@@ -1221,7 +1271,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: false))), 
                       Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word))),
                       
-                      if (isMitosis)
+                      if (isMitosis && !isWordNet)
                         Positioned(
                           bottom: 15,
                           left: 0,
@@ -1234,39 +1284,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   angle: -0.5,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black,
-                                      borderRadius: BorderRadius.circular(30),
-                                      border: Border.all(color: Colors.white30, width: 1),
-                                      boxShadow: [
-                                        BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)),
-                                        BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0)),
-                                      ]
-                                    ),
-                                    child: Transform.rotate(
-                                      angle: 0.5,
-                                      child: const Text(
-                                        "\u{1F9EC}", 
-                                        style: TextStyle(
-                                          fontSize: 16, 
-                                          shadows: [
-                                            Shadow(color: Colors.orangeAccent, blurRadius: 15),
-                                            Shadow(color: Colors.purpleAccent, blurRadius: 15),
-                                          ]
-                                        )
-                                      ),
-                                    ),
+                                    decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white30, width: 1), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)), BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0))]),
+                                    child: Transform.rotate(angle: 0.5, child: const Text("\u{1F9EC}", style: TextStyle(fontSize: 16, shadows: [Shadow(color: Colors.orangeAccent, blurRadius: 15), Shadow(color: Colors.purpleAccent, blurRadius: 15)]))),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black87,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
-                                    boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]
-                                  ),
+                                  decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1), boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -1288,7 +1313,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
 
           Widget current = cardContent;
-          if (isPremium) {
+          if (isPremium && !isWordNet) {
             for (int i = 0; i < level; i++) {
               double thickness = 2.0 + (i * 1.5); 
               current = Container(
@@ -1306,9 +1331,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
              current = Container(
                padding: const EdgeInsets.all(3),
                decoration: BoxDecoration(
-                 color: isMitosis ? Colors.purpleAccent : Theme.of(context).primaryColor,
+                 color: isWordNet ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Theme.of(context).primaryColor),
                  borderRadius: BorderRadius.circular(26), 
-                 boxShadow: [BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Theme.of(context).primaryColor.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))]
+                 boxShadow: [BoxShadow(color: isWordNet ? Colors.indigo.withOpacity(0.4) : (isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Theme.of(context).primaryColor.withOpacity(0.4)), blurRadius: 15, offset: const Offset(0, 5))]
                ),
                child: current,
              );
@@ -1319,11 +1344,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  // BÖLÜM 3: WordNet Kart Arka Yüz Tasarımı
   Widget _buildCardBack(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
+    bool isWordNet = word.pos.isNotEmpty || word.synonyms.isNotEmpty;
 
     return RepaintBoundary(
       child: AnimatedBuilder(
@@ -1334,35 +1361,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), 
             child: Column(
               children: [
-                if (isPremium || isMitosis) 
+                if (isPremium || isMitosis || isWordNet) 
                   Container(
                     width: double.infinity, 
                     padding: const EdgeInsets.symmetric(vertical: 8), 
                     decoration: BoxDecoration(
-                      color: isPremium ? distinctColors[level - 1].withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.15), 
+                      color: isWordNet ? Colors.indigo.withOpacity(0.15) : (isPremium ? distinctColors[level - 1].withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.15)), 
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
-                      border: Border(bottom: BorderSide(color: isPremium ? distinctColors[level - 1].withOpacity(0.5) : Colors.purpleAccent.withOpacity(0.5), width: 2))
+                      border: Border(bottom: BorderSide(color: isWordNet ? Colors.indigo.withOpacity(0.5) : (isPremium ? distinctColors[level - 1].withOpacity(0.5) : Colors.purpleAccent.withOpacity(0.5)), width: 2))
                     ), 
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (isPremium) _buildCrown(level, isMitosis), 
-                        if (isPremium) const SizedBox(height: 4),
+                        if (isPremium && !isWordNet) _buildCrown(level, isMitosis), 
+                        if (isPremium && !isWordNet) const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent)),
-                            if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
-                            if (isPremium) const SizedBox(width: 8),
-                            Text(
-                              isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
-                              style: TextStyle(
-                                color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, 
-                                fontWeight: FontWeight.bold, 
-                                fontSize: 14, 
-                                letterSpacing: 1.5,
-                              )
-                            ),
+                            if (isWordNet) ...[
+                              const Icon(Icons.language, size: 16, color: Colors.indigo),
+                              const SizedBox(width: 8),
+                              Text("WordNet [${word.pos.toUpperCase()}]", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+                            ] else ...[
+                              if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent)),
+                              if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
+                              if (isPremium) const SizedBox(width: 8),
+                              Text(
+                                isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
+                                style: TextStyle(color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)
+                              ),
+                            ]
                           ],
                         ),
                       ],
@@ -1380,12 +1408,39 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             children: [
                               Center(child: Text(word.word, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
                               Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (_getTextColor(context, isDark, isMitosis)).withOpacity(0.3))), 
-                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• " + m, style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
-                              if (word.examples.isNotEmpty) ...[
-                                const SizedBox(height: 16),
-                                Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isMitosis ? Colors.pinkAccent : Theme.of(context).colorScheme.secondary)),
-                                const SizedBox(height: 6),
-                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» " + e, style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis))))),
+                              
+                              if (isWordNet) ...[
+                                Row(children: [const Icon(Icons.menu_book, size: 14, color: Colors.indigo), const SizedBox(width: 6), Text("Definition:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.indigo.shade300))]),
+                                ...word.meanings.map((m) => Padding(padding: const EdgeInsets.only(top: 4.0, bottom: 8.0, left: 6), child: Text(m, style: TextStyle(fontSize: 15, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
+                                
+                                if (word.synonyms.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Row(children: [const Icon(Icons.link, size: 14, color: Colors.teal), const SizedBox(width: 6), Text("Synonyms:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.teal.shade300))]),
+                                  Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.synonyms.take(4).map((s) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.teal.withOpacity(0.3))), child: Text(s, style: const TextStyle(fontSize: 12, color: Colors.teal, fontWeight: FontWeight.bold)))).toList())),
+                                  const SizedBox(height: 8),
+                                ],
+                                
+                                if (word.antonyms.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Row(children: [const Icon(Icons.link_off, size: 14, color: Colors.redAccent), const SizedBox(width: 6), Text("Antonyms:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.redAccent.shade200))]),
+                                  Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.antonyms.take(4).map((a) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.redAccent.withOpacity(0.3))), child: Text(a, style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold)))).toList())),
+                                  const SizedBox(height: 8),
+                                ],
+
+                                if (word.examples.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Row(children: [const Icon(Icons.format_quote, size: 14, color: Colors.orange), const SizedBox(width: 6), Text("Examples:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.orange.shade300))]),
+                                  ...word.examples.map((e) => Padding(padding: const EdgeInsets.only(top: 4.0, bottom: 4.0, left: 6), child: Text("» " + e, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.8))))),
+                                ]
+                              ] else ...[
+                                // Klasik Sözlük Görünümü
+                                ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• " + m, style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
+                                if (word.examples.isNotEmpty) ...[
+                                  const SizedBox(height: 16),
+                                  Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isMitosis ? Colors.pinkAccent : Theme.of(context).colorScheme.secondary)),
+                                  const SizedBox(height: 6),
+                                  ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» " + e, style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis))))),
+                                ]
                               ]
                             ]
                           )
@@ -1394,7 +1449,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: true))), 
                       Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word))),
                       
-                      if (isMitosis)
+                      if (isMitosis && !isWordNet)
                         Positioned(
                           bottom: 15,
                           left: 0,
@@ -1407,39 +1462,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   angle: -0.5,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black,
-                                      borderRadius: BorderRadius.circular(30),
-                                      border: Border.all(color: Colors.white30, width: 1),
-                                      boxShadow: [
-                                        BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)),
-                                        BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0)),
-                                      ]
-                                    ),
-                                    child: Transform.rotate(
-                                      angle: 0.5,
-                                      child: const Text(
-                                        "\u{1F9EC}", 
-                                        style: TextStyle(
-                                          fontSize: 16, 
-                                          shadows: [
-                                            Shadow(color: Colors.orangeAccent, blurRadius: 15),
-                                            Shadow(color: Colors.purpleAccent, blurRadius: 15),
-                                          ]
-                                        )
-                                      ),
-                                    ),
+                                    decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white30, width: 1), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)), BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0))]),
+                                    child: Transform.rotate(angle: 0.5, child: const Text("\u{1F9EC}", style: TextStyle(fontSize: 16, shadows: [Shadow(color: Colors.orangeAccent, blurRadius: 15), Shadow(color: Colors.purpleAccent, blurRadius: 15)]))),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black87,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
-                                    boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]
-                                  ),
+                                  decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1), boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -1461,7 +1491,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
 
           Widget current = cardContent;
-          if (isPremium) {
+          if (isPremium && !isWordNet) {
             for (int i = 0; i < level; i++) {
               double thickness = 2.0 + (i * 1.5);
               current = Container(
@@ -1479,9 +1509,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
              current = Container(
                padding: const EdgeInsets.all(3),
                decoration: BoxDecoration(
-                 color: isMitosis ? Colors.purpleAccent : Colors.green, 
+                 color: isWordNet ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Colors.green), 
                  borderRadius: BorderRadius.circular(26), 
-                 boxShadow: [BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Colors.green.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 5))]
+                 boxShadow: [BoxShadow(color: isWordNet ? Colors.indigo.withOpacity(0.4) : (isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Colors.green.withOpacity(0.4)), blurRadius: 15, offset: const Offset(0, 5))]
                ),
                child: current,
              );
@@ -1551,14 +1581,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (100 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
                     const Divider(),
                     
+                    // BÖLÜM 2: YENİ WORDNET KÜTÜPHANESİ YÜKLEME BUTONU
                     ListTile(
                       leading: const Icon(Icons.language, color: Colors.indigo), 
-                      title: const Text("WordNet Kütüphanesi", style: TextStyle(fontWeight: FontWeight.bold)), 
-                      subtitle: const Text("Detaylı İng-İng Sözlük"), 
+                      title: const Text("WordNet Yükle", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), 
+                      subtitle: const Text("Gelişmiş İng-İng Sözlük"), 
                       onTap: () { 
                         HapticFeedback.lightImpact(); 
                         Navigator.pop(context); 
-                        _showCenteredDialog(title: "WordNet Kütüphanesi", message: "Yazılımcı halen çalışıyor... 😅\n\nÇok yakında harika bir İngilizce-İngilizce sözlük deneyimiyle karşınızda olacak!", icon: Icons.code, color: Colors.indigo);
+                        _loadPackageFromAssets('assets/tayf_wordnet_optimized.json', 'json', 'WordNet (İng-İng)');
                       }
                     ),
                     
@@ -1596,7 +1627,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     ListTile(leading: const Icon(Icons.cancel, color: Colors.red), title: const Text("Yanlış Kelimeler"), subtitle: Text("${wrongWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Yanlış Kelimeler", words: wrongWords, showWrongCount: true, onDelete: (w) { setState(() => wrongWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => wrongWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                     
-                    // Karantina & Hata Havuzu Sekmesi
                     ListTile(
                       leading: const Icon(Icons.warning_amber_rounded, color: Colors.amber), 
                       title: const Text("Karantina & Hata Havuzu", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)), 
@@ -1609,7 +1639,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
 
                     const Divider(),
-                    // YENİ: Callback eklendi -> onPointsEarned: (p) => _recordActivity(p)
                     ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary, onPointsEarned: (points) => _recordActivity(points)))); }),
                     ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
                     ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
