@@ -256,8 +256,8 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Lexis Eldora',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
-      themeAnimationDuration: const Duration(milliseconds: 600), 
-      themeAnimationCurve: Curves.easeInOutCubic,
+      // PERFORMANS VE UI DÜZELTMESİ: Tema geçişi sırasındaki Kırmızı Ekran hatasını önler.
+      themeAnimationDuration: Duration.zero, 
       home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
     );
   }
