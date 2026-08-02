@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:isar/isar.dart'; // YENİ: Isar.autoIncrement güvenlik kilidi için
 import 'models.dart';
 import 'main.dart'; 
 
@@ -45,7 +46,10 @@ class _WordListScreenState extends State<WordListScreen> {
       _filteredList.remove(word);
     });
 
-    isar.writeTxn(() async { await isar.wordModels.put(word); });
+    // YENİ: Isar Güvenlik Kilidi (Sadece VT'de kayıtlıysa güncelle)
+    if (word.id != Isar.autoIncrement) {
+       isar.writeTxn(() async { await isar.wordModels.put(word); });
+    }
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("⚠️ Kelime incelenmek üzere ayrıldı!", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
@@ -145,8 +149,11 @@ class _WordListScreenState extends State<WordListScreen> {
   Widget _buildListItem(BuildContext context, int index) {
     final WordModel item = _filteredList[index];
     final bool isMitosis = item.libraryName.startsWith('\u{1F9EC}');
-    final String dismissKey = item.word + '_' + index.toString();
-    final String heroTag = 'hero_word_' + item.word;
+    
+    // GÜNCELLEME: WordNet kelimesi ise word ismini, değilse ID'yi kullanarak eşsiz key üret
+    final String dismissKey = item.id == Isar.autoIncrement ? '${item.word}_$index' : '${item.id}_$index';
+    final String heroTag = 'hero_word_${item.word}_$index';
+    
     final String subtitleText = item.libraryName + " / " + item.level;
 
     return _buildAnimatedItem(
@@ -244,6 +251,9 @@ class _WordListScreenState extends State<WordListScreen> {
       return w.word.toLowerCase().contains(lowerQuery) || 
              w.meanings.join(' ').toLowerCase().contains(lowerQuery);
     }).toList();
+    
+    // YENİ: Liste WordNet havuzu içeriyorsa kontrol et
+    bool hasWordNet = widget.words.any((w) => w.libraryName == 'WordNet Veritabanı');
 
     return Scaffold(
       body: CustomScrollView(
@@ -259,6 +269,29 @@ class _WordListScreenState extends State<WordListScreen> {
               centerTitle: false,
             ),
           ),
+          
+          if (hasWordNet)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.withOpacity(0.1), 
+                  borderRadius: BorderRadius.circular(12), 
+                  border: Border.all(color: Colors.indigo.withOpacity(0.5))
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.indigo),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text("WordNet veritabanından cihazı yormamak için rastgele 200 kelimelik bir havuz gösterilmektedir. Tamamı WordNet Browser'dan aranabilir.", style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12))
+                    )
+                  ]
+                )
+              )
+            ),
+            
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(12.0),
