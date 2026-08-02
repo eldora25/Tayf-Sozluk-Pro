@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:lottie/lottie.dart'; // YENİ: Lottie Animasyon Desteği
+import 'package:lottie/lottie.dart'; 
 import 'models.dart';
 import 'main.dart'; 
 import 'firebase_sync_service.dart';
@@ -21,6 +21,9 @@ class LibraryManagerScreen extends StatefulWidget {
   final Function(String, String) onRename;
   final Function(String) onDelete;
   final Function(String) onExport;
+  
+  // YENİ: Buluttan kazanılan TP'yi ana ekrana iletecek köprü
+  final Function(int)? onPointsEarned;
 
   const LibraryManagerScreen({
     super.key,
@@ -32,6 +35,7 @@ class LibraryManagerScreen extends StatefulWidget {
     required this.onRename,
     required this.onDelete,
     required this.onExport,
+    this.onPointsEarned,
   });
 
   @override
@@ -363,7 +367,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 
-  // YENİ: Lottie Animasyonlu Şık Bulut Yükleme Dialog Kutusu
   Future<void> _executeCloudUpload({required bool isMitosis}) async {
     showDialog(
       context: context,
@@ -402,16 +405,17 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
 
     if (mounted) {
-      Navigator.pop(context); // Diyalogu kapat
-      await _loadLastSyncInfo(); // Senkronizasyon zaman damgasını güncelle
+      Navigator.pop(context); 
+      await _loadLastSyncInfo(); 
 
       bool success = result["success"] ?? false;
       String message = result["message"] ?? "İşlem tamamlandı.";
 
       if (success) {
-        setState(() {
-          tayfPoints += 50; 
-        });
+        // YENİ: Başarılı olursa Köprü Callback'ini tetikle
+        if (widget.onPointsEarned != null) {
+          widget.onPointsEarned!(50);
+        }
         
         showDialog(
           context: context,
@@ -580,7 +584,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
             floating: true,
             pinned: true,
             snap: false,
-            expandedHeight: 140.0, // YENİ: Canlı senkronizasyon rozeti için genişletildi
+            expandedHeight: 140.0, 
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
               title: Column(
@@ -589,7 +593,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                 children: [
                   const Text("Kütüphaneler", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 2),
-                  // YENİ: Canlı Senkronizasyon Durum Rozeti
                   Row(
                     children: [
                       const Icon(Icons.cloud_sync, size: 12, color: Colors.white70),
