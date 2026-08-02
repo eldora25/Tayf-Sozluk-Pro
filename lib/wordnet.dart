@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
-// Yeni eklediğimiz archive paketini içe aktarıyoruz
 import 'package:archive/archive.dart';
 
 class WordNetEntry {
@@ -49,6 +48,7 @@ class WordNetService {
     if (_isLoaded) return; 
 
     try {
+      print("WordNet ZIP dosyası okunuyor...");
       // 1. ZIP dosyasını byte veri olarak oku
       final ByteData zipBytes = await rootBundle.load('assets/wordnet/wordnet_data.zip');
       
@@ -62,6 +62,7 @@ class WordNetService {
       }
       
       // 4. Byte verisini UTF-8 metne çevir ve JSON olarak ayrıştır
+      print("JSON verisi ayrıştırılıyor...");
       final String response = utf8.decode(jsonFile.content as List<int>);
       final Map<String, dynamic> data = json.decode(response);
 
@@ -78,6 +79,10 @@ class WordNetService {
   }
 
   List<WordNetEntry> searchWord(String word) {
-    return _wordNetData.values.where((entry) => entry.members.contains(word)).toList();
+    // Küçük harfe çevirerek arama yapar (Case-insensitive)
+    final searchKeyword = word.toLowerCase();
+    return _wordNetData.values.where((entry) {
+      return entry.members.any((member) => member.toLowerCase() == searchKeyword);
+    }).toList();
   }
 }
