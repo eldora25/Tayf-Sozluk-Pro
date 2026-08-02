@@ -1,35 +1,48 @@
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:archive/archive.dart';
+import 'models.dart';
 
 class WordNetEntry {
+  final String id;
   final List<String> definition;
   final List<String> example;
-  final List<String> hypernym;
-  final String ili;
-  final List<String> members;
+  final List<String> members; // Synonyms
+  final List<String> antonyms;
   final String partOfSpeech;
-  final List<String> similar;
 
   WordNetEntry({
+    required this.id,
     required this.definition,
     required this.example,
-    required this.hypernym,
-    required this.ili,
     required this.members,
+    required this.antonyms,
     required this.partOfSpeech,
-    required this.similar,
   });
 
-  factory WordNetEntry.fromJson(Map<String, dynamic> json) {
+  factory WordNetEntry.fromJson(String id, Map<String, dynamic> json) {
     return WordNetEntry(
+      id: id,
       definition: List<String>.from(json['definition'] ?? []),
       example: List<String>.from(json['example'] ?? []),
-      hypernym: List<String>.from(json['hypernym'] ?? []),
-      ili: json['ili'] ?? '',
       members: List<String>.from(json['members'] ?? []),
-      partOfSpeech: json['partOfSpeech'] ?? '',
-      similar: List<String>.from(json['similar'] ?? []),
+      antonyms: List<String>.from(json['antonyms'] ?? []),
+      partOfSpeech: json['partOfSpeech'] ?? json['pos'] ?? '',
+    );
+  }
+
+  // ZIP'ten gelen ham veriyi uygulamanın anlayacağı WordModel'e çeviren köprü
+  WordModel toWordModel() {
+    return WordModel(
+      word: members.isNotEmpty ? members.first : "Unknown",
+      meanings: definition,
+      examples: example,
+      synonyms: members.length > 1 ? members.sublist(1) : [],
+      antonyms: antonyms,
+      pos: partOfSpeech,
+      libraryName: "WordNet Veritabanı",
+      level: "WordNet",
+      listType: "all",
     );
   }
 }
@@ -41,32 +54,22 @@ class WordNetService {
 
   Map<String, WordNetEntry> _wordNetData = {};
   bool _isLoaded = false;
-
   bool get isLoaded => _isLoaded;
 
   Future<void> loadWordNetData() async {
-    if (_isLoaded) return; 
-
+    if (_isLoaded) return;
     try {
       print("WordNet ZIP dosyası okunuyor...");
-      // 1. ZIP dosyasını byte veri olarak oku
       final ByteData zipBytes = await rootBundle.load('assets/wordnet/wordnet_data.zip');
-      
-      // 2. ZIP'i bellekte çöz
       final archive = ZipDecoder().decodeBytes(zipBytes.buffer.asUint8List());
-      
-      // 3. İçindeki JSON dosyasını bul
       final jsonFile = archive.findFile('wordnet_data.json');
-      if (jsonFile == null) {
-        throw Exception("ZIP arşivi içinde wordnet_data.json bulunamadı.");
-      }
+      if (jsonFile == null) throw Exception("ZIP arşivi içinde wordnet_data.json bulunamadı.");
       
-      // 4. Byte verisini UTF-8 metne çevir ve JSON olarak ayrıştır
       print("JSON verisi ayrıştırılıyor...");
       final String response = utf8.decode(jsonFile.content as List<int>);
       final Map<String, dynamic> data = json.decode(response);
 
-      _wordNetData = data.map((key, value) => MapEntry(key, WordNetEntry.fromJson(value)));
+      _wordNetData = data.map((key, value) => MapEntry(key, WordNetEntry.fromJson(key, value)));
       _isLoaded = true;
       print("WordNet verisi ZIP'ten başarıyla çıkarıldı: ${_wordNetData.length} kayıt.");
     } catch (e) {
@@ -74,15 +77,19 @@ class WordNetService {
     }
   }
 
-  WordNetEntry? getEntryById(String id) {
-    return _wordNetData[id];
+  // Quiz ve Oyunlar için cihazı yormadan anlık kelime havuzu oluşturur
+  List<WordModel> getRandomWords(int count) {
+    if (!_isLoaded || _wordNetData.isEmpty) return [];
+    var values = _wordNetData.values.toList()..shuffle();
+    return values.take(count).map((e) => e.toWordModel()).toList();
   }
 
+  // WordNet Browser için arama motoru
   List<WordNetEntry> searchWord(String word) {
-    // Küçük harfe çevirerek arama yapar (Case-insensitive)
     final searchKeyword = word.toLowerCase();
     return _wordNetData.values.where((entry) {
-      return entry.members.any((member) => member.toLowerCase() == searchKeyword);
+      return entry.members.any((m) => m.toLowerCase().contains(searchKeyword)) ||
+             entry.definition.any((d) => d.toLowerCase().contains(searchKeyword));
     }).toList();
   }
 }
