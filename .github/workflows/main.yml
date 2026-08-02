@@ -27,22 +27,23 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Install Android SDK Packages (Fix RecognitionListener)
-        run: |
-          # speech_to_text ve flutter_tts için gereken en güncel Android 36 SDK platform ve araçlarını yüklüyoruz
-          echo "y" | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-36" "build-tools;36.0.0" || true
-
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Patch flutter_tts to API 34
+        run: |
+          # flutter_tts paketinin API 36 dayatmasını API 34'e çekerek speech_to_text ile çakışmasını önlüyoruz
+          find ~/.pub-cache/ -type f -name "build.gradle" -path "*/flutter_tts-*/android/build.gradle" -exec sed -i 's/compileSdk 36/compileSdk 34/g' {} + || true
+          find ~/.pub-cache/ -type f -name "build.gradle" -path "*/flutter_tts-*/android/build.gradle" -exec sed -i 's/compileSdkVersion 36/compileSdkVersion 34/g' {} + || true
+
       - name: Generate Isar Models
         run: |
-          # Isar model uyuşmazlıklarını ve .g.dart hatalarını çözer
+          # Isar model uyuşmazlıklarını çözer
           flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Fix Undefined Variable Issue
         run: |
-          # library_manager_screen.dart içindeki tanımsız değişken hatasını yeni konseptimize uygun askıya alıyoruz
+          # library_manager_screen.dart içindeki tanımsız değişken hatasını askıya alıyoruz
           sed -i 's/tayfPoints += 50;/\/\/ lexisPoints += 50;/g' lib/library_manager_screen.dart
 
       - name: Regenerate Android Project
@@ -54,15 +55,20 @@ jobs:
           # 1. KOTLIN SÜRÜMÜNÜ GÜNCELLEME VE SABİTLEME
           sed -i -E 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           
-          # 2. API 36 VE MİNİMUM SDK 24 ZORLAMASI
-          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle
-          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/g' android/app/build.gradle
+          # 2. KARARLI API 34 VE MİNİMUM SDK 24 ZORLAMASI
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 34/g' android/app/build.gradle
+          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/g' android/app/build.gradle
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 24/g' android/app/build.gradle
           
-          sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' android/app/build.gradle
-          sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 36/g' android/app/build.gradle
+          sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' android/app/build.gradle
+          sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' android/app/build.gradle
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/g' android/app/build.gradle
           
+          # Yedek Güvenlik
+          echo "flutter.compileSdkVersion=34" >> android/local.properties
+          echo "flutter.targetSdkVersion=34" >> android/local.properties
+          echo "flutter.minSdkVersion=24" >> android/local.properties
+
           # 3. DESUGARING AKTİVASYONU
           sed -i '/compileOptions {/a \        coreLibraryDesugaringEnabled true' android/app/build.gradle
           echo "dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4' }" >> android/app/build.gradle
@@ -82,6 +88,7 @@ jobs:
                       if (namespace == null) {
                           namespace project.group
                       }
+                      compileSdkVersion 34
                       compileOptions {
                           sourceCompatibility JavaVersion.VERSION_17
                           targetCompatibility JavaVersion.VERSION_17
