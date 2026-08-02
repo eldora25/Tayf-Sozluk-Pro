@@ -71,6 +71,3 @@ class WordModel {
     );
   }
 }
-```[cite: 12]
-
-Lütfen yerel projenizdeki `models.dart` dosyasının tamamını silip bu kod bloğunu yapıştırın ve GitHub'a kaydedip gönderin. Bu sayede `build_runner` hatasız bir şekilde tamamlanacaktır.
