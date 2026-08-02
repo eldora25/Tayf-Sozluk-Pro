@@ -246,7 +246,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       List<String> correctPool = [...currentWord.meanings, ...currentWord.examples];
       correctOption = correctPool.isNotEmpty ? correctPool[random.nextInt(correctPool.length)] : currentWord.word;
       
-      // DÜZELTME: Eğer kelime ID ise eşanlamlısını göster (Gizle)
       _displayWordStr = currentWord.word;
       if (RegExp(r'^\d{8}-').hasMatch(_displayWordStr) || _displayWordStr.contains('[ID:')) {
           _displayWordStr = currentWord.synonyms.isNotEmpty ? currentWord.synonyms.first : "WordNet Kaydı";
@@ -275,6 +274,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           wOptions.add(wOpt);
         }
       }
+    }
+    
+    // YENİ: Eğer yeterli yanlış cevap bulunamazsa yedek olarak seçenekleri rastgele doldur
+    if (wOptions.length < 3) {
+      wOptions.addAll(["Entity", "Process", "Attribute", "Event"]);
+      wOptions = wOptions.take(3).toSet();
     }
     
     options = [correctOption, ...wOptions];
@@ -319,9 +324,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         correctAnswers++; 
         
         if (_isCurrentWordNet) {
-          currentWord.correctCount++;
-          isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
-          if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
+          // WordNet ise veri tabanı harici olduğu için doğrudan Mastered olayına yolla.
+          widget.onWordMastered(currentWord);
         } else {
           int totalOptions = currentWord.meanings.length + currentWord.examples.length;
           if (totalOptions > 1) {
@@ -416,8 +420,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
       if (selectedWrongOptions.length == 1) { 
         if (_isCurrentWordNet) {
-          currentWord.wrongCount++;
-          isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
           widget.onWrongWord(currentWord);
         } else {
           int totalOptions = currentWord.meanings.length + currentWord.examples.length;
