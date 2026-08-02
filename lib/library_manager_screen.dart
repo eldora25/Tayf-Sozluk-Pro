@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lottie/lottie.dart'; // YENİ: Lottie Animasyon Desteği
 import 'models.dart';
 import 'main.dart'; 
 import 'firebase_sync_service.dart';
@@ -38,6 +40,31 @@ class LibraryManagerScreen extends StatefulWidget {
 
 class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
   bool _isDownloading = false;
+  String _lastSyncText = "Hiç senkronize edilmedi";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastSyncInfo();
+  }
+
+  Future<void> _loadLastSyncInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    int lastSync = prefs.getInt('last_sync_time') ?? 0;
+    if (lastSync > 0) {
+      DateTime syncDate = DateTime.fromMillisecondsSinceEpoch(lastSync * 1000);
+      Duration diff = DateTime.now().difference(syncDate);
+      if (diff.inMinutes < 1) {
+        setState(() => _lastSyncText = "Az önce senkronize edildi");
+      } else if (diff.inHours < 1) {
+        setState(() => _lastSyncText = "${diff.inMinutes} dakika önce senkronize edildi");
+      } else if (diff.inDays < 1) {
+        setState(() => _lastSyncText = "${diff.inHours} saat önce senkronize edildi");
+      } else {
+        setState(() => _lastSyncText = "${diff.inDays} gün önce senkronize edildi");
+      }
+    }
+  }
 
   List<String> get _libraries {
     Set<String> libs = {};
@@ -282,7 +309,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     }
   }
 
-  // YENİ: Buluta Gönderme Seçim Menüsü (Mitoz vs. Standart)
   void _showUploadMenu() {
     showModalBottomSheet(
       context: context,
@@ -337,17 +363,27 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 
-  // YENİ: Akıllı Gönderim ve Gerçek TP Ödül Yönetimi
+  // YENİ: Lottie Animasyonlu Şık Bulut Yükleme Dialog Kutusu
   Future<void> _executeCloudUpload({required bool isMitosis}) async {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Row(
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 20),
-            Expanded(child: Text("Veriler güvenli buluta aktarılıyor..."))
+            SizedBox(
+              height: 120,
+              child: Lottie.network(
+                'https://assets9.lottiefiles.com/packages/lf20_5tl1xxic.json', 
+                errorBuilder: (context, error, stackTrace) => const CircularProgressIndicator(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text("Güvenli Buluta Aktarılıyor...", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
+            const Text("Veriler senkronize ediliyor, lütfen bekleyin.", style: TextStyle(color: Colors.grey, fontSize: 13), textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -367,12 +403,12 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
 
     if (mounted) {
       Navigator.pop(context); // Diyalogu kapat
+      await _loadLastSyncInfo(); // Senkronizasyon zaman damgasını güncelle
 
       bool success = result["success"] ?? false;
       String message = result["message"] ?? "İşlem tamamlandı.";
 
       if (success) {
-        // GERÇEK TP ARTIŞI: Sadece başarılı ve kart içeren gönderimde +50 TP kasaya işlenir
         setState(() {
           tayfPoints += 50; 
         });
@@ -400,7 +436,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
           )
         );
       } else {
-        // Yetersiz kart veya hata durumu (TP verilmez)
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -545,13 +580,28 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
             floating: true,
             pinned: true,
             snap: false,
-            expandedHeight: 120.0,
-            flexibleSpace: const FlexibleSpaceBar(
-              title: Text("Kütüphaneler", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            expandedHeight: 140.0, // YENİ: Canlı senkronizasyon rozeti için genişletildi
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              title: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Kütüphaneler", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  // YENİ: Canlı Senkronizasyon Durum Rozeti
+                  Row(
+                    children: [
+                      const Icon(Icons.cloud_sync, size: 12, color: Colors.white70),
+                      const SizedBox(width: 4),
+                      Text(_lastSyncText, style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.normal)),
+                    ],
+                  ),
+                ],
+              ),
               centerTitle: false,
             ),
             actions: [
-               // YENİ: Seçimli Gönderme Menüsünü Tetikleyen Buton
                Padding(
                  padding: const EdgeInsets.only(right: 8.0),
                  child: Container(
