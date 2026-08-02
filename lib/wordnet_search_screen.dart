@@ -40,7 +40,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
   @override
   void initState() {
     super.initState();
-    // Hem eski JSON okuyucu formatını hem de yeni direkt WordNet objelerini yakalar.
     baseWords = widget.words.where((w) {
       bool isOldFormat = w.level == 'WordNet' || w.libraryName.toLowerCase().contains('wordnet');
       bool isNewFormat = w.pos.isNotEmpty || w.synonyms.isNotEmpty || w.antonyms.isNotEmpty;
@@ -59,9 +58,14 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
       }
 
       filteredWords = baseWords.where((w) {
-        String cleanWord = w.word.contains('[ID:') ? "WordNet Kaydı" : w.word;
+        // DÜZELTME: Arama sırasında kelime ID ise temizle
+        String cleanWord = w.word;
+        if (RegExp(r'^\d{8}-').hasMatch(cleanWord) || cleanWord.contains('[ID:')) {
+           cleanWord = w.synonyms.isNotEmpty ? w.synonyms.first : "WordNet Kaydı";
+        }
+        
         if (cleanWord.toLowerCase() == query) return true;
-        // Eğer aranan kelime anlamlar, eş anlamlılar veya zıt anlamlılar içindeyse bul
+        
         if (w.meanings.any((m) => m.toLowerCase().contains(query))) return true;
         if (w.synonyms.any((s) => s.toLowerCase().contains(query))) return true;
         if (w.antonyms.any((a) => a.toLowerCase().contains(query))) return true;
@@ -85,8 +89,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
     super.dispose();
   }
 
-  // Eğer veri eski TXT/JSON formatında (ANLAM: EŞ ANLAMLI: vs) kaydedildiyse ayrıştırır,
-  // Yeni şemadaki gerçek parametreleri (w.synonyms) varsa onları kullanır.
   Map<String, dynamic> _getParsedData(WordModel w) {
     String definition = "";
     List<String> synonyms = [];
@@ -107,7 +109,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
         } else if (m.startsWith("ZIT ANLAMLI: ")) {
           antonyms.add(m.replaceAll("ZIT ANLAMLI: ", "").trim());
         } else if (definition.isEmpty) {
-          definition = m; // Saf tanım direkt eklendiyse
+          definition = m; 
         }
       }
     }
@@ -158,7 +160,11 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
     String def = parsedData["definition"];
     String pos = parsedData["pos"];
     
-    String mainWord = w.word.contains('[ID:') ? "WordNet Kaydı" : w.word;
+    // DÜZELTME: Kelime ID ise gizle ve eş anlamlıyı göster
+    String mainWord = w.word;
+    if (RegExp(r'^\d{8}-').hasMatch(mainWord) || mainWord.contains('[ID:')) {
+        mainWord = syns.isNotEmpty ? syns.first : "WordNet Kaydı";
+    }
     
     List<String> allWords = [if (mainWord != "WordNet Kaydı") mainWord, ...syns];
     if (allWords.isEmpty) allWords.add("Term");
