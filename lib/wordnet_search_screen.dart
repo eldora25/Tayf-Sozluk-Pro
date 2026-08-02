@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'models.dart';
-import 'main.dart'; 
+import 'wordnet.dart'; // YENİ: ZIP Servisini bağladık
 
 class WordNetSearchScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -19,15 +19,13 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
   List<WordModel> filteredWords = [];
   List<WordModel> baseWords = [];
   
-  // Arayüz Ayarları
   double _fontSizeBase = 15.0; 
-  Color? _customFontColor; // Kullanıcının seçtiği font rengi
+  Color? _customFontColor; 
   List<String> searchHistory = [];
   bool showGloss = true;
   bool wrapLines = true;
   String currentViewMode = "Overview"; 
 
-  // Hazır Font Renkleri
   final List<Color> _fontColors = [
     Colors.black87,
     Colors.white,
@@ -57,8 +55,8 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
         if (searchHistory.length > 15) searchHistory.removeLast();
       }
 
-      filteredWords = baseWords.where((w) {
-        // DÜZELTME: Arama sırasında kelime ID ise temizle
+      // YENİ: 1. Adım -> Lokal veritabanında arama
+      List<WordModel> localResults = baseWords.where((w) {
         String cleanWord = w.word;
         if (RegExp(r'^\d{8}-').hasMatch(cleanWord) || cleanWord.contains('[ID:')) {
            cleanWord = w.synonyms.isNotEmpty ? w.synonyms.first : "WordNet Kaydı";
@@ -70,7 +68,13 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
         if (w.synonyms.any((s) => s.toLowerCase().contains(query))) return true;
         if (w.antonyms.any((a) => a.toLowerCase().contains(query))) return true;
         return false;
-      }).take(300).toList(); 
+      }).toList();
+
+      // YENİ: 2. Adım -> ZIP içindeki WordNet Veritabanında (150 Bin kelime) arama yap ve model'e çevir
+      List<WordModel> zipResults = WordNetService().searchWord(query).map((e) => e.toWordModel()).toList();
+
+      // 3. Adım -> İki sonucu birleştirip filtrele
+      filteredWords = [...localResults, ...zipResults].take(300).toList();
     });
   }
 
@@ -94,13 +98,11 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
     List<String> synonyms = [];
     List<String> antonyms = [];
 
-    // Yeni Isar Şeması Önceliği
     if (w.pos.isNotEmpty || w.synonyms.isNotEmpty || w.antonyms.isNotEmpty) {
       definition = w.meanings.isNotEmpty ? w.meanings.first : "";
       synonyms = w.synonyms;
       antonyms = w.antonyms;
     } else {
-      // Eski Metin Tabanlı Format (Fallback)
       for (var m in w.meanings) {
         if (m.startsWith("ANLAM: ")) {
           definition = m.replaceAll("ANLAM: ", "").trim();
@@ -160,7 +162,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
     String def = parsedData["definition"];
     String pos = parsedData["pos"];
     
-    // DÜZELTME: Kelime ID ise gizle ve eş anlamlıyı göster
     String mainWord = w.word;
     if (RegExp(r'^\d{8}-').hasMatch(mainWord) || mainWord.contains('[ID:')) {
         mainWord = syns.isNotEmpty ? syns.first : "WordNet Kaydı";
@@ -249,7 +250,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. Üst Menü Simülasyonu
           Container(
             color: Theme.of(context).primaryColor.withOpacity(0.1),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -298,7 +298,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
             ),
           ),
           
-          // 2. Arama Çubuğu
           Container(
             color: Theme.of(context).cardColor,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -326,7 +325,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
             ),
           ),
           
-          // 3. Alt Menü
           if (query.isNotEmpty)
             Container(
               color: Theme.of(context).cardColor,
@@ -361,7 +359,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
             
           const Divider(height: 1, thickness: 1),
 
-          // 4. WordNet Okuma Ekranı (Klasik Çıktı)
           Expanded(
             child: Container(
               margin: const EdgeInsets.all(12.0),
@@ -428,7 +425,6 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> {
             ),
           ),
           
-          // Alt Bar
           Container(
             height: 28,
             color: Theme.of(context).primaryColor.withOpacity(0.1),
