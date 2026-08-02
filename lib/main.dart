@@ -15,12 +15,12 @@ import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 
-// Firebase Kütüphaneleri ve Senkronizasyon Servisi
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'firebase_sync_service.dart';
 
 import 'models.dart';
+import 'wordnet.dart'; // YENİ EKLENDİ
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
 import 'word_list_screen.dart';
@@ -112,7 +112,6 @@ List<List<String>> parseCsvMultiline(String text) {
   return rows;
 }
 
-// İZOLE ALGORİTMA: OPEN ENGLISH WORDNET (GWN-LMF) VE STANDART JSON AYRIŞTIRICI
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
@@ -125,119 +124,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   try {
     if (extension == 'json') {
       var decoded = json.decode(content);
-      
-      // 1. OPEN ENGLISH WORDNET (GWN-LMF) FORMAT TESPİTİ
-      List lexicons = [];
-      if (decoded is Map && decoded.containsKey('lexicons')) {
-        lexicons = decoded['lexicons'];
-      } else if (decoded is List && decoded.isNotEmpty && decoded[0] is Map && decoded[0].containsKey('lexicons')) {
-        lexicons = decoded[0]['lexicons'];
-      }
-
-      if (lexicons.isNotEmpty) {
-        // GWN-LMF FORMATI İŞLEME DÖNGÜSÜ
-        for (var lexicon in lexicons) {
-          List synsetsList = lexicon['synsets'] ?? [];
-          List entriesList = lexicon['entries'] ?? [];
-          
-          // Synset verilerini ID'ye göre hızlı erişim için haritalandır
-          Map<String, Map<String, dynamic>> synsetMap = {};
-          for (var s in synsetsList) {
-            String sId = s['id']?.toString() ?? '';
-            if (sId.isNotEmpty) synsetMap[sId] = s;
-          }
-          
-          // Eş anlamlıları (Synonyms) bulabilmek için Synset ID'lerini kelimelerle eşleştir
-          Map<String, List<String>> synsetLemmas = {};
-          for (var entry in entriesList) {
-            String lemma = '';
-            if (entry['lemma'] is Map) {
-               lemma = entry['lemma']['writtenForm']?.toString() ?? '';
-            }
-            if (lemma.isEmpty) continue;
-            
-            List senses = entry['senses'] ?? [];
-            for (var sense in senses) {
-              String synsetId = sense['synset']?.toString() ?? '';
-              if (synsetId.isNotEmpty) {
-                if (!synsetLemmas.containsKey(synsetId)) synsetLemmas[synsetId] = [];
-                if (!synsetLemmas[synsetId]!.contains(lemma)) synsetLemmas[synsetId]!.add(lemma);
-              }
-            }
-          }
-          
-          // Kelime (Entry) Listesini dön ve Saf Kartları oluştur
-          for (var entry in entriesList) {
-            String lemma = '';
-            if (entry['lemma'] is Map) {
-               lemma = entry['lemma']['writtenForm']?.toString() ?? '';
-            }
-            if (lemma.isEmpty) continue;
-            
-            List senses = entry['senses'] ?? [];
-            for (var sense in senses) {
-              String synsetId = sense['synset']?.toString() ?? '';
-              if (synsetMap.containsKey(synsetId)) {
-                var synset = synsetMap[synsetId]!;
-                
-                // Tanım (Definition / Gloss) Çekimi
-                String defStr = '';
-                if (synset['definitions'] is List && synset['definitions'].isNotEmpty) {
-                  var defVal = synset['definitions'][0];
-                  if (defVal is Map && defVal.containsKey('value')) {
-                    defStr = defVal['value'].toString();
-                  } else if (defVal is String) {
-                    defStr = defVal;
-                  }
-                }
-                
-                // Örnekler (Examples) Çekimi
-                List<String> examplesList = [];
-                if (synset['examples'] is List) {
-                  for (var ex in synset['examples']) {
-                    if (ex is Map && ex.containsKey('value')) {
-                       examplesList.add(ex['value'].toString());
-                    } else if (ex is String) {
-                       examplesList.add(ex);
-                    }
-                  }
-                }
-                
-                // Tür (Part of Speech) Çekimi
-                String posStr = synset['partOfSpeech']?.toString() ?? synset['pos']?.toString() ?? '';
-                
-                // Eş Anlamlılar (Synonyms) - Kendi kelimesini listeden çıkartarak
-                List<String> synonymsList = [];
-                if (synsetLemmas.containsKey(synsetId)) {
-                  synonymsList = synsetLemmas[synsetId]!.where((s) => s != lemma).toList();
-                }
-                
-                // Tanımı olan kelimeyi listeye WordModel formatında ekle
-                if (defStr.isNotEmpty) {
-                  parsedList.add(json.encode({
-                    'word': lemma,
-                    'meanings': [defStr], 
-                    'examples': examplesList,
-                    'level': 'Genel', 
-                    'libraryName': customLibraryName,
-                    'correctCount': 0,
-                    'wrongCount': 0,
-                    'listType': 'all',
-                    'srsLevel': 0,
-                    'nextReviewDate': 0,
-                    'pos': posStr,
-                    'synonyms': synonymsList,
-                    'antonyms': [] 
-                  }));
-                }
-              }
-            }
-          }
-        }
-        return parsedList;
-      }
-
-      // 2. STANDART JSON / ESKİ WORDNET FORMATLARI (Mevcut yapı korundu)
       List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
       for (var item in list) {
         if (item is Map) {
@@ -283,7 +169,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
                 }));
              }
           } else {
-             // Klasik JSON Okuyucu
              List<String> subWords = [];
              String w = item['word']?.toString().trim() ?? '';
              if (!RegExp(r'^\d{8}-').hasMatch(w) && w.isNotEmpty) subWords.add(w);
@@ -321,7 +206,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       return parsedList;
     }
 
-    // TXT Okuyucu
     if (originalFileName.contains('tayf') && extension == 'txt') {
       List<String> lines = const LineSplitter().convert(content);
       for (String line in lines) {
@@ -340,7 +224,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
       return parsedList;
     }
 
-    // CSV Okuyucu
     List<List<String>> rows = parseCsvMultiline(content);
     for (List<String> row in rows) {
       if (row.length >= 2) {
@@ -465,6 +348,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<WordModel> toSRSRepeatWords = []; 
   List<WordModel> wrongWords = []; 
   List<WordModel> reviewWordsPool = []; 
+  
+  // YENİ: Performans için WordNet kelime havuzu
+  List<WordModel> _cachedWordNetDeck = [];
 
   String selectedLibrary = 'Varsayılan';
   String selectedLevel = 'Genel';
@@ -517,6 +403,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _loadData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      
+      // YENİ: Uygulama açılışında WordNet Servisini ZIP'ten RAM'e yükle
+      await WordNetService().loadWordNetData();
+      if (_cachedWordNetDeck.isEmpty) {
+        _cachedWordNetDeck = WordNetService().getRandomWords(200);
+      }
+
       setState(() {
         selectedLibrary = prefs.getString('selectedLibrary') ?? 'Varsayılan';
         selectedLevel = prefs.getString('selectedLevel') ?? 'Genel';
@@ -819,6 +712,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (selectedLibrary == 'Tekrarlanması Gerekenler') {
       deck.addAll(toSRSRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
       deck.addAll(toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
+    } else if (selectedLibrary == 'WordNet Veritabanı') {
+      // YENİ: Seçim WordNet ise cihazı yormadan anlık çekilen belleği karta bas
+      deck.addAll(_cachedWordNetDeck);
     } else {
       deck.addAll(toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
       deck.addAll(toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
@@ -835,6 +731,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ..addAll(learningWords.map((e) => e.libraryName)); 
     var uniqueLibs = libs.toSet().toList();
     uniqueLibs.add('Tekrarlanması Gerekenler'); 
+    
+    // YENİ: ZIP yüklendiyse seçimlere dev WordNet'i ekle
+    if (WordNetService().isLoaded) {
+      uniqueLibs.add('WordNet Veritabanı');
+    }
     return uniqueLibs;
   }
 
@@ -1781,7 +1682,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
                       HapticFeedback.lightImpact();
                       Navigator.pop(context); 
-                      List<WordModel> fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
+                      // YENİ: Quiz Modunda seçilen WordNet ise cached data gönderilir
+                      List<WordModel> fullPool = [];
+                      if (selectedLibrary == 'WordNet Veritabanı') {
+                        fullPool = _cachedWordNetDeck;
+                      } else {
+                        fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
+                      }
                       Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
                         words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, 
                         onWordMastered: (w) => _markAsLearned(w, fromQuiz: true), 
