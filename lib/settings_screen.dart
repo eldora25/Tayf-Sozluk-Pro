@@ -64,31 +64,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _level = widget.selectedLevel;
   }
 
-  void _showWordNetAlert() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.code, color: Colors.indigo, size: 70),
-            const SizedBox(height: 16),
-            const Text("WordNet Kütüphanesi", textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo)),
-            const SizedBox(height: 12),
-            const Text("Yazılımcı halen çalışıyor... 😅\n\nÇok yakında harika bir İngilizce-İngilizce sözlük deneyimiyle karşınızda olacak!", textAlign: TextAlign.center, style: TextStyle(fontSize: 15, height: 1.4)),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text("Anladım", style: TextStyle(fontWeight: FontWeight.bold))
-            )
-          ]
-        )
-      )
-    );
-  }
-
   Widget _buildSectionTitle(String title, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, top: 8),
@@ -134,7 +109,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text("Tema Rengi Seçimi", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    // ZIRHLI MANTIK: Kırmızı ekran hatasını önlemek için gölge tamamen temizlendi
                     Text(
                       _themeNames[_themeIndex], 
                       style: TextStyle(
@@ -250,7 +224,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text("Boyutu büyük paketlerin yüklenmesi birkaç saniye sürebilir.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                     const SizedBox(height: 16),
-                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet İngilizce", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kapsamlı İng-İng Sözlük"), trailing: const Icon(Icons.download_for_offline, color: Colors.indigo, size: 32), onTap: () { _showWordNetAlert(); }),
+                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet İngilizce", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kapsamlı İng-İng Sözlük"), trailing: const Icon(Icons.download_for_offline, color: Colors.indigo, size: 32), onTap: () { HapticFeedback.lightImpact(); widget.onAddPackage("assets/tayf_wordnet_optimized.json", "json", "WordNet (İng-İng)"); }),
                     const SizedBox(height: 10),
                     ListTile(tileColor: Colors.orange.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kısa Temel Kelimeler"), trailing: const Icon(Icons.download_for_offline, color: Colors.orange, size: 32), onTap: () { widget.onAddPackage("assets/EN-TR_tayf.txt", "txt", "Tayf İng-Tr"); }),
                     const SizedBox(height: 10),
