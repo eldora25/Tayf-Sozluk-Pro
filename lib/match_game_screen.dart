@@ -37,7 +37,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   final ValueNotifier<bool> _isHoveringTarget = ValueNotifier(false);
   final Random _random = Random();
   
-  // BÖLÜM 5: Hedef Kutuların Akıllı İçerik Haritası
   Map<String, String> _targetDisplays = {};
 
   @override
@@ -303,7 +302,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                 Expanded(
                   child: Row(
                     children: [
-                      // SOL SÜTUN
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -396,7 +394,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                         ),
                       ),
                       
-                      // SAĞ SÜTUN VE YUKARI KAYARAK AÇILAN KARTLAR
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
