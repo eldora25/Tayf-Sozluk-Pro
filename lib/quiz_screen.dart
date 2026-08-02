@@ -218,7 +218,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
     
-    // BÖLÜM 4: Akıllı WordNet Quiz Motoru Entegrasyonu
     _isCurrentWordNet = currentWord.pos.isNotEmpty || currentWord.synonyms.isNotEmpty || currentWord.antonyms.isNotEmpty;
     
     List<String> qTypes = ['standard'];
@@ -246,7 +245,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       _questionSubtext = "";
       List<String> correctPool = [...currentWord.meanings, ...currentWord.examples];
       correctOption = correctPool.isNotEmpty ? correctPool[random.nextInt(correctPool.length)] : currentWord.word;
-      _displayWordStr = currentWord.word.contains('[ID:') ? "WordNet Kaydı" : currentWord.word;
+      
+      // DÜZELTME: Eğer kelime ID ise eşanlamlısını göster (Gizle)
+      _displayWordStr = currentWord.word;
+      if (RegExp(r'^\d{8}-').hasMatch(_displayWordStr) || _displayWordStr.contains('[ID:')) {
+          _displayWordStr = currentWord.synonyms.isNotEmpty ? currentWord.synonyms.first : "WordNet Kaydı";
+      }
     }
 
     Set<String> wOptions = {};
@@ -314,7 +318,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (selectedWrongOptions.isEmpty) { 
         correctAnswers++; 
         
-        // WordNet Kelimeleri Mitoz İşleminden Muaf Tutularak Bütünlüğü Korunur
         if (_isCurrentWordNet) {
           currentWord.correctCount++;
           isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
