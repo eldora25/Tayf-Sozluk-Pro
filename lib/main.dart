@@ -112,6 +112,7 @@ List<List<String>> parseCsvMultiline(String text) {
   return rows;
 }
 
+// BÖLÜM 2: GELİŞMİŞ GLOBAL WORDNET DESTEKLİ JSON AYRIŞTIRICI
 List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   String content = params['content'];
   String extension = params['extension'];
@@ -124,37 +125,76 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   try {
     if (extension == 'json') {
       var decoded = json.decode(content);
-      List list = decoded is Map ? (decoded['words'] ?? decoded) : decoded;
-      for (var item in list) {
+      List listToParse = [];
+      
+      // Kök dizini (Root) bulma mekanizması (Global WordNet / OMW desteği)
+      if (decoded is List) {
+        listToParse = decoded;
+      } else if (decoded is Map) {
+        if (decoded.containsKey('words') && decoded['words'] is List) {
+          listToParse = decoded['words'];
+        } else if (decoded.containsKey('synsets') && decoded['synsets'] is List) {
+          listToParse = decoded['synsets'];
+        } else if (decoded.containsKey('data') && decoded['data'] is List) {
+          listToParse = decoded['data'];
+        } else {
+          // ID bazlı sözlük yapısıysa (örn: {"10101-n": {...}})
+          listToParse = decoded.values.toList();
+        }
+      }
+
+      for (var item in listToParse) {
         if (item is Map) {
-          // BÖLÜM 2: YENİ WORDNET JSON OKUYUCU MANTIĞI VE DÜZELTMELER
-          bool isWordNet = item.containsKey('pos') || item.containsKey('antonyms') || item.containsKey('lemmas') || item.containsKey('synonyms');
+          bool isWordNet = item.containsKey('pos') || item.containsKey('partOfSpeech') || item.containsKey('antonyms') || item.containsKey('lemmas') || item.containsKey('synonyms') || item.containsKey('members') || item.containsKey('gloss');
           
           if (isWordNet) {
-             String wordStr = item['word']?.toString().trim() ?? '';
-             String posStr = item['pos']?.toString().trim() ?? '';
-             String defStr = item['definition']?.toString().trim() ?? '';
+             // Olası kelime/lemma listesini topla (members, lemmas, synonyms, vb.)
+             List<String> rawSynonyms = [];
+             if (item['synonyms'] is List) rawSynonyms.addAll(List<String>.from(item['synonyms'].map((e) => e.toString())));
+             if (item['lemmas'] is List) rawSynonyms.addAll(List<String>.from(item['lemmas'].map((e) => e.toString())));
+             if (item['members'] is List) rawSynonyms.addAll(List<String>.from(item['members'].map((e) => e.toString())));
+             if (item['word'] is String) rawSynonyms.add(item['word'].toString());
+             if (item['lemma'] is String) rawSynonyms.add(item['lemma'].toString());
              
-             List<String> examplesList = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
-             
-             // Eş anlamlıları hem 'synonyms' hem de 'lemmas' keylerinden topla
-             List<String> synonymsList = [];
-             if (item['synonyms'] is List) synonymsList.addAll((item['synonyms'] as List).map((e) => e.toString()));
-             if (item['lemmas'] is List) synonymsList.addAll((item['lemmas'] as List).map((e) => e.toString()));
-             synonymsList = synonymsList.toSet().toList(); // Tekrarları kaldır
-             
-             List<String> antonymsList = item['antonyms'] is List ? (item['antonyms'] as List).map((e) => e.toString()).toList() : [];
+             // Boşlukları temizle ve tekrar eden kelimeleri sil
+             rawSynonyms = rawSynonyms.map((e) => e.replaceAll('_', ' ').trim()).where((e) => e.isNotEmpty).toSet().toList();
 
-             // Eğer word ID ise (örn: 10102030-n) veya boşsa, ilk eş anlamlıyı kelime olarak ata
-             if (wordStr.isEmpty || RegExp(r'^\d{8}-').hasMatch(wordStr) || wordStr.contains('[ID:')) {
-                 if (synonymsList.isNotEmpty) {
-                     wordStr = synonymsList.first;
-                 } else {
-                     wordStr = "WordNet Term";
+             // Asıl kelimeyi (ID olmayan ilk kelimeyi) belirle
+             String wordStr = "";
+             for (String syn in rawSynonyms) {
+                 if (!RegExp(r'^\d{8}-').hasMatch(syn) && !RegExp(r'^eng-').hasMatch(syn) && !syn.contains('[ID:')) {
+                     wordStr = syn;
+                     break;
                  }
              }
+             
+             // Eğer geçerli bir kelime bulunamadıysa varsayılan atama
+             if (wordStr.isEmpty) {
+                 wordStr = rawSynonyms.isNotEmpty ? rawSynonyms.first : "WordNet Term";
+             }
 
-             if (wordStr.isNotEmpty && defStr.isNotEmpty) {
+             // Anlam/Tanım Çekme (Gloss, Definition, vb.)
+             String defStr = "";
+             if (item['definition'] is String) defStr = item['definition'];
+             else if (item['gloss'] is String) defStr = item['gloss'];
+             else if (item['definitions'] is List && item['definitions'].isNotEmpty) defStr = item['definitions'].first.toString();
+             else if (item['meanings'] is List && item['meanings'].isNotEmpty) defStr = item['meanings'].first.toString();
+
+             // Part of Speech
+             String posStr = item['pos']?.toString() ?? item['partOfSpeech']?.toString() ?? "";
+
+             // Örnekler
+             List<String> examplesList = [];
+             if (item['examples'] is List) examplesList = List<String>.from(item['examples'].map((e) => e.toString()));
+
+             // Zıt Anlamlılar
+             List<String> antonymsList = [];
+             if (item['antonyms'] is List) antonymsList = List<String>.from(item['antonyms'].map((e) => e.toString()));
+
+             // Ana kelimeyi eş anlamlı listesinden ayır
+             List<String> finalSynonyms = rawSynonyms.where((s) => s != wordStr).toList();
+
+             if (wordStr.isNotEmpty && wordStr != "WordNet Term" && defStr.isNotEmpty) {
                 parsedList.add(json.encode({
                   'word': wordStr,
                   'meanings': [defStr], 
@@ -167,17 +207,16 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
                   'srsLevel': 0,
                   'nextReviewDate': 0,
                   'pos': posStr,
-                  'synonyms': synonymsList,
+                  'synonyms': finalSynonyms,
                   'antonyms': antonymsList
                 }));
              }
           } else {
-             // Eski Klasik JSON Okuyucu
+             // Klasik JSON Ayrıştırıcı
              List<String> subWords = [];
              String w = item['word']?.toString().trim() ?? '';
              if (!RegExp(r'^\d{8}-').hasMatch(w) && w.isNotEmpty) subWords.add(w);
-             if (item['synonyms'] is List) subWords.addAll((item['synonyms'] as List).map((e) => e.toString()));
-             if (item['lemmas'] is List) subWords.addAll((item['lemmas'] as List).map((e) => e.toString()));
+             
              String def = item['definition']?.toString() ?? '';
              List<String> mList = item['meanings'] is List ? (item['meanings'] as List).map((e) => e.toString()).toList() : (def.isNotEmpty ? [def] : []);
              List<String> eList = item['examples'] is List ? (item['examples'] as List).map((e) => e.toString()).toList() : [];
@@ -738,7 +777,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (combinedList.isEmpty) return;
         rawText = combinedList.join('. '); 
       } else {
-        // DÜZELTME: Eğer kelime bir ID içeriyorsa telaffuz etmeden önce gerçek kelimeyi al
         String wText = word.word;
         if (RegExp(r'^\d{8}-').hasMatch(wText) || wText.contains('[ID:')) {
             wText = word.synonyms.isNotEmpty ? word.synonyms.first : (word.meanings.isNotEmpty ? word.meanings.first : wText);
@@ -1232,7 +1270,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
   }
 
-  // BÖLÜM 3: WordNet Kart Ön Yüz Tasarımı (DÜZELTİLDİ: ID yerine kelime)
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
@@ -1240,7 +1277,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
     bool isWordNet = word.pos.isNotEmpty || word.synonyms.isNotEmpty;
 
-    // DÜZELTME: Kelime ID ise asıl kelimeyi bul
     String displayWord = word.word;
     if (RegExp(r'^\d{8}-').hasMatch(displayWord) || displayWord.contains('[ID:')) {
         displayWord = word.synonyms.isNotEmpty ? word.synonyms.first : "WordNet Terimi";
@@ -1370,7 +1406,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // BÖLÜM 3: WordNet Kart Arka Yüz Tasarımı (DÜZELTİLDİ: ID yerine kelime)
   Widget _buildCardBack(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
     bool isPremium = level > 0;
@@ -1378,7 +1413,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
     bool isWordNet = word.pos.isNotEmpty || word.synonyms.isNotEmpty;
 
-    // DÜZELTME: Kelime ID ise asıl kelimeyi bul
     String displayWord = word.word;
     if (RegExp(r'^\d{8}-').hasMatch(displayWord) || displayWord.contains('[ID:')) {
         displayWord = word.synonyms.isNotEmpty ? word.synonyms.first : "WordNet Terimi";
@@ -1465,7 +1499,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   ...word.examples.map((e) => Padding(padding: const EdgeInsets.only(top: 4.0, bottom: 4.0, left: 6), child: Text("» " + e, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.8))))),
                                 ]
                               ] else ...[
-                                // Klasik Sözlük Görünümü
                                 ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• " + m, style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
                                 if (word.examples.isNotEmpty) ...[
                                   const SizedBox(height: 16),
@@ -1613,7 +1646,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (100 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); _buyFreeze(); }),
                     const Divider(),
                     
-                    // BÖLÜM 2 DÜZELTME: Browser Ekranı Yönlendirmesi
                     ListTile(
                       leading: const Icon(Icons.travel_explore, color: Colors.indigoAccent), 
                       title: const Text("WordNet Browser", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigoAccent)), 
