@@ -108,7 +108,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("WordNet Browser 2.0", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+        title: const Text("WordNet Browser", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
         elevation: 0,
         backgroundColor: Colors.transparent,
         flexibleSpace: ClipRRect(
@@ -117,7 +117,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.indigo.withOpacity(0.7), Colors.deepPurple.withOpacity(0.7)],
+                  colors: [Theme.of(context).primaryColor.withOpacity(0.7), Theme.of(context).colorScheme.secondary.withOpacity(0.7)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -155,9 +155,9 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
                       decoration: InputDecoration(
                         hintText: "İngilizce kelime ara (Örn: run)...",
                         hintStyle: TextStyle(color: Colors.grey.shade400),
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Icon(Icons.travel_explore, color: Colors.indigo, size: 28),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Icon(Icons.travel_explore, color: Theme.of(context).primaryColor, size: 28),
                         ),
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.clear, color: Colors.grey),
@@ -180,7 +180,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
             
             if (_isLoading)
               const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator(color: Colors.indigo)),
+                child: Center(child: CircularProgressIndicator()),
               )
             else if (_searchResults.isEmpty)
               SliverFillRemaining(
@@ -188,7 +188,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.manage_search, size: 80, color: Colors.indigo.withOpacity(0.3)),
+                      Icon(Icons.manage_search, size: 80, color: Theme.of(context).primaryColor.withOpacity(0.3)),
                       const SizedBox(height: 16),
                       Text(
                         _searchController.text.isEmpty ? "150.000+ Kelime Arasında Gezin" : "Sonuç bulunamadı.",
@@ -208,18 +208,18 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
                       return _buildAnimatedItem(
                         index,
                         Card(
-                          elevation: 0,
+                          elevation: 2,
                           margin: const EdgeInsets.only(bottom: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            side: BorderSide(color: Colors.indigo.withOpacity(0.3), width: 1.5),
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1.5),
                           ),
                           color: isDark ? Colors.grey.shade900 : Colors.white,
                           child: ExpansionTile(
                             tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                             title: Text(
                               item.word,
-                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.indigo),
+                              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Theme.of(context).primaryColor),
                             ),
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 8.0),
@@ -236,13 +236,13 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
                                 padding: const EdgeInsets.all(20),
                                 width: double.infinity,
                                 decoration: BoxDecoration(
-                                  color: Colors.indigo.withOpacity(0.03),
-                                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
+                                  color: Theme.of(context).primaryColor.withOpacity(0.03),
+                                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(children: [const Icon(Icons.menu_book, size: 16, color: Colors.indigo), const SizedBox(width: 8), Text("Tanım (Definition):", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.indigo.shade400))]),
+                                    Row(children: [Icon(Icons.menu_book, size: 16, color: Theme.of(context).primaryColor), const SizedBox(width: 8), Text("Tanım (Definition):", style: TextStyle(fontWeight: FontWeight.w900, color: Theme.of(context).primaryColor))]),
                                     const SizedBox(height: 8),
                                     ...item.meanings.map((m) => Padding(
                                       padding: const EdgeInsets.only(bottom: 8.0, left: 8.0),
