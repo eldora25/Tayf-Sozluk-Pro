@@ -1,87 +1,67 @@
-import 'dart:ui';
 import 'dart:async'; // EKLENDİ: Timer için
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:isar/isar.dart';
 import 'models.dart';
-import 'main.dart';
+import 'main.dart'; 
 
-class WordNetSearchScreen extends StatefulWidget {
+class WordListScreen extends StatefulWidget {
   final List<WordModel> words;
-  const WordNetSearchScreen({super.key, required this.words});
+  final Function(WordModel) onDelete;
+  final Function(WordModel)? onLearned; 
+
+  const WordListScreen({super.key, required this.words, required this.onDelete, this.onLearned});
 
   @override
-  State<WordNetSearchScreen> createState() => _WordNetSearchScreenState();
+  State<WordListScreen> createState() => _WordListScreenState();
 }
 
-class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTickerProviderStateMixin {
-  final TextEditingController _searchController = TextEditingController();
-  List<WordModel> _searchResults = [];
-  bool _isLoading = false;
-  late AnimationController _fadeController;
-  Timer? _debounceTimer; // EKLENDİ: Debouncer timer
+class _WordListScreenState extends State<WordListScreen> {
+  String searchQuery = '';
+  List<WordModel> _filteredList = [];
+  Timer? _debounceTimer; // EKLENDİ: Timer
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    _fadeController.forward();
+    _filteredList = widget.words; // İlk açılışta tüm liste görünmeli
   }
 
   @override
   void dispose() {
-    _debounceTimer?.cancel(); // EKLENDİ: Timer temizliği
-    _searchController.dispose();
-    _fadeController.dispose();
+    _debounceTimer?.cancel(); // EKLENDİ: Bellek temizliği
     super.dispose();
   }
 
-  // EKLENDİ: Arama öncesi Debounce katmanı (400ms)
+  // EKLENDİ: Sıçrama önleyici 400ms gecikme
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    
     _debounceTimer = Timer(const Duration(milliseconds: 400), () {
-      _executeSearch(query);
+      if (mounted) {
+        setState(() {
+          searchQuery = query;
+          if (query.trim().isEmpty) {
+            _filteredList = widget.words;
+          } else {
+            String lowerQuery = query.toLowerCase();
+            _filteredList = widget.words.where((w) {
+              return w.word.toLowerCase().contains(lowerQuery) || 
+                     w.meanings.join(' ').toLowerCase().contains(lowerQuery);
+            }).toList();
+          }
+        });
+      }
     });
   }
 
-  void _executeSearch(String query) async {
-    if (query.trim().isEmpty) {
-      if (mounted) setState(() => _searchResults = []);
-      return;
-    }
-
-    if (mounted) setState(() => _isLoading = true);
-    String lowerQuery = query.toLowerCase().trim();
-
-    try {
-      // Işık hızında Isar araması
-      List<WordModel> results = await isar.wordModels
-          .filter()
-          .libraryNameEqualTo('WordNet Veritabanı')
-          .and()
-          .wordContains(lowerQuery, caseSensitive: false)
-          .limit(50)
-          .findAll();
-
-      if (mounted) {
-        setState(() {
-          _searchResults = results;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Widget _buildAnimatedItem(int index, Widget child) {
+  Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index.clamp(0, 15) * 50)),
+      duration: Duration(milliseconds: 400 + (index.clamp(0, 10) * 50)), 
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
-          offset: Offset(0, 30 * (1 - value)),
+          offset: Offset(0, 50 * (1 - value)),
           child: Opacity(
             opacity: value.clamp(0.0, 1.0),
             child: child,
@@ -92,225 +72,274 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
     );
   }
 
-  Widget _buildTag(String text, Color color, IconData icon) {
+  void _moveToReview(WordModel word) {
+    HapticFeedback.heavyImpact();
+    setState(() {
+      word.libraryName = 'İncelenecek Kelimeler';
+      word.listType = 'all';
+      widget.words.remove(word);
+      _filteredList.remove(word);
+    });
+
+    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("⚠️ Kelime incelenmek üzere ayrıldı!", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
+    );
+  }
+
+  Widget _buildMitosisBadge(WordModel item) {
+    final String dnaCode = "DNA-" + item.id.toString().padLeft(6, '0');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Transform.rotate(
+              angle: -0.5,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.white30, width: 1),
+                  boxShadow: [
+                    BoxShadow(color: Colors.orangeAccent.withOpacity(0.9), blurRadius: 12, spreadRadius: 2, offset: const Offset(-2, 0)),
+                    BoxShadow(color: Colors.purpleAccent.withOpacity(0.9), blurRadius: 12, spreadRadius: 2, offset: const Offset(2, 0)),
+                  ],
+                ),
+                child: Transform.rotate(
+                  angle: 0.5,
+                  child: const Text(
+                    "\u{1F9EC}", 
+                    style: TextStyle(
+                      fontSize: 12, 
+                      shadows: [
+                        Shadow(color: Colors.orangeAccent, blurRadius: 15),
+                        Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
+                  const SizedBox(width: 4),
+                  Text(dnaCode, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExpansionContent(WordModel item) {
+    List<Widget> contentList = [];
+    contentList.add(const Text("Anlamlar:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)));
+    
+    for (var m in item.meanings) {
+      contentList.add(Text("• " + m, style: const TextStyle(fontWeight: FontWeight.w600, height: 1.4)));
+    }
+    
+    if (item.examples.isNotEmpty) {
+      contentList.add(const SizedBox(height: 8));
+      contentList.add(const Text("Örnekler:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)));
+      for (var e in item.examples) {
+        contentList.add(Text("» " + e, style: const TextStyle(fontStyle: FontStyle.italic, height: 1.4)));
+      }
+    }
+
     return Container(
-      margin: const EdgeInsets.only(right: 8, bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.all(16),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        color: Theme.of(context).primaryColor.withOpacity(0.05),
+        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16))
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(text, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
-        ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: contentList,
       ),
+    );
+  }
+
+  Widget _buildListItem(BuildContext context, int index) {
+    final WordModel item = _filteredList[index];
+    final bool isMitosis = item.libraryName.startsWith('\u{1F9EC}');
+    final String dismissKey = '${item.id}_$index';
+    final String heroTag = 'hero_word_${item.word}_$index';
+    final String subtitleText = item.libraryName + " / " + item.level;
+
+    return RepaintBoundary(
+      child: _buildAnimatedItem(
+        context, 
+        index,
+        Dismissible(
+          key: Key(dismissKey),
+          direction: widget.onLearned != null ? DismissDirection.horizontal : DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12)),
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: const Icon(Icons.check_circle, color: Colors.white, size: 30),
+          ),
+          secondaryBackground: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(12)),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: const Icon(Icons.delete, color: Colors.white, size: 30),
+          ),
+          onDismissed: (direction) {
+            setState(() {
+              widget.words.remove(item);
+              _filteredList.remove(item);
+            });
+            if (direction == DismissDirection.endToStart) {
+              widget.onDelete(item);
+            } else if (direction == DismissDirection.startToEnd) {
+              final learnCb = widget.onLearned;
+              if (learnCb != null) {
+                learnCb(item);
+              }
+            }
+          },
+          child: Card(
+            elevation: 2,
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: isMitosis ? BorderSide(color: Colors.purpleAccent.withOpacity(0.3), width: 1.5) : BorderSide.none,
+            ),
+            color: isMitosis ? Colors.purpleAccent.withOpacity(0.05) : Theme.of(context).cardColor,
+            child: ExpansionTile(
+              title: Hero(
+                tag: heroTag,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Text(item.word, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple)),
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+                  Text(subtitleText),
+                  if (isMitosis) _buildMitosisBadge(item),
+                ],
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+                    tooltip: 'İnceleneceklere Taşı',
+                    onPressed: () => _moveToReview(item),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: () {
+                      widget.onDelete(item);
+                      setState(() {
+                        _filteredList.remove(item);
+                      });
+                    },
+                  ),
+                ],
+              ),
+              children: [
+                _buildExpansionContent(item),
+              ],
+            ),
+          ),
+        ),
+      )
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
+    bool hasWordNet = widget.words.any((w) => w.libraryName == 'WordNet Veritabanı');
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text("WordNet Browser", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Theme.of(context).primaryColor.withOpacity(0.7), Theme.of(context).colorScheme.secondary.withOpacity(0.7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          const SliverAppBar(
+            floating: true,
+            pinned: true,
+            snap: false,
+            expandedHeight: 110.0,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text("Kelime Listesi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              centerTitle: false,
             ),
           ),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Theme.of(context).primaryColor.withOpacity(0.05), Colors.transparent],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
+          
+          if (hasWordNet)
             SliverToBoxAdapter(
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.indigo.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      autofocus: true,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                      decoration: InputDecoration(
-                        hintText: "İngilizce kelime ara (Örn: run)...",
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Icon(Icons.travel_explore, color: Theme.of(context).primaryColor, size: 28),
-                        ),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey),
-                          onPressed: () {
-                            HapticFeedback.selectionClick();
-                            _searchController.clear();
-                            _executeSearch('');
-                          },
-                        ),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-                        filled: true,
-                        fillColor: Colors.transparent,
-                      ),
-                      onChanged: _onSearchChanged, // GÜNCELLENDİ: Doğrudan Isar'ı çağırmak yerine Debouncer tetiklenir
-                    ),
-                  ),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.withOpacity(0.1), 
+                  borderRadius: BorderRadius.circular(12), 
+                  border: Border.all(color: Colors.indigo.withOpacity(0.5))
                 ),
-              ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.indigo),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text("WordNet veritabanından cihazı yormamak için rastgele 200 kelimelik bir havuz gösterilmektedir. Tamamı WordNet Browser'dan aranabilir.", style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12))
+                    )
+                  ]
+                )
+              )
             ),
             
-            if (_isLoading)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_searchResults.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.manage_search, size: 80, color: Theme.of(context).primaryColor.withOpacity(0.3)),
-                      const SizedBox(height: 16),
-                      Text(
-                        _searchController.text.isEmpty ? "150.000+ Kelime Arasında Gezin" : "Sonuç bulunamadı.",
-                        style: TextStyle(color: Colors.grey.shade500, fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: TextField(
+                decoration: InputDecoration(
+                  labelText: "Kelime veya Anlam Ara...",
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  filled: true,
+                  fillColor: Theme.of(context).primaryColor.withOpacity(0.05),
                 ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      WordModel item = _searchResults[index];
-                      return _buildAnimatedItem(
-                        index,
-                        Card(
-                          elevation: 2,
-                          margin: const EdgeInsets.only(bottom: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 1.5),
-                          ),
-                          color: isDark ? Colors.grey.shade900 : Colors.white,
-                          child: ExpansionTile(
-                            tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                            title: Text(
-                              item.word,
-                              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Theme.of(context).primaryColor),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Row(
-                                children: [
-                                  if (item.pos.isNotEmpty)
-                                    _buildTag(item.pos.toUpperCase(), Colors.purple, Icons.account_tree),
-                                  _buildTag("WordNet", Colors.blue, Icons.language),
-                                ],
-                              ),
-                            ),
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(20),
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor.withOpacity(0.03),
-                                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(children: [Icon(Icons.menu_book, size: 16, color: Theme.of(context).primaryColor), const SizedBox(width: 8), Text("Tanım (Definition):", style: TextStyle(fontWeight: FontWeight.w900, color: Theme.of(context).primaryColor))]),
-                                    const SizedBox(height: 8),
-                                    ...item.meanings.map((m) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 8.0, left: 8.0),
-                                      child: Text("• $m", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, height: 1.4)),
-                                    )),
-                                    
-                                    if (item.synonyms.isNotEmpty) ...[
-                                      const SizedBox(height: 16),
-                                      Row(children: [const Icon(Icons.link, size: 16, color: Colors.teal), const SizedBox(width: 8), Text("Eş Anlamlılar (Synonyms):", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.teal.shade400))]),
-                                      const SizedBox(height: 8),
-                                      Wrap(
-                                        spacing: 8, runSpacing: 8,
-                                        children: item.synonyms.map((s) => Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                          decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.teal.withOpacity(0.3))),
-                                          child: Text(s, style: const TextStyle(fontSize: 13, color: Colors.teal, fontWeight: FontWeight.bold)),
-                                        )).toList(),
-                                      ),
-                                    ],
-                                    
-                                    if (item.antonyms.isNotEmpty) ...[
-                                      const SizedBox(height: 16),
-                                      Row(children: [const Icon(Icons.link_off, size: 16, color: Colors.redAccent), const SizedBox(width: 8), Text("Zıt Anlamlılar (Antonyms):", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.redAccent.shade400))]),
-                                      const SizedBox(height: 8),
-                                      Wrap(
-                                        spacing: 8, runSpacing: 8,
-                                        children: item.antonyms.map((a) => Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                          decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.redAccent.withOpacity(0.3))),
-                                          child: Text(a, style: const TextStyle(fontSize: 13, color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                                        )).toList(),
-                                      ),
-                                    ],
-
-                                    if (item.examples.isNotEmpty) ...[
-                                      const SizedBox(height: 16),
-                                      Row(children: [const Icon(Icons.format_quote, size: 16, color: Colors.orange), const SizedBox(width: 8), Text("Örnekler (Examples):", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.orange.shade400))]),
-                                      const SizedBox(height: 8),
-                                      ...item.examples.map((e) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 6.0, left: 8.0),
-                                        child: Text("» $e", style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 14, height: 1.4)),
-                                      )),
-                                    ]
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                    childCount: _searchResults.length,
-                  ),
-                ),
+                onChanged: _onSearchChanged, // GÜNCELLENDİ: Timer tetiklenir
               ),
-          ],
-        ),
+            ),
+          ),
+          _filteredList.isEmpty
+              ? const SliverFillRemaining(
+                  child: Center(child: Text("Kelime bulunamadı.", style: TextStyle(fontSize: 16, color: Colors.grey))),
+                )
+              : SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    _buildListItem,
+                    childCount: _filteredList.length,
+                  ),
+                ),
+        ],
       ),
     );
   }
