@@ -1,5 +1,5 @@
 import 'dart:async'; 
-import 'dart:math'; // EKLENDİ: min() fonksiyonu için matematik kütüphanesi
+import 'dart:math'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart'; 
@@ -45,14 +45,15 @@ class _ManageListScreenState extends State<ManageListScreen> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel(); 
+    _debounceTimer?.cancel(); // OPTİMİZE: Timer sızmasını engeller
     super.dispose();
   }
 
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
     
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    // GÜNCELLENDİ: Süre 400ms'ye çıkarıldı ki sistem tam dinlensin
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
       if (mounted) {
         setState(() {
           searchQuery = query;
@@ -125,7 +126,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
   Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      // GÜNCELLENDİ: min fonksiyonu için <int> tipi belirtildi ve math eklendi
       duration: Duration(milliseconds: 400 + (min<int>(index, 10) * 50)), 
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
@@ -338,10 +338,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (searchQuery.isEmpty && _filteredList.length != widget.words.length) {
-      _filteredList = widget.words;
-    }
-
     return Scaffold(
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -374,7 +370,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                   filled: true,
                   fillColor: Theme.of(context).primaryColor.withOpacity(0.05),
                 ),
-                onChanged: _onSearchChanged,
+                onChanged: _onSearchChanged, // GÜNCELLENDİ
               ),
             ),
           ),
