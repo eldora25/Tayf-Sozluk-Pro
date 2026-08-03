@@ -357,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<WordModel> _activeDeck = [];
   Map<String, int> _cardMistakes = {};
 
-  String selectedLibrary = 'Test Paketi'; // Varsayılan olarak değiştirildi
+  String selectedLibrary = 'Test Paketi'; 
   String selectedLevel = 'Genel';
   int dailyGoal = 10, quizThreshold = 10, quizQuestionCount = 10, currentCardIndex = 0;
   bool isFlipped = false;
@@ -405,7 +405,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // YENİ: IŞIK HIZINDA (O(1)) Deste Oluşturucu. Donmaları kesinlikle çözer.
   Future<void> _buildActiveDeck() async {
     _activeDeck.clear();
     _cardMistakes.clear(); 
@@ -460,13 +459,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
              });
              
              int batchSize = 5000;
-             // YENİ OPTİMİZASYON: UI Thread'in tamamen kitlenmemesi için kısa molalar
              for (int i = 0; i < wnList.length; i += batchSize) {
                 int end = (i + batchSize < wnList.length) ? i + batchSize : wnList.length;
                 await isar.writeTxn(() async {
                    await isar.wordModels.putAll(wnList.sublist(i, end));
                 });
-                await Future.delayed(const Duration(milliseconds: 10)); // Event Loop'a nefes aldır
+                await Future.delayed(const Duration(milliseconds: 10)); 
              }
              GlobalLogger.addLog("WordNet Isar'a başarıyla kuruldu.");
          } else {
@@ -476,7 +474,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       setState(() { _loadingText = "Kullanıcı Verileri Yükleniyor..."; });
 
-      // YENİ: Uygulama açılışında varsayılan olarak Test Paketi seçili gelir, yoksa sessizce yüklenir.
       String savedLib = prefs.getString('selectedLibrary') ?? '';
       if (savedLib.isEmpty || savedLib == 'Varsayılan') {
         int testPackCount = await isar.wordModels.filter().libraryNameEqualTo('Test Paketi').count();
@@ -931,7 +928,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _activeDeck.removeWhere((w) => w.id == word.id);
     });
 
-    // YENİ OPTİMİZASYON: Veritabanı yazma işlemi asenkron yapıldı, buton basımı UI'ı dondurmaz.
     if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
        Future.microtask(() async {
          await isar.writeTxn(() async { await isar.wordModels.put(word); });
@@ -975,7 +971,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _activeDeck.add(word);
     });
 
-    // YENİ OPTİMİZASYON: Asenkron Isar Kaydı
     if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
        Future.microtask(() async {
          await isar.writeTxn(() async { await isar.wordModels.put(word); });
@@ -1007,7 +1002,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       reviewWordsPool.add(word);
     });
 
-    // YENİ OPTİMİZASYON: Asenkron Isar Kaydı
     if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
       Future.microtask(() async {
          await isar.writeTxn(() async { await isar.wordModels.put(word); });
@@ -1545,123 +1539,121 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     children: [
                       SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 24.0, left: 20, right: 20, bottom: 100), 
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Center(child: Text(displayWord, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
-                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (_getTextColor(context, isDark, isMitosis)).withOpacity(0.3))), 
+                        padding: const EdgeInsets.only(top: 24.0, left: 20, right: 20, bottom: 100), 
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(child: Text(displayWord, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
+                            Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (_getTextColor(context, isDark, isMitosis)).withOpacity(0.3))), 
+                            
+                            if (isWordNet) ...[
+                              Row(children: [const Icon(Icons.menu_book, size: 14, color: Colors.indigo), const SizedBox(width: 6), Text("Definition:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.indigo.shade300))]),
+                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.only(top: 4.0, bottom: 8.0, left: 6), child: Text(m, style: TextStyle(fontSize: 15, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
                               
-                              if (isWordNet) ...[
-                                Row(children: [const Icon(Icons.menu_book, size: 14, color: Colors.indigo), const SizedBox(width: 6), Text("Definition:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.indigo.shade300))]),
-                                ...word.meanings.map((m) => Padding(padding: const EdgeInsets.only(top: 4.0, bottom: 8.0, left: 6), child: Text(m, style: TextStyle(fontSize: 15, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
-                                
-                                if (word.synonyms.isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  Row(children: [const Icon(Icons.link, size: 14, color: Colors.teal), const SizedBox(width: 6), Text("Synonyms:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.teal.shade300))]),
-                                  Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.synonyms.take(6).map((s) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.teal.withOpacity(0.3))), child: Text(s, style: const TextStyle(fontSize: 12, color: Colors.teal, fontWeight: FontWeight.bold)))).toList())),
-                                  const SizedBox(height: 8),
-                                ],
-                                
-                                if (word.antonyms.isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  Row(children: [const Icon(Icons.link_off, size: 14, color: Colors.redAccent), const SizedBox(width: 6), Text("Antonyms:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.redAccent.shade200))]),
-                                  Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.antonyms.take(6).map((a) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.redAccent.withOpacity(0.3))), child: Text(a, style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold)))).toList())),
-                                  const SizedBox(height: 8),
-                                ],
+                              if (word.synonyms.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Row(children: [const Icon(Icons.link, size: 14, color: Colors.teal), const SizedBox(width: 6), Text("Synonyms:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.teal.shade300))]),
+                                Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.synonyms.take(6).map((s) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.teal.withOpacity(0.3))), child: Text(s, style: const TextStyle(fontSize: 12, color: Colors.teal, fontWeight: FontWeight.bold)))).toList())),
+                                const SizedBox(height: 8),
+                              ],
+                              
+                              if (word.antonyms.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Row(children: [const Icon(Icons.link_off, size: 14, color: Colors.redAccent), const SizedBox(width: 6), Text("Antonyms:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.redAccent.shade200))]),
+                                Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.antonyms.take(6).map((a) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.redAccent.withOpacity(0.3))), child: Text(a, style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold)))).toList())),
+                                const SizedBox(height: 8),
+                              ],
 
-                                if (word.examples.isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  Row(children: [const Icon(Icons.format_quote, size: 14, color: Colors.orange), const SizedBox(width: 6), Text("Examples:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.orange.shade300))]),
-                                  ...word.examples.map((e) => Padding(padding: const EdgeInsets.only(top: 4.0, bottom: 4.0, left: 6), child: Text("» " + e, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.8))))),
-                                ]
-                              ] else ...[
-                                ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• " + m, style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
-                                if (word.examples.isNotEmpty) ...[
-                                  const SizedBox(height: 16),
-                                  Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isMitosis ? Colors.pinkAccent : Theme.of(context).colorScheme.secondary)),
-                                  const SizedBox(height: 6),
-                                  ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» " + e, style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis))))),
-                                ]
+                              if (word.examples.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Row(children: [const Icon(Icons.format_quote, size: 14, color: Colors.orange), const SizedBox(width: 6), Text("Examples:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.orange.shade300))]),
+                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.only(top: 4.0, bottom: 4.0, left: 6), child: Text("» " + e, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.8))))),
+                              ]
+                            ] else ...[
+                              ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• " + m, style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
+                              if (word.examples.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                Text("Örnekler:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isMitosis ? Colors.pinkAccent : Theme.of(context).colorScheme.secondary)),
+                                const SizedBox(height: 6),
+                                ...word.examples.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Text("» " + e, style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis))))),
                               ]
                             ]
-                          )
+                          ]
                         )
-                      ), 
-                      Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: true))), 
-                      Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word))),
-                      
-                      if (isMitosis && !isWordNet)
-                        Positioned(
-                          bottom: 15,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Transform.rotate(
-                                  angle: -0.5,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                                    decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white30, width: 1), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)), BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0))]),
-                                    child: Transform.rotate(angle: 0.5, child: const Text("\u{1F9EC}", style: TextStyle(fontSize: 16, shadows: [Shadow(color: Colors.orangeAccent, blurRadius: 15), Shadow(color: Colors.purpleAccent, blurRadius: 15)]))),
-                                  ),
+                      )
+                    ), 
+                    Positioned(right: 5, top: 0, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: true))), 
+                    Positioned(left: 5, top: 0, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word))),
+                    
+                    if (isMitosis && !isWordNet)
+                      Positioned(
+                        bottom: 15,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Transform.rotate(
+                                angle: -0.5,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                                  decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white30, width: 1), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)), BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0))]),
+                                  child: Transform.rotate(angle: 0.5, child: const Text("\u{1F9EC}", style: TextStyle(fontSize: 16, shadows: [Shadow(color: Colors.orangeAccent, blurRadius: 15), Shadow(color: Colors.purpleAccent, blurRadius: 15)]))),
                                 ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1), boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
-                                      const SizedBox(width: 6),
-                                      Text("DNA-" + word.id.toString().padLeft(6, '0'), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
-                                    ],
-                                  ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1), boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
+                                    const SizedBox(width: 6),
+                                    Text("DNA-" + word.id.toString().padLeft(6, '0'), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                    ]
-                  )
+                      ),
+                  ]
                 )
-              ],
-            ),
-          );
+              )
+            ],
+          ),
+        );
 
-          Widget current = cardContent;
-          if (level > 0 && !isWordNet) {
-            for (int i = 0; i < level; i++) {
-              double thickness = 2.0 + (i * 1.5);
-              current = Container(
-                padding: EdgeInsets.all(thickness),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24 + ((i + 1) * thickness)),
-                  border: Border.all(color: Colors.black.withOpacity(0.2), width: 1.0 + (i * 0.5)),
-                  gradient: LinearGradient(colors: [distinctColors[i].withOpacity(0.9), distinctColors[i]], begin: Alignment.bottomRight, end: Alignment.topLeft),
-                  boxShadow: (i == level - 1) ? [BoxShadow(color: distinctColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)), blurRadius: 25 * _glowAnimation.value, spreadRadius: 6 * _glowAnimation.value)] : const [],
-                ),
-                child: current,
-              );
-            }
-          } else {
-             current = Container(
-               padding: const EdgeInsets.all(3),
-               decoration: BoxDecoration(
-                 color: isWordNet ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Colors.green), 
-                 borderRadius: BorderRadius.circular(26), 
-                 boxShadow: [BoxShadow(color: isWordNet ? Colors.indigo.withOpacity(0.4) : (isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Colors.green.withOpacity(0.4)), blurRadius: 15, offset: const Offset(0, 5))]
-               ),
-               child: current,
-             );
+        Widget current = cardContent;
+        if (level > 0 && !isWordNet) {
+          for (int i = 0; i < level; i++) {
+            double thickness = 2.0 + (i * 1.5);
+            current = Container(
+              padding: EdgeInsets.all(thickness),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24 + ((i + 1) * thickness)),
+                border: Border.all(color: Colors.black.withOpacity(0.2), width: 1.0 + (i * 0.5)),
+                gradient: LinearGradient(colors: [distinctColors[i].withOpacity(0.9), distinctColors[i]], begin: Alignment.bottomRight, end: Alignment.topLeft),
+                boxShadow: (i == level - 1) ? [BoxShadow(color: distinctColors[i].withOpacity((0.6 * _glowAnimation.value).clamp(0.0, 1.0)), blurRadius: 25 * _glowAnimation.value, spreadRadius: 6 * _glowAnimation.value)] : const [],
+              ),
+              child: current,
+            );
           }
-          return current;
+        } else {
+           current = Container(
+             padding: const EdgeInsets.all(3),
+             decoration: BoxDecoration(
+               color: isWordNet ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Colors.green), 
+               borderRadius: BorderRadius.circular(26), 
+               boxShadow: [BoxShadow(color: isWordNet ? Colors.indigo.withOpacity(0.4) : (isMitosis ? Colors.purpleAccent.withOpacity(0.4) : Colors.green.withOpacity(0.4)), blurRadius: 15, offset: const Offset(0, 5))]
+             ),
+             child: current,
+           );
         }
-      ),
+        return current;
+      }
     );
   }
 
