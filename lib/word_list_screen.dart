@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:isar/isar.dart'; // YENİ: Isar.autoIncrement güvenlik kilidi için
+import 'package:isar/isar.dart'; 
 import 'models.dart';
 import 'main.dart'; 
 
@@ -46,8 +46,8 @@ class _WordListScreenState extends State<WordListScreen> {
       _filteredList.remove(word);
     });
 
-    // YENİ: Isar Güvenlik Kilidi (Sadece VT'de kayıtlıysa güncelle)
-    if (word.id != Isar.autoIncrement) {
+    // YENİ: Isar Güvenlik Kilidi (Sadece fiziksel kayıtlıları güncelle)
+    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
        isar.writeTxn(() async { await isar.wordModels.put(word); });
     }
     
@@ -150,8 +150,8 @@ class _WordListScreenState extends State<WordListScreen> {
     final WordModel item = _filteredList[index];
     final bool isMitosis = item.libraryName.startsWith('\u{1F9EC}');
     
-    // GÜNCELLEME: WordNet kelimesi ise word ismini, değilse ID'yi kullanarak eşsiz key üret
-    final String dismissKey = item.id == Isar.autoIncrement ? '${item.word}_$index' : '${item.id}_$index';
+    // YENİ: Kelime ID yerine word ve index'i eşsiz anahtar olarak belirle ki silerken çökmesin
+    final String dismissKey = (item.id == Isar.autoIncrement || item.libraryName == 'WordNet Veritabanı') ? '${item.word}_$index' : '${item.id}_$index';
     final String heroTag = 'hero_word_${item.word}_$index';
     
     final String subtitleText = item.libraryName + " / " + item.level;
@@ -183,7 +183,10 @@ class _WordListScreenState extends State<WordListScreen> {
               _filteredList.remove(item);
             });
             if (direction == DismissDirection.endToStart) {
-              widget.onDelete(item);
+              // WordNet dışındaysa veya id'si varsa silme isteğini gönder
+              if (item.id != Isar.autoIncrement) {
+                 widget.onDelete(item);
+              }
             } else if (direction == DismissDirection.startToEnd) {
               final learnCb = widget.onLearned;
               if (learnCb != null) {
@@ -226,7 +229,7 @@ class _WordListScreenState extends State<WordListScreen> {
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
                     onPressed: () {
-                      widget.onDelete(item);
+                      if (item.id != Isar.autoIncrement) widget.onDelete(item);
                       setState(() {
                         _filteredList.remove(item);
                       });
@@ -252,7 +255,7 @@ class _WordListScreenState extends State<WordListScreen> {
              w.meanings.join(' ').toLowerCase().contains(lowerQuery);
     }).toList();
     
-    // YENİ: Liste WordNet havuzu içeriyorsa kontrol et
+    // YENİ: Liste WordNet havuzu içeriyorsa bilgi banner'ını göster
     bool hasWordNet = widget.words.any((w) => w.libraryName == 'WordNet Veritabanı');
 
     return Scaffold(
