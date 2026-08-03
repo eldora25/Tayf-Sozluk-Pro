@@ -11,7 +11,6 @@ import 'package:lottie/lottie.dart';
 import 'models.dart';
 import 'main.dart'; 
 import 'firebase_sync_service.dart';
-import 'wordnet.dart'; // YENİ: WordNet Servisi Eklendi
 
 class LibraryManagerScreen extends StatefulWidget {
   final List<WordModel> allWords;
@@ -77,12 +76,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     libs.addAll(widget.toRepeatWords.map((e) => e.libraryName));
     libs.addAll(widget.learningWords.map((e) => e.libraryName));
     libs.remove('Tekrarlanması Gerekenler'); 
-    
-    // YENİ: WordNet Veritabanını Listeye Ekle
-    if (WordNetService().isLoaded) {
-      libs.add('WordNet Veritabanı');
-    }
-    
     return libs.toList();
   }
 
@@ -623,14 +616,13 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
   }
 
   void _showLibraryMenu(String libName) {
-    // YENİ: WordNet menüsü için özel engelleme
     if (libName == 'WordNet Veritabanı') {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(children: [Icon(Icons.info_outline, color: Colors.indigo, size: 30), SizedBox(width: 8), Text("Sistem Kütüphanesi", style: TextStyle(color: Colors.indigo))]),
-          content: const Text("WordNet Veritabanı (150.000+ Kelime) cihazı yormamak için ZIP dosyası üzerinden anlık olarak çalışır.\n\nBu sebeple bu kütüphaneyi yeniden adlandıramaz, dışa aktaramaz veya silemezsiniz.", style: TextStyle(fontSize: 15, height: 1.4)),
+          content: const Text("WordNet Veritabanı (150.000+ Kelime) Isar veritabanına kalıcı olarak gömülmüştür.\n\nBu kütüphaneyi yeniden adlandıramaz, dışa aktaramaz veya silebilirsiniz.", style: TextStyle(fontSize: 15, height: 1.4)),
           actions: [
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
@@ -772,82 +764,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                       String libName = libs[index];
                       bool isMitosis = libName.startsWith('🧬'); 
                       
-                      // YENİ: WordNet Veritabanı için devasa istatistik kartı görseli
-                      if (libName == 'WordNet Veritabanı') {
-                         int learned = widget.learnedWords.where((e) => e.libraryName == libName).length;
-                         int wrong = widget.wrongWords.where((e) => e.libraryName == libName).fold(0, (a, b) => a + b.wrongCount);
-                         double progress = 147306 > 0 ? (learned / 147306) : 0;
-
-                         return _buildAnimatedItem(
-                           context, 
-                           index,
-                           Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.indigo.withOpacity(0.08), 
-                                borderRadius: BorderRadius.circular(20), 
-                                border: Border.all(color: Colors.indigo.withOpacity(0.3), width: 2), 
-                                boxShadow: [BoxShadow(color: Colors.indigo.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))]
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () => _showLibraryMenu(libName),
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Row(
-                                                children: [
-                                                  const Icon(Icons.language, color: Colors.indigo, size: 28),
-                                                  const SizedBox(width: 10),
-                                                  const Expanded(child: Text("WordNet Veritabanı", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.indigo), overflow: TextOverflow.ellipsis)),
-                                                ],
-                                              ),
-                                            ),
-                                            Icon(Icons.more_vert, color: Colors.indigo.shade400),
-                                          ],
-                                        ),
-                                        const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
-                                        FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              const Text("Toplam: 150.000+", style: TextStyle(fontWeight: FontWeight.w600, color: Colors.indigo)),
-                                              const SizedBox(width: 16),
-                                              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
-                                              const SizedBox(width: 16),
-                                              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(10),
-                                          child: LinearProgressIndicator(
-                                            value: progress,
-                                            backgroundColor: Colors.indigo.withOpacity(0.1),
-                                            color: Colors.indigoAccent,
-                                            minHeight: 6,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            )
-                         );
-                      }
-
                       int total = widget.allWords.where((e) => e.libraryName == libName).length +
                                   widget.learnedWords.where((e) => e.libraryName == libName).length +
                                   widget.learningWords.where((e) => e.libraryName == libName).length +
@@ -885,9 +801,9 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                                         Expanded(
                                           child: Row(
                                             children: [
-                                              Icon(isMitosis ? Icons.biotech : Icons.menu_book, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple, size: 24),
+                                              Icon(libName == 'WordNet Veritabanı' ? Icons.language : (isMitosis ? Icons.biotech : Icons.menu_book), color: libName == 'WordNet Veritabanı' ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Colors.deepPurple), size: 24),
                                               const SizedBox(width: 10),
-                                              Expanded(child: Text(libName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isMitosis ? Colors.purpleAccent : Colors.deepPurple), overflow: TextOverflow.ellipsis)),
+                                              Expanded(child: Text(libName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: libName == 'WordNet Veritabanı' ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Colors.deepPurple)), overflow: TextOverflow.ellipsis)),
                                             ],
                                           ),
                                         ),
@@ -915,7 +831,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                                       child: LinearProgressIndicator(
                                         value: progress,
                                         backgroundColor: Colors.grey.withOpacity(0.2),
-                                        color: isMitosis ? Colors.purpleAccent : Colors.greenAccent.shade400,
+                                        color: libName == 'WordNet Veritabanı' ? Colors.indigoAccent : (isMitosis ? Colors.purpleAccent : Colors.greenAccent.shade400),
                                         minHeight: 6,
                                       ),
                                     ),
