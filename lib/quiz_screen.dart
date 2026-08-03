@@ -596,7 +596,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               children: [
                 const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
                 const SizedBox(height: 10),
-                Lottie.network('https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', height: 180, repeat: true, errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber)),
+                // EKLENDİ: Havai Fişek Başarı Kutlama Lottie Animasyonu Geri Getirildi
+                Lottie.network(
+                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', 
+                  height: 180, 
+                  repeat: true, 
+                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber)
+                ),
                 const SizedBox(height: 10),
                 const Text("Congratulations!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
@@ -742,7 +748,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                               border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.4), width: 1.5), 
                               boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.05), blurRadius: 20, spreadRadius: 5)]
                             ),
-                            // YENİ OPTİMİZASYON: DNA Rozeti ve Metin Column mimarisine taşınarak üst üste binmeleri (overlap) kesin olarak engellendi.
                             child: Column(
                               children: [
                                 Text(_displayWordStr, textAlign: TextAlign.center, style: TextStyle(fontSize: _isCurrentWordNet && _questionSubtext.contains("Tanım") ? 22 : 30, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
@@ -773,7 +778,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                                     ),
                                   ),
 
-                                // YENİ: Esnek Column Mimarisindeki DNA Rozeti Entegrasyonu
                                 if (currentWord.libraryName.startsWith('\u{1F9EC}') && !_isCurrentWordNet)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 24.0),
