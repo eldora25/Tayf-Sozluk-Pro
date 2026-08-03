@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'models.dart';
-import 'main.dart'; // isar nesnesine erişmek için eklendi
+import 'main.dart'; 
 
 enum EditAction { update, delete, copy, move }
 
@@ -35,17 +35,28 @@ class _EditWordScreenState extends State<EditWordScreen> {
   void initState() {
     super.initState();
     _wordText = widget.word.word;
+    
+    // YENİ: Kırmızı Ekran (RSOD) Çökmesini Önleyen Güvenlik Kilidi
+    // Listeyi tekrarsız hale getiriyoruz.
+    _currentLibraries = widget.availableLibraries
+        .where((lib) => lib != 'Tekrarlanması Gerekenler')
+        .toSet()
+        .toList();
+        
+    if (!_currentLibraries.contains('+ Yeni Kütüphane Oluştur')) {
+      _currentLibraries.add('+ Yeni Kütüphane Oluştur');
+    }
+
     _library = widget.word.libraryName;
+    // Eğer kelimenin kütüphanesi bir sebeple listede yoksa, uygulamanın çökmemesi için ilkini seç
+    if (!_currentLibraries.contains(_library) && _currentLibraries.isNotEmpty) {
+      _library = _currentLibraries.first;
+    }
     
     _level = widget.word.level;
     List<String> validLevels = ['A1','A2','B1','B2','C1','C2','Genel'];
     if (!validLevels.contains(_level)) {
       _level = 'Genel'; 
-    }
-
-    _currentLibraries = widget.availableLibraries.where((lib) => lib != 'Tekrarlanması Gerekenler').toList();
-    if (!_currentLibraries.contains('+ Yeni Kütüphane Oluştur')) {
-      _currentLibraries.add('+ Yeni Kütüphane Oluştur');
     }
 
     _meaningControllers = widget.word.meanings.isNotEmpty 
@@ -137,10 +148,14 @@ class _EditWordScreenState extends State<EditWordScreen> {
       listType: widget.word.listType,
       srsLevel: widget.word.srsLevel,
       nextReviewDate: widget.word.nextReviewDate,
+      sourceLanguage: widget.word.sourceLanguage,
+      targetLanguage: widget.word.targetLanguage,
+      pos: widget.word.pos,
+      synonyms: widget.word.synonyms,
+      antonyms: widget.word.antonyms,
     );
   }
 
-  // YENİ: DNA Eşsizlik ve Çakışma Kalkanı
   Future<void> _submitAction(EditAction action) async {
     if (action == EditAction.delete) {
       widget.onAction(action, widget.word);
@@ -163,10 +178,8 @@ class _EditWordScreenState extends State<EditWordScreen> {
 
           bool hasCollision = false;
           for (var card in existingCards) {
-            // Güncelleme yaparken kendi ID'siyle çakışma aramasını engelle
             if (action == EditAction.update && card.id == widget.word.id) continue;
 
-            // Anlamlardan veya örneklerden biri bile aynıysa çakışma var demektir
             bool meaningOverlap = updatedWord.meanings.any((m) => card.meanings.contains(m));
             bool exampleOverlap = updatedWord.examples.any((e) => card.examples.contains(e));
 
@@ -204,7 +217,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
                 )
               );
             }
-            return; // Çakışma varsa işlemi anında durdur
+            return; 
           }
         } catch (e) {
           debugPrint("DNA Kontrol Hatası: $e");
@@ -259,6 +272,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
             child: Form(
               key: _formKey,
               child: ListView(
+                physics: const BouncingScrollPhysics(),
                 padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 180 + MediaQuery.of(context).padding.bottom),
                 children: [
                   TextFormField(
@@ -335,7 +349,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
                   const SizedBox(height: 20),
                   DropdownButtonFormField<String>(
                     isExpanded: true,
-                    value: _currentLibraries.contains(_library) ? _library : _currentLibraries.first,
+                    value: _library,
                     decoration: _buildInputDeco("Kayıt Kütüphanesi", icon: Icons.library_books),
                     items: _currentLibraries.map((e) {
                       if (e == '+ Yeni Kütüphane Oluştur') {
