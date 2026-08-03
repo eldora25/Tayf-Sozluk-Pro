@@ -28,6 +28,10 @@ jobs:
           rm -rf android
           flutter create --platforms=android .
           
+          # YENİ EKLENEN: KOTLIN SÜRÜMÜNÜ STABİL (1.9.24) VERSİYONA ÇEKMEK İÇİN GÜVENLİ MÜDAHALE (403 Hatası Çözümü)
+          sed -i 's/version "2.2.0" apply false/version "1.9.24" apply false/g' android/settings.gradle.kts
+          sed -i 's/version "2.2.20" apply false/version "1.9.24" apply false/g' android/settings.gradle.kts
+          
           # ANA PROJE İÇİN API 36 ZORLAMASI
           sed -i 's/flutter.compileSdkVersion/36/g' android/app/build.gradle.kts
           sed -i 's/flutter.targetSdkVersion/36/g' android/app/build.gradle.kts
