@@ -1,7 +1,7 @@
 import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:isar/isar.dart'; 
+import 'isar.dart'; 
 import 'models.dart';
 import 'main.dart'; 
 
@@ -103,9 +103,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
       _filteredList.remove(word);
     });
 
-    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-      isar.writeTxn(() async { await isar.wordModels.put(word); });
-    }
+    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("⚠️ Kelime incelenmek üzere ayrıldı!", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
@@ -248,7 +246,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
           icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
           tooltip: 'Listeden Çıkar',
           onPressed: () {
-            if (item.id != Isar.autoIncrement) widget.onDelete(item);
+            widget.onDelete(item);
             setState(() {
               _filteredList.remove(item);
             });
@@ -261,7 +259,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
   Widget _buildListItem(BuildContext context, int index) {
     final WordModel item = _filteredList[index];
     final bool isMitosis = item.libraryName.startsWith('\u{1F9EC}');
-    final String dismissKey = (item.id == Isar.autoIncrement || item.libraryName == 'WordNet Veritabanı') ? '${item.word}_$index' : '${item.id}_$index';
+    final String dismissKey = '${item.id}_$index';
     final String heroTag = 'hero_word_list_${item.word}_$index';
 
     return _buildAnimatedItem(
@@ -291,7 +289,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
               _filteredList.remove(item);
             });
             if (direction == DismissDirection.endToStart) {
-              if (item.id != Isar.autoIncrement) widget.onDelete(item);
+              widget.onDelete(item);
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime silindi."), duration: Duration(seconds: 1)));
             } else if (direction == DismissDirection.startToEnd) {
               final learnCb = widget.onLearned;
