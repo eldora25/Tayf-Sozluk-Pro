@@ -3,7 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
+import 'package:isar/isar.dart';
 import 'models.dart';
+import 'main.dart'; // Isar bağlantısı için
 
 class MatchGameScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -31,6 +33,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   bool isGameFinished = false;
   int score = 0;
   int mistakes = 0;
+  bool _isLoading = true; // YENİ: Kelime tamamlama süreci için loading state
   
   bool isDragging = false; 
   
@@ -51,13 +54,35 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     super.dispose();
   }
 
-  void _prepareGame() {
-    List<WordModel> pool = List.from(widget.words)..shuffle();
+  Future<void> _prepareGame() async {
+    List<WordModel> pool = List.from(widget.words);
+    
+    // YENİ: Eğer havuzda 15'ten az kelime varsa arka planda Isar'dan rastgele takviye yap!
+    if (pool.length < 15) {
+      int needed = 15 - pool.length;
+      int dbCount = await isar.wordModels.count();
+      
+      if (dbCount > 0) {
+        for (int i = 0; i < needed; i++) {
+          int randomOffset = _random.nextInt(dbCount);
+          WordModel? randomWord = await isar.wordModels.where().offset(randomOffset).findFirst();
+          
+          if (randomWord != null && !pool.any((w) => w.word == randomWord.word)) {
+            pool.add(randomWord);
+          }
+        }
+      }
+    }
+
+    pool.shuffle();
     gameWords = pool.take(min(15, pool.length)).toList();
     totalRounds = (gameWords.length / 5).ceil();
 
     if (gameWords.isEmpty) {
-      isGameFinished = true;
+      setState(() {
+        isGameFinished = true;
+        _isLoading = false;
+      });
       return;
     }
 
@@ -86,7 +111,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     isDragging = false;
     _isHoveringTarget.value = false;
     
-    // YENİ: WordNet kelimeleri için hedefleri (Target) akıllı atama
     _targetDisplays.clear();
     for (var w in rightColumn) {
        bool isWordNet = w.pos.isNotEmpty || w.synonyms.isNotEmpty || w.antonyms.isNotEmpty;
@@ -109,7 +133,9 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
        }
     }
 
-    setState(() {});
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   void _handleDrop(WordModel dragged, WordModel target) {
@@ -163,10 +189,16 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    if (widget.words.isEmpty) {
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor)),
+      );
+    }
+
+    if (gameWords.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text("Lexis Eldora | Eşleştirme"), elevation: 0),
-        body: const Center(child: Text("Oynamak için yeterli kelime yok.")),
+        body: const Center(child: Text("Sistemde oynamak için yeterli kelime bulunamadı.")),
       );
     }
 
@@ -238,6 +270,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                           currentRound = 0;
                           score = 0;
                           mistakes = 0;
+                          _isLoading = true;
                           _prepareGame();
                         });
                       },
