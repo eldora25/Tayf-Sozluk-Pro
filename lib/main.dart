@@ -898,15 +898,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() => isFlipped = !isFlipped);
   }
 
-  // YENİ: Günlük Hedef Kontrolü ve Alev Bonusu (+30 TP) Tetikleyicisi
   void _checkDailyGoalBonus() async {
     final prefs = await SharedPreferences.getInstance();
-    final todayStr = DateTime.now().toIso8601String().split('T').first; // yyyy-MM-dd
+    final todayStr = DateTime.now().toIso8601String().split('T').first;
     final lastClaimedDate = prefs.getString('daily_goal_bonus_date') ?? '';
 
-    if (lastClaimedDate == todayStr) return; // Bugün zaten alındıysa çık
+    if (lastClaimedDate == todayStr) return;
 
-    // Bugün öğrenilen kelime sayısını hesapla
     int learnedToday = learnedWordTimestamps.where((ts) {
       final dt = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
       final dtStr = dt.toIso8601String().split('T').first;
@@ -917,11 +915,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       prefs.setString('daily_goal_bonus_date', todayStr);
       
       setState(() {
-        tayfPoints += 30; // Alev Bonusu
+        tayfPoints += 30; 
       });
       _savePreferencesOnly();
 
-      // Görsel Şık Kutlama Dialogu
       if (mounted) {
         showGeneralDialog(
           context: context,
@@ -984,7 +981,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     HapticFeedback.heavyImpact(); 
     learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     
-    // Günlük hedef bonusunu kontrol et
     _checkDailyGoalBonus();
 
     setState(() {
@@ -1629,7 +1625,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Center(child: Text(displayWord, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
-                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (_getTextColor(context, isDark, isMitosis)).withOpacity(0.3)))), 
+                              // DÜZELTİLDİ: Fazla parantezler ve hatalı kapanış kaldırıldı
+                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: _getTextColor(context, isDark, isMitosis).withOpacity(0.3))), 
                               
                               if (isWordNet) ...[
                                 Row(children: [const Icon(Icons.menu_book, size: 14, color: Colors.indigo), const SizedBox(width: 6), Text("Definition:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.indigo.shade300))]),
