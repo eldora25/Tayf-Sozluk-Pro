@@ -4,52 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:archive/archive.dart';
 import 'models.dart';
-import 'logger_screen.dart'; // YENİ: Log servisi dahil edildi
+import 'logger_screen.dart';
 
-class WordNetEntry {
-  final String id;
-  final List<String> definition;
-  final List<String> example;
-  final List<String> members; 
-  final List<String> antonyms;
-  final String partOfSpeech;
-
-  WordNetEntry({
-    required this.id,
-    required this.definition,
-    required this.example,
-    required this.members,
-    required this.antonyms,
-    required this.partOfSpeech,
-  });
-
-  factory WordNetEntry.fromJson(String id, Map<String, dynamic> json) {
-    return WordNetEntry(
-      id: id,
-      definition: List<String>.from(json['definition'] ?? []),
-      example: List<String>.from(json['example'] ?? []),
-      members: List<String>.from(json['members'] ?? []),
-      antonyms: List<String>.from(json['antonyms'] ?? []),
-      partOfSpeech: json['partOfSpeech'] ?? json['pos'] ?? '',
-    );
-  }
-
-  WordModel toWordModel() {
-    return WordModel(
-      word: members.isNotEmpty ? members.first : "Unknown",
-      meanings: definition,
-      examples: example,
-      synonyms: members.length > 1 ? members.sublist(1) : [],
-      antonyms: antonyms,
-      pos: partOfSpeech,
-      libraryName: "WordNet Veritabanı",
-      level: "WordNet",
-      listType: "all",
-    );
-  }
-}
-
-Map<String, WordNetEntry> _decodeZipInBackground(List<int> zipBytes) {
+// Arka planda (Isolate) ZIP'i çözüp Isar'a uygun WordModel listesine dönüştüren fonksiyon
+List<WordModel> _decodeZipToModels(List<int> zipBytes) {
   final archive = ZipDecoder().decodeBytes(zipBytes);
   
   ArchiveFile? jsonFile;
@@ -61,56 +19,70 @@ Map<String, WordNetEntry> _decodeZipInBackground(List<int> zipBytes) {
   }
 
   if (jsonFile == null) {
-    throw Exception("ZIP arşivi içinde geçerli bir .json dosyası bulunamadı. Lütfen ZIP dosyasını kontrol edin.");
+    throw Exception("ZIP arşivi içinde geçerli bir .json dosyası bulunamadı.");
   }
   
   final String response = utf8.decode(jsonFile.content as List<int>);
   final Map<String, dynamic> data = json.decode(response);
 
-  return data.map((key, value) => MapEntry(key, WordNetEntry.fromJson(key, value)));
+  List<WordModel> extractedModels = [];
+
+  data.forEach((key, value) {
+    // UNKNOWN HATASI ÇÖZÜMÜ: Anahtarı (Key) kelimenin kendisi olarak alıyoruz
+    String displayWord = key.trim();
+    
+    // Eğer key sadece bir sayı/ID ise (örn: 00001740-a) eşanlamlılara bak
+    if (displayWord.isEmpty || RegExp(r'^\d{8}-').hasMatch(displayWord)) {
+       List members = value['members'] ?? [];
+       if (members.isNotEmpty) {
+         displayWord = members.first.toString();
+       } else {
+         return; // Eşanlamlısı da yoksa anlamsızdır, pas geç
+       }
+    }
+
+    List<String> defs = List<String>.from(value['definition'] ?? []);
+    List<String> ex = List<String>.from(value['example'] ?? []);
+    List<String> syns = List<String>.from(value['members'] ?? []);
+    List<String> ants = List<String>.from(value['antonyms'] ?? []);
+    String pos = value['partOfSpeech'] ?? value['pos'] ?? '';
+
+    // Eşanlamlılar listesinden kendi adını çıkar (Gereksiz tekrarı önler)
+    syns.removeWhere((s) => s.toLowerCase() == displayWord.toLowerCase());
+
+    if (defs.isNotEmpty) {
+      extractedModels.add(WordModel(
+        word: displayWord,
+        meanings: defs,
+        examples: ex,
+        synonyms: syns,
+        antonyms: ants,
+        pos: pos,
+        libraryName: "WordNet Veritabanı",
+        level: "WordNet",
+        listType: "all",
+      ));
+    }
+  });
+
+  return extractedModels;
 }
 
-class WordNetService {
-  static final WordNetService _instance = WordNetService._internal();
-  factory WordNetService() => _instance;
-  WordNetService._internal();
-
-  Map<String, WordNetEntry> _wordNetData = {};
-  bool _isLoaded = false;
-  String errorMessage = ""; 
-
-  bool get isLoaded => _isLoaded;
-
-  Future<void> loadWordNetData() async {
-    if (_isLoaded) return;
+class WordNetInstaller {
+  // Sadece ilk kurulumda bir kez çağrılır.
+  static Future<List<WordModel>> getWordNetModels() async {
     try {
-      GlobalLogger.addLog("WordNet Service: ZIP dosyası asset/wordnet dizininden okunuyor...");
+      GlobalLogger.addLog("WordNet Installer: ZIP dosyası okunuyor...");
       final ByteData zipBytes = await rootBundle.load('assets/wordnet/wordnet_data.zip');
       
-      GlobalLogger.addLog("WordNet Service: Isolate (Arka plan) aktarımı başlatıldı, ZIP çıkarılıyor...");
-      _wordNetData = await compute(_decodeZipInBackground, zipBytes.buffer.asUint8List().toList());
+      GlobalLogger.addLog("WordNet Installer: Arka plan (Isolate) ayrıştırması başlatıldı...");
+      List<WordModel> models = await compute(_decodeZipToModels, zipBytes.buffer.asUint8List().toList());
       
-      _isLoaded = true;
-      errorMessage = "";
-      GlobalLogger.addLog("WordNet Service BAŞARILI: ZIP'ten ${_wordNetData.length} kayıt RAM'e aktarıldı.");
+      GlobalLogger.addLog("WordNet Installer BAŞARILI: ${models.length} kelime Isar'a gömülmek için hazırlandı.");
+      return models;
     } catch (e) {
-      _isLoaded = false;
-      errorMessage = e.toString();
-      GlobalLogger.addLog("WordNet Service HATA: Yükleme başarısız oldu. Detay: $e");
+      GlobalLogger.addLog("WordNet Installer HATA: Yükleme başarısız. Detay: $e");
+      return [];
     }
-  }
-
-  List<WordModel> getRandomWords(int count) {
-    if (!_isLoaded || _wordNetData.isEmpty) return [];
-    var values = _wordNetData.values.toList()..shuffle();
-    return values.take(count).map((e) => e.toWordModel()).toList();
-  }
-
-  List<WordNetEntry> searchWord(String word) {
-    final searchKeyword = word.toLowerCase();
-    return _wordNetData.values.where((entry) {
-      return entry.members.any((m) => m.toLowerCase().contains(searchKeyword)) ||
-             entry.definition.any((d) => d.toLowerCase().contains(searchKeyword));
-    }).toList();
   }
 }
