@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'logger_screen.dart'; // YENİ: Tüm logları çekmek için eklendi
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -17,11 +18,10 @@ class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _controller = TextEditingController();
   bool _includeLogs = true;
   bool _isSending = false;
-  List<XFile> _attachedImages = []; // DÜZELTİLDİ: Birden fazla resim için liste
+  List<XFile> _attachedImages = []; 
 
   Future<void> _pickImages() async {
     final ImagePicker picker = ImagePicker();
-    // DÜZELTİLDİ: MultiImage picker kullanılarak çoklu seçim aktif edildi
     final List<XFile> images = await picker.pickMultiImage();
     if (images.isNotEmpty) {
       setState(() {
@@ -63,9 +63,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
       if (_includeLogs) {
         reportContent.writeln("SİSTEM LOGLARI:");
-        reportContent.writeln("[Sistem] Uygulama stabil.");
-        reportContent.writeln("[Hafıza] Veritabanı (ISAR) bağlantısı aktif.");
-        reportContent.writeln("[TTS] Ses motoru hazır durumda.");
+        reportContent.writeln(GlobalLogger.getAllLogs()); // YENİ: Küresel loglar rapora eklendi
         reportContent.writeln("------------------------------------------------");
       }
 
