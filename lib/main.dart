@@ -355,8 +355,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   
   List<WordModel> _cachedWordNetDeck = [];
   
-  // YENİ: Deste Kaymasını Önleyen Sabit Aktif Deste State'i
   List<WordModel> _activeDeck = [];
+  Map<String, int> _cardMistakes = {};
 
   String selectedLibrary = 'Varsayılan';
   String selectedLevel = 'Genel';
@@ -406,18 +406,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // YENİ: Desteyi yalnızca ayarlar değiştiğinde veya açılışta 1 kez oluşturan güvenli fonksiyon
-  void _buildActiveDeck() {
+  Future<void> _buildActiveDeck() async {
     _activeDeck.clear();
+    _cardMistakes.clear(); 
+
     if (selectedLibrary == 'Tekrarlanması Gerekenler') {
       _activeDeck.addAll(toSRSRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
       _activeDeck.addAll(toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
     } else if (selectedLibrary == 'WordNet Veritabanı') {
-      _activeDeck.addAll(_cachedWordNetDeck);
+      int dbCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
+      if (dbCount > 0) {
+        List<WordModel> randomWN = [];
+        final random = Random();
+        for(int i=0; i<200; i++){
+          int offset = random.nextInt(dbCount);
+          var rw = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').offset(offset).findFirst();
+          if (rw != null && !randomWN.any((w)=>w.id == rw.id)) randomWN.add(rw);
+        }
+        _activeDeck.addAll(randomWN);
+      }
     } else {
       _activeDeck.addAll(toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
       _activeDeck.addAll(toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
       _activeDeck.addAll(allWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
+      _activeDeck.shuffle(); 
     }
   }
 
@@ -552,9 +564,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _createDefaultLibrary();
       }
 
+      await _buildActiveDeck(); 
+
       setState(() {
-        _buildActiveDeck(); // YENİ: Desteyi yalnızca bir kez ve güvenli oluştur
-        
         int urgentCount = _activeDeck.where((w) => w.listType == 'toSRSRepeat' || w.listType == 'toRepeat').length;
         
         if (urgentCount > 0 && currentCardIndex >= urgentCount) {
@@ -775,17 +787,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _savePreferencesOnly();
   }
 
+  // YENİ: Tekrarsız ve çökmeyen açılır menü kütüphaneleri
   List<String> get availableLibraries {
-    var libs = allWords.map((e) => e.libraryName).toSet().toList()
+    var libs = allWords.map((e) => e.libraryName).toSet()
       ..addAll(learnedWords.map((e) => e.libraryName))
       ..addAll(toRepeatWords.map((e) => e.libraryName))
       ..addAll(toSRSRepeatWords.map((e) => e.libraryName))
       ..addAll(learningWords.map((e) => e.libraryName)); 
-    var uniqueLibs = libs.toSet().toList();
-    uniqueLibs.add('Tekrarlanması Gerekenler'); 
     
+    var uniqueLibs = libs.toSet();
+    uniqueLibs.add('Tekrarlanması Gerekenler'); 
     uniqueLibs.add('WordNet Veritabanı');
-    return uniqueLibs;
+    return uniqueLibs.toList();
   }
 
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
@@ -807,13 +820,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       if (rawText.isEmpty) return;
       
-      // YENİ: KUSURSUZ TTS İÇİN REGEX TEMİZLİĞİ
       String cleanText = rawText
-          .replaceAll(RegExp(r'\[.*?\]'), ' ') // [ID:123] vb sil
-          .replaceAll(RegExp(r'\(.*?\)'), ' ') // (usually followed by) vb sil
-          .replaceAll(RegExp(r'[\[\]\{\}\\|_»•:;*+><=~]'), ' ') // Özel karakterleri sil
-          .replaceAll('ANLAM', '')
-          .replaceAll(RegExp(r'\s+'), ' ') // Çoklu boşlukları teke düşür
+          .replaceAll(RegExp(r'\[.*?\]'), ' ') 
+          .replaceAll(RegExp(r'\(.*?\)'), ' ') 
+          .replaceAll(RegExp(r'[\[\]\{\}\\|_»•:;*+><=~]'), ' ') 
+          .replaceAll('ANLAM:', '')
+          .replaceAll(RegExp(r'\s+'), ' ') 
           .trim();
 
       String detectText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : cleanText) : cleanText;
@@ -861,10 +873,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _markAsLearned(WordModel word, {bool fromQuiz = false}) {
-    if (!fromQuiz) { 
-      HapticFeedback.heavyImpact(); 
-      _recordActivity(1); 
-    }
+    HapticFeedback.heavyImpact(); 
     learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     
     setState(() {
@@ -880,7 +889,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         
         if (word.srsLevel == 5 && !fromQuiz) {
           _triggerLevel5Celebration();
-          _recordActivity(10);
+          _recordActivity(10); 
         }
 
         if (word.srsLevel > 5) {
@@ -894,24 +903,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         toSRSRepeatWords.removeWhere((w) => w.id == word.id);
       }
       
-      // YENİ: Deste Kaymasını Önleme
+      int mistakes = _cardMistakes[word.word] ?? 0;
+      if (mistakes == 0) {
+         _recordActivity(1); 
+      } else {
+         _recordActivity(0); 
+      }
+
       _activeDeck.removeWhere((w) => w.id == word.id);
-      _cachedWordNetDeck.removeWhere((w) => w.id == word.id);
     });
 
     if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
        isar.writeTxnSync(() { isar.wordModels.putSync(word); });
     }
 
-    if (!fromQuiz) _nextCard(increment: false); // Listedeki bir sonraki kelime mevcut index'e düşer, bu yüzden increment false!
+    if (!fromQuiz) _nextCard(increment: false); 
     else _savePreferencesOnly(); 
   }
 
   void _markAsToRepeat(WordModel word, {bool fromQuiz = false}) {
-    if (!fromQuiz) { 
-      HapticFeedback.mediumImpact(); 
-      _recordActivity(0); 
-    }
+    HapticFeedback.mediumImpact(); 
     wrongAnswerTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     
     setState(() {
@@ -930,17 +941,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         allWords.removeWhere((w) => w.id == word.id);
       }
 
-      // YENİ: Tekrar edilen kelimeyi destenin en sonuna at (Hemen ardından çıkmasın, daha sonra çıksın)
+      int currentMistakeCount = (_cardMistakes[word.word] ?? 0) + 1;
+      _cardMistakes[word.word] = currentMistakeCount;
+      int penalty = currentMistakeCount * 2; 
+      
+      tayfPoints -= penalty;
+      if (tayfPoints < 0) tayfPoints = 0;
+      
+      _tpFlashController.forward(from: 0.0).then((_) => _tpFlashController.reverse());
+
       _activeDeck.removeWhere((w) => w.id == word.id);
       _activeDeck.add(word);
-      _cachedWordNetDeck.removeWhere((w) => w.id == word.id);
     });
 
     if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
        isar.writeTxnSync(() { isar.wordModels.putSync(word); });
     }
 
-    if (!fromQuiz) _nextCard(increment: false); // Tekrar destenin sonuna atıldığı için current index'teki yeni kelimeye kayar
+    if (!fromQuiz) _nextCard(increment: false); 
     else _savePreferencesOnly();
   }
 
@@ -961,7 +979,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       learnedWords.removeWhere((w) => w.id == word.id);
       
       _activeDeck.removeWhere((w) => w.id == word.id);
-      _cachedWordNetDeck.removeWhere((w) => w.id == word.id);
       
       reviewWordsPool.add(word);
     });
@@ -1319,7 +1336,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
   }
 
-  // YENİ: Taç (Crown) alanındaki gelişmiş bilgilendirme rozeti
   Widget _buildTopBadge(int level, bool isMitosis, bool isWordNet, String pos) {
     return Container(
       width: double.infinity, 
@@ -1687,7 +1703,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
                           onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
                             setState(() { dailyGoal = nG; quizThreshold = nT; quizQuestionCount = nQC; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
-                            _buildActiveDeck(); // Yeni kütüphane seçildiğinde listeyi güncelle
+                            _buildActiveDeck(); 
                             _savePreferencesOnly(); 
                             Future.delayed(const Duration(milliseconds: 150), () {
                               _showCenteredDialog(
@@ -1878,7 +1894,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       );
     }
 
-    var deck = _activeDeck; // YENİ: Sürekli değişen getter yerine sabit State listesi kullanılıyor
+    var deck = _activeDeck; 
     if (currentCardIndex >= deck.length) currentCardIndex = 0;
     WordModel? currentWord = deck.isNotEmpty ? deck[currentCardIndex] : null;
     bool isSrsMode = currentWord != null && currentWord.listType == 'toSRSRepeat';
@@ -2077,7 +2093,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly, 
                                   children: [
                                     Expanded(
-                                      // YENİ: Şık Neon Buton Tasarımı - Tekrar
                                       child: Container(
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(30),
@@ -2126,7 +2141,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      // YENİ: Şık Neon Buton Tasarımı - Biliyorum
                                       child: Container(
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(30),
