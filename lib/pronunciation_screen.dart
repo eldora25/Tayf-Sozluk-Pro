@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:lottie/lottie.dart';
+import 'package:isar/isar.dart';
 import 'models.dart';
+import 'main.dart'; 
 
 class PronunciationScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -23,7 +25,8 @@ class PronunciationScreen extends StatefulWidget {
 class _PronunciationScreenState extends State<PronunciationScreen> with TickerProviderStateMixin {
   late stt.SpeechToText _speech;
   bool _isListening = false;
-  bool _isSpeechInitialized = false; // YENİ: Başlatılma kontrolü
+  bool _isSpeechInitialized = false;
+  bool _isLoading = true; 
   String _text = 'Mikrofona basılı tut ve kelimeyi oku...';
   
   List<WordModel> gameWords = [];
@@ -32,6 +35,8 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
   int score = 0;
   bool isFinished = false;
   bool _isSuccessAnim = false;
+  
+  int _currentWordMistakes = 0; 
 
   late AnimationController _pulseController;
 
@@ -39,20 +44,46 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
-    _initSpeech(); // YENİ: Sayfa açıldığında bir kez başlatılır
+    _initSpeech(); 
     _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: false);
+    _prepareGame();
+  }
 
-    List<WordModel> pool = List.from(widget.words)..shuffle();
+  Future<void> _prepareGame() async {
+    List<WordModel> pool = List.from(widget.words);
+    
+    // YENİ: Havuzda 10'dan az kelime varsa Isar veritabanından eksikleri tamamla
+    if (pool.length < 10) {
+      int dbCount = await isar.wordModels.count();
+      if (dbCount > 0) {
+        int needed = 10 - pool.length;
+        final random = Random();
+        for (int i = 0; i < needed; i++) {
+          int offset = random.nextInt(dbCount);
+          var rw = await isar.wordModels.where().offset(offset).findFirst();
+          if (rw != null && !pool.any((w) => w.word == rw.word)) {
+            pool.add(rw);
+          }
+        }
+      }
+    }
+
+    pool.shuffle();
     gameWords = pool.take(min(10, pool.length)).toList(); 
 
     if (gameWords.isNotEmpty) {
-      currentWord = gameWords[currentIndex];
+      setState(() {
+        currentWord = gameWords[currentIndex];
+        _isLoading = false;
+      });
     } else {
-      isFinished = true;
+      setState(() {
+        isFinished = true;
+        _isLoading = false;
+      });
     }
   }
 
-  // YENİ: Motoru sadece bir kez başlatan güvenli fonksiyon
   Future<void> _initSpeech() async {
     _isSpeechInitialized = await _speech.initialize(
       onStatus: (val) => debugPrint('onStatus: $val'),
@@ -67,6 +98,15 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
     super.dispose();
   }
 
+  String _getTargetWord() {
+    String targetWord = currentWord.word;
+    if (RegExp(r'^\d{8}-').hasMatch(targetWord) || targetWord.contains('[ID:')) {
+        targetWord = currentWord.synonyms.isNotEmpty ? currentWord.synonyms.first : (currentWord.meanings.isNotEmpty ? currentWord.meanings.first : "word");
+    }
+    // WordNet açıklamalarını ve özel karakterleri siliyoruz
+    return targetWord.replaceAll(RegExp(r'\[.*?\]'), '').replaceAll(RegExp(r'\(.*?\)'), '').replaceAll(RegExp(r'[\[\]\{\}\\|_»•:;*+><=~]'), '').trim();
+  }
+
   void _listen() async {
     if (!_isListening) {
       var status = await Permission.microphone.request();
@@ -75,7 +115,6 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
         return;
       }
 
-      // Eğer daha önce başlatılamadıysa tekrar dene
       if (!_isSpeechInitialized) {
         await _initSpeech();
       }
@@ -109,12 +148,27 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
     if (_isListening) {
       setState(() => _isListening = false);
       _speech.stop();
+      
+      // Kullanıcı dinlemeyi bıraktıysa ve kelimeyi henüz doğru okumadıysa
+      if (!_isSuccessAnim && _text != 'Mikrofona basılı tut ve kelimeyi oku...' && _text != "Dinleniyor, konuşmaya başla...") {
+         setState(() {
+            _currentWordMistakes++;
+            int penalty = _currentWordMistakes * 3; // 1. hata -3, 2. hata -6 TP
+            score -= penalty;
+            _text = "Hatalı Telaffuz! (-$penalty TP)\nOkunan: '$_text'";
+            HapticFeedback.heavyImpact();
+         });
+      } else if (!_isSuccessAnim) {
+         setState(() {
+            _text = 'Mikrofona basılı tut ve kelimeyi oku...';
+         });
+      }
     }
   }
 
   void _checkPronunciation(String spokenWords) {
     String cleanSpoken = spokenWords.toLowerCase().replaceAll(RegExp(r'[^\w\s]+'), '');
-    String cleanTarget = currentWord.word.toLowerCase().replaceAll(RegExp(r'[^\w\s]+'), '');
+    String cleanTarget = _getTargetWord().toLowerCase().replaceAll(RegExp(r'[^\w\s]+'), '');
 
     if (cleanSpoken.contains(cleanTarget) || cleanTarget.contains(cleanSpoken)) {
       _speech.stop();
@@ -122,7 +176,12 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
       setState(() {
         _isListening = false;
         _isSuccessAnim = true;
-        score += 15; 
+        
+        // YENİ: Sadece hiç hata yapmadıysa puan ver
+        if (_currentWordMistakes == 0) {
+          score += 15; 
+        }
+        
         _text = "Mükemmel Telaffuz! 👏";
       });
 
@@ -138,13 +197,15 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
         currentIndex++;
         currentWord = gameWords[currentIndex];
         _isSuccessAnim = false;
+        _currentWordMistakes = 0; // Hata sayacını sıfırla
         _text = 'Mikrofona basılı tut ve kelimeyi oku...';
       });
     } else {
       setState(() {
         isFinished = true;
       });
-      widget.onGameFinished(score);
+      // Sınav bittiğinde negatif puana düşülmüşse 0 gönder
+      widget.onGameFinished(score > 0 ? score : 0);
     }
   }
 
@@ -181,8 +242,12 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
 
   @override
   Widget build(BuildContext context) {
-    if (widget.words.isEmpty) {
-      return Scaffold(appBar: AppBar(title: const Text("Telaffuz Sınavı")), body: const Center(child: Text("Yeterli kelime yok.")));
+    if (_isLoading) {
+      return Scaffold(appBar: AppBar(title: const Text("Telaffuz Sınavı", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0), body: Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor)));
+    }
+
+    if (widget.words.isEmpty && gameWords.isEmpty) {
+      return Scaffold(appBar: AppBar(title: const Text("Telaffuz Sınavı")), body: const Center(child: Text("Sistemde oynamak için yeterli kelime bulunamadı.")));
     }
 
     if (isFinished) {
@@ -209,9 +274,9 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.diamond, color: Colors.green, size: 36),
+                            Icon(Icons.diamond, color: score > 0 ? Colors.green : Colors.redAccent, size: 36),
                             const SizedBox(width: 12),
-                            Text("+$score", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.green)),
+                            Text(score > 0 ? "+$score" : "0", style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: score > 0 ? Colors.green : Colors.redAccent)),
                           ],
                         ),
                       ],
@@ -222,6 +287,26 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(18), backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white, elevation: 8, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                      icon: const Icon(Icons.refresh, size: 24),
+                      label: const Text("YENİDEN OYNA", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        setState(() {
+                          isFinished = false;
+                          currentIndex = 0;
+                          score = 0;
+                          _currentWordMistakes = 0;
+                          _isLoading = true;
+                          _prepareGame();
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      style: TextButton.styleFrom(padding: const EdgeInsets.all(16)),
                       icon: const Icon(Icons.home, size: 24),
                       label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1)),
                       onPressed: () => Navigator.pop(context),
@@ -235,6 +320,8 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
       );
     }
 
+    String targetWordDisplay = _getTargetWord();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Telaffuz Pratiği 🎤", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -245,7 +332,7 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
               margin: const EdgeInsets.only(right: 16.0),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-              child: Text("Skor: $score", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              child: Text("Skor: $score", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: score < 0 ? Colors.redAccent.shade100 : Colors.white)),
             ),
           )
         ],
@@ -278,7 +365,7 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                   transform: Matrix4.identity()..scale(_isSuccessAnim ? 1.05 : 1.0),
                   alignment: Alignment.center,
                   child: Text(
-                    currentWord.word, 
+                    targetWordDisplay, 
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold, color: _isSuccessAnim ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color, letterSpacing: 1.5)
                   ),
@@ -305,7 +392,7 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                       style: TextStyle(
                         fontSize: 22, 
                         fontWeight: _isListening ? FontWeight.normal : FontWeight.bold, 
-                        color: _isSuccessAnim ? Colors.green : (_isListening ? Theme.of(context).primaryColor : Colors.grey.shade600)
+                        color: _isSuccessAnim ? Colors.green : (_isListening ? Theme.of(context).primaryColor : Colors.redAccent)
                       )
                     ),
                   ),
