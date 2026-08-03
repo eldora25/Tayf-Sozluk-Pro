@@ -1,7 +1,7 @@
 import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'isar.dart'; 
+import 'package:isar/isar.dart'; // DÜZELTİLDİ: Doğru paket yolu eklendi
 import 'models.dart';
 import 'main.dart'; 
 
