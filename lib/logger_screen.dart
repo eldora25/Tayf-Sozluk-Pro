@@ -3,6 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+// UYGULAMANIN HER YERİNDEN ERİŞİLEBİLECEK KÜRESEL LOG MERKEZİ
+class GlobalLogger {
+  static final List<String> logs = [
+    "Sistem başlatıldı.",
+  ];
+
+  static void addLog(String message) {
+    String timestamp = "[${DateTime.now().toLocal().toString().split('.')[0]}]";
+    logs.add("$timestamp $message");
+    print("$timestamp $message"); // Aynı zamanda konsola da yazdır
+  }
+
+  static String getAllLogs() {
+    return logs.join('\n');
+  }
+}
+
 class LoggerScreen extends StatefulWidget {
   const LoggerScreen({super.key});
 
@@ -11,16 +28,9 @@ class LoggerScreen extends StatefulWidget {
 }
 
 class _LoggerScreenState extends State<LoggerScreen> {
-  List<String> logs = [
-    "Sistem başlatıldı.",
-    "Veritabanı bağlantısı kuruldu.",
-    "Sözlük Kütüphaneleri yüklendi.",
-    "Kullanıcı girişi başarılı."
-  ];
-
-  // MADDE 7: Hata Loglarını Tarih Damgalı TXT Olarak Paylaşma
+  
   Future<void> _exportLogs() async {
-    if (logs.isEmpty) return;
+    if (GlobalLogger.logs.isEmpty) return;
 
     try {
       DateTime now = DateTime.now();
@@ -30,7 +40,7 @@ class _LoggerScreenState extends State<LoggerScreen> {
       final directory = await getTemporaryDirectory();
       final file = File('${directory.path}/$fileName');
       
-      String logContent = logs.join('\n');
+      String logContent = GlobalLogger.getAllLogs();
       await file.writeAsString(logContent);
       
       await Share.shareXFiles([XFile(file.path)], text: 'Tayf Sözlük Pro - Sistem Hata Logları');
@@ -52,19 +62,27 @@ class _LoggerScreenState extends State<LoggerScreen> {
           )
         ],
       ),
-      body: logs.isEmpty
+      body: GlobalLogger.logs.isEmpty
           ? const Center(child: Text("Henüz bir hata kaydı bulunmuyor."))
           : ListView.builder(
               padding: const EdgeInsets.all(8.0),
-              itemCount: logs.length,
+              itemCount: GlobalLogger.logs.length,
               itemBuilder: (context, index) {
+                // Hata mesajlarını kırmızı, bilgi mesajlarını yeşil göstermek için
+                bool isError = GlobalLogger.logs[index].toLowerCase().contains('hata') || 
+                               GlobalLogger.logs[index].toLowerCase().contains('error') || 
+                               GlobalLogger.logs[index].toLowerCase().contains('başarısız');
+
                 return Card(
                   color: Colors.black87,
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Text(
-                      "[${DateTime.now().toLocal().toString().split('.')[0]}] ${logs[index]}",
-                      style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace'),
+                      GlobalLogger.logs[index],
+                      style: TextStyle(
+                        color: isError ? Colors.redAccent : Colors.greenAccent, 
+                        fontFamily: 'monospace'
+                      ),
                     ),
                   ),
                 );
