@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'package:isar/isar.dart';
 import 'models.dart';
-import 'main.dart'; // Isar bağlantısı için eklendi
+import 'main.dart'; 
 
 class MatchGameScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -41,6 +41,9 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   final Random _random = Random();
   
   Map<String, String> _targetDisplays = {};
+  
+  // YENİ: Artan ceza sistemi için hata kayıt defteri
+  Map<String, int> _wordMistakeCounts = {}; 
 
   @override
   void initState() {
@@ -57,7 +60,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   Future<void> _prepareGame() async {
     List<WordModel> pool = List.from(widget.words);
     
-    // YENİ: Eğer havuzda 15'ten az kelime varsa arka planda Isar'dan rastgele takviye yap!
     if (pool.length < 15) {
       int dbCount = await isar.wordModels.count();
       if (dbCount > 0) {
@@ -92,10 +94,10 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
       setState(() {
         isGameFinished = true;
       });
-      int earnedPoints = (gameWords.length * 3) - (mistakes * 3);
-      if (earnedPoints < 0) earnedPoints = 0; 
-      if (earnedPoints < 5 && mistakes == 0) earnedPoints = 5; 
-      widget.onGameFinished(earnedPoints);
+      
+      // Toplam kazanç eksi puana düşerse 0'da tut. 
+      int finalPoints = score > 0 ? score : 0;
+      widget.onGameFinished(finalPoints);
       return;
     }
 
@@ -109,7 +111,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     isDragging = false;
     _isHoveringTarget.value = false;
     
-    // WordNet kelimeleri için hedefleri (Target) akıllı atama
     _targetDisplays.clear();
     for (var w in rightColumn) {
        bool isWordNet = w.pos.isNotEmpty || w.synonyms.isNotEmpty || w.antonyms.isNotEmpty;
@@ -140,11 +141,17 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   void _handleDrop(WordModel dragged, WordModel target) {
     _isHoveringTarget.value = false;
     setState(() => isDragging = false);
+    
     if (dragged.word == target.word) {
       HapticFeedback.mediumImpact();
       setState(() {
         matchedWords.add(dragged.word);
-        score += 10;
+        
+        // YENİ ANTİ-SPAM: Sadece sıfır hatayla bulunursa puan ver
+        int previousMistakes = _wordMistakeCounts[target.word] ?? 0;
+        if (previousMistakes == 0) {
+          score += 10;
+        }
       });
 
       if (matchedWords.length == leftColumn.length) {
@@ -156,7 +163,13 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
       setState(() {
         wrongTargetWord = target.word;
         mistakes++;
-        score -= 5; 
+        
+        // YENİ ARTAN CEZA SİSTEMİ
+        int currentMistakeCount = (_wordMistakeCounts[target.word] ?? 0) + 1;
+        _wordMistakeCounts[target.word] = currentMistakeCount;
+        
+        int penalty = currentMistakeCount * 5; // 1. hata -5, 2. hata -10, 3. hata -15
+        score -= penalty; 
       });
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
@@ -203,9 +216,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     }
 
     if (isGameFinished) {
-      int finalPoints = (gameWords.length * 3) - (mistakes * 3);
-      if (finalPoints < 0) finalPoints = 0;
-      if (finalPoints < 5 && mistakes == 0) finalPoints = 5;
+      int finalPoints = score > 0 ? score : 0; // Negatif puana düştüyse sıfırla
 
       return Scaffold(
         appBar: AppBar(title: const Text("Oyun Bitti", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
@@ -233,7 +244,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                       child: Column(
                         children: [
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            const Text("Oyun Skoru:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                            const Text("Ham Skor:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                             Text("$score", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: score < 0 ? Colors.red : Colors.blue)),
                           ]),
                           const Divider(height: 30),
@@ -246,9 +257,9 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                             const Text("Kazanılan Tayf Puanı:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                             Row(
                               children: [
-                                const Icon(Icons.diamond, color: Colors.green, size: 28),
+                                Icon(Icons.diamond, color: finalPoints > 0 ? Colors.green : Colors.redAccent, size: 28),
                                 const SizedBox(width: 8),
-                                Text("+$finalPoints", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green)),
+                                Text(finalPoints > 0 ? "+$finalPoints" : "0", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: finalPoints > 0 ? Colors.green : Colors.redAccent)),
                               ],
                             ),
                           ]),
@@ -270,6 +281,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                           currentRound = 0;
                           score = 0;
                           mistakes = 0;
+                          _wordMistakeCounts.clear();
                           _isLoading = true;
                           _prepareGame();
                         });
