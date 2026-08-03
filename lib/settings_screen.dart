@@ -37,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _library;
   late String _level;
   
-  // YENİ: Kırmızı Ekran çökmesini önleyen, tekrarsız ve güvenli kütüphane listesi
   late List<String> _safeLibraries;
 
   final List<Color> _themeColors = [
@@ -58,13 +57,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     
-    // YENİ: Listede aynı kütüphaneden birden fazla varsa teke düşür (Çökme Engellendi)
     _safeLibraries = widget.availableLibraries.toSet().toList();
     if (_safeLibraries.isEmpty) {
       _safeLibraries = ['Varsayılan'];
     }
 
-    // YENİ: Slider değerlerinin limit dışına çıkmasını engelle (Çökme Engellendi)
     _goalValue = widget.currentGoal.toDouble().clamp(5.0, 100.0);
     _thresholdValue = widget.currentThreshold.toDouble().clamp(2.0, 50.0);
     _questionCountValue = widget.currentQuestionCount.toDouble().clamp(5.0, 100.0);
@@ -272,8 +269,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18), backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white, elevation: 5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                 onPressed: () {
                   HapticFeedback.heavyImpact();
-                  widget.onSaveSettings(_goalValue.toInt(), _thresholdValue.toInt(), _questionCountValue.toInt(), _themeIndex, _library, _level);
+                  final g = _goalValue.toInt();
+                  final t = _thresholdValue.toInt();
+                  final qc = _questionCountValue.toInt();
+                  final ti = _themeIndex;
+                  final lib = _library;
+                  final lvl = _level;
+                  
+                  // YENİ RSOD ÇÖZÜMÜ: Önce sayfayı kapat (unmount işlemi bitsin)
                   Navigator.pop(context);
+                  
+                  // Kısa bir beklemeden sonra kök dizindeki temayı ve State'i güncelle
+                  Future.delayed(const Duration(milliseconds: 150), () {
+                    widget.onSaveSettings(g, t, qc, ti, lib, lvl);
+                  });
                 },
               ),
             ),
