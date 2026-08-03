@@ -58,7 +58,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   late String _displayWordStr; 
   String? _testedMeaningOrExample; 
   
-  // YENİ: Soru üretildiğinde ekrandaki metnin dilini (İngilizce mi Türkçe mi) belirleyen değişken
   String _currentReadLang = 'en-US';
 
   late AnimationController _entranceController; 
@@ -256,7 +255,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         rawWord = currentWord.synonyms.isNotEmpty ? currentWord.synonyms.first : (currentWord.meanings.isNotEmpty ? currentWord.meanings.first : "WordNet Terimi");
     }
 
-    // YENİ: Soru tipine göre _currentReadLang atanarak TTS'in dili %100 doğru seçmesi sağlandı
     if (selectedType == 'word2meaning') {
       _questionSubtext = "Bu Kelimenin Anlamı Nedir?";
       _displayWordStr = rawWord;
@@ -723,7 +721,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
-                // YENİ: _currentReadLang ile Türkçe veya İngilizceyi otomatik doğru okur
                 _speakText(_displayWordStr, _currentReadLang); 
               },
               child: AnimatedBuilder(
@@ -745,6 +742,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                               border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.4), width: 1.5), 
                               boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.05), blurRadius: 20, spreadRadius: 5)]
                             ),
+                            // YENİ OPTİMİZASYON: DNA Rozeti ve Metin Column mimarisine taşınarak üst üste binmeleri (overlap) kesin olarak engellendi.
                             child: Column(
                               children: [
                                 Text(_displayWordStr, textAlign: TextAlign.center, style: TextStyle(fontSize: _isCurrentWordNet && _questionSubtext.contains("Tanım") ? 22 : 30, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
@@ -769,6 +767,38 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                                             _questionSubtext, 
                                             textAlign: TextAlign.center, 
                                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.orangeAccent.shade700)
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                // YENİ: Esnek Column Mimarisindeki DNA Rozeti Entegrasyonu
+                                if (currentWord.libraryName.startsWith('\u{1F9EC}') && !_isCurrentWordNet)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 24.0),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Transform.rotate(
+                                          angle: -0.5,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                                            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white30, width: 1), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)), BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0))]),
+                                            child: Transform.rotate(angle: 0.5, child: const Text("\u{1F9EC}", style: TextStyle(fontSize: 16, shadows: [Shadow(color: Colors.orangeAccent, blurRadius: 15), Shadow(color: Colors.purpleAccent, blurRadius: 15)]))),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1), boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
+                                              const SizedBox(width: 6),
+                                              Text("DNA-" + currentWord.id.toString().padLeft(6, '0'), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                                            ],
                                           ),
                                         ),
                                       ],
