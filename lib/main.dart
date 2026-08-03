@@ -20,7 +20,7 @@ import 'firebase_options.dart';
 import 'firebase_sync_service.dart';
 
 import 'models.dart';
-import 'wordnet.dart'; // YENİ: Installer eklendi
+import 'wordnet.dart'; 
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
 import 'word_list_screen.dart';
@@ -318,6 +318,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
     );
   }
 }
+
 class HomeScreen extends StatefulWidget {
   final int themeIndex;
   final ValueChanged<int> onThemeChanged;
@@ -351,6 +352,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<WordModel> toSRSRepeatWords = []; 
   List<WordModel> wrongWords = []; 
   List<WordModel> reviewWordsPool = []; 
+  
+  List<WordModel> _cachedWordNetDeck = [];
+  
+  // YENİ: Deste Kaymasını Önleyen Sabit Aktif Deste State'i
+  List<WordModel> _activeDeck = [];
 
   String selectedLibrary = 'Varsayılan';
   String selectedLevel = 'Genel';
@@ -400,11 +406,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // YENİ: Desteyi yalnızca ayarlar değiştiğinde veya açılışta 1 kez oluşturan güvenli fonksiyon
+  void _buildActiveDeck() {
+    _activeDeck.clear();
+    if (selectedLibrary == 'Tekrarlanması Gerekenler') {
+      _activeDeck.addAll(toSRSRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
+      _activeDeck.addAll(toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
+    } else if (selectedLibrary == 'WordNet Veritabanı') {
+      _activeDeck.addAll(_cachedWordNetDeck);
+    } else {
+      _activeDeck.addAll(toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
+      _activeDeck.addAll(toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
+      _activeDeck.addAll(allWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
+    }
+  }
+
   Future<void> _loadData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
-      // YENİ YAPI: Isar'da WordNet Veritabanı yüklü mü kontrol et (150K kelimeden az ise tam yüklenmemiştir)
       int wordNetCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
       
       if (wordNetCount < 50000) {
@@ -412,12 +432,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
            _loadingText = "WordNet İlk Kurulumu Yapılıyor...\n(Bu işlem sadece 1 kez yapılır\nve cihaz hızına göre 1-2 dk sürebilir)"; 
          });
          
-         // Yarım kalmış eski kalıntıları temizle
          await isar.writeTxn(() async {
             await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').deleteAll();
          });
          
-         // ZIP'ten çözüp listeye al
          List<WordModel> wnList = await WordNetInstaller.getWordNetModels();
          
          if (wnList.isNotEmpty) {
@@ -425,7 +443,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                _loadingText = "Veritabanına Gömülüyor...\n(${wnList.length} Kelime)\nLütfen uygulamayı kapatmayın..."; 
              });
              
-             // Cihazı kitlememek ve OOM hatası almamak için 5000'erlik batchler halinde (Paket paket) kaydet
              int batchSize = 5000;
              for (int i = 0; i < wnList.length; i += batchSize) {
                 int end = (i + batchSize < wnList.length) ? i + batchSize : wnList.length;
@@ -437,6 +454,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
          } else {
              GlobalLogger.addLog("HATA: WordNet verileri çıkarılamadı.");
          }
+      }
+
+      if (_cachedWordNetDeck.isEmpty) {
+        int dbCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
+        if (dbCount > 0) {
+           List<WordModel> randomWN = [];
+           final random = Random();
+           for(int i=0; i<200; i++){
+              int offset = random.nextInt(dbCount);
+              var rw = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').offset(offset).findFirst();
+              if (rw != null && !randomWN.any((w)=>w.id == rw.id)) randomWN.add(rw);
+           }
+           _cachedWordNetDeck = randomWN;
+        }
       }
 
       setState(() { _loadingText = "Kullanıcı Verileri Yükleniyor..."; });
@@ -522,13 +553,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
 
       setState(() {
-        var deck = activeDeck;
-        int urgentCount = deck.where((w) => w.listType == 'toSRSRepeat' || w.listType == 'toRepeat').length;
+        _buildActiveDeck(); // YENİ: Desteyi yalnızca bir kez ve güvenli oluştur
+        
+        int urgentCount = _activeDeck.where((w) => w.listType == 'toSRSRepeat' || w.listType == 'toRepeat').length;
         
         if (urgentCount > 0 && currentCardIndex >= urgentCount) {
           currentCardIndex = 0;
           isFlipped = false;
-        } else if (deck.isNotEmpty && currentCardIndex >= deck.length) {
+        } else if (_activeDeck.isNotEmpty && currentCardIndex >= _activeDeck.length) {
           currentCardIndex = 0;
           isFlipped = false;
         }
@@ -743,26 +775,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _savePreferencesOnly();
   }
 
-  List<WordModel> get activeDeck {
-    List<WordModel> deck = [];
-    if (selectedLibrary == 'Tekrarlanması Gerekenler') {
-      deck.addAll(toSRSRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
-      deck.addAll(toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
-    } else if (selectedLibrary == 'WordNet Veritabanı') {
-      // YENİ YAPI: WordNet kelimelerini Isar listesinden çekip her açılışta 200 taze rastgele kelime çıkar
-      var wnWords = allWords.where((w) => w.libraryName == 'WordNet Veritabanı').toList();
-      wnWords.shuffle();
-      deck.addAll(wnWords.take(200));
-    } else {
-      deck.addAll(toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
-      deck.addAll(toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
-      deck.addAll(allWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
-    }
-    return deck;
-  }
-
   List<String> get availableLibraries {
-    // WordNet artık allWords listesinde olduğu için otomatik olarak buraya dahil edilecek!
     var libs = allWords.map((e) => e.libraryName).toSet().toList()
       ..addAll(learnedWords.map((e) => e.libraryName))
       ..addAll(toRepeatWords.map((e) => e.libraryName))
@@ -771,6 +784,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     var uniqueLibs = libs.toSet().toList();
     uniqueLibs.add('Tekrarlanması Gerekenler'); 
     
+    uniqueLibs.add('WordNet Veritabanı');
     return uniqueLibs;
   }
 
@@ -793,7 +807,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       if (rawText.isEmpty) return;
       
-      String cleanText = rawText.replaceAll(RegExp(r'[\[\]\{\}\\|_»•]'), ' ').replaceAll('ANLAM:', '');
+      // YENİ: KUSURSUZ TTS İÇİN REGEX TEMİZLİĞİ
+      String cleanText = rawText
+          .replaceAll(RegExp(r'\[.*?\]'), ' ') // [ID:123] vb sil
+          .replaceAll(RegExp(r'\(.*?\)'), ' ') // (usually followed by) vb sil
+          .replaceAll(RegExp(r'[\[\]\{\}\\|_»•:;*+><=~]'), ' ') // Özel karakterleri sil
+          .replaceAll('ANLAM', '')
+          .replaceAll(RegExp(r'\s+'), ' ') // Çoklu boşlukları teke düşür
+          .trim();
+
       String detectText = isMeaning ? (word.meanings.isNotEmpty ? word.meanings.first : cleanText) : cleanText;
       
       String targetLang = isMeaning 
@@ -818,10 +840,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
     
     _savePreferencesOnly();
-    var deck = activeDeck;
-    if (deck.isNotEmpty) {
-      if (currentCardIndex >= deck.length) currentCardIndex = 0;
-      _speakWord(deck[currentCardIndex], isMeaning: false);
+    if (_activeDeck.isNotEmpty) {
+      if (currentCardIndex >= _activeDeck.length) currentCardIndex = 0;
+      _speakWord(_activeDeck[currentCardIndex], isMeaning: false);
     }
   }
 
@@ -872,11 +893,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
         toSRSRepeatWords.removeWhere((w) => w.id == word.id);
       }
+      
+      // YENİ: Deste Kaymasını Önleme
+      _activeDeck.removeWhere((w) => w.id == word.id);
+      _cachedWordNetDeck.removeWhere((w) => w.id == word.id);
     });
 
-    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
+       isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    }
 
-    if (!fromQuiz) _nextCard(increment: false); 
+    if (!fromQuiz) _nextCard(increment: false); // Listedeki bir sonraki kelime mevcut index'e düşer, bu yüzden increment false!
     else _savePreferencesOnly(); 
   }
 
@@ -902,11 +929,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (!toRepeatWords.any((w) => w.id == word.id)) toRepeatWords.add(word);
         allWords.removeWhere((w) => w.id == word.id);
       }
+
+      // YENİ: Tekrar edilen kelimeyi destenin en sonuna at (Hemen ardından çıkmasın, daha sonra çıksın)
+      _activeDeck.removeWhere((w) => w.id == word.id);
+      _activeDeck.add(word);
+      _cachedWordNetDeck.removeWhere((w) => w.id == word.id);
     });
 
-    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
+       isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    }
 
-    if (!fromQuiz) _nextCard(increment: true);
+    if (!fromQuiz) _nextCard(increment: false); // Tekrar destenin sonuna atıldığı için current index'teki yeni kelimeye kayar
     else _savePreferencesOnly();
   }
 
@@ -926,10 +960,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       wrongWords.removeWhere((w) => w.id == word.id);
       learnedWords.removeWhere((w) => w.id == word.id);
       
+      _activeDeck.removeWhere((w) => w.id == word.id);
+      _cachedWordNetDeck.removeWhere((w) => w.id == word.id);
+      
       reviewWordsPool.add(word);
     });
 
-    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
+      isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    }
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("⚠️ Kelime karantinaya alındı! Bulut güven skoru düşürüldü.", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
@@ -980,7 +1019,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             } catch(e) { continue; }
           }
 
-          setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
+          setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; _buildActiveDeck(); });
           
           await isar.writeTxn(() async { await isar.wordModels.putAll(newWords); });
           _savePreferencesOnly();
@@ -1045,7 +1084,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           } catch(e) { continue; }
         }
 
-        setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
+        setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; _buildActiveDeck(); });
         await isar.writeTxn(() async { await isar.wordModels.putAll(newWords); });
         _savePreferencesOnly();
         dialogMessage = "$customLibraryName başarıyla yüklendi!\n\n(${newWords.length} yeni kelime eklendi)";
@@ -1103,6 +1142,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       for (var w in wrongWords) { if (w.libraryName == oldName) w.libraryName = newName; }
       for (var w in reviewWordsPool) { if (w.libraryName == oldName) w.libraryName = newName; } 
       if (selectedLibrary == oldName) selectedLibrary = newName;
+      _buildActiveDeck();
     });
     
     isar.writeTxn(() async {
@@ -1123,6 +1163,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       wrongWords.removeWhere((w) => w.libraryName == libName);
       reviewWordsPool.removeWhere((w) => w.libraryName == libName);
       if (selectedLibrary == libName) selectedLibrary = 'Varsayılan';
+      _buildActiveDeck();
     });
     
     isar.writeTxn(() async {
@@ -1171,7 +1212,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             wrongWords.removeWhere((w) => w.id == word.id);
             learnedWords.removeWhere((w) => w.id == word.id);
             reviewWordsPool.removeWhere((w) => w.id == word.id);
-            isar.writeTxn(() async { await isar.wordModels.delete(word.id); });
+            if (word.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.delete(word.id); });
           } else if (action == EditAction.update || action == EditAction.move) {
             allWords.removeWhere((w) => w.id == word.id);
             toRepeatWords.removeWhere((w) => w.id == word.id);
@@ -1189,12 +1230,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             } else { 
               allWords.add(updatedWord); 
             }
-            isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
+            if (updatedWord.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
           } else if (action == EditAction.copy) { 
             allWords.add(updatedWord); 
-            isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
+            if (updatedWord.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
           }
           currentCardIndex = 0;
+          _buildActiveDeck();
         });
         _savePreferencesOnly();
       },
@@ -1277,12 +1319,49 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
   }
 
+  // YENİ: Taç (Crown) alanındaki gelişmiş bilgilendirme rozeti
+  Widget _buildTopBadge(int level, bool isMitosis, bool isWordNet, String pos) {
+    return Container(
+      width: double.infinity, 
+      padding: const EdgeInsets.symmetric(vertical: 8), 
+      decoration: BoxDecoration(
+        color: isWordNet ? Colors.indigo.withOpacity(0.15) : (isMitosis ? Colors.purpleAccent.withOpacity(0.15) : (level > 0 ? distinctColors[level - 1].withOpacity(0.15) : Colors.blueGrey.withOpacity(0.15))), 
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
+        border: Border(bottom: BorderSide(color: isWordNet ? Colors.indigo.withOpacity(0.5) : (isMitosis ? Colors.purpleAccent.withOpacity(0.5) : (level > 0 ? distinctColors[level - 1].withOpacity(0.5) : Colors.blueGrey.withOpacity(0.5))), width: 2))
+      ), 
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (level > 0 && !isWordNet) _buildCrown(level, isMitosis), 
+          if (level > 0 && !isWordNet) const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isWordNet) ...[
+                const Icon(Icons.language, size: 16, color: Colors.indigo),
+                const SizedBox(width: 8),
+                Text("WORDNET SÖZLÜK ${pos.isNotEmpty ? '[${pos.toUpperCase()}]' : ''}", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+              ] else if (isMitosis) ...[
+                const Icon(Icons.biotech, size: 16, color: Colors.purpleAccent),
+                const SizedBox(width: 8),
+                Text(level > 0 ? "MİTOZ (SAF KART) • SRS: $level/5" : "YENİ MİTOZ (SAF KART)", style: const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+              ] else ...[
+                Icon(Icons.menu_book, size: 16, color: level > 0 ? distinctColors[level - 1] : Colors.blueGrey),
+                const SizedBox(width: 8),
+                Text(level > 0 ? "STANDART KART • SRS: $level/5" : "YENİ STANDART KART", style: TextStyle(color: level > 0 ? distinctColors[level - 1] : Colors.blueGrey, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+              ]
+            ],
+          ),
+        ],
+      )
+    );
+  }
+
   Widget _buildCardFront(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
-    bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
-    bool isWordNet = word.pos.isNotEmpty || word.synonyms.isNotEmpty;
+    bool isWordNet = word.libraryName == 'WordNet Veritabanı';
 
     String displayWord = word.word;
     if (RegExp(r'^\d{8}-').hasMatch(displayWord) || displayWord.contains('[ID:')) {
@@ -1298,41 +1377,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), 
             child: Column(
               children: [
-                if (isPremium || isMitosis || isWordNet) 
-                  Container(
-                    width: double.infinity, 
-                    padding: const EdgeInsets.symmetric(vertical: 8), 
-                    decoration: BoxDecoration(
-                      color: isWordNet ? Colors.indigo.withOpacity(0.15) : (isPremium ? distinctColors[level - 1].withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.15)), 
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
-                      border: Border(bottom: BorderSide(color: isWordNet ? Colors.indigo.withOpacity(0.5) : (isPremium ? distinctColors[level - 1].withOpacity(0.5) : Colors.purpleAccent.withOpacity(0.5)), width: 2))
-                    ), 
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (isPremium && !isWordNet) _buildCrown(level, isMitosis), 
-                        if (isPremium && !isWordNet) const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (isWordNet) ...[
-                              const Icon(Icons.language, size: 16, color: Colors.indigo),
-                              const SizedBox(width: 8),
-                              Text("WordNet [${word.pos.toUpperCase()}]", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
-                            ] else ...[
-                              if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent)),
-                              if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
-                              if (isPremium) const SizedBox(width: 8),
-                              Text(
-                                isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
-                                style: TextStyle(color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)
-                              ),
-                            ]
-                          ],
-                        ),
-                      ],
-                    )
-                  ),
+                _buildTopBadge(level, isMitosis, isWordNet, word.pos),
                 Expanded(
                   child: Stack(
                     children: [
@@ -1382,7 +1427,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
 
           Widget current = cardContent;
-          if (isPremium && !isWordNet) {
+          if (level > 0 && !isWordNet) {
             for (int i = 0; i < level; i++) {
               double thickness = 2.0 + (i * 1.5); 
               current = Container(
@@ -1415,10 +1460,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildCardBack(WordModel word) {
     int level = word.srsLevel.clamp(0, 5);
-    bool isPremium = level > 0;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isMitosis = word.libraryName.startsWith('\u{1F9EC}'); 
-    bool isWordNet = word.pos.isNotEmpty || word.synonyms.isNotEmpty;
+    bool isWordNet = word.libraryName == 'WordNet Veritabanı';
 
     String displayWord = word.word;
     if (RegExp(r'^\d{8}-').hasMatch(displayWord) || displayWord.contains('[ID:')) {
@@ -1434,48 +1478,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: _getPremiumCardDecoration(context, isDark, isMitosis: isMitosis), 
             child: Column(
               children: [
-                if (isPremium || isMitosis || isWordNet) 
-                  Container(
-                    width: double.infinity, 
-                    padding: const EdgeInsets.symmetric(vertical: 8), 
-                    decoration: BoxDecoration(
-                      color: isWordNet ? Colors.indigo.withOpacity(0.15) : (isPremium ? distinctColors[level - 1].withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.15)), 
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
-                      border: Border(bottom: BorderSide(color: isWordNet ? Colors.indigo.withOpacity(0.5) : (isPremium ? distinctColors[level - 1].withOpacity(0.5) : Colors.purpleAccent.withOpacity(0.5)), width: 2))
-                    ), 
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (isPremium && !isWordNet) _buildCrown(level, isMitosis), 
-                        if (isPremium && !isWordNet) const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (isWordNet) ...[
-                              const Icon(Icons.language, size: 16, color: Colors.indigo),
-                              const SizedBox(width: 8),
-                              Text("WordNet [${word.pos.toUpperCase()}]", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
-                            ] else ...[
-                              if (isMitosis) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.biotech, size: 16, color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent)),
-                              if (isPremium) Icon(Icons.stars, color: distinctColors[level - 1], size: 16),
-                              if (isPremium) const SizedBox(width: 8),
-                              Text(
-                                isPremium ? (isMitosis ? "SRS: $level / 5 (Saf Kart)" : "SRS Seviye: $level / 5") : "Yeni Saf Kart (Mitoz)", 
-                                style: TextStyle(color: isPremium ? distinctColors[level - 1] : Colors.purpleAccent, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.5)
-                              ),
-                            ]
-                          ],
-                        ),
-                      ],
-                    )
-                  ),
+                _buildTopBadge(level, isMitosis, isWordNet, word.pos),
                 Expanded(
                   child: Stack(
                     children: [
                       SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
                         child: Padding(
-                          padding: const EdgeInsets.only(top: 24.0, left: 20, right: 20, bottom: 40), 
+                          padding: const EdgeInsets.only(top: 24.0, left: 20, right: 20, bottom: 100), 
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1489,14 +1499,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 if (word.synonyms.isNotEmpty) ...[
                                   const SizedBox(height: 8),
                                   Row(children: [const Icon(Icons.link, size: 14, color: Colors.teal), const SizedBox(width: 6), Text("Synonyms:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.teal.shade300))]),
-                                  Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.synonyms.take(4).map((s) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.teal.withOpacity(0.3))), child: Text(s, style: const TextStyle(fontSize: 12, color: Colors.teal, fontWeight: FontWeight.bold)))).toList())),
+                                  Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.synonyms.take(6).map((s) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.teal.withOpacity(0.3))), child: Text(s, style: const TextStyle(fontSize: 12, color: Colors.teal, fontWeight: FontWeight.bold)))).toList())),
                                   const SizedBox(height: 8),
                                 ],
                                 
                                 if (word.antonyms.isNotEmpty) ...[
                                   const SizedBox(height: 8),
                                   Row(children: [const Icon(Icons.link_off, size: 14, color: Colors.redAccent), const SizedBox(width: 6), Text("Antonyms:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.redAccent.shade200))]),
-                                  Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.antonyms.take(4).map((a) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.redAccent.withOpacity(0.3))), child: Text(a, style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold)))).toList())),
+                                  Padding(padding: const EdgeInsets.only(top: 4.0, left: 6), child: Wrap(spacing: 6, runSpacing: 6, children: word.antonyms.take(6).map((a) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.redAccent.withOpacity(0.3))), child: Text(a, style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold)))).toList())),
                                   const SizedBox(height: 8),
                                 ],
 
@@ -1563,7 +1573,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
 
           Widget current = cardContent;
-          if (isPremium && !isWordNet) {
+          if (level > 0 && !isWordNet) {
             for (int i = 0; i < level; i++) {
               double thickness = 2.0 + (i * 1.5);
               current = Container(
@@ -1665,7 +1675,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     
                     ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _savePreferencesOnly(); }))); }),
-                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onLearned: _markAsLearned))); }),
+                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: _activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onLearned: _markAsLearned))); }),
                     
                     ListTile(
                       leading: const Icon(Icons.settings), 
@@ -1677,6 +1687,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
                           onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
                             setState(() { dailyGoal = nG; quizThreshold = nT; quizQuestionCount = nQC; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
+                            _buildActiveDeck(); // Yeni kütüphane seçildiğinde listeyi güncelle
                             _savePreferencesOnly(); 
                             Future.delayed(const Duration(milliseconds: 150), () {
                               _showCenteredDialog(
@@ -1711,8 +1722,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                     const Divider(),
                     ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary, onPointsEarned: (points) => _recordActivity(points)))); }),
-                    ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
-                    ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
+                    ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: _activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
+                    ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: _activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
                     
                     ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
                       HapticFeedback.lightImpact();
@@ -1867,7 +1878,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       );
     }
 
-    var deck = activeDeck;
+    var deck = _activeDeck; // YENİ: Sürekli değişen getter yerine sabit State listesi kullanılıyor
     if (currentCardIndex >= deck.length) currentCardIndex = 0;
     WordModel? currentWord = deck.isNotEmpty ? deck[currentCardIndex] : null;
     bool isSrsMode = currentWord != null && currentWord.listType == 'toSRSRepeat';
@@ -2066,11 +2077,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly, 
                                   children: [
                                     Expanded(
-                                      child: ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), 
-                                        icon: const Icon(Icons.repeat), 
-                                        label: const Text("Tekrar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), 
-                                        onPressed: () => _markAsToRepeat(currentWord)
+                                      // YENİ: Şık Neon Buton Tasarımı - Tekrar
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(30),
+                                          gradient: const LinearGradient(colors: [Colors.redAccent, Colors.deepOrange]),
+                                          boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(0.5), blurRadius: 15, spreadRadius: 2)],
+                                        ),
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.transparent, 
+                                            shadowColor: Colors.transparent,
+                                            foregroundColor: Colors.white, 
+                                            padding: const EdgeInsets.symmetric(vertical: 14), 
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))
+                                          ), 
+                                          icon: const Icon(Icons.repeat), 
+                                          label: const Text("Tekrar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), 
+                                          onPressed: () => _markAsToRepeat(currentWord)
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -2101,11 +2126,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 5, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), 
-                                        icon: const Icon(Icons.check), 
-                                        label: const Text("Biliyorum", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), 
-                                        onPressed: () => _markAsLearned(currentWord)
+                                      // YENİ: Şık Neon Buton Tasarımı - Biliyorum
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(30),
+                                          gradient: LinearGradient(colors: [Colors.green.shade400, Colors.teal]),
+                                          boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.5), blurRadius: 15, spreadRadius: 2)],
+                                        ),
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.transparent, 
+                                            shadowColor: Colors.transparent,
+                                            foregroundColor: Colors.white, 
+                                            padding: const EdgeInsets.symmetric(vertical: 14), 
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))
+                                          ), 
+                                          icon: const Icon(Icons.check), 
+                                          label: const Text("Biliyorum", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), 
+                                          onPressed: () => _markAsLearned(currentWord)
+                                        ),
                                       ),
                                     )
                                   ]
