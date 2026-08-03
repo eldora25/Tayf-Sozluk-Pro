@@ -47,7 +47,7 @@ class InfoScreen extends StatelessWidget {
             icon: Icons.language,
             color: Colors.indigo,
             title: "WordNet Veritabanı (150.000+ Kelime)",
-            description: "Gelişmiş İngilizce-İngilizce kelime ağından oluşan bu devasa sözlük, ilk kullanımda Isar veritabanına kalıcı olarak gömülür. Bu işlem sadece bir kez yapılır ve cihazınızın hızına bağlı olarak 1-2 dakika sürebilir. Sonrasında tüm sorgularınız, eşleştirmeleriniz ve listeleriniz ışık hızında çalışır.",
+            description: "Gelişmiş İngilizce-İngilizce kelime ağından oluşan bu devasa sözlük, ilk kullanımda Isar veritabanına kalıcı olarak gömülür. Bu işlem sadece bir kez yapılır ve cihazınızın hızına bağlı olarak 1-2 dakika sürebilir. Sonrasında tüm sorgularınız, quiz eşleştirmeleriniz ve listeleriniz tamamen offline (internetsiz) ve ışık hızında çalışır.",
           ),
           _buildFeatureCard(
             context,
