@@ -49,10 +49,10 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
     _prepareGame();
   }
 
+  // YENİ: Havuzda kelime yoksa veya azsa doğrudan Isar veritabanından rastgele çeker
   Future<void> _prepareGame() async {
     List<WordModel> pool = List.from(widget.words);
     
-    // YENİ: Havuzda 10'dan az kelime varsa Isar veritabanından eksikleri tamamla
     if (pool.length < 10) {
       int dbCount = await isar.wordModels.count();
       if (dbCount > 0) {
@@ -149,11 +149,11 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
       setState(() => _isListening = false);
       _speech.stop();
       
-      // Kullanıcı dinlemeyi bıraktıysa ve kelimeyi henüz doğru okumadıysa
+      // Kullanıcı dinlemeyi bıraktıysa ve kelimeyi henüz doğru okumadıysa CEZA KES
       if (!_isSuccessAnim && _text != 'Mikrofona basılı tut ve kelimeyi oku...' && _text != "Dinleniyor, konuşmaya başla...") {
          setState(() {
             _currentWordMistakes++;
-            int penalty = _currentWordMistakes * 3; // 1. hata -3, 2. hata -6 TP
+            int penalty = _currentWordMistakes * 3; // 1. hata -3, 2. hata -6 TP vb.
             score -= penalty;
             _text = "Hatalı Telaffuz! (-$penalty TP)\nOkunan: '$_text'";
             HapticFeedback.heavyImpact();
@@ -177,7 +177,7 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
         _isListening = false;
         _isSuccessAnim = true;
         
-        // YENİ: Sadece hiç hata yapmadıysa puan ver
+        // YENİ: Sadece hiç hata yapmadıysa tam puan ver
         if (_currentWordMistakes == 0) {
           score += 15; 
         }
@@ -197,14 +197,14 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
         currentIndex++;
         currentWord = gameWords[currentIndex];
         _isSuccessAnim = false;
-        _currentWordMistakes = 0; // Hata sayacını sıfırla
+        _currentWordMistakes = 0; // Hata sayacını yeni kelime için sıfırla
         _text = 'Mikrofona basılı tut ve kelimeyi oku...';
       });
     } else {
       setState(() {
         isFinished = true;
       });
-      // Sınav bittiğinde negatif puana düşülmüşse 0 gönder
+      // Sınav bittiğinde negatif puana düşülmüşse sıfırla
       widget.onGameFinished(score > 0 ? score : 0);
     }
   }
@@ -251,6 +251,7 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
     }
 
     if (isFinished) {
+      int finalPoints = score > 0 ? score : 0; // Negatifse sıfır göster
       return Scaffold(
         appBar: AppBar(title: const Text("Sınav Bitti", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
         body: Container(
@@ -274,9 +275,9 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.diamond, color: score > 0 ? Colors.green : Colors.redAccent, size: 36),
+                            Icon(Icons.diamond, color: finalPoints > 0 ? Colors.green : Colors.redAccent, size: 36),
                             const SizedBox(width: 12),
-                            Text(score > 0 ? "+$score" : "0", style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: score > 0 ? Colors.green : Colors.redAccent)),
+                            Text(finalPoints > 0 ? "+$finalPoints" : "0", style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: finalPoints > 0 ? Colors.green : Colors.redAccent)),
                           ],
                         ),
                       ],
