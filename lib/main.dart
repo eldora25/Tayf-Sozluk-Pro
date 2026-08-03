@@ -341,7 +341,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _streakFlashController;
   late AnimationController _warningPulseController;
 
-  // YENİ YAPI: Uygulama yükleme durumu
   bool _isAppLoading = true;
   String _loadingText = "Uygulama Hazırlanıyor...";
 
@@ -409,7 +408,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       
       setState(() { _loadingText = "WordNet Veritabanı Çıkarılıyor...\n(Bu işlem ilk açılışta biraz sürebilir)"; });
       
-      // YENİ YAPI: WordNet servisinin tamamen yüklenmesini bekliyoruz
       await WordNetService().loadWordNetData();
       if (_cachedWordNetDeck.isEmpty) {
         _cachedWordNetDeck = WordNetService().getRandomWords(200);
@@ -509,9 +507,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           isFlipped = false;
         }
         
-        // Yükleme tamamlandı, ana ekranı aç
         _isAppLoading = false;
       });
+
+      // YENİ: Eğer WordNet yüklenirken (zip/klasör/hafıza vb.) hata oluştuysa ekrana yansıt
+      if (!WordNetService().isLoaded && WordNetService().errorMessage.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("WordNet Yüklenemedi: ${WordNetService().errorMessage}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 8),
+            )
+          );
+        });
+      }
+
     } catch (e) {
       debugPrint("Load Data Error: $e");
       setState(() { _isAppLoading = false; });
@@ -742,7 +753,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     var uniqueLibs = libs.toSet().toList();
     uniqueLibs.add('Tekrarlanması Gerekenler'); 
     
-    // GÜNCELLEME: WordNet hazırsa ayarlar ekranı için listeye ekle
     if (WordNetService().isLoaded) {
       uniqueLibs.add('WordNet Veritabanı');
     }
@@ -849,7 +859,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
+      isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    }
 
     if (!fromQuiz) _nextCard(increment: false); 
     else _savePreferencesOnly(); 
@@ -879,7 +891,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
+      isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    }
 
     if (!fromQuiz) _nextCard(increment: true);
     else _savePreferencesOnly();
@@ -887,7 +901,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _moveToReview(WordModel word) {
     HapticFeedback.heavyImpact();
-    
     FirebaseSyncService.reportCardErrorInCloud(word);
 
     setState(() {
@@ -904,7 +917,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       reviewWordsPool.add(word);
     });
 
-    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
+      isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+    }
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("⚠️ Kelime karantinaya alındı! Bulut güven skoru düşürüldü.", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
@@ -1146,7 +1161,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             wrongWords.removeWhere((w) => w.id == word.id);
             learnedWords.removeWhere((w) => w.id == word.id);
             reviewWordsPool.removeWhere((w) => w.id == word.id);
-            isar.writeTxn(() async { await isar.wordModels.delete(word.id); });
+            if (word.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.delete(word.id); });
           } else if (action == EditAction.update || action == EditAction.move) {
             allWords.removeWhere((w) => w.id == word.id);
             toRepeatWords.removeWhere((w) => w.id == word.id);
@@ -1164,10 +1179,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             } else { 
               allWords.add(updatedWord); 
             }
-            isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
+            if (updatedWord.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
           } else if (action == EditAction.copy) { 
             allWords.add(updatedWord); 
-            isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
+            if (updatedWord.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
           }
           currentCardIndex = 0;
         });
@@ -1812,7 +1827,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // YENİ YAPI: Yükleme Ekranı
     if (_isAppLoading) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
