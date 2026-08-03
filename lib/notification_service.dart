@@ -19,7 +19,7 @@ class NotificationService {
     await androidImplementation?.requestExactAlarmsPermission();
   }
 
-  // MADDE 6: GERÇEK SİSTEM BİLDİRİMİ (Push Notification) TESTİ
+  // GERÇEK SİSTEM BİLDİRİMİ (Push Notification) TESTİ
   static Future<void> showInstantTestNotification() async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -45,7 +45,8 @@ class NotificationService {
     required int srsCount, 
     required int wordsLearnedToday, 
     required int dailyGoal,
-    required bool isStreakInDanger
+    required bool isStreakInDanger,
+    required int streakFreezes // YENİ: Kalan buz kalkanı bilgisini alıyoruz
   }) async {
     await _notificationsPlugin.cancelAll(); 
 
@@ -59,6 +60,7 @@ class NotificationService {
     );
     const NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
 
+    // 1. Sabah / Gündüz Seri Tehlike Uyarısı
     if (isStreakInDanger) {
       await _notificationsPlugin.zonedSchedule(
         1,
@@ -72,11 +74,30 @@ class NotificationService {
       );
     }
 
+    // 2. Akşam Akıllı Seri & Buz Kalkanı Uyarısı (YENİ EKLENDİ)
+    if (isStreakInDanger) {
+      String shieldText = streakFreezes > 0 
+          ? "Merak etme, envanterinde $streakFreezes adet Buz Kalkanın (❄️) var ama serinin sıfırlanmaması için hemen bir kelime çalış ya da kalkanını aktif et!"
+          : "Serin tehlikede ve hiç Buz Kalkanın kalmamış! Hemen uygulamaya girip serini kurtar!";
+
+      await _notificationsPlugin.zonedSchedule(
+        6,
+        'Serin Sönüyor & Buz Kalkanı! ❄️🔥',
+        shieldText,
+        _nextInstanceOfTime(21, 0), // Akşam saat 21:00 uyarısı
+        platformDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    }
+
+    // 3. SRS (Aralıklı Tekrar) Akıllı Hatırlatıcısı
     if (srsCount > 0) {
       await _notificationsPlugin.zonedSchedule(
         2,
         'Tekrar Zamanı Geldi! 🧠',
-        'Seni bekleyen $srsCount SRS kelimen var. Hafızanı tazelemek için hemen başla!',
+        'Seni bekleyen $srsCount SRS kelimen var. Unutma curve eğrisini yenmek için şimdi tam zamanı!',
         _nextInstanceOfTime(9, 30), 
         platformDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -85,12 +106,13 @@ class NotificationService {
       );
     }
 
+    // 4. Günlük Hedef Takibi
     int remainingGoal = dailyGoal - wordsLearnedToday;
     if (remainingGoal > 0) {
        await _notificationsPlugin.zonedSchedule(
         3,
         'Hedefine Çok Yakınsın! 🎯',
-        'Bugünkü hedefine ulaşmak için sadece $remainingGoal kelime kaldı.',
+        'Bugünkü hedefine ulaşmak için sadece $remainingGoal kelime kaldı. Başarabilirsin!',
         _nextInstanceOfTime(10, 30), 
         platformDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -99,6 +121,7 @@ class NotificationService {
       );
     }
 
+    // 5. Öğle Molası Hatırlatıcısı
     String noonMessage = srsCount > 0 
         ? "Öğle arası boş durma! $srsCount tekrar kelimen seni bekliyor."
         : "Yeni bir kütüphane keşfetmek veya birkaç kelime ezberlemek için harika bir zaman.";
@@ -114,6 +137,7 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.time,
     );
 
+    // 6. Gece Kapanış / Özet Hatırlatıcısı
     if (srsCount > 0 || remainingGoal > 0) {
        await _notificationsPlugin.zonedSchedule(
         5,
