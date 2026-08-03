@@ -52,11 +52,14 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   bool _isStatsSaved = false;
   
   int _sessionEarnedTP = 0; 
-  int _currentQuestionAttempts = 0; // YENİ: Artan ceza sistemi için deneme sayacı
+  int _currentQuestionAttempts = 0; 
 
   String _questionSubtext = "";
   late String _displayWordStr; 
   String? _testedMeaningOrExample; 
+  
+  // YENİ: Soru üretildiğinde ekrandaki metnin dilini (İngilizce mi Türkçe mi) belirleyen değişken
+  String _currentReadLang = 'en-US';
 
   late AnimationController _entranceController; 
   late AnimationController _shakeController;    
@@ -141,7 +144,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     try {
       await globalTts.stop(); 
       String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
-                             .replaceAll(RegExp(r'[\[\]\{\}\\|_]'), ' ');
+                             .replaceAll(RegExp(r'[\[\]\{\}\\|_»•:;*+><=~]'), ' ')
+                             .trim();
       globalTts.setLanguage(languageCode);
       globalTts.setSpeechRate(0.45); 
       globalTts.speak(cleanText);
@@ -218,7 +222,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     selectedWrongOptions.clear();
     _lastWrongOption = null;
     isAnsweredCorrectly = false;
-    _currentQuestionAttempts = 0; // YENİ: Soru değiştiğinde hata sayacını sıfırla
+    _currentQuestionAttempts = 0; 
     
     currentWord = quizWords[answeredQuestions];
     _testedMeaningOrExample = null;
@@ -252,40 +256,49 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         rawWord = currentWord.synonyms.isNotEmpty ? currentWord.synonyms.first : (currentWord.meanings.isNotEmpty ? currentWord.meanings.first : "WordNet Terimi");
     }
 
+    // YENİ: Soru tipine göre _currentReadLang atanarak TTS'in dili %100 doğru seçmesi sağlandı
     if (selectedType == 'word2meaning') {
       _questionSubtext = "Bu Kelimenin Anlamı Nedir?";
       _displayWordStr = rawWord;
       correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
       _testedMeaningOrExample = correctOption; 
+      _currentReadLang = getSmartSourceLanguage(currentWord.libraryName, _displayWordStr);
     } else if (selectedType == 'meaning2word') {
       _questionSubtext = "Bu Anlama Gelen Kelime Hangisidir?";
       _displayWordStr = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
       correctOption = rawWord;
+      _currentReadLang = getSmartTargetLanguage(currentWord.libraryName, _displayWordStr);
     } else if (selectedType == 'word2example') {
       _questionSubtext = "Hangi Cümlede Örnek Olarak Kullanılmıştır?";
       _displayWordStr = rawWord;
       correctOption = currentWord.examples[random.nextInt(currentWord.examples.length)];
       _testedMeaningOrExample = correctOption; 
+      _currentReadLang = getSmartSourceLanguage(currentWord.libraryName, _displayWordStr);
     } else if (selectedType == 'word2synonym') {
       _questionSubtext = "Bu Kelimenin Eş Anlamlısı (Synonym) Nedir?";
       _displayWordStr = rawWord;
       correctOption = currentWord.synonyms[random.nextInt(currentWord.synonyms.length)];
+      _currentReadLang = getSmartSourceLanguage(currentWord.libraryName, _displayWordStr);
     } else if (selectedType == 'synonym2word') {
       _questionSubtext = "Aşağıdaki Eş Anlamlıya Sahip Kelime Hangisidir?";
       _displayWordStr = currentWord.synonyms[random.nextInt(currentWord.synonyms.length)];
       correctOption = rawWord;
+      _currentReadLang = getSmartSourceLanguage(currentWord.libraryName, _displayWordStr); 
     } else if (selectedType == 'word2antonym') {
       _questionSubtext = "Bu Kelimenin Zıt Anlamlısı (Antonym) Nedir?";
       _displayWordStr = rawWord;
       correctOption = currentWord.antonyms[random.nextInt(currentWord.antonyms.length)];
+      _currentReadLang = getSmartSourceLanguage(currentWord.libraryName, _displayWordStr);
     } else if (selectedType == 'antonym2word') {
       _questionSubtext = "Aşağıdaki Zıt Anlamlıya Sahip Kelime Hangisidir?";
       _displayWordStr = currentWord.antonyms[random.nextInt(currentWord.antonyms.length)];
       correctOption = rawWord;
+      _currentReadLang = getSmartSourceLanguage(currentWord.libraryName, _displayWordStr);
     } else {
       _questionSubtext = "Doğru Eşleşmeyi Bulun";
       _displayWordStr = rawWord;
       correctOption = rawWord;
+      _currentReadLang = getSmartSourceLanguage(currentWord.libraryName, _displayWordStr);
     }
 
     Set<String> wOptions = {};
@@ -334,7 +347,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     _entranceController.forward(from: 0.0); 
     
-    _speakText(_displayWordStr, getSmartSourceLanguage(currentWord.libraryName, _displayWordStr));
+    _speakText(_displayWordStr, _currentReadLang);
   }
 
   String _getReadableLang(String code) {
@@ -362,7 +375,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         HapticFeedback.mediumImpact(); 
         _scaleController.forward(from: 0.0); 
         
-        // YENİ ANTİ-SPAM: Sadece sıfır hata yapıldıysa puan ver
         if (_currentQuestionAttempts == 0) {
            _sessionEarnedTP += 3; 
            _flyDiamondAnimation();
@@ -373,7 +385,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         correctAnswers++; 
         
         if (_isCurrentWordNet) {
-          widget.onWordMastered(currentWord);
+          currentWord.correctCount++;
+          await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+          if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
         } else {
           int totalOptions = currentWord.meanings.length + currentWord.examples.length;
           
@@ -407,7 +421,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
             if (existingMitosisCard != null) {
               existingMitosisCard.correctCount++;
-              isar.writeTxn(() async {
+              await isar.writeTxn(() async {
                 if (isGhostCard) {
                   await isar.wordModels.delete(currentWord.id);
                 } else {
@@ -433,7 +447,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 targetLanguage: currentWord.targetLanguage,
                 pos: '', synonyms: [], antonyms: []
               );
-              isar.writeTxn(() async {
+              await isar.writeTxn(() async {
                 if (isGhostCard) {
                   await isar.wordModels.delete(currentWord.id);
                 } else {
@@ -446,7 +460,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             }
           } else {
             currentWord.correctCount++;
-            isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+            await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
             if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
           }
         }
@@ -465,16 +479,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         _lastWrongOption = option; 
         _shakeController.forward(from: 0.0); 
         
-        // YENİ ARTAN CEZA SİSTEMİ
         _currentQuestionAttempts++;
-        int penalty = _currentQuestionAttempts * 2; // 1. hata -2, 2. hata -4, 3. hata -6 TP
+        int penalty = _currentQuestionAttempts * 2; 
         _sessionEarnedTP -= penalty; 
       });
 
       if (selectedWrongOptions.length == 1) { 
         if (_isCurrentWordNet) {
           currentWord.wrongCount++;
-          isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+          await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
           widget.onWrongWord(currentWord);
         } else {
           int totalOptions = currentWord.meanings.length + currentWord.examples.length;
@@ -509,7 +522,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
             if (existingMitosisCard != null) {
               existingMitosisCard.wrongCount++;
-              isar.writeTxn(() async {
+              await isar.writeTxn(() async {
                 if (isGhostCard) {
                   await isar.wordModels.delete(currentWord.id);
                 } else {
@@ -535,7 +548,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 targetLanguage: currentWord.targetLanguage,
                 pos: '', synonyms: [], antonyms: []
               );
-              isar.writeTxn(() async {
+              await isar.writeTxn(() async {
                 if (isGhostCard) {
                   await isar.wordModels.delete(currentWord.id);
                 } else {
@@ -548,7 +561,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             }
           } else {
             currentWord.wrongCount++;
-            isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+            await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
             widget.onWrongWord(currentWord);
           }
         }
@@ -710,8 +723,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
-                String readWord = _displayWordStr == "WordNet Kaydı" && currentWord.meanings.isNotEmpty ? currentWord.meanings.first : _displayWordStr;
-                _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
+                _speakText(_displayWordStr, _currentReadLang); // TTS Dil Hatası Çözüldü
               },
               child: AnimatedBuilder(
                 animation: _entranceController,
