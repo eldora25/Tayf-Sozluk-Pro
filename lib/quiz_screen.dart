@@ -55,6 +55,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   String _questionSubtext = "";
   late String _displayWordStr; 
+  String? _testedMeaningOrExample; 
 
   late AnimationController _entranceController; 
   late AnimationController _shakeController;    
@@ -217,10 +218,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _lastWrongOption = null;
     isAnsweredCorrectly = false;
     currentWord = quizWords[answeredQuestions];
+    _testedMeaningOrExample = null;
     
     _isCurrentWordNet = currentWord.pos.isNotEmpty || currentWord.synonyms.isNotEmpty || currentWord.antonyms.isNotEmpty;
     
-    // YENİ DİNAMİK SORU MOTORU BAŞLANGICI
+    // YENİ DİNAMİK SORU MOTORU: Kelime içeriklerine göre sorulabilecek varyasyonlar belirlenir.
     List<String> qTypes = [];
     
     if (currentWord.meanings.isNotEmpty) {
@@ -228,18 +230,18 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       qTypes.add('meaning2word'); // Anlam -> Kelime
     }
     if (currentWord.examples.isNotEmpty) {
-      qTypes.add('word2example'); // Kelime -> Örnek (Örnek -> Kelime YASAK)
+      qTypes.add('word2example'); // Kelime -> Örnek (Örnek -> Kelime Yasaklandı)
     }
     if (currentWord.synonyms.isNotEmpty) {
-      qTypes.add('word2synonym'); // Kelime -> Eş Anlam
-      qTypes.add('synonym2word'); // Eş Anlam -> Kelime
+      qTypes.add('word2synonym'); // Kelime -> Eş Anlamlı
+      qTypes.add('synonym2word'); // Eş Anlamlı -> Kelime
     }
     if (currentWord.antonyms.isNotEmpty) {
-      qTypes.add('word2antonym'); // Kelime -> Zıt Anlam
-      qTypes.add('antonym2word'); // Zıt Anlam -> Kelime
+      qTypes.add('word2antonym'); // Kelime -> Zıt Anlamlı
+      qTypes.add('antonym2word'); // Zıt Anlamlı -> Kelime
     }
 
-    if (qTypes.isEmpty) qTypes.add('word2word'); // Güvenlik yedeği
+    if (qTypes.isEmpty) qTypes.add('word2word'); 
 
     String selectedType = qTypes[random.nextInt(qTypes.length)];
     
@@ -252,6 +254,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       _questionSubtext = "Bu Kelimenin Anlamı Nedir?";
       _displayWordStr = rawWord;
       correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
+      _testedMeaningOrExample = correctOption; // Mitoz için işaretle
     } else if (selectedType == 'meaning2word') {
       _questionSubtext = "Bu Anlama Gelen Kelime Hangisidir?";
       _displayWordStr = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
@@ -260,12 +263,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       _questionSubtext = "Hangi Cümlede Örnek Olarak Kullanılmıştır?";
       _displayWordStr = rawWord;
       correctOption = currentWord.examples[random.nextInt(currentWord.examples.length)];
+      _testedMeaningOrExample = correctOption; // Mitoz için işaretle
     } else if (selectedType == 'word2synonym') {
       _questionSubtext = "Bu Kelimenin Eş Anlamlısı (Synonym) Nedir?";
       _displayWordStr = rawWord;
       correctOption = currentWord.synonyms[random.nextInt(currentWord.synonyms.length)];
     } else if (selectedType == 'synonym2word') {
-      _questionSubtext = "Bu Kelimenin Eş Anlamlısı (Synonym) Hangisidir?";
+      _questionSubtext = "Aşağıdaki Eş Anlamlıya Sahip Kelime Hangisidir?";
       _displayWordStr = currentWord.synonyms[random.nextInt(currentWord.synonyms.length)];
       correctOption = rawWord;
     } else if (selectedType == 'word2antonym') {
@@ -273,7 +277,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       _displayWordStr = rawWord;
       correctOption = currentWord.antonyms[random.nextInt(currentWord.antonyms.length)];
     } else if (selectedType == 'antonym2word') {
-      _questionSubtext = "Bu Kelimenin Zıt Anlamlısı (Antonym) Hangisidir?";
+      _questionSubtext = "Aşağıdaki Zıt Anlamlıya Sahip Kelime Hangisidir?";
       _displayWordStr = currentWord.antonyms[random.nextInt(currentWord.antonyms.length)];
       correctOption = rawWord;
     } else {
@@ -282,6 +286,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       correctOption = rawWord;
     }
 
+    // Yanlış Seçenekleri (Çeldiricileri) Soru Türüne Göre Akıllıca Üret
     Set<String> wOptions = {};
     int loops = 0;
     while(wOptions.length < 3 && loops < 200) {
@@ -297,20 +302,16 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
         if (selectedType == 'word2meaning') {
            if (rw.meanings.isNotEmpty) wOpt = rw.meanings[random.nextInt(rw.meanings.length)];
-        } else if (selectedType == 'meaning2word') {
+        } else if (selectedType == 'meaning2word' || selectedType == 'synonym2word' || selectedType == 'antonym2word') {
            wOpt = rwRawWord;
         } else if (selectedType == 'word2example') {
            if (rw.examples.isNotEmpty) wOpt = rw.examples[random.nextInt(rw.examples.length)];
         } else if (selectedType == 'word2synonym') {
            if (rw.synonyms.isNotEmpty) wOpt = rw.synonyms[random.nextInt(rw.synonyms.length)];
            else wOpt = rwRawWord; 
-        } else if (selectedType == 'synonym2word') {
-           wOpt = rwRawWord;
         } else if (selectedType == 'word2antonym') {
            if (rw.antonyms.isNotEmpty) wOpt = rw.antonyms[random.nextInt(rw.antonyms.length)];
            else wOpt = rwRawWord; 
-        } else if (selectedType == 'antonym2word') {
-           wOpt = rwRawWord;
         } else {
            wOpt = rwRawWord;
         }
@@ -321,7 +322,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       }
     }
     
-    // Eğer yeterli yanlış cevap bulunamazsa yedek olarak seçenekleri rastgele doldur
     if (wOptions.length < 3) {
       wOptions.addAll(["Entity", "Process", "Attribute", "Event", "Condition", "State"]);
       wOptions = wOptions.take(3).toSet();
@@ -368,16 +368,20 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         correctAnswers++; 
         
         if (_isCurrentWordNet) {
-          widget.onWordMastered(currentWord);
+          currentWord.correctCount++;
+          await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+          if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
         } else {
           int totalOptions = currentWord.meanings.length + currentWord.examples.length;
-          if (totalOptions > 1) {
-            bool isMeaning = currentWord.meanings.contains(correctOption);
+          
+          // MİTOZ KALKANI: Sadece word2meaning ve word2example senaryolarında bölünme yapılır.
+          if (_testedMeaningOrExample != null && totalOptions > 1) {
+            bool isMeaning = currentWord.meanings.contains(_testedMeaningOrExample);
             
             if (isMeaning) {
-              currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
+              currentWord.meanings = List.from(currentWord.meanings)..remove(_testedMeaningOrExample);
             } else {
-              currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
+              currentWord.examples = List.from(currentWord.examples)..remove(_testedMeaningOrExample);
             }
 
             bool isGhostCard = currentWord.meanings.isEmpty && currentWord.examples.isEmpty;
@@ -389,7 +393,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   .libraryNameEqualTo(mitosisLibName)
                   .findAll();
               
-              String safeCorrect = correctOption.toLowerCase().trim();
+              String safeCorrect = _testedMeaningOrExample!.toLowerCase().trim();
               for (var mWord in matchingWords) {
                 if (isMeaning && mWord.meanings.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
                    existingMitosisCard = mWord; break;
@@ -401,7 +405,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
             if (existingMitosisCard != null) {
               existingMitosisCard.correctCount++;
-              isar.writeTxn(() async {
+              await isar.writeTxn(() async {
                 if (isGhostCard) {
                   await isar.wordModels.delete(currentWord.id);
                 } else {
@@ -414,8 +418,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             } else {
               WordModel splitWord = WordModel(
                 word: currentWord.word,
-                meanings: isMeaning ? [correctOption] : [],
-                examples: !isMeaning ? [correctOption] : [],
+                meanings: isMeaning ? [_testedMeaningOrExample!] : [],
+                examples: !isMeaning ? [_testedMeaningOrExample!] : [],
                 libraryName: mitosisLibName, 
                 level: currentWord.level,
                 correctCount: currentWord.correctCount + 1, 
@@ -427,7 +431,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 targetLanguage: currentWord.targetLanguage,
                 pos: '', synonyms: [], antonyms: []
               );
-              isar.writeTxn(() async {
+              await isar.writeTxn(() async {
                 if (isGhostCard) {
                   await isar.wordModels.delete(currentWord.id);
                 } else {
@@ -439,8 +443,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               if (splitWord.correctCount >= widget.threshold) widget.onWordMastered(splitWord);
             }
           } else {
+            // Ters sorularda (Anlam->Kelime) kart bölünmez, kart bütünüyle +1 alır
             currentWord.correctCount++;
-            isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+            await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
             if (currentWord.correctCount >= widget.threshold) widget.onWordMastered(currentWord);
           }
         }
@@ -463,16 +468,19 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
       if (selectedWrongOptions.length == 1) { 
         if (_isCurrentWordNet) {
+          currentWord.wrongCount++;
+          await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
           widget.onWrongWord(currentWord);
         } else {
           int totalOptions = currentWord.meanings.length + currentWord.examples.length;
-          if (totalOptions > 1) {
-            bool isMeaning = currentWord.meanings.contains(correctOption);
+          
+          if (_testedMeaningOrExample != null && totalOptions > 1) {
+            bool isMeaning = currentWord.meanings.contains(_testedMeaningOrExample);
             
             if (isMeaning) {
-              currentWord.meanings = List.from(currentWord.meanings)..remove(correctOption);
+              currentWord.meanings = List.from(currentWord.meanings)..remove(_testedMeaningOrExample);
             } else {
-              currentWord.examples = List.from(currentWord.examples)..remove(correctOption);
+              currentWord.examples = List.from(currentWord.examples)..remove(_testedMeaningOrExample);
             }
 
             bool isGhostCard = currentWord.meanings.isEmpty && currentWord.examples.isEmpty;
@@ -484,7 +492,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                   .libraryNameEqualTo(mitosisLibName)
                   .findAll();
               
-              String safeCorrect = correctOption.toLowerCase().trim();
+              String safeCorrect = _testedMeaningOrExample!.toLowerCase().trim();
               for (var mWord in matchingWords) {
                 if (isMeaning && mWord.meanings.map((e)=>e.toLowerCase().trim()).contains(safeCorrect)) {
                    existingMitosisCard = mWord; break;
@@ -496,7 +504,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
             if (existingMitosisCard != null) {
               existingMitosisCard.wrongCount++;
-              isar.writeTxn(() async {
+              await isar.writeTxn(() async {
                 if (isGhostCard) {
                   await isar.wordModels.delete(currentWord.id);
                 } else {
@@ -509,8 +517,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             } else {
               WordModel splitWord = WordModel(
                 word: currentWord.word,
-                meanings: isMeaning ? [correctOption] : [],
-                examples: !isMeaning ? [correctOption] : [],
+                meanings: isMeaning ? [_testedMeaningOrExample!] : [],
+                examples: !isMeaning ? [_testedMeaningOrExample!] : [],
                 libraryName: mitosisLibName, 
                 level: currentWord.level,
                 correctCount: currentWord.correctCount,
@@ -522,7 +530,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 targetLanguage: currentWord.targetLanguage,
                 pos: '', synonyms: [], antonyms: []
               );
-              isar.writeTxn(() async {
+              await isar.writeTxn(() async {
                 if (isGhostCard) {
                   await isar.wordModels.delete(currentWord.id);
                 } else {
@@ -535,7 +543,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             }
           } else {
             currentWord.wrongCount++;
-            isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
+            await isar.writeTxn(() async { await isar.wordModels.put(currentWord); });
             widget.onWrongWord(currentWord);
           }
         }
@@ -650,8 +658,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           )
         ),
         child: ListView(
-          // YENİ: Alt kısma 120 padding verilerek uzun metinlerin ve kaydırmanın sorunsuz olması sağlandı.
-          padding: EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 120), 
+          // DEV BOŞLUK: Uzun şıkların alta yapışmasını engelleyen 120px padding
+          padding: const EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 120), 
           physics: const BouncingScrollPhysics(),
           children: [
             Row(
@@ -724,7 +732,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                               children: [
                                 Text(_displayWordStr, textAlign: TextAlign.center, style: TextStyle(fontSize: _isCurrentWordNet && _questionSubtext.contains("Tanım") ? 22 : 30, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
                                 
-                                // YENİ: Sorunun türünü açıklayan şık alt başlık rozeti
+                                // ŞIK SORU YÖNERGE KAPSÜLÜ
                                 if (_questionSubtext.isNotEmpty)
                                   Container(
                                     margin: const EdgeInsets.only(top: 24.0),
@@ -791,7 +799,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                       child: Row(
                         children: [
                           Expanded(
-                            // YENİ: Sınır (maxLines) kaldırılarak uzun paragrafların tamamen görünmesi sağlandı.
+                            // LİMİTSİZ YAPI: maxLines silindi. Seçenek ne kadar uzun olursa olsun tamamen görünür.
                             child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500)),
                           ),
                           if (trailingIcon != null) ...[
