@@ -21,7 +21,8 @@ class _WordListScreenState extends State<WordListScreen> {
   Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index.clamp(0, 20) * 50)), 
+      // YENİ OPTİMİZASYON: Çok sayıda kelime varsa animasyonlar çok uzun sürmesin diye max limit eklendi.
+      duration: Duration(milliseconds: 400 + (index.clamp(0, 10) * 50)), 
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
@@ -149,11 +150,12 @@ class _WordListScreenState extends State<WordListScreen> {
     final String heroTag = 'hero_word_${item.word}_$index';
     final String subtitleText = item.libraryName + " / " + item.level;
 
-    return _buildAnimatedItem(
-      context, 
-      index,
-      RepaintBoundary(
-        child: Dismissible(
+    // YENİ OPTİMİZASYON: Kaydırma sırasında ekranın donmasını engelleyen RepaintBoundary
+    return RepaintBoundary(
+      child: _buildAnimatedItem(
+        context, 
+        index,
+        Dismissible(
           key: Key(dismissKey),
           direction: widget.onLearned != null ? DismissDirection.horizontal : DismissDirection.endToStart,
           background: Container(
