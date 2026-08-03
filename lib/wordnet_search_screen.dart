@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async'; // EKLENDİ: Timer için
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart';
@@ -18,6 +19,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
   List<WordModel> _searchResults = [];
   bool _isLoading = false;
   late AnimationController _fadeController;
+  Timer? _debounceTimer; // EKLENDİ: Debouncer timer
 
   @override
   void initState() {
@@ -28,18 +30,27 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
 
   @override
   void dispose() {
+    _debounceTimer?.cancel(); // EKLENDİ: Timer temizliği
     _searchController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
 
-  void _searchWord(String query) async {
+  // EKLENDİ: Arama öncesi Debounce katmanı (400ms)
+  void _onSearchChanged(String query) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      _executeSearch(query);
+    });
+  }
+
+  void _executeSearch(String query) async {
     if (query.trim().isEmpty) {
-      setState(() => _searchResults = []);
+      if (mounted) setState(() => _searchResults = []);
       return;
     }
 
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
     String lowerQuery = query.toLowerCase().trim();
 
     try {
@@ -164,14 +175,14 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
                           onPressed: () {
                             HapticFeedback.selectionClick();
                             _searchController.clear();
-                            _searchWord('');
+                            _executeSearch('');
                           },
                         ),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                         filled: true,
                         fillColor: Colors.transparent,
                       ),
-                      onChanged: _searchWord,
+                      onChanged: _onSearchChanged, // GÜNCELLENDİ: Doğrudan Isar'ı çağırmak yerine Debouncer tetiklenir
                     ),
                   ),
                 ),
