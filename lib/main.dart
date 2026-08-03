@@ -816,7 +816,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return uniqueLibs.toList();
   }
 
-  // YENİ: WordNet kartlarının arka yüzündeki synonym, antonym ve anlamları sırasıyla seslendiren gelişmiş TTS fonksiyonu
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       await globalTts.stop(); 
@@ -825,7 +824,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (isMeaning) {
         List<String> combinedList = [...word.meanings, ...word.examples];
         
-        // WordNet kartları için eş ve zıt anlamları da seslendirmeye ekle
         bool isWordNet = word.libraryName == 'WordNet Veritabanı' || word.pos.isNotEmpty || word.synonyms.isNotEmpty || word.antonyms.isNotEmpty;
         if (isWordNet) {
           if (word.synonyms.isNotEmpty) {
@@ -900,10 +898,95 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() => isFlipped = !isFlipped);
   }
 
+  // YENİ: Günlük Hedef Kontrolü ve Alev Bonusu (+30 TP) Tetikleyicisi
+  void _checkDailyGoalBonus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final todayStr = DateTime.now().toIso8601String().split('T').first; // yyyy-MM-dd
+    final lastClaimedDate = prefs.getString('daily_goal_bonus_date') ?? '';
+
+    if (lastClaimedDate == todayStr) return; // Bugün zaten alındıysa çık
+
+    // Bugün öğrenilen kelime sayısını hesapla
+    int learnedToday = learnedWordTimestamps.where((ts) {
+      final dt = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
+      final dtStr = dt.toIso8601String().split('T').first;
+      return dtStr == todayStr;
+    }).length;
+
+    if (learnedToday >= dailyGoal) {
+      prefs.setString('daily_goal_bonus_date', todayStr);
+      
+      setState(() {
+        tayfPoints += 30; // Alev Bonusu
+      });
+      _savePreferencesOnly();
+
+      // Görsel Şık Kutlama Dialogu
+      if (mounted) {
+        showGeneralDialog(
+          context: context,
+          barrierDismissible: true,
+          barrierLabel: "Kapat",
+          transitionDuration: const Duration(milliseconds: 500),
+          pageBuilder: (context, a1, a2) => const SizedBox(),
+          transitionBuilder: (context, a1, a2, child) {
+            return Transform.scale(
+              scale: Curves.easeOutBack.transform(a1.value),
+              child: AlertDialog(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                content: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [Colors.deepOrange.shade600, Colors.orangeAccent.shade400], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [BoxShadow(color: Colors.deepOrange.withOpacity(0.6), blurRadius: 30, spreadRadius: 5)]
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.local_fire_department, color: Colors.white, size: 70),
+                      const SizedBox(height: 16),
+                      const Text("GÜNLÜK HEDEF TAMAMLANDI! 🔥", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                      const SizedBox(height: 10),
+                      const Text("Harika bir iş çıkardın! Günlük hedefini tamamladığın için cömert bir alev bonusu kazandın.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(20)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 20),
+                            SizedBox(width: 8),
+                            Text("+30 Alev Bonusu TP", style: TextStyle(color: Colors.lightBlueAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepOrange, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Süper!", style: TextStyle(fontWeight: FontWeight.bold))
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+        );
+      }
+    }
+  }
+
   void _markAsLearned(WordModel word, {bool fromQuiz = false}) {
     HapticFeedback.heavyImpact(); 
     learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
     
+    // Günlük hedef bonusunu kontrol et
+    _checkDailyGoalBonus();
+
     setState(() {
       if (word.srsLevel == 0) {
         word.srsLevel = 1;
@@ -1546,7 +1629,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Center(child: Text(displayWord, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
-                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (_getTextColor(context, isDark, isMitosis)).withOpacity(0.3))), 
+                              Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: (_getTextColor(context, isDark, isMitosis)).withOpacity(0.3)))), 
                               
                               if (isWordNet) ...[
                                 Row(children: [const Icon(Icons.menu_book, size: 14, color: Colors.indigo), const SizedBox(width: 6), Text("Definition:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.indigo.shade300))]),
