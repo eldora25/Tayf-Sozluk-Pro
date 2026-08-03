@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui'; // Bulanıklaştırma (Blur) efekti için eklendi
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; 
 import 'models.dart';
@@ -183,7 +184,94 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMitosisCard(BuildContext context, int count) {
+  // YENİ: Mitoz Ağacı Modal Fonksiyonu
+  void _showMitosisTreeModal(BuildContext context, List<MapEntry<String, int>> treeData) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1))
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.5), borderRadius: BorderRadius.circular(10)))),
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.account_tree, color: Colors.purpleAccent, size: 28),
+                          const SizedBox(width: 10),
+                          Text("Mitoz Bölünme Ağacı", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text("Hangi kelimeden kaç adet saf kart üretildi?", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    const SizedBox(height: 20),
+                    Flexible(
+                      child: treeData.isEmpty 
+                        ? const Center(child: Text("Henüz bölünmüş kartınız yok.", style: TextStyle(color: Colors.grey)))
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: treeData.length,
+                            itemBuilder: (ctx, i) {
+                              String word = treeData[i].key;
+                              int count = treeData[i].value;
+                              return Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.purpleAccent.withOpacity(0.3)),
+                                  boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))]
+                                ),
+                                child: ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), shape: BoxShape.circle),
+                                    child: const Icon(Icons.biotech, color: Colors.purpleAccent),
+                                  ),
+                                  title: Text(word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  trailing: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.pinkAccent]),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text("$count Klon", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                  ),
+                                ),
+                              );
+                            }
+                          )
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMitosisCard(BuildContext context, int count, List<MapEntry<String, int>> treeData) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -191,35 +279,51 @@ class StatisticsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-              child: const Icon(Icons.biotech, color: Colors.white, size: 32),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            if (count > 0) _showMitosisTreeModal(context, treeData);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                  child: const Icon(Icons.biotech, color: Colors.white, size: 32),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("🧬 Mitoz Havuzu", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      const Text("Quizlerde bölünerek saf, eşsiz ve tek anlamlı hale gelen toplam kart sayısı.", style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4)),
+                      if (count > 0) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(10)),
+                          child: const Text("Ağacı görmek için dokunun", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                        )
+                      ]
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _buildAnimatedNumber(count, const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900)),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text("🧬 Mitoz Havuzu", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  Text("Quizlerde bölünerek saf, eşsiz ve tek anlamlı hale gelen toplam kart sayısı.", style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4)),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            _buildAnimatedNumber(count, const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900)),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  // YENİ: Leitner Kutusu Kart Tasarımı
   Widget _buildLeitnerBoxCard(BuildContext context, String boxName, String title, int count, int totalCount, IconData icon, Color color) {
     double percent = totalCount > 0 ? (count / totalCount) : 0.0;
     return Container(
@@ -292,13 +396,26 @@ class StatisticsScreen extends StatelessWidget {
 
     List<String> trueGraduationTimestamps = learnedWords.map((w) => w.nextReviewDate.toString()).toList();
 
-    int totalMitosisCount = [
+    // Mitoz Ağacı Hesaplaması
+    int totalMitosisCount = 0;
+    Map<String, int> mitosisTree = {};
+
+    var allActiveWords = [
       ...allWords,
       ...learnedWords,
       ...learningWords,
       ...toRepeatWords,
       ...toSRSRepeatWords
-    ].where((w) => w.libraryName.startsWith('\u{1F9EC} Mitoz')).length;
+    ];
+
+    for (var w in allActiveWords) {
+      if (w.libraryName.startsWith('\u{1F9EC} Mitoz')) {
+        totalMitosisCount++;
+        mitosisTree[w.word] = (mitosisTree[w.word] ?? 0) + 1;
+      }
+    }
+    
+    var sortedMitosis = mitosisTree.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
     // Leitner (SRS 1-5) Kutu Hesaplamaları
     int srs1Count = 0;
@@ -307,10 +424,9 @@ class StatisticsScreen extends StatelessWidget {
     int srs4Count = 0;
     int srs5Count = 0;
 
-    List<WordModel> activeSRS = [...learningWords, ...toSRSRepeatWords, ...toRepeatWords, ...allWords];
     Set<int> countedIds = {};
 
-    for (var w in activeSRS) {
+    for (var w in allActiveWords) {
       if (countedIds.contains(w.id)) continue;
       countedIds.add(w.id);
       
@@ -333,7 +449,7 @@ class StatisticsScreen extends StatelessWidget {
     final primaryColor = Theme.of(context).primaryColor;
 
     return DefaultTabController(
-      length: 6, // 5'ten 6'ya çıkarıldı (Leitner Kutusu eklendi)
+      length: 6, 
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Lexis Eldora | İstatistikler", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -346,7 +462,7 @@ class StatisticsScreen extends StatelessWidget {
             tabs: const [
               Tab(text: "Başarılar", icon: Icon(Icons.emoji_events)),
               Tab(text: "Genel Özet", icon: Icon(Icons.pie_chart)),
-              Tab(text: "Leitner Kutusu", icon: Icon(Icons.inventory_2)), // YENİ SEKME
+              Tab(text: "Leitner Kutusu", icon: Icon(Icons.inventory_2)),
               Tab(text: "Öğrenme Grafiği", icon: Icon(Icons.auto_graph)), 
               Tab(text: "Quiz", icon: Icon(Icons.psychology)),
               Tab(text: "Kütüphaneler", icon: Icon(Icons.library_books)),
@@ -387,7 +503,7 @@ class StatisticsScreen extends StatelessWidget {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
-                  _buildStaggeredWrapper(0, _buildMitosisCard(context, totalMitosisCount)), 
+                  _buildStaggeredWrapper(0, _buildMitosisCard(context, totalMitosisCount, sortedMitosis)), 
                   _buildStaggeredWrapper(1, _buildStatCard(context, "Mevcut Tayf Puan (TP)", tayfPoints, Icons.diamond, Colors.blueAccent)),
                   _buildStaggeredWrapper(2, _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1), Icons.my_library_books, Colors.deepPurple)),
                   _buildStaggeredWrapper(3, _buildStatCard(context, "Toplam Kelime", totalSystemWords, Icons.format_list_bulleted, Colors.cyan)),
@@ -397,7 +513,6 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
               
-              // YENİ SEKME: Leitner Kutusu Hafıza Dağılım Grafiği
               ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
@@ -426,7 +541,6 @@ class StatisticsScreen extends StatelessWidget {
                   )),
                   const SizedBox(height: 20),
 
-                  // Canlı Bar Grafiği
                   _buildStaggeredWrapper(1, Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -487,7 +601,6 @@ class StatisticsScreen extends StatelessWidget {
                   )),
                   const SizedBox(height: 20),
 
-                  // Kutular Detaylı Liste
                   _buildStaggeredWrapper(2, _buildLeitnerBoxCard(context, "1. Kutu (1 Gün Tekrar)", "Geçici Hafıza • İlk Adım", srs1Count, totalActiveSRS, Icons.change_history, const Color(0xFFFFEA00))),
                   _buildStaggeredWrapper(3, _buildLeitnerBoxCard(context, "2. Kutu (2 Gün Tekrar)", "Başlangıç Seviyesi", srs2Count, totalActiveSRS, Icons.spa, const Color(0xFFD500F9))),
                   _buildStaggeredWrapper(4, _buildLeitnerBoxCard(context, "3. Kutu (4 Gün Tekrar)", "Orta Düzey Hafıza", srs3Count, totalActiveSRS, Icons.workspace_premium, const Color(0xFF00E5FF))),
