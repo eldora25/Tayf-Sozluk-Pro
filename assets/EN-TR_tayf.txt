@@ -1,39 +1,39 @@
-a few:birkaç
-a great deal:bir hayli;birçok;pek çok
-a great many:pek çok
-a great variety of:çok çeşitli
-a lot of:çok
-a priori:apaçık;önsel
-a:bir;gürültü;patırtı
-ab initio:başlangıçtan
+a few:birkaÃ§
+a great deal:bir hayli;birÃ§ok;pek Ã§ok
+a great many:pek Ã§ok
+a great variety of:Ã§ok Ã§eÅŸitli
+a lot of:Ã§ok
+a priori:apaÃ§Ä±k;Ã¶nsel
+a:bir;gÃ¼rÃ¼ltÃ¼;patÄ±rtÄ±
+ab initio:baÅŸlangÄ±Ã§tan
 aback:geride;geriye
-abacus:abaküs;hesap tahtası;sayı boncuğu
-abalone:denizkulağı
-abandon:terk etmek;bırakmak;vazgeçmek
+abacus:abakÃ¼s;hesap tahtasÄ±;sayÄ± boncuÄŸu
+abalone:denizkulaÄŸÄ±
+abandon:terk etmek;bÄ±rakmak;vazgeÃ§mek
 abandonment:terk
-abase:küçük düşürmek;aşağılamak
-abash:utandırmak,bozmak
-abate:(rüzgar,fırtına,ağrı,rahatsızlık,fiyat,vergi)azaltmak;ortadan kaldırmak;hafiflemek;çekilmek; hükmü kalmamak.;hükmü kalmamak
-abatement:azaltma;azaltılma;azaltma,azaltılma
+abase:kÃ¼Ã§Ã¼k dÃ¼ÅŸÃ¼rmek;aÅŸaÄŸÄ±lamak
+abash:utandÄ±rmak,bozmak
+abate:(rÃ¼zgar,fÄ±rtÄ±na,aÄŸrÄ±,rahatsÄ±zlÄ±k,fiyat,vergi)azaltmak;ortadan kaldÄ±rmak;hafiflemek;Ã§ekilmek; hÃ¼kmÃ¼ kalmamak.;hÃ¼kmÃ¼ kalmamak
+abatement:azaltma;azaltÄ±lma;azaltma,azaltÄ±lma
 abattoir:salhane;mezbaha;kesimevi
-abbess:başrahibe
-abbey:manastır
-abbot:başrahip
-abbreviate:kısaltmak;özetlemek
-abbreviation:kısaltma
-abdicate:tahttan çekilmek;hakkından vazgeçmek;el çekmek;bırakmak
-abdication:bırakma;istifa;terk
-abdomen:karın
-abdominal:karın ile ilgili;karna ait;karın
-abduct:birini zorla kaçırmak
-abduction:adam kaçırma
-abductor muscle:uzaklaştırıcı kas
-abductor:kaçıran
+abbess:baÅŸrahibe
+abbey:manastÄ±r
+abbot:baÅŸrahip
+abbreviate:kÄ±saltmak;Ã¶zetlemek
+abbreviation:kÄ±saltma
+abdicate:tahttan Ã§ekilmek;hakkÄ±ndan vazgeÃ§mek;el Ã§ekmek;bÄ±rakmak
+abdication:bÄ±rakma;istifa;terk
+abdomen:karÄ±n
+abdominal:karÄ±n ile ilgili;karna ait;karÄ±n
+abduct:birini zorla kaÃ§Ä±rmak
+abduction:adam kaÃ§Ä±rma
+abductor muscle:uzaklaÅŸtÄ±rÄ±cÄ± kas
+abductor:kaÃ§Ä±ran
 abed:yatakta
-aberration:anormallik;kısa süreli bellek kaybı;sapınç;sapma
-abet:desteklemek;yardakçılık etmek;yardım etmek
-abettor:suç ortağı
-abeyance:askıda;karara bağlanmamış;muallakta;yürürlüğe girmemiş
+aberration:anormallik;kÄ±sa sÃ¼reli bellek kaybÄ±;sapÄ±nÃ§;sapma
+abet:desteklemek;yardakÃ§Ä±lÄ±k etmek;yardÄ±m etmek
+abettor:suÃ§ ortaÄŸÄ±
+abeyance:askÄ±da;karara baÄŸlanmamÄ±ÅŸ;muallakta;yÃ¼rÃ¼rlÃ¼ÄŸe girmemiÅŸ
 abhor:nefret etmek
 abhorrence:nefret;tiksinme
 abhorrent:tiksindirici
@@ -41,436 +41,436 @@ abide by:itaat etmek;uymak
 abide:durmak;kalmak
 ability:kabiliyet;yetenek
 abiogenesis:abiyogenez
-abiotic environment:abiyotik çevre
-abject:alçak;sefil
-able:güçlü;muktedir
+abiotic environment:abiyotik Ã§evre
+abject:alÃ§ak;sefil
+able:gÃ¼Ã§lÃ¼;muktedir
 ablution:aptes
 abnormal:anormal
 abnormality:anormallik
 aboard:gemide;gemiye
 abode:ev;ikametgah;konut;mesken
-abolish:iptal etmek;yürürlükten kaldırmak
-abolition:ortadan kaldırma;yürürlükten kaldırma
-A-bomb:atom bombası
-abominable:iğrenç;nefret verici
-abomination:iğrenme;nefret
+abolish:iptal etmek;yÃ¼rÃ¼rlÃ¼kten kaldÄ±rmak
+abolition:ortadan kaldÄ±rma;yÃ¼rÃ¼rlÃ¼kten kaldÄ±rma
+A-bomb:atom bombasÄ±
+abominable:iÄŸrenÃ§;nefret verici
+abomination:iÄŸrenme;nefret
 abort sequence:durdurma dizisi
-abort:boşa çıkmak;çocuk düşürmek;durdurmak;sonlandırma;yarıda kesme
-aborted connection:yarıda kalan bağlantı
-abortion:çocuk düşürme;düşük
-abound:bol olmak;çok sayıda bulunmak;çok sayıda olmak
-about to:yapmak üzere olmak
-about:aşağı yukarı;etrafında;hakkında;hemen hemen;yaklaşık;şurada,burada,her yerde;etrafına;aksi yöne;ilgili;-e dair;konusunda
-above all:herşeyden önce
-above:fazla;üstünde;yukarıda
-aboveboard:apaçık;doğru;hilesiz
-abrade:aşındırmak;yemek
-abrasion resistant:aşınmaya daynıklı (madde/-ler)
-abrasion:aşınma;sert, katı bir cisim tarafından derinin sıyrılması;sürtünme veya kazıma ile aşındırma;yenme;yıpranma
-abrasive:aşındırıcı
-abreast:aynı hizada;aynı seviyede;başa baş;yan yana
-abridge:kesmek;kısaltmak;özetlemek
-abridged:kısaltılmış
-abridgement:kısaltılmış yazı;kısaltma;özet
-abroad:geniş bir alanda;her tarafta;her yerde;meydanda;ortalıkta;yabancı ülkede;yurt dışında
-abrogate:iptal etmek;son vermek;yürürlükten kaldırmak
-abrogation:iptal;yürürlükten kaldırma
-abrupt:ani;beklenmedik;birden bire oluşan;çok çabuk olan;kaba;sert;terbiyesiz
+abort:boÅŸa Ã§Ä±kmak;Ã§ocuk dÃ¼ÅŸÃ¼rmek;durdurmak;sonlandÄ±rma;yarÄ±da kesme
+aborted connection:yarÄ±da kalan baÄŸlantÄ±
+abortion:Ã§ocuk dÃ¼ÅŸÃ¼rme;dÃ¼ÅŸÃ¼k
+abound:bol olmak;Ã§ok sayÄ±da bulunmak;Ã§ok sayÄ±da olmak
+about to:yapmak Ã¼zere olmak
+about:aÅŸaÄŸÄ± yukarÄ±;etrafÄ±nda;hakkÄ±nda;hemen hemen;yaklaÅŸÄ±k;ÅŸurada,burada,her yerde;etrafÄ±na;aksi yÃ¶ne;ilgili;-e dair;konusunda
+above all:herÅŸeyden Ã¶nce
+above:fazla;Ã¼stÃ¼nde;yukarÄ±da
+aboveboard:apaÃ§Ä±k;doÄŸru;hilesiz
+abrade:aÅŸÄ±ndÄ±rmak;yemek
+abrasion resistant:aÅŸÄ±nmaya daynÄ±klÄ± (madde/-ler)
+abrasion:aÅŸÄ±nma;sert, katÄ± bir cisim tarafÄ±ndan derinin sÄ±yrÄ±lmasÄ±;sÃ¼rtÃ¼nme veya kazÄ±ma ile aÅŸÄ±ndÄ±rma;yenme;yÄ±pranma
+abrasive:aÅŸÄ±ndÄ±rÄ±cÄ±
+abreast:aynÄ± hizada;aynÄ± seviyede;baÅŸa baÅŸ;yan yana
+abridge:kesmek;kÄ±saltmak;Ã¶zetlemek
+abridged:kÄ±saltÄ±lmÄ±ÅŸ
+abridgement:kÄ±saltÄ±lmÄ±ÅŸ yazÄ±;kÄ±saltma;Ã¶zet
+abroad:geniÅŸ bir alanda;her tarafta;her yerde;meydanda;ortalÄ±kta;yabancÄ± Ã¼lkede;yurt dÄ±ÅŸÄ±nda
+abrogate:iptal etmek;son vermek;yÃ¼rÃ¼rlÃ¼kten kaldÄ±rmak
+abrogation:iptal;yÃ¼rÃ¼rlÃ¼kten kaldÄ±rma
+abrupt:ani;beklenmedik;birden bire oluÅŸan;Ã§ok Ã§abuk olan;kaba;sert;terbiyesiz
 abruptly:birdenbire
 abruptness:acele;terslik
-abscess:apse;çıban;sivilce
+abscess:apse;Ã§Ä±ban;sivilce
 abscissa:apsis;koordinat sisteminde yatay eksen
-abscond:sıvışmak kaçmak
-absence of mind:dalgınlık
-absence:bulunmayış;yokluk
-absent minded:dalgın
+abscond:sÄ±vÄ±ÅŸmak kaÃ§mak
+absence of mind:dalgÄ±nlÄ±k
+absence:bulunmayÄ±ÅŸ;yokluk
+absent minded:dalgÄ±n
 absent:yok
-absentee:(görevi başında,yoklamada vb. ) bulunmayan kimse
+absentee:(gÃ¶revi baÅŸÄ±nda,yoklamada vb. ) bulunmayan kimse
 absolute address:salt adres
 absolute code:makine dilindeki kod;mutlak kod
 absolute delay:mutlak gecikme
-absolute device:salt aygıt
+absolute device:salt aygÄ±t
 absolute error:mutlak hata
-absolute pressure:mutlak basınç
-absolute temperature:mutlak sıcaklık;salt sıcaklık
-absolute zero:mutlak sıfır;mutlak sıfır noktası
-absolute:mutlak;mükemmel;saltık;tam;salt
+absolute pressure:mutlak basÄ±nÃ§
+absolute temperature:mutlak sÄ±caklÄ±k;salt sÄ±caklÄ±k
+absolute zero:mutlak sÄ±fÄ±r;mutlak sÄ±fÄ±r noktasÄ±
+absolute:mutlak;mÃ¼kemmel;saltÄ±k;tam;salt
 absolutely:kesinlikle;tamamen;kesinlikle,kati surette;katiyen
 absolve:beraat ettirmek
-absorb:almak ve yansıtmamak;emmek;içine almak veya ısıya çevirmek;içine çekmek;soğurmak;emme;içine çekme;soğurulma;soğurum
-absorbant:emici;soğurucu
-absorbency:emici olma özelliği;emicilik
+absorb:almak ve yansÄ±tmamak;emmek;iÃ§ine almak veya Ä±sÄ±ya Ã§evirmek;iÃ§ine Ã§ekmek;soÄŸurmak;emme;iÃ§ine Ã§ekme;soÄŸurulma;soÄŸurum
+absorbant:emici;soÄŸurucu
+absorbency:emici olma Ã¶zelliÄŸi;emicilik
 absorbent:emici
-absorption:emme;içine çekme
-abstain:çekinmek;kaçınmak
-abstention:çekinme
-abstinence:perhiz;sakınma
+absorption:emme;iÃ§ine Ã§ekme
+abstain:Ã§ekinmek;kaÃ§Ä±nmak
+abstention:Ã§ekinme
+abstinence:perhiz;sakÄ±nma
 abstract symbol:soyut simge
-abstract syntax tree:soyut sözdizim ağacı
-abstract:ayırmak;çıkarmak;genel;kimyasal yöntemlerle ayırmak;özet;soyut
-abstracted:dalgın
-abstraction:ayırma;dalgınlık;soyutlama
-absurd:anlamsız;gülünç;manasız;saçma
-absurdity:anlamsızlık;delilik;gülünçlük;maskaralık
-absurdly:saçma bir şekilde
-abundance:bereket;bolluk;çokluk;servet;zenginlik
-abundant:çok bol
+abstract syntax tree:soyut sÃ¶zdizim aÄŸacÄ±
+abstract:ayÄ±rmak;Ã§Ä±karmak;genel;kimyasal yÃ¶ntemlerle ayÄ±rmak;Ã¶zet;soyut
+abstracted:dalgÄ±n
+abstraction:ayÄ±rma;dalgÄ±nlÄ±k;soyutlama
+absurd:anlamsÄ±z;gÃ¼lÃ¼nÃ§;manasÄ±z;saÃ§ma
+absurdity:anlamsÄ±zlÄ±k;delilik;gÃ¼lÃ¼nÃ§lÃ¼k;maskaralÄ±k
+absurdly:saÃ§ma bir ÅŸekilde
+abundance:bereket;bolluk;Ã§okluk;servet;zenginlik
+abundant:Ã§ok bol
 abundantly:bol bol
-abuse:ırza tecavüz etmek;kötü davranış;kötüye kullanma;küfür;sövüp saymak;yolsuzluk
-abusive:ağzı bozuk;yolsuz
-abyss:uçurum
-abyssal:okyanus derinliklerine ait;ölçmek için çok derin
+abuse:Ä±rza tecavÃ¼z etmek;kÃ¶tÃ¼ davranÄ±ÅŸ;kÃ¶tÃ¼ye kullanma;kÃ¼fÃ¼r;sÃ¶vÃ¼p saymak;yolsuzluk
+abusive:aÄŸzÄ± bozuk;yolsuz
+abyss:uÃ§urum
+abyssal:okyanus derinliklerine ait;Ã¶lÃ§mek iÃ§in Ã§ok derin
 acacia:akasya
-academic:eğitimsel;üniversiteye ait
-academical:bir üniversite veya kolleje ait
-accede:iktidara gelmek;kabul etmek;onaylamak;razı olmak
-accelerate:hızlandırmak
-accelerated test:hızlandırılmış test
-acceleration:hızlandırma;ivme
-accelerator:gaz pedalı;hızlandırıcı
-accent:aksan;aksan vermek;şive;vurgu;vurgulamak
-accept:almak;kabul etmek;kabullenmek;onaylamak;razı olmak;kabul ölçütleri;onama ölçütleri
+academic:eÄŸitimsel;Ã¼niversiteye ait
+academical:bir Ã¼niversite veya kolleje ait
+accede:iktidara gelmek;kabul etmek;onaylamak;razÄ± olmak
+accelerate:hÄ±zlandÄ±rmak
+accelerated test:hÄ±zlandÄ±rÄ±lmÄ±ÅŸ test
+acceleration:hÄ±zlandÄ±rma;ivme
+accelerator:gaz pedalÄ±;hÄ±zlandÄ±rÄ±cÄ±
+accent:aksan;aksan vermek;ÅŸive;vurgu;vurgulamak
+accept:almak;kabul etmek;kabullenmek;onaylamak;razÄ± olmak;kabul Ã¶lÃ§Ã¼tleri;onama Ã¶lÃ§Ã¼tleri
 acceptable:kabul edilebilir;makbul;uygun
-acceptance boundary:kabul sınırı
-acceptance probability:kabul olasılığı
-acceptance sampling:kabul örneklemesi
+acceptance boundary:kabul sÄ±nÄ±rÄ±
+acceptance probability:kabul olasÄ±lÄ±ÄŸÄ±
+acceptance sampling:kabul Ã¶rneklemesi
 acceptance:kabul;kabul edilme;uygun bulunma;uygun olma
-acceptor:alıcı
-access period:erişim dönemi
-access right:erişim hakkı
-access road:giriş yolu
-access time:erişim süresi
-access:erişim;erişmek;geçit;giriş;nöbet;yol
-accessible:elde edilebilir;erişilebilir;kolay bulunur;yanına varılabilir
-accession:erme;göreve gelme;tahta çıkma;ulaşma;varma
-accessory:aksesuar;ikinci derecede suçlu;suç ortağı;yardakçı;donatı
-accident:kaza;raslantı;tesadüf
-accidental:kaza eseri;raslantı eseri;raslantısal;tesadüfi
-accidentally:istemiyerek;kazara;rastgele;tesadüfen
-acclaim:alkışlamak
-acclamation:alkış;alkışlama
-acclimatization:yabancı iklime,ortama alışma
-acclimatize:alıştırmak;yeni/yabancı bir iklime/ortama alışmak/alıştırmak
-accolade:alkış;övgü
+acceptor:alÄ±cÄ±
+access period:eriÅŸim dÃ¶nemi
+access right:eriÅŸim hakkÄ±
+access road:giriÅŸ yolu
+access time:eriÅŸim sÃ¼resi
+access:eriÅŸim;eriÅŸmek;geÃ§it;giriÅŸ;nÃ¶bet;yol
+accessible:elde edilebilir;eriÅŸilebilir;kolay bulunur;yanÄ±na varÄ±labilir
+accession:erme;gÃ¶reve gelme;tahta Ã§Ä±kma;ulaÅŸma;varma
+accessory:aksesuar;ikinci derecede suÃ§lu;suÃ§ ortaÄŸÄ±;yardakÃ§Ä±;donatÄ±
+accident:kaza;raslantÄ±;tesadÃ¼f
+accidental:kaza eseri;raslantÄ± eseri;raslantÄ±sal;tesadÃ¼fi
+accidentally:istemiyerek;kazara;rastgele;tesadÃ¼fen
+acclaim:alkÄ±ÅŸlamak
+acclamation:alkÄ±ÅŸ;alkÄ±ÅŸlama
+acclimatization:yabancÄ± iklime,ortama alÄ±ÅŸma
+acclimatize:alÄ±ÅŸtÄ±rmak;yeni/yabancÄ± bir iklime/ortama alÄ±ÅŸmak/alÄ±ÅŸtÄ±rmak
+accolade:alkÄ±ÅŸ;Ã¶vgÃ¼
 accommodate oneself:intibak etmek;uymak
-accommodate:bağdaştırmak;barındırmak;başkasına iyilik etmek;birbirine uydurmak;uzlaştırmak;yer sağlamak;yer vermek;yerleştirmek
-accommodating:uygun;yardımcı;yardımsever
-accommodation:kalacak yer;rahatlık;uydurma;uyum;yatacak yer
-accompaniment:eşlik eden;eşlik etme;refakat
-accompany:eşlik etmek;refakat etmek
-accomplish:başarmak;tamamlamak
-according to:-e göre;-e uygun olarak;göre
+accommodate:baÄŸdaÅŸtÄ±rmak;barÄ±ndÄ±rmak;baÅŸkasÄ±na iyilik etmek;birbirine uydurmak;uzlaÅŸtÄ±rmak;yer saÄŸlamak;yer vermek;yerleÅŸtirmek
+accommodating:uygun;yardÄ±mcÄ±;yardÄ±msever
+accommodation:kalacak yer;rahatlÄ±k;uydurma;uyum;yatacak yer
+accompaniment:eÅŸlik eden;eÅŸlik etme;refakat
+accompany:eÅŸlik etmek;refakat etmek
+accomplish:baÅŸarmak;tamamlamak
+according to:-e gÃ¶re;-e uygun olarak;gÃ¶re
 according:uygun olarak
-account:hesap;hesap vermek;rapor;banka hesabı
-accumulator:akü;akümülatör;birikeç
-accuracy rating:doğruluk derecesi
-accuracy:doğruluk
-accurate:doğru;kesin;tam;yanlışsız
-ace:çok cesur savaş plotu;iskambilde birli/as
-ache:acımak;ağrı;ağrımak;sızı;sızlamak
-achieve:başarmak;elde etmek;kazanmak;ulaşmak;yapmak
-acknowledgment:onaylama;tasdik;teşekkür
-acoustic:yankılanım;yankılanımlı
-across:karşı tarafa,öte yana
-act:davranışta bulunmak;davranmak;eylem;hareket;hareket etmek
+account:hesap;hesap vermek;rapor;banka hesabÄ±
+accumulator:akÃ¼;akÃ¼mÃ¼latÃ¶r;birikeÃ§
+accuracy rating:doÄŸruluk derecesi
+accuracy:doÄŸruluk
+accurate:doÄŸru;kesin;tam;yanlÄ±ÅŸsÄ±z
+ace:Ã§ok cesur savaÅŸ plotu;iskambilde birli/as
+ache:acÄ±mak;aÄŸrÄ±;aÄŸrÄ±mak;sÄ±zÄ±;sÄ±zlamak
+achieve:baÅŸarmak;elde etmek;kazanmak;ulaÅŸmak;yapmak
+acknowledgment:onaylama;tasdik;teÅŸekkÃ¼r
+acoustic:yankÄ±lanÄ±m;yankÄ±lanÄ±mlÄ±
+across:karÅŸÄ± tarafa,Ã¶te yana
+act:davranÄ±ÅŸta bulunmak;davranmak;eylem;hareket;hareket etmek
 action and reaction:etki-tepki
-action bar:menü çubuğu
+action bar:menÃ¼ Ã§ubuÄŸu
 action:faaliyet;hareket
 actions:eylemler
-activate:etkinleştirmek;harekete geçirmek
-activator:canlandırıcı;etkinleştirici
-active:canlı;etkin;faal;hareketli
-actually:aslında,gerçekten
+activate:etkinleÅŸtirmek;harekete geÃ§irmek
+activator:canlandÄ±rÄ±cÄ±;etkinleÅŸtirici
+active:canlÄ±;etkin;faal;hareketli
+actually:aslÄ±nda,gerÃ§ekten
 adaptation:uyarlama
-addict:bağımlı;tiryaki
-addictive:bağımlılık yapan
+addict:baÄŸÄ±mlÄ±;tiryaki
+addictive:baÄŸÄ±mlÄ±lÄ±k yapan
 addition:ekleme;ilave;katma;toplama
 additional information:ek bilgi
 additional:ek;eklenilen;ekstra;ilave
-additive:katkı;katkı maddesi
+additive:katkÄ±;katkÄ± maddesi
 add-on:eklenti
 addressing:adresleme
 adequate:uygun;yeterli
 adequately:yeterli derecede
-admit:içeriye almak;itiraf etmek
-adorable:çekici;çok güzel;sevimli;şirin
-advanced:gelişmiş;ilerde;ileri
-advancing:gelişen;ilerleyen
-advisable:akıllıca;makul;mantıklı;tavsiye edilebilir;uygun
-afraid:korkmuş
-after all:herşeye karşın,yine de,bununla beraber
+admit:iÃ§eriye almak;itiraf etmek
+adorable:Ã§ekici;Ã§ok gÃ¼zel;sevimli;ÅŸirin
+advanced:geliÅŸmiÅŸ;ilerde;ileri
+advancing:geliÅŸen;ilerleyen
+advisable:akÄ±llÄ±ca;makul;mantÄ±klÄ±;tavsiye edilebilir;uygun
+afraid:korkmuÅŸ
+after all:herÅŸeye karÅŸÄ±n,yine de,bununla beraber
 after:sonra
-afternoon:öğleden sonra
+afternoon:Ã¶ÄŸleden sonra
 afterwards:daha sonra;sonradan
-again:birdaha;bundan başka;gene;tekrar;yeniden;yine
-against:karşı,aleyhinde
-age:çağ;devir;dönem;yaş
-aggressive:agresif;saldırgan
-aimless:amaçsız;başıboş
-aimlessly:amaçsızca
-akin:benzer;yakın
-alert:alarm işareti;alarma geçmek;dikkatli;hazır olmak;ikaz etmek;tehlikeye karşı uyarı;tetik;uyanık
+again:birdaha;bundan baÅŸka;gene;tekrar;yeniden;yine
+against:karÅŸÄ±,aleyhinde
+age:Ã§aÄŸ;devir;dÃ¶nem;yaÅŸ
+aggressive:agresif;saldÄ±rgan
+aimless:amaÃ§sÄ±z;baÅŸÄ±boÅŸ
+aimlessly:amaÃ§sÄ±zca
+akin:benzer;yakÄ±n
+alert:alarm iÅŸareti;alarma geÃ§mek;dikkatli;hazÄ±r olmak;ikaz etmek;tehlikeye karÅŸÄ± uyarÄ±;tetik;uyanÄ±k
 algebra:cebir
 alias:sahte isim;takma isim
 alignment:hiza;hizalamak
 alimentation:besleme;beslenme
-all:bütün;hepsi;tümü;bütün,hep,tümü
-allocate:bölüştürmek;dağıtma;paylaştırmak;tahsis etmek
-allow:bırakmak;izin vermek;sağlamak
-ally:arkadaş;dost;müttefik
+all:bÃ¼tÃ¼n;hepsi;tÃ¼mÃ¼;bÃ¼tÃ¼n,hep,tÃ¼mÃ¼
+allocate:bÃ¶lÃ¼ÅŸtÃ¼rmek;daÄŸÄ±tma;paylaÅŸtÄ±rmak;tahsis etmek
+allow:bÄ±rakmak;izin vermek;saÄŸlamak
+ally:arkadaÅŸ;dost;mÃ¼ttefik
 almost:hemen hemen
-alone:sadece,yalnızca
-already:daha önce;evvelce;şimdiden;zaten
-also:aynı zamanda;ayrıca;bir de;da;de;hem
+alone:sadece,yalnÄ±zca
+already:daha Ã¶nce;evvelce;ÅŸimdiden;zaten
+also:aynÄ± zamanda;ayrÄ±ca;bir de;da;de;hem
 although:her ne kadar;ise de;olmakla beraber;olmakla beraber,her ne kadar,ise de
-altogether:bütünüyle,tümden
+altogether:bÃ¼tÃ¼nÃ¼yle,tÃ¼mden
 always:hep,her zaman
-amazing:şaşırtıcı
-ambient:çevre;çevreleyen;kuşatan
-ambition:büyük istek;ihtiras;tutku
-ambitious:hırslı;istekli;tutkulu
+amazing:ÅŸaÅŸÄ±rtÄ±cÄ±
+ambient:Ã§evre;Ã§evreleyen;kuÅŸatan
+ambition:bÃ¼yÃ¼k istek;ihtiras;tutku
+ambitious:hÄ±rslÄ±;istekli;tutkulu
 ammonia:amonyak
 ammonium:amonyum
-among:arasında,içinde,ek olarak,yanında
+among:arasÄ±nda,iÃ§inde,ek olarak,yanÄ±nda
 amount:miktar;tutar
-ample:bol;büyük;geniş;gerekenden çok;yeterli
-amulet:muska;nazarlık
-amusement:eğlence;eğlenme;oyalanma
-an:bir(ünlü ile başlayan sözcüklerden önce)
-analogy:benzerlik;kıyas
-analyse:analiz etmek;çözümlemek
+ample:bol;bÃ¼yÃ¼k;geniÅŸ;gerekenden Ã§ok;yeterli
+amulet:muska;nazarlÄ±k
+amusement:eÄŸlence;eÄŸlenme;oyalanma
+an:bir(Ã¼nlÃ¼ ile baÅŸlayan sÃ¶zcÃ¼klerden Ã¶nce)
+analogy:benzerlik;kÄ±yas
+analyse:analiz etmek;Ã§Ã¶zÃ¼mlemek
 analytical:analitik
-anchor bolt:ankraj civatası;tespit civatası
-anchor:çapa;gemi demiri
+anchor bolt:ankraj civatasÄ±;tespit civatasÄ±
+anchor:Ã§apa;gemi demiri
 and:ve,ile,de,daha sonra;ve
-anger:gazap;hiddet;öfke
-animated:canlandırılmış;canlı;canlı neşeli;sevimli hoş
-annuity:yıllık gelir;yıllık taksit
-another:başka bir,bir daha
-anticipate:beklemek;geleceği görmek;önce davranmak;önceden tahmin etmek;öneceden görmek;sezinlemek;söylenmeden yapmak;ummak
-anxiety:endişe;kaygı;korku;şiddetli istek
-any:azıcık;biri;birisi;herhangi birisi;hiç;kimse;herhangi,biraz,birkaç,hiç
+anger:gazap;hiddet;Ã¶fke
+animated:canlandÄ±rÄ±lmÄ±ÅŸ;canlÄ±;canlÄ± neÅŸeli;sevimli hoÅŸ
+annuity:yÄ±llÄ±k gelir;yÄ±llÄ±k taksit
+another:baÅŸka bir,bir daha
+anticipate:beklemek;geleceÄŸi gÃ¶rmek;Ã¶nce davranmak;Ã¶nceden tahmin etmek;Ã¶neceden gÃ¶rmek;sezinlemek;sÃ¶ylenmeden yapmak;ummak
+anxiety:endiÅŸe;kaygÄ±;korku;ÅŸiddetli istek
+any:azÄ±cÄ±k;biri;birisi;herhangi birisi;hiÃ§;kimse;herhangi,biraz,birkaÃ§,hiÃ§
 anybody:her hangi biri
-anymore:artık;daha çok;daha fazla
-anything:herhangi bir şey;hiç bir şey;herhangi birşey,birşey,hiçbirşey
-apart from:dışında,ek olarak
-apologize:özür dilemek
-apology:özür
-appeal:çekmek;hoşuna gitmek;sarmak
-appetite:arzu;istek;iştah
-application:başvuru;kullanma;talep;uygulama
-apply:başvurmak;müracat etmek;uygulamak
+anymore:artÄ±k;daha Ã§ok;daha fazla
+anything:herhangi bir ÅŸey;hiÃ§ bir ÅŸey;herhangi birÅŸey,birÅŸey,hiÃ§birÅŸey
+apart from:dÄ±ÅŸÄ±nda,ek olarak
+apologize:Ã¶zÃ¼r dilemek
+apology:Ã¶zÃ¼r
+appeal:Ã§ekmek;hoÅŸuna gitmek;sarmak
+appetite:arzu;istek;iÅŸtah
+application:baÅŸvuru;kullanma;talep;uygulama
+apply:baÅŸvurmak;mÃ¼racat etmek;uygulamak
 appointment:randevu
 appreciate:takdir etmek
-apprentice:çırak
-approach:ilerlemek;yakınlaşma;yaklaşma;yanaşma
-approximate:yaklaşık
-approximately:aşağı yukarı;yaklaşık olarak
+apprentice:Ã§Ä±rak
+approach:ilerlemek;yakÄ±nlaÅŸma;yaklaÅŸma;yanaÅŸma
+approximate:yaklaÅŸÄ±k
+approximately:aÅŸaÄŸÄ± yukarÄ±;yaklaÅŸÄ±k olarak
 aqueous:sulu;suyla ilgili
-arbitrarily:isteğe göre;keyfi olarak
-arc:ark (akkor durumundaki ışık);kavis;yay
-area:alan;bölge;saha;yüzölçümü
-argument:delil;düşünce;kanıt;münakaşa;tartışma;tez
-arise:ayağa kalkmak;doğmak;doğrulmak;kalkmak;kaynaklanmak;ortaya çıkmak;yükselmek
-armor:zırh
-armour:zırh
-around:aşağı yukarı,yaklaşık
-arrive:gelmek;ulaşmak;varmak
+arbitrarily:isteÄŸe gÃ¶re;keyfi olarak
+arc:ark (akkor durumundaki Ä±ÅŸÄ±k);kavis;yay
+area:alan;bÃ¶lge;saha;yÃ¼zÃ¶lÃ§Ã¼mÃ¼
+argument:delil;dÃ¼ÅŸÃ¼nce;kanÄ±t;mÃ¼nakaÅŸa;tartÄ±ÅŸma;tez
+arise:ayaÄŸa kalkmak;doÄŸmak;doÄŸrulmak;kalkmak;kaynaklanmak;ortaya Ã§Ä±kmak;yÃ¼kselmek
+armor:zÄ±rh
+armour:zÄ±rh
+around:aÅŸaÄŸÄ± yukarÄ±,yaklaÅŸÄ±k
+arrive:gelmek;ulaÅŸmak;varmak
 arrow:ok
 arsenal:cephanelik;silah deposu
 art:sanat
 as ... as:kadar
-as ... so:olduğu gibi
-as a result of:..nın sonucu olarak
-as a result:sonuç olarak
-as a rule:çoğunlukla,genellikle,kural olarak
-as before:eskiden olduğu gibi
-as far as (he/she/ı) be concerned:ona/bana kalırsa,bana göre,benim görüşüme göre
-as far as (ı/he/we) know:bildiği(m) kadarı ile
-as far as ...concerned:... söz konusu olduğunda
-as ı understand it:anladığım kadarı ile
-as opposed to:..nin aksine,tersine,..e karşıt olarak
+as ... so:olduÄŸu gibi
+as a result of:..nÄ±n sonucu olarak
+as a result:sonuÃ§ olarak
+as a rule:Ã§oÄŸunlukla,genellikle,kural olarak
+as before:eskiden olduÄŸu gibi
+as far as (he/she/Ä±) be concerned:ona/bana kalÄ±rsa,bana gÃ¶re,benim gÃ¶rÃ¼ÅŸÃ¼me gÃ¶re
+as far as (Ä±/he/we) know:bildiÄŸi(m) kadarÄ± ile
+as far as ...concerned:... sÃ¶z konusu olduÄŸunda
+as Ä± understand it:anladÄ±ÄŸÄ±m kadarÄ± ile
+as opposed to:..nin aksine,tersine,..e karÅŸÄ±t olarak
 as regards:ilgili olarak,-e gelince
 as soon as:..-mez,..-maz,yapar yapmaz,derhal,hemen
-as to:bakımından
-as well as:..-e ilaveten,ile beraber,olduğu kadar
-as:1-iken,sırasında 2-nedeniyle,mademki,çünkü 3- gibi 4- olarak 5- her ne kadar, ..dığı halde
+as to:bakÄ±mÄ±ndan
+as well as:..-e ilaveten,ile beraber,olduÄŸu kadar
+as:1-iken,sÄ±rasÄ±nda 2-nedeniyle,mademki,Ã§Ã¼nkÃ¼ 3- gibi 4- olarak 5- her ne kadar, ..dÄ±ÄŸÄ± halde
 asbestos:asbest
-ascending:yukarı çıkma
+ascending:yukarÄ± Ã§Ä±kma
 aside:kenara;yan tarafa;yana
 ask:sormak;istemek;talep etmek
-aspect:açı;bakım;görünüş;görüş;yan;yön
-assailant:saldırgan
-asset:mal;servet;varlık
-assignment:atama;ayırma;tayin;tayin etme
-assistance:destek;yardım
-associate:ilişkilendirmek
-associated:ilişkilendirilmiş;ilişkili
+aspect:aÃ§Ä±;bakÄ±m;gÃ¶rÃ¼nÃ¼ÅŸ;gÃ¶rÃ¼ÅŸ;yan;yÃ¶n
+assailant:saldÄ±rgan
+asset:mal;servet;varlÄ±k
+assignment:atama;ayÄ±rma;tayin;tayin etme
+assistance:destek;yardÄ±m
+associate:iliÅŸkilendirmek
+associated:iliÅŸkilendirilmiÅŸ;iliÅŸkili
 assume:farzetmek;varsaymak
-at all costs:ne pahasına olursa olsun
-at all:hiç,hiçbir surette
-at first:önce,başlangıçta,evvela
-at least:en azından,hiç olmazsa
-at once:derhal,hemen,aynı anda
+at all costs:ne pahasÄ±na olursa olsun
+at all:hiÃ§,hiÃ§bir surette
+at first:Ã¶nce,baÅŸlangÄ±Ã§ta,evvela
+at least:en azÄ±ndan,hiÃ§ olmazsa
+at once:derhal,hemen,aynÄ± anda
 at the end:sonunda(yol/zaman)
-at the turn of:dönüş,devir anında
+at the turn of:dÃ¶nÃ¼ÅŸ,devir anÄ±nda
 at:-de,-da
 atmospheric:atmosferik;atmosferle ilgili
-attain:erişmek;ermek;ulaşmak;varmak
-attempt:denemek;girişimde bulunmak
-attention:bakım;dikkat;ilgi;uyarı
-attract:cezbetmek;çekmek
-attractive:cazip;çekici;hoş
+attain:eriÅŸmek;ermek;ulaÅŸmak;varmak
+attempt:denemek;giriÅŸimde bulunmak
+attention:bakÄ±m;dikkat;ilgi;uyarÄ±
+attract:cezbetmek;Ã§ekmek
+attractive:cazip;Ã§ekici;hoÅŸ
 auburn:kestane rengi;koyu kestane;kumral
-audible:duyulabilir;işitilir
-austenitic:östenitik
+audible:duyulabilir;iÅŸitilir
+austenitic:Ã¶stenitik
 authentication:kimlik belirleme;kimlik denetimi
-author:yapan;yaratıcı;yazar
+author:yapan;yaratÄ±cÄ±;yazar
 authorized:yetkili
-autogenous:kendi kendine oluşan;kendiliğinden olan;otojen
-automatically:kendiliğinden;otomatik olarak
-autonomous:kendi kendini idare eden;otonom;özerk
+autogenous:kendi kendine oluÅŸan;kendiliÄŸinden olan;otojen
+automatically:kendiliÄŸinden;otomatik olarak
+autonomous:kendi kendini idare eden;otonom;Ã¶zerk
 autumn:sonbahar
-available:geçerli;hazır;mevcut;müsait
-aviation:havacılık
-avoid:-den kurtulmak;-i önlemek;sakınmak
+available:geÃ§erli;hazÄ±r;mevcut;mÃ¼sait
+aviation:havacÄ±lÄ±k
+avoid:-den kurtulmak;-i Ã¶nlemek;sakÄ±nmak
 awake:uyanmak
-aware:haberdar;vakıf;farkında;bilinçli;farkında olan
-away:hemen, şimdi;uzağa;uzakta
+aware:haberdar;vakÄ±f;farkÄ±nda;bilinÃ§li;farkÄ±nda olan
+away:hemen, ÅŸimdi;uzaÄŸa;uzakta
 axe:balta
-back crossing:geri çaprazlama
+back crossing:geri Ã§aprazlama
 back mutation:geri mutasyon
-back pressure:açık basınç
+back pressure:aÃ§Ä±k basÄ±nÃ§
 backing:arka;destek
 backlog:ardbirikim
-backpack:sırt çantası
+backpack:sÄ±rt Ã§antasÄ±
 backup:yedek;yedekleme;yedeklemek
-bacterial:virüs bakteriyofaj
+bacterial:virÃ¼s bakteriyofaj
 balance:denge;dengelemek
 ball bearing:rulman
 banana:muz
-bar:çubuk;demir ya da tahta parmaklık;sırık
-barbiturate:yatıştırıcı
-barrel:fıçı;namlu;varil
+bar:Ã§ubuk;demir ya da tahta parmaklÄ±k;sÄ±rÄ±k
+barbiturate:yatÄ±ÅŸtÄ±rÄ±cÄ±
+barrel:fÄ±Ã§Ä±;namlu;varil
 barrier:engel
-base:daha önce;eskiden,önce
+base:daha Ã¶nce;eskiden,Ã¶nce
 basic:esas;temel
-be included in:içinde,dahil
+be included in:iÃ§inde,dahil
 bead:boncuk
-beam:dalga;ışık;ışık demeti;ışın;sinyal
-bearing sleeve:yatak kovanı
-bearing:mil yatağı;yatak
-beat:darbe;devriye;dövmek;vurmak;vuruş;yenmek
-because of:nedeniyle,yüzünden,-den dolayı
-because:çünkü
+beam:dalga;Ä±ÅŸÄ±k;Ä±ÅŸÄ±k demeti;Ä±ÅŸÄ±n;sinyal
+bearing sleeve:yatak kovanÄ±
+bearing:mil yataÄŸÄ±;yatak
+beat:darbe;devriye;dÃ¶vmek;vurmak;vuruÅŸ;yenmek
+because of:nedeniyle,yÃ¼zÃ¼nden,-den dolayÄ±
+because:Ã§Ã¼nkÃ¼
 bedridden:yatalak
-before:daha önce
+before:daha Ã¶nce
 befouled:kirli
 behave:davranmak;hareket etmek
-behind:destek,ardında
-belief:güven;inanç
+behind:destek,ardÄ±nda
+belief:gÃ¼ven;inanÃ§
 belong:ait olmak
-below:aşağı;aşağıda
-belt:kayış;kemer
-beneficial:faydalı;yararlı
-benefit:çıkar;fayda;kazanç;yarar
-beside:yanına;yanında
-besides:..den başka,ek olarak
+below:aÅŸaÄŸÄ±;aÅŸaÄŸÄ±da
+belt:kayÄ±ÅŸ;kemer
+beneficial:faydalÄ±;yararlÄ±
+benefit:Ã§Ä±kar;fayda;kazanÃ§;yarar
+beside:yanÄ±na;yanÄ±nda
+besides:..den baÅŸka,ek olarak
 best:en iyi
 better:daha iyi
-betterment:düzeltme;iyileşme
-between:arasında
-bevel:eğmek;pah;pahlamak;pahlanmış kenar
-beyond:ileri;ötesine;öteye
-binary:çift;ikili;ikilik
-binder:bağlayıcı
+betterment:dÃ¼zeltme;iyileÅŸme
+between:arasÄ±nda
+bevel:eÄŸmek;pah;pahlamak;pahlanmÄ±ÅŸ kenar
+beyond:ileri;Ã¶tesine;Ã¶teye
+binary:Ã§ift;ikili;ikilik
+binder:baÄŸlayÄ±cÄ±
 biogas:biyogaz
-birth:doğma;doğum;doğurma;köken;nesil;soy
-bishop:(satrançta) fil;piskopos
+birth:doÄŸma;doÄŸum;doÄŸurma;kÃ¶ken;nesil;soy
+bishop:(satranÃ§ta) fil;piskopos
 bizarre:garip;tuhaf
 blacksmith:demirci
-blanket:battaniye;genel;geniş kapsamlı;kapsamlı;örtü
-bleak:çıplak;kasvetli;rüzgarlı;soğuk;umutsuz
-bleary:kızarmış;sulanmış
-blind:anlayışsız;dikkatsiz;düşüncesiz;kör
-blow:esmek;üflemek
-blown:soluğu kesilmiş;şişmiş
-blue:kederli;mavi;üzgün
-blush:kızarmak;utanmak
+blanket:battaniye;genel;geniÅŸ kapsamlÄ±;kapsamlÄ±;Ã¶rtÃ¼
+bleak:Ã§Ä±plak;kasvetli;rÃ¼zgarlÄ±;soÄŸuk;umutsuz
+bleary:kÄ±zarmÄ±ÅŸ;sulanmÄ±ÅŸ
+blind:anlayÄ±ÅŸsÄ±z;dikkatsiz;dÃ¼ÅŸÃ¼ncesiz;kÃ¶r
+blow:esmek;Ã¼flemek
+blown:soluÄŸu kesilmiÅŸ;ÅŸiÅŸmiÅŸ
+blue:kederli;mavi;Ã¼zgÃ¼n
+blush:kÄ±zarmak;utanmak
 bolt:civata
 bond:bono;tahvil
 book:kitap
 bookmark:yer imi
-bookshop:kitapçı
+bookshop:kitapÃ§Ä±
 bookworm:kitapkurdu
-booze:içki
-bore:çap;delik;delmek;kalibre;oymak;oyuk
+booze:iÃ§ki
+bore:Ã§ap;delik;delmek;kalibre;oymak;oyuk
 both ... and:hem ... hem de,ikisi de
 both:her iki;her ikisi;her ikisi de
-bottom:alt;dip;etek;kıç
+bottom:alt;dip;etek;kÄ±Ã§
 bound to:kesin,mutlaka
-boundary:hudut;sınır
+boundary:hudut;sÄ±nÄ±r
 boutique:butik
 bow:yay
-bracket:destek;dirsek;hedefi makas içine almak;köşebent;paranteze almak
-bramble:böğürtlen çalısı
-brand:damga;işaret;marka;damgalamak
-brass:pirinç metali
+bracket:destek;dirsek;hedefi makas iÃ§ine almak;kÃ¶ÅŸebent;paranteze almak
+bramble:bÃ¶ÄŸÃ¼rtlen Ã§alÄ±sÄ±
+brand:damga;iÅŸaret;marka;damgalamak
+brass:pirinÃ§ metali
 brave:cesur;kahraman
-breastbone:göğüs kemiği
+breastbone:gÃ¶ÄŸÃ¼s kemiÄŸi
 breathe:nefes almak;solumak
 breeze:esinti;meltem
-brethren:din kardeşleri;kardeşler
-bridge:köprü
-brief:evrak;kısa;kısa ve öz;yazılı belge
-broad:enli;genel;geniş
-brood:aile;bir kuluçkada çıkan yavrular;civcivler;damızlık;derin derin düşünmek;kuluçkaya yatmak
-browser:tarayıcı
-budget:bütçe
-buffer:arabellek;tampon;tampon görevi gören şey
+brethren:din kardeÅŸleri;kardeÅŸler
+bridge:kÃ¶prÃ¼
+brief:evrak;kÄ±sa;kÄ±sa ve Ã¶z;yazÄ±lÄ± belge
+broad:enli;genel;geniÅŸ
+brood:aile;bir kuluÃ§kada Ã§Ä±kan yavrular;civcivler;damÄ±zlÄ±k;derin derin dÃ¼ÅŸÃ¼nmek;kuluÃ§kaya yatmak
+browser:tarayÄ±cÄ±
+budget:bÃ¼tÃ§e
+buffer:arabellek;tampon;tampon gÃ¶revi gÃ¶ren ÅŸey
 bulkiness:hacimlilik
-bullet:kurşun;mermi
-burly:iriyarı;yapılı
-burn:tutuşmak;yakmak;yanmak
-burr:çapak
-bus:otobüs
-bust:büst;göğüs
-busy:faal;işlek;kullanımda;meşgul
+bullet:kurÅŸun;mermi
+burly:iriyarÄ±;yapÄ±lÄ±
+burn:tutuÅŸmak;yakmak;yanmak
+burr:Ã§apak
+bus:otobÃ¼s
+bust:bÃ¼st;gÃ¶ÄŸÃ¼s
+busy:faal;iÅŸlek;kullanÄ±mda;meÅŸgul
 but one:bir sonraki
 but:ama,fakat,yine de
-by all means:elbette,kuşkusuz,şüphesiz
-by and large:genel olarak,genellikle,tüm olarak ele alınırsa
-by far:büyük bir farkla
-by the time:... den önce,daha geç değil
-by value:değerine göre,değer olarak
-by:yoluyla,ile,tarafından,-erek,-arak,-e kadar,daha önce,... olmadan
-byproduct:yan ürün
+by all means:elbette,kuÅŸkusuz,ÅŸÃ¼phesiz
+by and large:genel olarak,genellikle,tÃ¼m olarak ele alÄ±nÄ±rsa
+by far:bÃ¼yÃ¼k bir farkla
+by the time:... den Ã¶nce,daha geÃ§ deÄŸil
+by value:deÄŸerine gÃ¶re,deÄŸer olarak
+by:yoluyla,ile,tarafÄ±ndan,-erek,-arak,-e kadar,daha Ã¶nce,... olmadan
+byproduct:yan Ã¼rÃ¼n
 calorie:kalori
-can:-e bilmek;kap;konserve kutusu;kutu;gücü yetmek,yapabilmek,olasılık anlatır
-cancel:iptal;iptal etmek;vazgeç
+can:-e bilmek;kap;konserve kutusu;kutu;gÃ¼cÃ¼ yetmek,yapabilmek,olasÄ±lÄ±k anlatÄ±r
+cancel:iptal;iptal etmek;vazgeÃ§
 canned:konserve
 capability:kabiliyet;kapasite;yetenek
-capillary:kılcal;kılcal damar
+capillary:kÄ±lcal;kÄ±lcal damar
 capsicum:biber
-captivate:büyülemek;çekmek
+captivate:bÃ¼yÃ¼lemek;Ã§ekmek
 carbon:karbon
-care:kaygı;aldırış;endişe;merak;tasa;itina;özen
-career:kariyer;meslek;meslek yaşamı
-careful:dikkatli;özenli
-carefully:dikkatlice;özenle
+care:kaygÄ±;aldÄ±rÄ±ÅŸ;endiÅŸe;merak;tasa;itina;Ã¶zen
+career:kariyer;meslek;meslek yaÅŸamÄ±
+careful:dikkatli;Ã¶zenli
+carefully:dikkatlice;Ã¶zenle
 carp:sazan
-carry out:başarmak;tamamlamak;icra etmek;menzil
+carry out:baÅŸarmak;tamamlamak;icra etmek;menzil
 case of:durum;husus;olay
-case:çanta;dava;durum;hal;kasa;kutulamak;olay;sorun
-casing:gövde
-cast:biçim vermek;döküm;fırlatmak;kalıp;rol vermek
+case:Ã§anta;dava;durum;hal;kasa;kutulamak;olay;sorun
+casing:gÃ¶vde
+cast:biÃ§im vermek;dÃ¶kÃ¼m;fÄ±rlatmak;kalÄ±p;rol vermek
 castaway:deniz kazazedesi
 catastrophe:afet;facia;felaket
 catastrophic:feci;felaket getiren;felaket gibi;felaketli
-category:kategory;sınıf
+category:kategory;sÄ±nÄ±f
 cause:neden;sebep;dava;-e neden olmak
-cavitation:boşluk oluşumu;kavitasyon;oyma
-cavity:boşluk;çukur;kovuk;oyuk
+cavitation:boÅŸluk oluÅŸumu;kavitasyon;oyma
+cavity:boÅŸluk;Ã§ukur;kovuk;oyuk
 cease:bitirmek;bitmek;durmak
 ceiling:tavan
 central:merkezi
@@ -478,1793 +478,1793 @@ certain:kati;kesin
 chain:zincir;zincire vurmak;zincirlemek
 challenge:meydan okuma
 chandelier:avize
-chant:dinsel şarkı;ilahi söylemek
-characteristic:karakteristik;özellik
-charmed:büyülemek
-chassis:şase
+chant:dinsel ÅŸarkÄ±;ilahi sÃ¶ylemek
+characteristic:karakteristik;Ã¶zellik
+charmed:bÃ¼yÃ¼lemek
+chassis:ÅŸase
 chattering:laflamak
-chauffeur:özel şöför
-cheap:basit;değersiz;kalitesiz;kolay;ucuz
-check:denetim;denetlemek;durdurma;engel;gözden geçirmek;kontrol;kontrol etmek
+chauffeur:Ã¶zel ÅŸÃ¶fÃ¶r
+cheap:basit;deÄŸersiz;kalitesiz;kolay;ucuz
+check:denetim;denetlemek;durdurma;engel;gÃ¶zden geÃ§irmek;kontrol;kontrol etmek
 chemical:kimyasal;kimyasal madde
-chess:satranç
+chess:satranÃ§
 chlorine:klor;klorin
-cipher:şifre
-ciphering:şifreleme
-circuit:çevrim;devre;dolaşım;dolaşma
-circumstance:durum;koşul
+cipher:ÅŸifre
+ciphering:ÅŸifreleme
+circuit:Ã§evrim;devre;dolaÅŸÄ±m;dolaÅŸma
+circumstance:durum;koÅŸul
 circus:sirk
-clamber:tırmanmak
-clamour:gürültü;patırtı
-clamping:kenetlemek;bağlama;sıkma
-classmate:sınıf arkadaşı
-claustrophobia:kapalı yer korkusu;klostrofobi
+clamber:tÄ±rmanmak
+clamour:gÃ¼rÃ¼ltÃ¼;patÄ±rtÄ±
+clamping:kenetlemek;baÄŸlama;sÄ±kma
+classmate:sÄ±nÄ±f arkadaÅŸÄ±
+claustrophobia:kapalÄ± yer korkusu;klostrofobi
 clean:temiz;temizlemek
-client:alıcı;istemci;müşteri
+client:alÄ±cÄ±;istemci;mÃ¼ÅŸteri
 climate:hava;iklim
-climb:tırmanmak
+climb:tÄ±rmanmak
 clock:masa/duvar saati;saat
-clockwise:saat yönünde
-close:bitişik;kapatmak;yakın
-cluster:grup;küme;kümelenmek
-clutter:dağıtmak;gürültü;karışıklık;patırtı;yığın;yığmak
+clockwise:saat yÃ¶nÃ¼nde
+close:bitiÅŸik;kapatmak;yakÄ±n
+cluster:grup;kÃ¼me;kÃ¼melenmek
+clutter:daÄŸÄ±tmak;gÃ¼rÃ¼ltÃ¼;karÄ±ÅŸÄ±klÄ±k;patÄ±rtÄ±;yÄ±ÄŸÄ±n;yÄ±ÄŸmak
 cock:musluk
 coconut:hindistancevizi
-code:kod;kodlamak;şifre;şifre ile yazmak;şifrelemek
-coherent:birbirini tutan;kolay anlaşılır;mantıklı;tutarlı;uyumlu;yapışık;yapışkan
-cold:soğuk
-colder:daha soğuk;soğuk
-colleague:meslektaş
-collection:koleksiyon;toplama;yığın
+code:kod;kodlamak;ÅŸifre;ÅŸifre ile yazmak;ÅŸifrelemek
+coherent:birbirini tutan;kolay anlaÅŸÄ±lÄ±r;mantÄ±klÄ±;tutarlÄ±;uyumlu;yapÄ±ÅŸÄ±k;yapÄ±ÅŸkan
+cold:soÄŸuk
+colder:daha soÄŸuk;soÄŸuk
+colleague:meslektaÅŸ
+collection:koleksiyon;toplama;yÄ±ÄŸÄ±n
 cologne:kolonya
 colorless:renksiz;solgun;soluk
-column:direk;kolon;sütun
+column:direk;kolon;sÃ¼tun
 combustion:yanma
-comma:virgül
-commemorate:anısı olmak;anısına olmak;anısını kutlamak;anmak
-comment:yorum;açıklama
+comma:virgÃ¼l
+commemorate:anÄ±sÄ± olmak;anÄ±sÄ±na olmak;anÄ±sÄ±nÄ± kutlamak;anmak
+comment:yorum;aÃ§Ä±klama
 commerce:ticaret
-commodity:eşya;hammadde;mal;yararlı şey
-common:genel;ortak;yaygın
-compactibility:sıkışabilirlik
-companion:arkadaş;el kitabı;kılavuz;yardımcı;yoldaş
-company:firma;grup;ortaklık;şirket
-compare:karşılaştırmak;kıyaslamak
+commodity:eÅŸya;hammadde;mal;yararlÄ± ÅŸey
+common:genel;ortak;yaygÄ±n
+compactibility:sÄ±kÄ±ÅŸabilirlik
+companion:arkadaÅŸ;el kitabÄ±;kÄ±lavuz;yardÄ±mcÄ±;yoldaÅŸ
+company:firma;grup;ortaklÄ±k;ÅŸirket
+compare:karÅŸÄ±laÅŸtÄ±rmak;kÄ±yaslamak
 compel:mecbur etmek;zorlamak
 compelled:mecbur
-compensate:bedel;bedelini ödemek;karşılık;telafi etmek
-compete:rekabet etmek;yarışmak
+compensate:bedel;bedelini Ã¶demek;karÅŸÄ±lÄ±k;telafi etmek
+compete:rekabet etmek;yarÄ±ÅŸmak
 compilation:derleme
-complaint:şikayet;yakınma
+complaint:ÅŸikayet;yakÄ±nma
 complete:eksiksiz;tam;tamam;tamamlamak
 compliment:iltifat etmek;kutlamak;tebrik etmek
-component:bileşen;eleman;parça
-composition:bileşim;bir araya getirme;derleme;dizgi;düzenleme;kompozisyon;tertip;yapıt
-compound:bileşik;duvarla çevrili binalar topluluğu
-compulsory:mecburi;yükümlü;zorunlu
-concept:fikir;genel düşünce;genel kavram;görüş
-concern:ilgi;ilgilendirmek;iş;kaygı;merak;şirket;tasa
-concerning:ilişkin,ilgili olarak
+component:bileÅŸen;eleman;parÃ§a
+composition:bileÅŸim;bir araya getirme;derleme;dizgi;dÃ¼zenleme;kompozisyon;tertip;yapÄ±t
+compound:bileÅŸik;duvarla Ã§evrili binalar topluluÄŸu
+compulsory:mecburi;yÃ¼kÃ¼mlÃ¼;zorunlu
+concept:fikir;genel dÃ¼ÅŸÃ¼nce;genel kavram;gÃ¶rÃ¼ÅŸ
+concern:ilgi;ilgilendirmek;iÅŸ;kaygÄ±;merak;ÅŸirket;tasa
+concerning:iliÅŸkin,ilgili olarak
 concert:birlik;uyum
 conclusion:bitim;karar;son
-condition:durum;hal;koşul;şart;vaziyet
-conditional:koşullu;şarta bağlı;şartlı
-conduction:iletme;kondüksiyon
+condition:durum;hal;koÅŸul;ÅŸart;vaziyet
+conditional:koÅŸullu;ÅŸarta baÄŸlÄ±;ÅŸartlÄ±
+conduction:iletme;kondÃ¼ksiyon
 conductive:iletici;iletken
-configuration:biçim;şekil
-confirm:doğrulamak;teyit etmek
-confirmation:doğrulayıcı şey;kanıt;doğrulama;doğrulayıcı şey;kanıt;doğrulama;doğrulayıcı şey;kanıt;doğrulama;doğrulayıcı şey;kanıt;doğrulama;doğrulayıcı şey;kanıt
-conjecture:farzetmek;sanı;sanmak;tahmin;tahmin etmek;varsayım;zan
-conscious:bilinçli;kendinde
-consciousness:bilinç
-consequently:dolayısıyla
-consider:düşünmek;göz önünde tutmak;dikkate almak
-considerably:epeyce;oldukça
-considered:dikkate alınan
-consistent:birbirine uygun;devamlı;istikrarlı;tutarlı
+configuration:biÃ§im;ÅŸekil
+confirm:doÄŸrulamak;teyit etmek
+confirmation:doÄŸrulayÄ±cÄ± ÅŸey;kanÄ±t;doÄŸrulama;doÄŸrulayÄ±cÄ± ÅŸey;kanÄ±t;doÄŸrulama;doÄŸrulayÄ±cÄ± ÅŸey;kanÄ±t;doÄŸrulama;doÄŸrulayÄ±cÄ± ÅŸey;kanÄ±t;doÄŸrulama;doÄŸrulayÄ±cÄ± ÅŸey;kanÄ±t
+conjecture:farzetmek;sanÄ±;sanmak;tahmin;tahmin etmek;varsayÄ±m;zan
+conscious:bilinÃ§li;kendinde
+consciousness:bilinÃ§
+consequently:dolayÄ±sÄ±yla
+consider:dÃ¼ÅŸÃ¼nmek;gÃ¶z Ã¶nÃ¼nde tutmak;dikkate almak
+considerably:epeyce;oldukÃ§a
+considered:dikkate alÄ±nan
+consistent:birbirine uygun;devamlÄ±;istikrarlÄ±;tutarlÄ±
 conspirator:komplocu
 conspire:komplo kurmak;plan yapmak
-constant:değişmez;sabit
-constrict:büzmek;daraltmak;kısmak;sıkmak
-constriction:boğaz;büzme;dar geçit;daraltı;sıkma
-construct:bina;yapı
-consumable:kullanılır;tüketilir
-contact:değme;dokunma;ilişki;temas
-containment:geliştirmeme siyaseti;yumuşaklık
-contamination:bulaştırma;kirlenme
-context:bağlam;durum;kontekst;şartlar
-contrary to:tersine,karşın
-contribute:katılmak;katkıda bulunmak
-controlled:denetimli;kontrollü
-controversy:munazara;münakaşa;tartışma
-convenient:elverişli;müsait;uygun
+constant:deÄŸiÅŸmez;sabit
+constrict:bÃ¼zmek;daraltmak;kÄ±smak;sÄ±kmak
+constriction:boÄŸaz;bÃ¼zme;dar geÃ§it;daraltÄ±;sÄ±kma
+construct:bina;yapÄ±
+consumable:kullanÄ±lÄ±r;tÃ¼ketilir
+contact:deÄŸme;dokunma;iliÅŸki;temas
+containment:geliÅŸtirmeme siyaseti;yumuÅŸaklÄ±k
+contamination:bulaÅŸtÄ±rma;kirlenme
+context:baÄŸlam;durum;kontekst;ÅŸartlar
+contrary to:tersine,karÅŸÄ±n
+contribute:katÄ±lmak;katkÄ±da bulunmak
+controlled:denetimli;kontrollÃ¼
+controversy:munazara;mÃ¼nakaÅŸa;tartÄ±ÅŸma
+convenient:elveriÅŸli;mÃ¼sait;uygun
 conveniently:uygun olarak
 conventional:geleneksel;konvansiyonel
-conversation:konuşma;sohbet
-conversion:dönüştürme;değiştirme;hammaddenin ürüne dönüştürülmesi
-convert:dönüştür;dönüştürmek
-converter:dönüştürücü
-convey:taşınma
-convince:ikna etmek;inandırmak
-cool:sakin;serin;soğuk;soğukkanlı;harika
-cooperative:kooperatif;yardımcı;yardımsever
-copper:bakır
-copy:kopya;kopyalamak;örnek
+conversation:konuÅŸma;sohbet
+conversion:dÃ¶nÃ¼ÅŸtÃ¼rme;deÄŸiÅŸtirme;hammaddenin Ã¼rÃ¼ne dÃ¶nÃ¼ÅŸtÃ¼rÃ¼lmesi
+convert:dÃ¶nÃ¼ÅŸtÃ¼r;dÃ¶nÃ¼ÅŸtÃ¼rmek
+converter:dÃ¶nÃ¼ÅŸtÃ¼rÃ¼cÃ¼
+convey:taÅŸÄ±nma
+convince:ikna etmek;inandÄ±rmak
+cool:sakin;serin;soÄŸuk;soÄŸukkanlÄ±;harika
+cooperative:kooperatif;yardÄ±mcÄ±;yardÄ±msever
+copper:bakÄ±r
+copy:kopya;kopyalamak;Ã¶rnek
 coral:mercan
-corporate:birleşik;birleşmiş;ortak
-corpulent:çok şişman;şişko
+corporate:birleÅŸik;birleÅŸmiÅŸ;ortak
+corpulent:Ã§ok ÅŸiÅŸman;ÅŸiÅŸko
 correspond to:benzeri olmak
 correspond:uygun gelmek;uymak
 corresponding:benzer;uygun
-corroborate:doğrulamak;kanıtlarla desteklemek;onaylamak
-corrode:aşındırmak;oksitlenmek;paslanmak
+corroborate:doÄŸrulamak;kanÄ±tlarla desteklemek;onaylamak
+corrode:aÅŸÄ±ndÄ±rmak;oksitlenmek;paslanmak
 corrupted:bozuk
 cost:fiyat;maliyet
-cost-effective:maliyet etkinliği olan;uygun maliyetli
-costly:masraflı;pahalı;pahalıya mal olan
-cottage:kır evi;kulube
+cost-effective:maliyet etkinliÄŸi olan;uygun maliyetli
+costly:masraflÄ±;pahalÄ±;pahalÄ±ya mal olan
+cottage:kÄ±r evi;kulube
 could have:olabilirdi ama
-could:can'in geçmiş zamanı,olasılık
-counter:kırsal bölge;kırsal yöre halkı
-counterclockwise:saat aksi yönüne
-countryside:kırsal bölge
-couple:çift;eş;karı koca
-coupling:bağlama;kaplin;kavrama
+could:can'in geÃ§miÅŸ zamanÄ±,olasÄ±lÄ±k
+counter:kÄ±rsal bÃ¶lge;kÄ±rsal yÃ¶re halkÄ±
+counterclockwise:saat aksi yÃ¶nÃ¼ne
+countryside:kÄ±rsal bÃ¶lge
+couple:Ã§ift;eÅŸ;karÄ± koca
+coupling:baÄŸlama;kaplin;kavrama
 cover:kapak;koruyucu
-covert:gizli;örtülü;saklı
-cox:dümenci
-crab:yengeç
-craft:hüner;sanat;ustalık
+covert:gizli;Ã¶rtÃ¼lÃ¼;saklÄ±
+cox:dÃ¼menci
+crab:yengeÃ§
+craft:hÃ¼ner;sanat;ustalÄ±k
 craftsman:usta
-craftsmanship:el işi;ustalık
+craftsmanship:el iÅŸi;ustalÄ±k
 cross section:yatay kesit
-crouch:çömelmek
-crowd:kalabalık
-crucial:can alıcı;ciddi;çok önemli;elzem;kesin;kritik;önemli;zor
-cruelly:insafsızca;zalimce
+crouch:Ã§Ã¶melmek
+crowd:kalabalÄ±k
+crucial:can alÄ±cÄ±;ciddi;Ã§ok Ã¶nemli;elzem;kesin;kritik;Ã¶nemli;zor
+cruelly:insafsÄ±zca;zalimce
 crushing:ezici;ezme
-cry:ağlamak
-cryogen:soğutucu madde
-cull:ıskartaya çıkarmak;seçmek;toplamak
-curator:kütüphane müdürü;müze müdürü
-curb:durdurmak;fren;frenlemek;kaldırım kenarı;sınırlamak
-currency:döviz;para;para birimi
-current:akım;bugünkü;geçerli;güncel;şimdiki;varsayılan;yaygın
+cry:aÄŸlamak
+cryogen:soÄŸutucu madde
+cull:Ä±skartaya Ã§Ä±karmak;seÃ§mek;toplamak
+curator:kÃ¼tÃ¼phane mÃ¼dÃ¼rÃ¼;mÃ¼ze mÃ¼dÃ¼rÃ¼
+curb:durdurmak;fren;frenlemek;kaldÄ±rÄ±m kenarÄ±;sÄ±nÄ±rlamak
+currency:dÃ¶viz;para;para birimi
+current:akÄ±m;bugÃ¼nkÃ¼;geÃ§erli;gÃ¼ncel;ÅŸimdiki;varsayÄ±lan;yaygÄ±n
 currently:halen
-custom:adet;alışkanlık;gelenek;huy;müşteri;özel
-customer:müşteri
-cute:şirin;hoş;sevimli
-cylindrical bearing ring:silindirik makaralı rulman
+custom:adet;alÄ±ÅŸkanlÄ±k;gelenek;huy;mÃ¼ÅŸteri;Ã¶zel
+customer:mÃ¼ÅŸteri
+cute:ÅŸirin;hoÅŸ;sevimli
+cylindrical bearing ring:silindirik makaralÄ± rulman
 cylindrical:silindirik
-dagger:hançer;kama
-damnably:lanet bir şekilde
+dagger:hanÃ§er;kama
+damnably:lanet bir ÅŸekilde
 danger:tehlike
 dangerous:tehlikeli
-darkroom:karanlık oda
+darkroom:karanlÄ±k oda
 data:veri
 date:tarih;tarih atmak;tarih koymak
-deal:alışveriş;anlaşma;meşgul olmak;miktar;uğraşmak
-decade:on yıl
-decision:hüküm;karar;kararlılık
+deal:alÄ±ÅŸveriÅŸ;anlaÅŸma;meÅŸgul olmak;miktar;uÄŸraÅŸmak
+decade:on yÄ±l
+decision:hÃ¼kÃ¼m;karar;kararlÄ±lÄ±k
 declaration:bildiri
 declare:beyan etmek;bildirmek;ilan etmek
-default:varsayılan
+default:varsayÄ±lan
 defect:bozukluk;eksiklik;hata;kusur;noksan
-defenseless:korunmasız;savunmasız
+defenseless:korunmasÄ±z;savunmasÄ±z
 definitely:kesinlikle
-definition:açıklama;belirtme;tanım;tanımlama;tarif
-degradation:ayrışım;bozulma;bozunma;daha küçük moleküllere ayrışma;yıkılma
-deity:tanrı;tanrıça
-delay:ertelemek;geciktirmek;sonraya bırakmak;tehir etmek
-delete:çıkarmak;silmek
-delivery:kuruluş;teslim;dağıtım
-denominator:bölen;payda
-denote:göstermek
-dense:kabarık;koyu;sıkışık;yoğun
-deny:tanımamak
-departure:ayrılış;gidiş;hareket;kalkış
-depend on:bağlı olmak;göre değişmek
-derive:çıkarmak;türetmek
-descend:alçalmak;batmak;inmek
+definition:aÃ§Ä±klama;belirtme;tanÄ±m;tanÄ±mlama;tarif
+degradation:ayrÄ±ÅŸÄ±m;bozulma;bozunma;daha kÃ¼Ã§Ã¼k molekÃ¼llere ayrÄ±ÅŸma;yÄ±kÄ±lma
+deity:tanrÄ±;tanrÄ±Ã§a
+delay:ertelemek;geciktirmek;sonraya bÄ±rakmak;tehir etmek
+delete:Ã§Ä±karmak;silmek
+delivery:kuruluÅŸ;teslim;daÄŸÄ±tÄ±m
+denominator:bÃ¶len;payda
+denote:gÃ¶stermek
+dense:kabarÄ±k;koyu;sÄ±kÄ±ÅŸÄ±k;yoÄŸun
+deny:tanÄ±mamak
+departure:ayrÄ±lÄ±ÅŸ;gidiÅŸ;hareket;kalkÄ±ÅŸ
+depend on:baÄŸlÄ± olmak;gÃ¶re deÄŸiÅŸmek
+derive:Ã§Ä±karmak;tÃ¼retmek
+descend:alÃ§almak;batmak;inmek
 descendant:neslinden olan;torun
-describe:anlatmak;tanımlamak
-described:tanımlı
-description:betimleme;cins;çeşit;tanım;tanımlama;tarif;tasvir
-deselect all:tüm seçimleri kaldır;tüm seçimleri kaldırmak
-deselect:seçimden çıkar;seçimi kaldır
-desert:çöl
-deserve:hak etmek;hak kazanmak;layık olmak;müstahak olmak
-designate:adlandırmak;atamak;göstermek;işaret etmek;tanımlamak;tayin etmek
-desk:masa;okul sırası
-despite:-e karşın;-e rağmen
-destination:gidilecek yer;hedef;istikamet;varış;yön
+describe:anlatmak;tanÄ±mlamak
+described:tanÄ±mlÄ±
+description:betimleme;cins;Ã§eÅŸit;tanÄ±m;tanÄ±mlama;tarif;tasvir
+deselect all:tÃ¼m seÃ§imleri kaldÄ±r;tÃ¼m seÃ§imleri kaldÄ±rmak
+deselect:seÃ§imden Ã§Ä±kar;seÃ§imi kaldÄ±r
+desert:Ã§Ã¶l
+deserve:hak etmek;hak kazanmak;layÄ±k olmak;mÃ¼stahak olmak
+designate:adlandÄ±rmak;atamak;gÃ¶stermek;iÅŸaret etmek;tanÄ±mlamak;tayin etmek
+desk:masa;okul sÄ±rasÄ±
+despite:-e karÅŸÄ±n;-e raÄŸmen
+destination:gidilecek yer;hedef;istikamet;varÄ±ÅŸ;yÃ¶n
 destiny:kader
-destruction:yıkım;yıkma;yok etme
-detect:algıla;bulmak;keşfetmek;meydana çıkarmak;ortaya çıkar
+destruction:yÄ±kÄ±m;yÄ±kma;yok etme
+detect:algÄ±la;bulmak;keÅŸfetmek;meydana Ã§Ä±karmak;ortaya Ã§Ä±kar
 detective:dedektif
-detention:alıkoyma;engelleme;tutma
-deter:vazgeçirmek
+detention:alÄ±koyma;engelleme;tutma
+deter:vazgeÃ§irmek
 determine:belirlemek;saptamak;tayin etmek;tespit etmek;karar vermek
-develop:gelişmek;geliştirmek
-development:gelişim
-device:alet;aygıt
-diagnosis:tanı;teşhis
-dialog:konuşma
-dictionary:sözlük
-die:ölmek
-differ:ayrılmak;farklı olmak
-diffuse:dağıtmak;yayılmak;yayılmış
-digital:sayısal
+develop:geliÅŸmek;geliÅŸtirmek
+development:geliÅŸim
+device:alet;aygÄ±t
+diagnosis:tanÄ±;teÅŸhis
+dialog:konuÅŸma
+dictionary:sÃ¶zlÃ¼k
+die:Ã¶lmek
+differ:ayrÄ±lmak;farklÄ± olmak
+diffuse:daÄŸÄ±tmak;yayÄ±lmak;yayÄ±lmÄ±ÅŸ
+digital:sayÄ±sal
 diplomacy:diplomasi
-direction:istikamet;taraf;yön
-disabled:etkin değil;geçersizleştirilmiş;seçilemez kılınmış
-disagreement:anlaşmazlık;ihtilaf;uyuşmazlık
-disappointed:üzgün;düş kırıklığına uğramış
-disappointment:düş kırıklığı;hayal kırıklığı;hüsran
+direction:istikamet;taraf;yÃ¶n
+disabled:etkin deÄŸil;geÃ§ersizleÅŸtirilmiÅŸ;seÃ§ilemez kÄ±lÄ±nmÄ±ÅŸ
+disagreement:anlaÅŸmazlÄ±k;ihtilaf;uyuÅŸmazlÄ±k
+disappointed:Ã¼zgÃ¼n;dÃ¼ÅŸ kÄ±rÄ±klÄ±ÄŸÄ±na uÄŸramÄ±ÅŸ
+disappointment:dÃ¼ÅŸ kÄ±rÄ±klÄ±ÄŸÄ±;hayal kÄ±rÄ±klÄ±ÄŸÄ±;hÃ¼sran
 disc:disk;plak
 discard:atmak
-disclosure:açığa çıkarma
-discrimination:ayrım;fark gözetme
-disgust:iğrenme;tiksinti
-dishes:bulaşık
-dismiss:görevden almak;işten çıkarmak;kovmak
-dismount:parçalarına ayırmak;sökmek;demonte etmek
-display:görüntü;gösterme;göstermek
-disposal:düzen;yok etme;ortadan kaldırma;düzenleme;tertip;idare;kontrol
-disrupt:bozmak;dağıtmak
+disclosure:aÃ§Ä±ÄŸa Ã§Ä±karma
+discrimination:ayrÄ±m;fark gÃ¶zetme
+disgust:iÄŸrenme;tiksinti
+dishes:bulaÅŸÄ±k
+dismiss:gÃ¶revden almak;iÅŸten Ã§Ä±karmak;kovmak
+dismount:parÃ§alarÄ±na ayÄ±rmak;sÃ¶kmek;demonte etmek
+display:gÃ¶rÃ¼ntÃ¼;gÃ¶sterme;gÃ¶stermek
+disposal:dÃ¼zen;yok etme;ortadan kaldÄ±rma;dÃ¼zenleme;tertip;idare;kontrol
+disrupt:bozmak;daÄŸÄ±tmak
 dissimilar:benzemez
-dissociation:ayırma;ayrışma;çözünmeye uğrama
-distinct:açık;ayrı;belirgin;farklı
-distinguish:ayırt etmek
-distribution:dağılım;dağıtım
-district:bölge
-divide:ayırmak;bölmek;taksim etmek
+dissociation:ayÄ±rma;ayrÄ±ÅŸma;Ã§Ã¶zÃ¼nmeye uÄŸrama
+distinct:aÃ§Ä±k;ayrÄ±;belirgin;farklÄ±
+distinguish:ayÄ±rt etmek
+distribution:daÄŸÄ±lÄ±m;daÄŸÄ±tÄ±m
+district:bÃ¶lge
+divide:ayÄ±rmak;bÃ¶lmek;taksim etmek
 divine:ilahi;kutsal;ulu
-dizzy:baş döndürücü
-dominate:egemen olmak;hakim olmak;hükmetmek
+dizzy:baÅŸ dÃ¶ndÃ¼rÃ¼cÃ¼
+dominate:egemen olmak;hakim olmak;hÃ¼kmetmek
 dork:aptal ve beceriksiz kimse
 dorm:yatakhane
-doubt:emin olmamak;kararsızlık;kuşku;kuşkulanmak;şüphe
-downstream:akıntı yönünde
+doubt:emin olmamak;kararsÄ±zlÄ±k;kuÅŸku;kuÅŸkulanmak;ÅŸÃ¼phe
+downstream:akÄ±ntÄ± yÃ¶nÃ¼nde
 drawback:engel;mahzur;sorun
-drawer:çekmece;göz
+drawer:Ã§ekmece;gÃ¶z
 dress:elbise;giyim
-droop:bükülmek;eğilmek;indirmek;sarkmak
-drop:damla;düşmek;düşürmek
-droplet:damlacık
-dross:artık;cüruf
-drum:davul;davul çalmak
-dual:çifte;ikili
-ductile:sünek
-dude:;giyimine aşırı düşkün erkek;züppe adam
-due to:-den dolayı;yüzünden;dolayı
-duly:hakkıyla;tam olarak;zamanında
-dumbly:ahmakça;konuşmadan
+droop:bÃ¼kÃ¼lmek;eÄŸilmek;indirmek;sarkmak
+drop:damla;dÃ¼ÅŸmek;dÃ¼ÅŸÃ¼rmek
+droplet:damlacÄ±k
+dross:artÄ±k;cÃ¼ruf
+drum:davul;davul Ã§almak
+dual:Ã§ifte;ikili
+ductile:sÃ¼nek
+dude:;giyimine aÅŸÄ±rÄ± dÃ¼ÅŸkÃ¼n erkek;zÃ¼ppe adam
+due to:-den dolayÄ±;yÃ¼zÃ¼nden;dolayÄ±
+duly:hakkÄ±yla;tam olarak;zamanÄ±nda
+dumbly:ahmakÃ§a;konuÅŸmadan
 dummy:dilsiz;kukla;manken;sahte;suret;taklit;yapma
-duration:süre
-during:süresince,sırasında
-duty:görev;hizmet;sorumluluk;vazife
-dwell:hayat sürmek;yaşamak
+duration:sÃ¼re
+during:sÃ¼resince,sÄ±rasÄ±nda
+duty:gÃ¶rev;hizmet;sorumluluk;vazife
+dwell:hayat sÃ¼rmek;yaÅŸamak
 each:her;her biri
-eager:hevesli;istekli;sabırsız
-early:erken;eski;ilk;önceki
-earring:küpe
+eager:hevesli;istekli;sabÄ±rsÄ±z
+early:erken;eski;ilk;Ã¶nceki
+earring:kÃ¼pe
 earthquake:deprem
-east:doğu
-edge:kenar;sınır
+east:doÄŸu
+edge:kenar;sÄ±nÄ±r
 edible:yenilebilir
-edifice:gösterişli yapı
-edit:düzenlemek
-education:eğitim;öğrenim
-eel:yılanbalığı
-effect:etki;sonuç;tesir;sonuçlandırmak;gerçekleştirmek
+edifice:gÃ¶steriÅŸli yapÄ±
+edit:dÃ¼zenlemek
+education:eÄŸitim;Ã¶ÄŸrenim
+eel:yÄ±lanbalÄ±ÄŸÄ±
+effect:etki;sonuÃ§;tesir;sonuÃ§landÄ±rmak;gerÃ§ekleÅŸtirmek
 effective:etkili;etkin
 efficiency:etkililik;verim;verimlilik
-effluent:akıntı;atık madde;atık su
-efflux:dışarı sızma;dışarıya akış;dışarıya çıkış;fışkırma
-effort:çaba;gayret
+effluent:akÄ±ntÄ±;atÄ±k madde;atÄ±k su
+efflux:dÄ±ÅŸarÄ± sÄ±zma;dÄ±ÅŸarÄ±ya akÄ±ÅŸ;dÄ±ÅŸarÄ±ya Ã§Ä±kÄ±ÅŸ;fÄ±ÅŸkÄ±rma
+effort:Ã§aba;gayret
 eight:sekiz
 either ... or:ya... yada
 either:her iki;ikisinden biri
-eject:çıkarmak;dışarı atmak;fırlatmak;fışkırtmak
+eject:Ã§Ä±karmak;dÄ±ÅŸarÄ± atmak;fÄ±rlatmak;fÄ±ÅŸkÄ±rtmak
 elbow:dirsek
 electrical:elektrikli
-electrically:elektirik gücüyle;elektiriksel olarak;elektrik kuvvetiyle
+electrically:elektirik gÃ¼cÃ¼yle;elektiriksel olarak;elektrik kuvvetiyle
 electricity:elektrik
-elegant:düzenli;güzel;ince;şık;zarif
+elegant:dÃ¼zenli;gÃ¼zel;ince;ÅŸÄ±k;zarif
 elephant:fil
 eleven:onbir
-else:başka,daha
-elude:aklına gelmemek;çağrıştırmamak;gözünden kaçmak;kurtulmak
-elusive:akla gelmeyen;anlaşılması zor;kaypak;yakalanması zor
+else:baÅŸka,daha
+elude:aklÄ±na gelmemek;Ã§aÄŸrÄ±ÅŸtÄ±rmamak;gÃ¶zÃ¼nden kaÃ§mak;kurtulmak
+elusive:akla gelmeyen;anlaÅŸÄ±lmasÄ± zor;kaypak;yakalanmasÄ± zor
 e-mail:e-posta
-embarrassing:utandırıcı
-embed:gömmek;iyice yerleştirmek;oturtmak;sokmak
-emerald:zümrüt
-emerge:çıkmak;meydana çıkmak;ortaya çıkmak
-emergency:acil vaka;olağanüstü durum
-emission:çıkarma;dışarı verme;emisyon;ihraç;yayınlama;yayma
-emotion:coşku;duygu;güçlü duygu;heyecan
+embarrassing:utandÄ±rÄ±cÄ±
+embed:gÃ¶mmek;iyice yerleÅŸtirmek;oturtmak;sokmak
+emerald:zÃ¼mrÃ¼t
+emerge:Ã§Ä±kmak;meydana Ã§Ä±kmak;ortaya Ã§Ä±kmak
+emergency:acil vaka;olaÄŸanÃ¼stÃ¼ durum
+emission:Ã§Ä±karma;dÄ±ÅŸarÄ± verme;emisyon;ihraÃ§;yayÄ±nlama;yayma
+emotion:coÅŸku;duygu;gÃ¼Ã§lÃ¼ duygu;heyecan
 emperor:imparator
 empirical:ampirik;deneysel
-employ:çalıştırmak;görevlendirmek;iş vermek;kullanmak
-encapsulation:giydirme;kapsülleme;kuşatma;sarma
-encase:kapamak;örtmek;sandığa koymak
-encompass:çevrelemek;kuşatmak
-encounter:karşı karşıya gelmek;karşılaşmak;rastlamak
-encourage:cesaretlendirmek;yüreklendirmek
-enough:yeterince,oldukça
-ensure:sağlamak;temin etmek
-entangle:dolaştırmak;karıştırmak
-entangling:dolaştırarak
+employ:Ã§alÄ±ÅŸtÄ±rmak;gÃ¶revlendirmek;iÅŸ vermek;kullanmak
+encapsulation:giydirme;kapsÃ¼lleme;kuÅŸatma;sarma
+encase:kapamak;Ã¶rtmek;sandÄ±ÄŸa koymak
+encompass:Ã§evrelemek;kuÅŸatmak
+encounter:karÅŸÄ± karÅŸÄ±ya gelmek;karÅŸÄ±laÅŸmak;rastlamak
+encourage:cesaretlendirmek;yÃ¼reklendirmek
+enough:yeterince,oldukÃ§a
+ensure:saÄŸlamak;temin etmek
+entangle:dolaÅŸtÄ±rmak;karÄ±ÅŸtÄ±rmak
+entangling:dolaÅŸtÄ±rarak
 enthalpy:entalpi
-entire:bütün;tam;tümüyle
-entirely:büsbütün;tamamen
-entity:mevcudiyet;tek ve bağımsız varlık;varoluş
-entrust:emanet etmek;sorumluluğuna vermek
-entry:giriş
-environment:çevre;ortam
-epidemic:salgın
-equally:aynı derecede;eşit olarak;eşit ölçüde
+entire:bÃ¼tÃ¼n;tam;tÃ¼mÃ¼yle
+entirely:bÃ¼sbÃ¼tÃ¼n;tamamen
+entity:mevcudiyet;tek ve baÄŸÄ±msÄ±z varlÄ±k;varoluÅŸ
+entrust:emanet etmek;sorumluluÄŸuna vermek
+entry:giriÅŸ
+environment:Ã§evre;ortam
+epidemic:salgÄ±n
+equally:aynÄ± derecede;eÅŸit olarak;eÅŸit Ã¶lÃ§Ã¼de
 equation:denklem
 equilibrium:denge
-equivalent:bedel;denk;eşdeğer;eşit
-era:çağ;devir;dönem;zaman
-erosion:aşındırma;aşınma;erozyon
-erosive:aşındırıcı;erozif
+equivalent:bedel;denk;eÅŸdeÄŸer;eÅŸit
+era:Ã§aÄŸ;devir;dÃ¶nem;zaman
+erosion:aÅŸÄ±ndÄ±rma;aÅŸÄ±nma;erozyon
+erosive:aÅŸÄ±ndÄ±rÄ±cÄ±;erozif
 error:hata
 especially:bilhassa
 essay:deneme
-essential:ana;asıl;esas;temel
-established:kurulmuş;oturmuş;yerleşmiş
-esteem:itibar;saygı;saygı göstermek
+essential:ana;asÄ±l;esas;temel
+established:kurulmuÅŸ;oturmuÅŸ;yerleÅŸmiÅŸ
+esteem:itibar;saygÄ±;saygÄ± gÃ¶stermek
 estimate:hesap;tahmin;tahmin etmek
-etcher:kazıyıcı
-eternal:ebedi;ölümsüz;sonsuz
-evaporate:buharlaşmak;buharlaştırmak
-even though:bile,karşın,..makla birlikte
-even:bile;düz;düzgün;düzleştirmek;düzletmek;hatta;tesviye etmek;yine de;bile,hatta,yine de;dahi
-evening:akşam
+etcher:kazÄ±yÄ±cÄ±
+eternal:ebedi;Ã¶lÃ¼msÃ¼z;sonsuz
+evaporate:buharlaÅŸmak;buharlaÅŸtÄ±rmak
+even though:bile,karÅŸÄ±n,..makla birlikte
+even:bile;dÃ¼z;dÃ¼zgÃ¼n;dÃ¼zleÅŸtirmek;dÃ¼zletmek;hatta;tesviye etmek;yine de;bile,hatta,yine de;dahi
+evening:akÅŸam
 eventually:sonunda
-ever:sürekli,hep,şimdiye değin,ola ki
+ever:sÃ¼rekli,hep,ÅŸimdiye deÄŸin,ola ki
 every time:her ... -de
-every:her,bütün,tüm
-everything:herşey
-evidence:delil;kanıt
-evidently:açıkça;anlaşılan
+every:her,bÃ¼tÃ¼n,tÃ¼m
+everything:herÅŸey
+evidence:delil;kanÄ±t
+evidently:aÃ§Ä±kÃ§a;anlaÅŸÄ±lan
 exactly:aynen;tam olarak;tamamen
-exalted:ulu;yüce
-exam:sınav
-examine:gözden geçirmek;incelemek;muayene etmek;teftiş etmek
-excellent:kusursuz;mükemmel
-except for:dışında,hariç
-except:hariç tutmak
-excepted:dışında
-exceptional:olağanüstü
-exceptionally:fevkalade;istisna olarak;olağan üstü
-excess:aşırılık;fazlalık;ölçüsüzlük
-excessive:aşırı;fazla
-exclaim:bağırmak;haykırmak
-exclude list:dışlama listesi
-exclude:dışlamak;hariç tutmak
-exclusion:çıkarma
-executable:işletilebilir;yürütülür
-execution:icra;idam;işletim;uygulama;yapma;yerine getirme;yürütme
-exhausted:bitkin;çok yorgun
-exile:sürgün;sürülme
+exalted:ulu;yÃ¼ce
+exam:sÄ±nav
+examine:gÃ¶zden geÃ§irmek;incelemek;muayene etmek;teftiÅŸ etmek
+excellent:kusursuz;mÃ¼kemmel
+except for:dÄ±ÅŸÄ±nda,hariÃ§
+except:hariÃ§ tutmak
+excepted:dÄ±ÅŸÄ±nda
+exceptional:olaÄŸanÃ¼stÃ¼
+exceptionally:fevkalade;istisna olarak;olaÄŸan Ã¼stÃ¼
+excess:aÅŸÄ±rÄ±lÄ±k;fazlalÄ±k;Ã¶lÃ§Ã¼sÃ¼zlÃ¼k
+excessive:aÅŸÄ±rÄ±;fazla
+exclaim:baÄŸÄ±rmak;haykÄ±rmak
+exclude list:dÄ±ÅŸlama listesi
+exclude:dÄ±ÅŸlamak;hariÃ§ tutmak
+exclusion:Ã§Ä±karma
+executable:iÅŸletilebilir;yÃ¼rÃ¼tÃ¼lÃ¼r
+execution:icra;idam;iÅŸletim;uygulama;yapma;yerine getirme;yÃ¼rÃ¼tme
+exhausted:bitkin;Ã§ok yorgun
+exile:sÃ¼rgÃ¼n;sÃ¼rÃ¼lme
 exist:bulunmak;mevcut;var olmak
-existence:varlık
-exorcist:kötü ruhları kovan kişi
-expansion:büyüme;genişleme;genleşme;yayılma
-expect:beklemek;sanmak;tahmin etmek;ummak;ümit etmek
-expectancy:beklenti;ümit
+existence:varlÄ±k
+exorcist:kÃ¶tÃ¼ ruhlarÄ± kovan kiÅŸi
+expansion:bÃ¼yÃ¼me;geniÅŸleme;genleÅŸme;yayÄ±lma
+expect:beklemek;sanmak;tahmin etmek;ummak;Ã¼mit etmek
+expectancy:beklenti;Ã¼mit
 expedition:sefer;yolculuk
-experience:deneyim;tecrübe
-experiment:deneme;deney;deney yapmak;tecrübe
-expert:bilirkişi;usta;uzman
+experience:deneyim;tecrÃ¼be
+experiment:deneme;deney;deney yapmak;tecrÃ¼be
+expert:bilirkiÅŸi;usta;uzman
 expiry:son;bitim
-exploited:sömürülmüş
-explosive:patlayıcı;patlayıcı madde
-exponential:üstel
-export:dış satım;dışarı aktarım;dışarı aktarmak;ihracat
-expressly:açıkça;açık ve net bir şekilde
-extend:genişletmek;uzatmak
-extension:büyütme;genişleme;genişletme;uzama;uzantı;uzatılma;uzatma
-extract:alıntı;almak;çıkarmak;öz;özüt
-extraordinary:olağandışı;olağanüstü
-extreme:en uçtaki;had safhadaki;uçta olan
-eyebrow:kaş
+exploited:sÃ¶mÃ¼rÃ¼lmÃ¼ÅŸ
+explosive:patlayÄ±cÄ±;patlayÄ±cÄ± madde
+exponential:Ã¼stel
+export:dÄ±ÅŸ satÄ±m;dÄ±ÅŸarÄ± aktarÄ±m;dÄ±ÅŸarÄ± aktarmak;ihracat
+expressly:aÃ§Ä±kÃ§a;aÃ§Ä±k ve net bir ÅŸekilde
+extend:geniÅŸletmek;uzatmak
+extension:bÃ¼yÃ¼tme;geniÅŸleme;geniÅŸletme;uzama;uzantÄ±;uzatÄ±lma;uzatma
+extract:alÄ±ntÄ±;almak;Ã§Ä±karmak;Ã¶z;Ã¶zÃ¼t
+extraordinary:olaÄŸandÄ±ÅŸÄ±;olaÄŸanÃ¼stÃ¼
+extreme:en uÃ§taki;had safhadaki;uÃ§ta olan
+eyebrow:kaÅŸ
 eyelash:kirpik
-face:bakmak;çehre;dış görünüş;kadran;mine;yüz;yüzey
-facility:beceri;fırsat;kolaylık;olanak;yetenek
+face:bakmak;Ã§ehre;dÄ±ÅŸ gÃ¶rÃ¼nÃ¼ÅŸ;kadran;mine;yÃ¼z;yÃ¼zey
+facility:beceri;fÄ±rsat;kolaylÄ±k;olanak;yetenek
 facing:kaplama;koruyucu tabaka
-faculty:beceri;fakülte;yetenek;yeti
-fair:doğru;dürüst
-fairly:oldukça;tamamıyla
-faith:güven;inanç;sadakat
-fallout:radyoaktif kalıntı
-familiar:alışkın;arsız;aşina;bildik;bilinen;laubali;tanıdık;tanınan
-far:daha,daha daçok
-farthermost:en ötedeki;en uzak
-fascinate:büyülemek;hayran bırakmak
-fascinating:büyüleyici;çekici;etkileyici
-fast:çabuk;hızlı
-fatal:öldürücü;ölümcül
+faculty:beceri;fakÃ¼lte;yetenek;yeti
+fair:doÄŸru;dÃ¼rÃ¼st
+fairly:oldukÃ§a;tamamÄ±yla
+faith:gÃ¼ven;inanÃ§;sadakat
+fallout:radyoaktif kalÄ±ntÄ±
+familiar:alÄ±ÅŸkÄ±n;arsÄ±z;aÅŸina;bildik;bilinen;laubali;tanÄ±dÄ±k;tanÄ±nan
+far:daha,daha daÃ§ok
+farthermost:en Ã¶tedeki;en uzak
+fascinate:bÃ¼yÃ¼lemek;hayran bÄ±rakmak
+fascinating:bÃ¼yÃ¼leyici;Ã§ekici;etkileyici
+fast:Ã§abuk;hÄ±zlÄ±
+fatal:Ã¶ldÃ¼rÃ¼cÃ¼;Ã¶lÃ¼mcÃ¼l
 faucet:musluk
 favour:destek;desteklemek;onay;onaylamak
-fear:dehşet;endişe;kaygı;korkmak;korku;ürkmek
-fearful:korku dolu;korkunç
+fear:dehÅŸet;endiÅŸe;kaygÄ±;korkmak;korku;Ã¼rkmek
+fearful:korku dolu;korkunÃ§
 fearless:korkusuz
 feast:yortu;ziyafet
 fellow:adam;herif
-female:dişi;kadın;kız
-ferrous:demirden oluşan;demirli
+female:diÅŸi;kadÄ±n;kÄ±z
+ferrous:demirden oluÅŸan;demirli
 fertile:verimli
-fertilizer:gübre
-fever:ateş;heyecan;telaş
-few:birkaç
-field:alan;arazi;kır;meydan;otlak;saha;tarla
-fierce:ateşli;kızgın;sertlik;şiddet;şiddetli;vahşet
-fiery:ateş gibi;ateşli;kıpkırmızı;kızgın
-figure:şekil
+fertilizer:gÃ¼bre
+fever:ateÅŸ;heyecan;telaÅŸ
+few:birkaÃ§
+field:alan;arazi;kÄ±r;meydan;otlak;saha;tarla
+fierce:ateÅŸli;kÄ±zgÄ±n;sertlik;ÅŸiddet;ÅŸiddetli;vahÅŸet
+fiery:ateÅŸ gibi;ateÅŸli;kÄ±pkÄ±rmÄ±zÄ±;kÄ±zgÄ±n
+figure:ÅŸekil
 file:dosya
-filler:astar(boya);doldurucu madde;dolgu maddesi;geçici önlem
-finally:sonunda,sonuçta
+filler:astar(boya);doldurucu madde;dolgu maddesi;geÃ§ici Ã¶nlem
+finally:sonunda,sonuÃ§ta
 fingerprint:parmak izi
-firewall:ateş duvarı
-firm:katı;sağlam;sert
-firmly:sıkı bir şekilde
-first:ilk,başlangıçta
-fiscal:bütçeyle ilgili;mali
-fishy:karanlık;şüpheli
+firewall:ateÅŸ duvarÄ±
+firm:katÄ±;saÄŸlam;sert
+firmly:sÄ±kÄ± bir ÅŸekilde
+first:ilk,baÅŸlangÄ±Ã§ta
+fiscal:bÃ¼tÃ§eyle ilgili;mali
+fishy:karanlÄ±k;ÅŸÃ¼pheli
 fist:yumruk
 fit:uymak
-fitness:form;formda olma;sağlık;spor
-five:beş
-fix:düzeltmek;hazırlamak;onar;takmak;tamir etmek;yerleştirmek
-fixer:bağlayıcı;sabitleyici
+fitness:form;formda olma;saÄŸlÄ±k;spor
+five:beÅŸ
+fix:dÃ¼zeltmek;hazÄ±rlamak;onar;takmak;tamir etmek;yerleÅŸtirmek
+fixer:baÄŸlayÄ±cÄ±;sabitleyici
 flag:bayrak
-flame:alev;alev kırmızısı;alevlenmek;aşk ateşi;ateş;hiddet;kızarmak;parlaklık;sevgili
-flatter:övmek;pohpohlamak;yağ yakmak;yağcılık yapmak
+flame:alev;alev kÄ±rmÄ±zÄ±sÄ±;alevlenmek;aÅŸk ateÅŸi;ateÅŸ;hiddet;kÄ±zarmak;parlaklÄ±k;sevgili
+flatter:Ã¶vmek;pohpohlamak;yaÄŸ yakmak;yaÄŸcÄ±lÄ±k yapmak
 flavour:lezzet;tat
 flax:keten
-fleeting:çabuk geçen;fani;kısa süren;kısacık
-flesh:beden;et;vücut
-flicker:alevlenme;titrek ışık;titreme
-floodgate:bent kapağı;set
+fleeting:Ã§abuk geÃ§en;fani;kÄ±sa sÃ¼ren;kÄ±sacÄ±k
+flesh:beden;et;vÃ¼cut
+flicker:alevlenme;titrek Ä±ÅŸÄ±k;titreme
+floodgate:bent kapaÄŸÄ±;set
 floor:kat;taban;zemin
-flor:çiçek
-flow:akış;akmak
+flor:Ã§iÃ§ek
+flow:akÄ±ÅŸ;akmak
 flu:grip
-flux:değişim;değişkenlik;sürekli değişiklik
+flux:deÄŸiÅŸim;deÄŸiÅŸkenlik;sÃ¼rekli deÄŸiÅŸiklik
 focusing:odaklama;odaklayarak
-foe:düşman
-folder:dosya;klasör
+foe:dÃ¼ÅŸman
+folder:dosya;klasÃ¶r
 foot:ayak
-for instance:örneğin
-for one thing:bir kere/kez,herşeyden önce
+for instance:Ã¶rneÄŸin
+for one thing:bir kere/kez,herÅŸeyden Ã¶nce
 for the first time:ilk kez
-for:-den beri;-den dolayı;için;olarak;süresinde;yerine;zarfında;çünkü,zira
+for:-den beri;-den dolayÄ±;iÃ§in;olarak;sÃ¼resinde;yerine;zarfÄ±nda;Ã§Ã¼nkÃ¼,zira
 forcing:zorlayan;zorlayarak
-forearm:önkol
-foreign:dış;ecnebi;yabancı
-foremost:en önemli,başta gelen
-foreword:önsöz
+forearm:Ã¶nkol
+foreign:dÄ±ÅŸ;ecnebi;yabancÄ±
+foremost:en Ã¶nemli,baÅŸta gelen
+foreword:Ã¶nsÃ¶z
 forfeit:ceza
-fork:çatal
-form:biçim;oluşmak;şekil;şekil vermek
-formerly:eskiden;önceden
-forsake:bırakmak;terketmek
-fortunate:şanslı;talihli
-fortunately:çok şükür;neyse ki
-foundation:kurma;kuruluş;tesis
-fountain:çeşme;fıskiye
-four:dört
-frail:dayanıksız;zayıf
-frantic:çılgın
-fraud:dolandırıcılık;hile;sahtekarlık
-free:özgür;serbest
-freed:azat etmek;serbest bırakmak
-freedom:bağımsızlık;özgürlük;serbestlik
+fork:Ã§atal
+form:biÃ§im;oluÅŸmak;ÅŸekil;ÅŸekil vermek
+formerly:eskiden;Ã¶nceden
+forsake:bÄ±rakmak;terketmek
+fortunate:ÅŸanslÄ±;talihli
+fortunately:Ã§ok ÅŸÃ¼kÃ¼r;neyse ki
+foundation:kurma;kuruluÅŸ;tesis
+fountain:Ã§eÅŸme;fÄ±skiye
+four:dÃ¶rt
+frail:dayanÄ±ksÄ±z;zayÄ±f
+frantic:Ã§Ä±lgÄ±n
+fraud:dolandÄ±rÄ±cÄ±lÄ±k;hile;sahtekarlÄ±k
+free:Ã¶zgÃ¼r;serbest
+freed:azat etmek;serbest bÄ±rakmak
+freedom:baÄŸÄ±msÄ±zlÄ±k;Ã¶zgÃ¼rlÃ¼k;serbestlik
 freeze:buz tutmak;dondurmak;donmak
-freezer:buzluk;dondurucu;soğutucu
-Friday:Cuma (günü)
-frivolous:anlamsız;boş;uçarı
-from that day on:o günden itibaren
-from:-dan itibaren;-den;gönderen;-dan;itibaren
-frozen:donmuş
+freezer:buzluk;dondurucu;soÄŸutucu
+Friday:Cuma (gÃ¼nÃ¼)
+frivolous:anlamsÄ±z;boÅŸ;uÃ§arÄ±
+from that day on:o gÃ¼nden itibaren
+from:-dan itibaren;-den;gÃ¶nderen;-dan;itibaren
+frozen:donmuÅŸ
 fruit:meyve
-frustrate:boşa çıkarmak;bozmak;engel olmak;engellemek
-fuel cell:yakıt pili
-full:bütün;dolu;tam
+frustrate:boÅŸa Ã§Ä±karmak;bozmak;engel olmak;engellemek
+fuel cell:yakÄ±t pili
+full:bÃ¼tÃ¼n;dolu;tam
 fume:duman
-functionality:işlevsellik
+functionality:iÅŸlevsellik
 fundamental:ana;esas;kural;temel;temel ilke
-fundamentally:aslında;esas itibariyle;esasen;gerçekte;temel olarak;temelde
-furnace:fırın
-furry:kürklü
-fused:erimiş
-fusion:birleşme;ergime;kaynaşma
-futon:bir çeşit japon yatağı
-gain:elde etmek;kazanmak;sağlamak
-galvanic:elektrik şoku ile uyarma;galvanik;kimyasal etki ile elektrik akımı yaratan
-gap:açıklık;aralık;boşluk;yarık
-garbage:anlamsız veri;artık;çöp
+fundamentally:aslÄ±nda;esas itibariyle;esasen;gerÃ§ekte;temel olarak;temelde
+furnace:fÄ±rÄ±n
+furry:kÃ¼rklÃ¼
+fused:erimiÅŸ
+fusion:birleÅŸme;ergime;kaynaÅŸma
+futon:bir Ã§eÅŸit japon yataÄŸÄ±
+gain:elde etmek;kazanmak;saÄŸlamak
+galvanic:elektrik ÅŸoku ile uyarma;galvanik;kimyasal etki ile elektrik akÄ±mÄ± yaratan
+gap:aÃ§Ä±klÄ±k;aralÄ±k;boÅŸluk;yarÄ±k
+garbage:anlamsÄ±z veri;artÄ±k;Ã§Ã¶p
 gas:benzin;gaz
-gaseous:gaz şeklinde;gaza ait;gazlı
+gaseous:gaz ÅŸeklinde;gaza ait;gazlÄ±
 gasket:conta
-gasoil:gazyağı
-gauge pressure:geyiç basıncı;manometre basıncı
-gauge:ayar;ölçmek;ölçü
-gaze:gözünü dikerek bakmak
-gear case:dişli çark mahfazası
-gear wheel:dişli çark
-gear:dişli
+gasoil:gazyaÄŸÄ±
+gauge pressure:geyiÃ§ basÄ±ncÄ±;manometre basÄ±ncÄ±
+gauge:ayar;Ã¶lÃ§mek;Ã¶lÃ§Ã¼
+gaze:gÃ¶zÃ¼nÃ¼ dikerek bakmak
+gear case:diÅŸli Ã§ark mahfazasÄ±
+gear wheel:diÅŸli Ã§ark
+gear:diÅŸli
 gene:gen
 general:genel;general
-generosity:cömertlik
-genre:tarz;tür
-genuine:gerçek;hakiki;özgün
-gestalt:geştalt;yapı
-get along:başarmak;becermek;idare etmek
-get rid of:başından savmak;-den kurtulmak
-get:almak;elde etmek;olmak;ulaşmak;varmak
+generosity:cÃ¶mertlik
+genre:tarz;tÃ¼r
+genuine:gerÃ§ek;hakiki;Ã¶zgÃ¼n
+gestalt:geÅŸtalt;yapÄ±
+get along:baÅŸarmak;becermek;idare etmek
+get rid of:baÅŸÄ±ndan savmak;-den kurtulmak
+get:almak;elde etmek;olmak;ulaÅŸmak;varmak
 giant:dev
 gigantic:devasa;kocaman
-giggle:kıkır kıkır gülmek;kıkırdamak
-gilded:yaldızlı
-glad:hoşnut;memnun;mutlu
-gland:bez;salmastra bileziği;salmastra kovanı
-glass:bardak;cam;gözlük
-glee:neşe;sevinç
-glimpse:belirti;görünüp kaybolma;görüverme;gözüne ilişme
-glisten:parıldamak
-globe:dünya;küre;top
-glory:gurur duymak;övgü;övünmek;şan;şeref
-glossary:terimler sözlüğü
-glossy:parlak ve düz
+giggle:kÄ±kÄ±r kÄ±kÄ±r gÃ¼lmek;kÄ±kÄ±rdamak
+gilded:yaldÄ±zlÄ±
+glad:hoÅŸnut;memnun;mutlu
+gland:bez;salmastra bileziÄŸi;salmastra kovanÄ±
+glass:bardak;cam;gÃ¶zlÃ¼k
+glee:neÅŸe;sevinÃ§
+glimpse:belirti;gÃ¶rÃ¼nÃ¼p kaybolma;gÃ¶rÃ¼verme;gÃ¶zÃ¼ne iliÅŸme
+glisten:parÄ±ldamak
+globe:dÃ¼nya;kÃ¼re;top
+glory:gurur duymak;Ã¶vgÃ¼;Ã¶vÃ¼nmek;ÅŸan;ÅŸeref
+glossary:terimler sÃ¶zlÃ¼ÄŸÃ¼
+glossy:parlak ve dÃ¼z
 glove:eldiven
-glow:coşku;kızarma;parıltı
+glow:coÅŸku;kÄ±zarma;parÄ±ltÄ±
 go without:dayanmak;idare etmek (su yemek vb olmadan)
-god:ilah;tanrı
-godforsaken:boş;terkedilmiş
+god:ilah;tanrÄ±
+godforsaken:boÅŸ;terkedilmiÅŸ
 godly:dindar
-goggles:koruyucu gözlük;pilot gözlüğü;sualtı gözlüğü
-gold:altın
+goggles:koruyucu gÃ¶zlÃ¼k;pilot gÃ¶zlÃ¼ÄŸÃ¼;sualtÄ± gÃ¶zlÃ¼ÄŸÃ¼
+gold:altÄ±n
 gouge:iskerpelayla oymak;oyma kalemi
 grab:kapma;kapmak;yakalamak
-grade:derece;eğitim;not;sınıf
-gradually:azar azar;yavaş yavaş
-graduate:lisansüstü
+grade:derece;eÄŸitim;not;sÄ±nÄ±f
+gradually:azar azar;yavaÅŸ yavaÅŸ
+graduate:lisansÃ¼stÃ¼
 grasp:anlamak;kapma;kavramak;yakalamak
 grateful:minnettar
-gratitude:minnettarlık;şükran
+gratitude:minnettarlÄ±k;ÅŸÃ¼kran
 grease:gres
-grim:neşesiz;sert
-groove weld:oluk kaynağı
+grim:neÅŸesiz;sert
+groove weld:oluk kaynaÄŸÄ±
 groove:oluk;yiv
-group:topluluk;grup;küme;gruplaşmak
-grudging:gönülsüz;isteksiz
+group:topluluk;grup;kÃ¼me;gruplaÅŸmak
+grudging:gÃ¶nÃ¼lsÃ¼z;isteksiz
 grudgingly:istemeyerek
-guidance:rehberlik;yardım
+guidance:rehberlik;yardÄ±m
 gym:jimnastik salonu
 hafnium:hafniyum elementi
 hall:hol;koridor;salon
 hallway:hol;koridor
-hammer:çekiç;tokmak
+hammer:Ã§ekiÃ§;tokmak
 hand:el;el uzatma
-handle:başa çıkmak;ele almak;işlemek;kapı kulpu;sap
-handling:işleme
-hang:asılı durmak;asılmak;asmak
-hark back:geri çağırmak
-harm:hasar;incitmek;kötülük;zarar;zarar vermek
+handle:baÅŸa Ã§Ä±kmak;ele almak;iÅŸlemek;kapÄ± kulpu;sap
+handling:iÅŸleme
+hang:asÄ±lÄ± durmak;asÄ±lmak;asmak
+hark back:geri Ã§aÄŸÄ±rmak
+harm:hasar;incitmek;kÃ¶tÃ¼lÃ¼k;zarar;zarar vermek
 harmony:ahenk;uyum
-hate:iğrenme;kin;nefret
-hatred:düşmanlık;kin;nefret
+hate:iÄŸrenme;kin;nefret
+hatred:dÃ¼ÅŸmanlÄ±k;kin;nefret
 he:o(erkek)
-headhunter:kafa avcısı;teknik eleman avcısı
-health:sağlık;sıhhat
-heap:küme;kümelemek;yığın;yığmak
-heat treatment:ısıl işlem
-heat:ısı
+headhunter:kafa avcÄ±sÄ±;teknik eleman avcÄ±sÄ±
+health:saÄŸlÄ±k;sÄ±hhat
+heap:kÃ¼me;kÃ¼melemek;yÄ±ÄŸÄ±n;yÄ±ÄŸmak
+heat treatment:Ä±sÄ±l iÅŸlem
+heat:Ä±sÄ±
 heathen:barbar;kafir;putperest
-heaven:cennet;gökyüzü
-heel:ökçe;topuk
+heaven:cennet;gÃ¶kyÃ¼zÃ¼
+heel:Ã¶kÃ§e;topuk
 heliport:helikopter pisti
-helmet:miğfer;kask
-help:yardım;yardım etmek
-hence:bu nedenle;bu yüzden;bundan dolayı
-hermitage:inziva yeri;keşiş kulübesi
-hesitant:kararsız
-hesitate:tereddüt etmek
-hesitation:duraksama;tereddüt
+helmet:miÄŸfer;kask
+help:yardÄ±m;yardÄ±m etmek
+hence:bu nedenle;bu yÃ¼zden;bundan dolayÄ±
+hermitage:inziva yeri;keÅŸiÅŸ kulÃ¼besi
+hesitant:kararsÄ±z
+hesitate:tereddÃ¼t etmek
+hesitation:duraksama;tereddÃ¼t
 highlight:vurgu;vurgulamak
 hint:ipucu
-hire:kira;kiralama;ücret
+hire:kira;kiralama;Ã¼cret
 hole:delik
-hood:başlık
-hoody:kapüşonlu
+hood:baÅŸlÄ±k
+hoody:kapÃ¼ÅŸonlu
 horn:boynuz;korna
-horror:değşet;korku
+horror:deÄŸÅŸet;korku
 horse:at
-hostility:düşmanlık;kin
+hostility:dÃ¼ÅŸmanlÄ±k;kin
 hotel:otel
-hound:av köpeği;iz sürmek;takip etmek;tazı
-however:ancak;bununla birlikte;yalnız
-huddle:bir araya sıkışmak;birbirine sokulup sarılmak ve çömelmek;kalabalık;karışıklık;yığın
-hug:sevgiyle sarılmak
-huge:çok büyük;iri;kocaman
-humiliate:gururunu kırmak;küçük düşürmek;rezil etmek
-hundred:yüz
-hungry:acıktırıcı;aç
-hybrid:katışık;kırma;melez
+hound:av kÃ¶peÄŸi;iz sÃ¼rmek;takip etmek;tazÄ±
+however:ancak;bununla birlikte;yalnÄ±z
+huddle:bir araya sÄ±kÄ±ÅŸmak;birbirine sokulup sarÄ±lmak ve Ã§Ã¶melmek;kalabalÄ±k;karÄ±ÅŸÄ±klÄ±k;yÄ±ÄŸÄ±n
+hug:sevgiyle sarÄ±lmak
+huge:Ã§ok bÃ¼yÃ¼k;iri;kocaman
+humiliate:gururunu kÄ±rmak;kÃ¼Ã§Ã¼k dÃ¼ÅŸÃ¼rmek;rezil etmek
+hundred:yÃ¼z
+hungry:acÄ±ktÄ±rÄ±cÄ±;aÃ§
+hybrid:katÄ±ÅŸÄ±k;kÄ±rma;melez
 i:ben
 ice cream:dondurma
 ice:buz
-iceberg:buzdağı
-identical:aynı;benzer;özdeş;tıpkı
-if:eğer;ise
-ignite:tutuşmak;tutuşturmak
-ignore:aldırmamak;-e önem vermemek;görmemezlikten gelmek;yoksay
-illuminate:aydınlatmak;ışıklandırmak
-illustrate:göstermek;örneklemek;resimlemek
-immediate:acil;doğrudan doğruya;şimdiki;yakın
-immediately:acilen;derhal;doğrudan doğruya;hemen
-imminent:yakın;yakında olacak
-immunize:bağışık kılmak;bağışıklık kazandırmak
-impatient:sabırsız
-impeccable:kusursuz;mükemmel
-impeller:çark;fan;sevk edici pervane
-implement:alet;araç;yerine getirmek
-implementation:gerçekleştirme;uygulama;yerine getirme;yürütme
-imply:anlamına gelmek;içermek;ima etmek
-impress:etkilemek;hayran bırakmak
-impression:etki;fikir;izlenim;kanı
-improve:değerini arttırmak;düzeltmek
-improvement:düzelme;düzeltme;gelişme;ilerleme
-in a moment:az sonra;çok geçmeden
+iceberg:buzdaÄŸÄ±
+identical:aynÄ±;benzer;Ã¶zdeÅŸ;tÄ±pkÄ±
+if:eÄŸer;ise
+ignite:tutuÅŸmak;tutuÅŸturmak
+ignore:aldÄ±rmamak;-e Ã¶nem vermemek;gÃ¶rmemezlikten gelmek;yoksay
+illuminate:aydÄ±nlatmak;Ä±ÅŸÄ±klandÄ±rmak
+illustrate:gÃ¶stermek;Ã¶rneklemek;resimlemek
+immediate:acil;doÄŸrudan doÄŸruya;ÅŸimdiki;yakÄ±n
+immediately:acilen;derhal;doÄŸrudan doÄŸruya;hemen
+imminent:yakÄ±n;yakÄ±nda olacak
+immunize:baÄŸÄ±ÅŸÄ±k kÄ±lmak;baÄŸÄ±ÅŸÄ±klÄ±k kazandÄ±rmak
+impatient:sabÄ±rsÄ±z
+impeccable:kusursuz;mÃ¼kemmel
+impeller:Ã§ark;fan;sevk edici pervane
+implement:alet;araÃ§;yerine getirmek
+implementation:gerÃ§ekleÅŸtirme;uygulama;yerine getirme;yÃ¼rÃ¼tme
+imply:anlamÄ±na gelmek;iÃ§ermek;ima etmek
+impress:etkilemek;hayran bÄ±rakmak
+impression:etki;fikir;izlenim;kanÄ±
+improve:deÄŸerini arttÄ±rmak;dÃ¼zeltmek
+improvement:dÃ¼zelme;dÃ¼zeltme;geliÅŸme;ilerleme
+in a moment:az sonra;Ã§ok geÃ§meden
 in any case:her durumda;her halde
-in case of:tehlikesine karşı
-in case:olasılığına karşı
-in no mood for:bir şeyi yapacak halde/psikolojide olmamak
-in pieces:paramparça;parça parça
-in:içinde;-de;-da
-incense:tütsü
+in case of:tehlikesine karÅŸÄ±
+in case:olasÄ±lÄ±ÄŸÄ±na karÅŸÄ±
+in no mood for:bir ÅŸeyi yapacak halde/psikolojide olmamak
+in pieces:paramparÃ§a;parÃ§a parÃ§a
+in:iÃ§inde;-de;-da
+incense:tÃ¼tsÃ¼
 incident:olay
-inclined:eğimli;eğri;meyilli
-include:dahil olmak;içermek;içine almak;kapsamak;katmak
+inclined:eÄŸimli;eÄŸri;meyilli
+include:dahil olmak;iÃ§ermek;iÃ§ine almak;kapsamak;katmak
 inclusion:alma;dahil etme;ek;ilave
-incomparable:benzersiz;eşsiz;kıyaslanamaz
+incomparable:benzersiz;eÅŸsiz;kÄ±yaslanamaz
 incompetent:beceriksiz;ehliyetsiz;yeteneksiz;yetersiz
-incomplete:bitmemiş;eksik;noksan;tam olmayan;tamamlanmamış
-incorrect:doğru olmayan;hatalı;yanlış
-increase:artırmak;büyütmek
-indeed:cidden;gerçekten;hakikaten
-indentation:çentik;girintili yazma;koy;körfez
-indicate:göstermek;işaret etmek
+incomplete:bitmemiÅŸ;eksik;noksan;tam olmayan;tamamlanmamÄ±ÅŸ
+incorrect:doÄŸru olmayan;hatalÄ±;yanlÄ±ÅŸ
+increase:artÄ±rmak;bÃ¼yÃ¼tmek
+indeed:cidden;gerÃ§ekten;hakikaten
+indentation:Ã§entik;girintili yazma;koy;kÃ¶rfez
+indicate:gÃ¶stermek;iÅŸaret etmek
 individual:birey;bireysel
-induce:-e neden olmak;ikna etmek;teşvik etmek
+induce:-e neden olmak;ikna etmek;teÅŸvik etmek
 inert gas:asal gaz;inert gaz
-inert:atıl;inert;nötr;tarafsız
-influence:etki;nüfuz
-information:bilgi;danışma
-infrastructure:altyapı
-ingenuity:beceri;hüner;ustalık
-ingestion:alınım;midesine indirme
-ingredient:karışımı oluşturan madde
-inhabit:-de ikamet etmek;-de oturmak;-de yaşamak
+inert:atÄ±l;inert;nÃ¶tr;tarafsÄ±z
+influence:etki;nÃ¼fuz
+information:bilgi;danÄ±ÅŸma
+infrastructure:altyapÄ±
+ingenuity:beceri;hÃ¼ner;ustalÄ±k
+ingestion:alÄ±nÄ±m;midesine indirme
+ingredient:karÄ±ÅŸÄ±mÄ± oluÅŸturan madde
+inhabit:-de ikamet etmek;-de oturmak;-de yaÅŸamak
 inhabitant:bir yerde ikamet eden kimse;bir yerde oturan kimse;sakin
-inheritance:kalıt;kalıtım;miras
-initial:başlangıç
-initialization:başlangıç durumuna getirme;ilk kullanıma hazırlama
-initiate:başlamak;başlatmak
-initiation:başlatma;başlayış
-injection:enjeksiyon;püskürtme
-inlet:ağız;giriş;koy
-innermost:en içerideki;en içteki
-innocence:cahillik;günahsızlık;saflık;suçsuzluk
-insane:çılgın;deli
-insanity:aptallık;çılgınlık;delilik
+inheritance:kalÄ±t;kalÄ±tÄ±m;miras
+initial:baÅŸlangÄ±Ã§
+initialization:baÅŸlangÄ±Ã§ durumuna getirme;ilk kullanÄ±ma hazÄ±rlama
+initiate:baÅŸlamak;baÅŸlatmak
+initiation:baÅŸlatma;baÅŸlayÄ±ÅŸ
+injection:enjeksiyon;pÃ¼skÃ¼rtme
+inlet:aÄŸÄ±z;giriÅŸ;koy
+innermost:en iÃ§erideki;en iÃ§teki
+innocence:cahillik;gÃ¼nahsÄ±zlÄ±k;saflÄ±k;suÃ§suzluk
+insane:Ã§Ä±lgÄ±n;deli
+insanity:aptallÄ±k;Ã§Ä±lgÄ±nlÄ±k;delilik
 inspiration:esin;ilham
-instability:değişkenlik;kararsızlık
-install:kurmak;tesis etmek;yerleştirmek;yüklemek
-installation:tesisat;donanım;kurma;tertibat;düzen
-instance:misal;örnek
-instantiation:bir "class" tan yeni bir "object" yaratma işlemi (programlama)
+instability:deÄŸiÅŸkenlik;kararsÄ±zlÄ±k
+install:kurmak;tesis etmek;yerleÅŸtirmek;yÃ¼klemek
+installation:tesisat;donanÄ±m;kurma;tertibat;dÃ¼zen
+instance:misal;Ã¶rnek
+instantiation:bir "class" tan yeni bir "object" yaratma iÅŸlemi (programlama)
 instead of:-in yerine
 instead:yerinde;yerine
-instruction:öğretim;talimat;yönerge
-instrument:alet;vasıta;enstrüman;araç
+instruction:Ã¶ÄŸretim;talimat;yÃ¶nerge
+instrument:alet;vasÄ±ta;enstrÃ¼man;araÃ§
 insufficient:ehliyetsiz;eksik;yetersiz
-insulate:ayrı tutmak;izole etmek;yalıtmak
-insulating:yalıtıcı;yalıtım;yalıtkan
-intangible:elle tutulamaz;görülemez
-integrant:bütünleyici
-integrity:bütünlük;doğruluk;dürüstlük;güvenilirlik
-intellectual:akli;zihinsel;akıllı
+insulate:ayrÄ± tutmak;izole etmek;yalÄ±tmak
+insulating:yalÄ±tÄ±cÄ±;yalÄ±tÄ±m;yalÄ±tkan
+intangible:elle tutulamaz;gÃ¶rÃ¼lemez
+integrant:bÃ¼tÃ¼nleyici
+integrity:bÃ¼tÃ¼nlÃ¼k;doÄŸruluk;dÃ¼rÃ¼stlÃ¼k;gÃ¼venilirlik
+intellectual:akli;zihinsel;akÄ±llÄ±
 intend:niyet etmek;planlamak;tasarlamak
-intense:çok kuvvetli;mat;şiddetli;yoğun
-intensity:keskinlik;şiddet;yoğunluk
-intensive:şiddetli;yoğun
-intention:amaç;maksat;niyet
+intense:Ã§ok kuvvetli;mat;ÅŸiddetli;yoÄŸun
+intensity:keskinlik;ÅŸiddet;yoÄŸunluk
+intensive:ÅŸiddetli;yoÄŸun
+intention:amaÃ§;maksat;niyet
 interact:birbirini etkileme
-interactively:karşılıklı
-interface:arabirim;arayüz;arayüzey
-interlace:ara;aralık;müddet;süre
-internal application error:iç uygulama hatası
-internal combustion engine:içten yanmalı makine,motor
-internal:dahili;iç;iç taraf;içsel
-interpreter:tercüman
-interval:ara;aralık;süre
-intervene:karışmak;araya girmek;müdehale etmek
-intervention:keşif;keşfedilmiş şey;araya girme;karışma
-into:-in içerisine;-in içine
-intrinsically:aslında;özünde
-introduce:tanıştırmak;tanıtmak
-introduced:tanıtılan
-introduction:başlangıç;giriş;tanıştırma;tanıtım
+interactively:karÅŸÄ±lÄ±klÄ±
+interface:arabirim;arayÃ¼z;arayÃ¼zey
+interlace:ara;aralÄ±k;mÃ¼ddet;sÃ¼re
+internal application error:iÃ§ uygulama hatasÄ±
+internal combustion engine:iÃ§ten yanmalÄ± makine,motor
+internal:dahili;iÃ§;iÃ§ taraf;iÃ§sel
+interpreter:tercÃ¼man
+interval:ara;aralÄ±k;sÃ¼re
+intervene:karÄ±ÅŸmak;araya girmek;mÃ¼dehale etmek
+intervention:keÅŸif;keÅŸfedilmiÅŸ ÅŸey;araya girme;karÄ±ÅŸma
+into:-in iÃ§erisine;-in iÃ§ine
+intrinsically:aslÄ±nda;Ã¶zÃ¼nde
+introduce:tanÄ±ÅŸtÄ±rmak;tanÄ±tmak
+introduced:tanÄ±tÄ±lan
+introduction:baÅŸlangÄ±Ã§;giriÅŸ;tanÄ±ÅŸtÄ±rma;tanÄ±tÄ±m
 intruder:davetsiz misafir
 intuitively:sezgiyle
 invade:istila etmek
-invader:istilacı
-invention:buluş
-inverse:ters;ters çevrilmiş
-inversely proportional:ters orantılı
+invader:istilacÄ±
+invention:buluÅŸ
+inverse:ters;ters Ã§evrilmiÅŸ
+inversely proportional:ters orantÄ±lÄ±
 inversely:tersine
-investigate:araştırmak;incelemek;tetkik etmek
-investment:yatırılan para;yatırılan sermaye;yatırım;yatırma
-invisible:görülmez
-invoke:çağırmak;yalvarmak
-involuntary:istenilmeden yapılan
-involve:içermek
-involved:anlaşılmaz;karmaşık
-ionize:iyonlarına ayırmak;iyonlarına dönüştürmek;iyonlaştırmak
-ionized:iyonlaşmış
+investigate:araÅŸtÄ±rmak;incelemek;tetkik etmek
+investment:yatÄ±rÄ±lan para;yatÄ±rÄ±lan sermaye;yatÄ±rÄ±m;yatÄ±rma
+invisible:gÃ¶rÃ¼lmez
+invoke:Ã§aÄŸÄ±rmak;yalvarmak
+involuntary:istenilmeden yapÄ±lan
+involve:iÃ§ermek
+involved:anlaÅŸÄ±lmaz;karmaÅŸÄ±k
+ionize:iyonlarÄ±na ayÄ±rmak;iyonlarÄ±na dÃ¶nÃ¼ÅŸtÃ¼rmek;iyonlaÅŸtÄ±rmak
+ionized:iyonlaÅŸmÄ±ÅŸ
 iris:iris
-ironic:alaycı;alaylı
+ironic:alaycÄ±;alaylÄ±
 ironical:alay eden
-irregularity:düzensizlik
-irritate:sinirlendirmek;tahriş etmek
-issue:basım;mesele;sorun;yayımlama
+irregularity:dÃ¼zensizlik
+irritate:sinirlendirmek;tahriÅŸ etmek
+issue:basÄ±m;mesele;sorun;yayÄ±mlama
 it:o;ona;onu
-item:adet;fıkra;madde;öğe;parça;tane
-ivory:fildişi
-janitor:kapıcı
+item:adet;fÄ±kra;madde;Ã¶ÄŸe;parÃ§a;tane
+ivory:fildiÅŸi
+janitor:kapÄ±cÄ±
 jar:kavanoz
-jealous:kıskanç
+jealous:kÄ±skanÃ§
 jeopardy:tehlike
-job:görev;iş;meslek
-joint ring:yaylı rondela
+job:gÃ¶rev;iÅŸ;meslek
+joint ring:yaylÄ± rondela
 joint:ek yeri;eklem
 jot down:not almak
 journey:gezi;sefer;seyahat;yolculuk
-jurisdiction:yargılama hakkı
-just:adil;hemen;sadece;şimdi;tam;yerinde
-justice:adalet;doğruluk;dürüstlük;hak
-keen:güçlü;hevesli
-keep abreast of:ayak uydurmak;olup biteni öğrenmek;yeni gelişmeleri öğrenmek
-keep ahead of somebody:birini geride bırakmak;önde gitmek
-keep:devam etmek;işletmek;korumak;sürdürmek;tutmak
-kerf:çentik;kertik;kesilmiş parça;kesme
-key:anahtar;kama;tuş
-kid:çocuk;şaka yapmak
-kind:cins;çeşit;kibar;nazik;sevimli;tip;tür
-king:(satrançta) şah;kıral
-kingdom:krallık
-kneeling:diz çökerek
-knife:bıçak;bıçaklamak
-knight:(satrançta) at;şövalye
+jurisdiction:yargÄ±lama hakkÄ±
+just:adil;hemen;sadece;ÅŸimdi;tam;yerinde
+justice:adalet;doÄŸruluk;dÃ¼rÃ¼stlÃ¼k;hak
+keen:gÃ¼Ã§lÃ¼;hevesli
+keep abreast of:ayak uydurmak;olup biteni Ã¶ÄŸrenmek;yeni geliÅŸmeleri Ã¶ÄŸrenmek
+keep ahead of somebody:birini geride bÄ±rakmak;Ã¶nde gitmek
+keep:devam etmek;iÅŸletmek;korumak;sÃ¼rdÃ¼rmek;tutmak
+kerf:Ã§entik;kertik;kesilmiÅŸ parÃ§a;kesme
+key:anahtar;kama;tuÅŸ
+kid:Ã§ocuk;ÅŸaka yapmak
+kind:cins;Ã§eÅŸit;kibar;nazik;sevimli;tip;tÃ¼r
+king:(satranÃ§ta) ÅŸah;kÄ±ral
+kingdom:krallÄ±k
+kneeling:diz Ã§Ã¶kerek
+knife:bÄ±Ã§ak;bÄ±Ã§aklamak
+knight:(satranÃ§ta) at;ÅŸÃ¶valye
 knocked out:nakavt
-know:bilmek;tanımak
+know:bilmek;tanÄ±mak
 knowledge:bilgi;haber
-known:bilinen;tanınan
+known:bilinen;tanÄ±nan
 kumquat:mandalina
 ladder:el merdiveni
-ladle:kepçe
-landslide:heyelan;toprak kayması
+ladle:kepÃ§e
+landslide:heyelan;toprak kaymasÄ±
 language:dil;lisan
-lap:diz üstü;kucak;üstüste bindirmek
-last:devam etmek;en son;son;son olarak;sonuncu;sonuncu olarak;sürmek
-lately:geçenlerde;son günlerde;son zamanlarda
+lap:diz Ã¼stÃ¼;kucak;Ã¼stÃ¼ste bindirmek
+last:devam etmek;en son;son;son olarak;sonuncu;sonuncu olarak;sÃ¼rmek
+lately:geÃ§enlerde;son gÃ¼nlerde;son zamanlarda
 latter:son;sonraki
-launchpad:fırlatma rampası
-laundry:çamaşır
-lay up:biriktirmek;depolamak;toplamak;yığmak
+launchpad:fÄ±rlatma rampasÄ±
+laundry:Ã§amaÅŸÄ±r
+lay up:biriktirmek;depolamak;toplamak;yÄ±ÄŸmak
 layer:kat;katman;tabaka
-lead:kılavuzluk;kurşun;yol göstermek
-leaks:sızıntı;sızmak;sızdırmak;su sızdıran delik yada çatlak;elektrik kaçağı
+lead:kÄ±lavuzluk;kurÅŸun;yol gÃ¶stermek
+leaks:sÄ±zÄ±ntÄ±;sÄ±zmak;sÄ±zdÄ±rmak;su sÄ±zdÄ±ran delik yada Ã§atlak;elektrik kaÃ§aÄŸÄ±
 leather:deri
 legend:efsane
-legitimate:akla yatkın;kanuna uygun;mantıklı;meşru;yasal
-leisure time:boş vakit;boş zaman
-lend:borç vermek;ödünç vermek
+legitimate:akla yatkÄ±n;kanuna uygun;mantÄ±klÄ±;meÅŸru;yasal
+leisure time:boÅŸ vakit;boÅŸ zaman
+lend:borÃ§ vermek;Ã¶dÃ¼nÃ§ vermek
 length:boy;uzunluk
-less:daha az;daha küçük
-lessen:azalmak;azaltmak;eksiltmek;küçültmek
-level:aynı düzeyde;düzey;hiza;seviye
-library:kütüphane
+less:daha az;daha kÃ¼Ã§Ã¼k
+lessen:azalmak;azaltmak;eksiltmek;kÃ¼Ã§Ã¼ltmek
+level:aynÄ± dÃ¼zeyde;dÃ¼zey;hiza;seviye
+library:kÃ¼tÃ¼phane
 license:lisans
-lid:gözkapağı;kapak
-lie:uzanmak;yalan;yalan söylemek;yatmak;yer almak
-lifeboat:cankurtaran sandalı
+lid:gÃ¶zkapaÄŸÄ±;kapak
+lie:uzanmak;yalan;yalan sÃ¶ylemek;yatmak;yer almak
+lifeboat:cankurtaran sandalÄ±
 lily:zambak
 limb:bacak;kol;uzuv
-limit:kısıtlamak;limit;sınır;sınırlamak;uç
-line:çizgi;sıra
-linked:bağla;bağlı
+limit:kÄ±sÄ±tlamak;limit;sÄ±nÄ±r;sÄ±nÄ±rlamak;uÃ§
+line:Ã§izgi;sÄ±ra
+linked:baÄŸla;baÄŸlÄ±
 lion:aslan
-liquid:akıcı;berrak;likit;saydam;sıvı
-live:canlı;oturmak;yaşamak
+liquid:akÄ±cÄ±;berrak;likit;saydam;sÄ±vÄ±
+live:canlÄ±;oturmak;yaÅŸamak
 local:lokal;yerel
 location:konum;yer
-log:günlük;kütük
-logic:mantık
-logical:makul;mantıki;mantıklı;mantıksal;uygun
-loneliness:yalnızlık
+log:gÃ¼nlÃ¼k;kÃ¼tÃ¼k
+logic:mantÄ±k
+logical:makul;mantÄ±ki;mantÄ±klÄ±;mantÄ±ksal;uygun
+loneliness:yalnÄ±zlÄ±k
 longer:daha uzun
 longitude:boylam
 look for:aramak;beklemek
-loss:kayıp;zarar;zayi
-loud:gürültülü;yüksek sesli
-love:aşık olmak;sevgi;sevmek
-lower:alçaltmak;daha alçak;indirmek;inmek
-ludicrous:gülünç;komik
+loss:kayÄ±p;zarar;zayi
+loud:gÃ¼rÃ¼ltÃ¼lÃ¼;yÃ¼ksek sesli
+love:aÅŸÄ±k olmak;sevgi;sevmek
+lower:alÃ§altmak;daha alÃ§ak;indirmek;inmek
+ludicrous:gÃ¼lÃ¼nÃ§;komik
 luggage:bagaj
-lung:akciğer
-luscious:nefis;tatlı
-lyrics:şarkı sözü
-made out of:-den oluşmak
-magnificent:görkemli;muhteşem
+lung:akciÄŸer
+luscious:nefis;tatlÄ±
+lyrics:ÅŸarkÄ± sÃ¶zÃ¼
+made out of:-den oluÅŸmak
+magnificent:gÃ¶rkemli;muhteÅŸem
 maintaining:koruyarak
-maintenance:bakım;koruma;muhafaza;bakım işi
-major:ana;büyük;esas
-make something public:bir şeyi kamuoyuna açıklamak;izah etmek
+maintenance:bakÄ±m;koruma;muhafaza;bakÄ±m iÅŸi
+major:ana;bÃ¼yÃ¼k;esas
+make something public:bir ÅŸeyi kamuoyuna aÃ§Ä±klamak;izah etmek
 male:erkek
-malfunction:aksaklık;arıza;bozukluk;teklemek;tutukluk
-management:idare;yönetim
+malfunction:aksaklÄ±k;arÄ±za;bozukluk;teklemek;tutukluk
+management:idare;yÃ¶netim
 mandatory:zorunlu
 mangrove:mangrov
-manipulate:hile karıştırmak;hünerle kullanmak
-manipulation:çalıştırma;elle hareket ettirme;işleme;işletme;kullanma;manipulasyon
-manipulator:idare eden kimse;işleten;uzaktan elle çalışan aygıt
-manner:tarz;tavır;usul;biçim;şekil
+manipulate:hile karÄ±ÅŸtÄ±rmak;hÃ¼nerle kullanmak
+manipulation:Ã§alÄ±ÅŸtÄ±rma;elle hareket ettirme;iÅŸleme;iÅŸletme;kullanma;manipulasyon
+manipulator:idare eden kimse;iÅŸleten;uzaktan elle Ã§alÄ±ÅŸan aygÄ±t
+manner:tarz;tavÄ±r;usul;biÃ§im;ÅŸekil
 manufacture:imal etmek
-manufacturer:imalatçı;üretici
-marked:belirgin;göze çarpan;işaretlenmiş;işaretli
+manufacturer:imalatÃ§Ä±;Ã¼retici
+marked:belirgin;gÃ¶ze Ã§arpan;iÅŸaretlenmiÅŸ;iÅŸaretli
 married:evli
 marry:evlendirmek;evlenmek
-marvel:mucize;şaşılacak şey
+marvel:mucize;ÅŸaÅŸÄ±lacak ÅŸey
 mask:gizlemek;maske;maskelemek
-massive:büyük;iri;kocaman
-mate:arkadaş;eş;mat;ortak
-mathematician:matematikçi
+massive:bÃ¼yÃ¼k;iri;kocaman
+mate:arkadaÅŸ;eÅŸ;mat;ortak
+mathematician:matematikÃ§i
 matter:cisim;madde
 maturity:ergenlik;olgunluk;vade
-mayor:belediye başkanı
+mayor:belediye baÅŸkanÄ±
 maze:labirent
 meal:un;yemek
-mean:cimri;çirkin;demek istemek;huysuz;kaba;kastetmek;niyet etmek;pinti
-meaning:anlam;değer;mana;önem
-meaningful:anlamlı
-meaningless:abes;amaçsız;anlamsız;manasız
+mean:cimri;Ã§irkin;demek istemek;huysuz;kaba;kastetmek;niyet etmek;pinti
+meaning:anlam;deÄŸer;mana;Ã¶nem
+meaningful:anlamlÄ±
+meaningless:abes;amaÃ§sÄ±z;anlamsÄ±z;manasÄ±z
 meanwhile:bu arada;bu esnada
-mechanized:makineleştirilmiş;mekanize
-meddle:burnunu sokmak;karışmak
-medium:orta;ortam;çevre;vasıta
-memento:hatıra
-memorial:anıt
+mechanized:makineleÅŸtirilmiÅŸ;mekanize
+meddle:burnunu sokmak;karÄ±ÅŸmak
+medium:orta;ortam;Ã§evre;vasÄ±ta
+memento:hatÄ±ra
+memorial:anÄ±t
 menacing:tehditkar
-menu:menü
-merchandise:alışveriş etmek;mal;satılık eşya;ticaret yapmak;ticari eşya
+menu:menÃ¼
+merchandise:alÄ±ÅŸveriÅŸ etmek;mal;satÄ±lÄ±k eÅŸya;ticaret yapmak;ticari eÅŸya
 mercury:civa
-methodology:yöntembilim
-microstructure:mikroyapı
+methodology:yÃ¶ntembilim
+microstructure:mikroyapÄ±
 microwave:mikrodalga
-midterm:dönem ortası
+midterm:dÃ¶nem ortasÄ±
 might be:olabilir
-mimic:kopya etmek;taklit etmek;taklitçi
-mind:akıl;anımsama;beyin;dikkat;karşı çıkmak;karşı koymak
-mine:maden ocağı
-miner:maden işçisi
-miniature:minyatür
-minor:daha küçük;küçük;önemsiz
-miscellaneous:çeşitli
-mistake:hata;yanlış
+mimic:kopya etmek;taklit etmek;taklitÃ§i
+mind:akÄ±l;anÄ±msama;beyin;dikkat;karÅŸÄ± Ã§Ä±kmak;karÅŸÄ± koymak
+mine:maden ocaÄŸÄ±
+miner:maden iÅŸÃ§isi
+miniature:minyatÃ¼r
+minor:daha kÃ¼Ã§Ã¼k;kÃ¼Ã§Ã¼k;Ã¶nemsiz
+miscellaneous:Ã§eÅŸitli
+mistake:hata;yanlÄ±ÅŸ
 mobil:seyyar
-mode:biçim;mod;tarz;usul;yol
-moderate:makul;orta;ölçülü
-modification:değişiklik
-molten:dökme;erimiş
+mode:biÃ§im;mod;tarz;usul;yol
+moderate:makul;orta;Ã¶lÃ§Ã¼lÃ¼
+modification:deÄŸiÅŸiklik
+molten:dÃ¶kme;erimiÅŸ
 monetary:parasal;parayla ilgili
-monitor:gözleyici
+monitor:gÃ¶zleyici
 monkey:maymun
 month:ay
-more:çok;daha;daha çok;fazla
-moreover:ayrıca;bundan başka;üstelik;zaten
+more:Ã§ok;daha;daha Ã§ok;fazla
+moreover:ayrÄ±ca;bundan baÅŸka;Ã¼stelik;zaten
 morning:sabah
-motion:hareket;işaret etmek
-mount:binek hayvanı;dağ;tepe;tırmanmak
-mounted:bindirilmiş;kakılmış;takılı
+motion:hareket;iÅŸaret etmek
+mount:binek hayvanÄ±;daÄŸ;tepe;tÄ±rmanmak
+mounted:bindirilmiÅŸ;kakÄ±lmÄ±ÅŸ;takÄ±lÄ±
 mounting:kurma;montaj;takma
-mouth:ağız;giriş yeri
-multiplicative:çarpımsal;çarpmayla ilgili
-multiply:çarpmak;çoğalmak;çoğaltmak
-multitude:çok sayı;çokluk
+mouth:aÄŸÄ±z;giriÅŸ yeri
+multiplicative:Ã§arpÄ±msal;Ã§arpmayla ilgili
+multiply:Ã§arpmak;Ã§oÄŸalmak;Ã§oÄŸaltmak
+multitude:Ã§ok sayÄ±;Ã§okluk
 municipal:belediyeye ait
 muniment:senet
-museum:müze
+museum:mÃ¼ze
 myself:ben;kendim
 mystic:gizemli
-mystify:meraklandırmak;şaşırtmak
+mystify:meraklandÄ±rmak;ÅŸaÅŸÄ±rtmak
 naive:saf;toy
-nap:kestirmek;kısa uyku;şekerleme yapmak
+nap:kestirmek;kÄ±sa uyku;ÅŸekerleme yapmak
 nation:millet;ulus
-navigation:deniz veya uçak yolculuğu;dolaşma;navigasyon;sefer
+navigation:deniz veya uÃ§ak yolculuÄŸu;dolaÅŸma;navigasyon;sefer
 navy:bahriye;deniz filosu;deniz kuvvetleri;donanma
-necessary:gerekli;kaçınılmaz;vazgeçilmez;zaruri
-necessity:gereklilik;gereksinme;ihtiyaç
+necessary:gerekli;kaÃ§Ä±nÄ±lmaz;vazgeÃ§ilmez;zaruri
+necessity:gereklilik;gereksinme;ihtiyaÃ§
 neck:boyun;yaka
-necklace:gerdanlık;kolye
-needle:iğne;iğne gibi şey;pusula ibresi
-negligible:ihmal edilebilir;kayda değmez;önemsemeye değmez
-neither:hiçbiri
+necklace:gerdanlÄ±k;kolye
+needle:iÄŸne;iÄŸne gibi ÅŸey;pusula ibresi
+negligible:ihmal edilebilir;kayda deÄŸmez;Ã¶nemsemeye deÄŸmez
+neither:hiÃ§biri
 nervous:sinirleri gergin;sinirsel
 nest egg:birikim
-nest:hırsız yatağı;kuş yuvası;yuva;yuva yapmak
-never:asla;hiç;hiçbir zaman
+nest:hÄ±rsÄ±z yataÄŸÄ±;kuÅŸ yuvasÄ±;yuva;yuva yapmak
+never:asla;hiÃ§;hiÃ§bir zaman
 new:acemi;taze;yeni
 newer:daha yeni
 newlywed:yeni evli
 nine:dokuz
-nipple:boru rakoru;meme başı;nipel;nozul
-nitriding:çeliklerin sertleştirme yöntemlerinden biri;nitrikleme
-no:hayır;hiç
+nipple:boru rakoru;meme baÅŸÄ±;nipel;nozul
+nitriding:Ã§eliklerin sertleÅŸtirme yÃ¶ntemlerinden biri;nitrikleme
+no:hayÄ±r;hiÃ§
 noble metal:soy metal
-nod:başını sallamak
-node:düğüm
-noise:gürültü
+nod:baÅŸÄ±nÄ± sallamak
+node:dÃ¼ÄŸÃ¼m
+noise:gÃ¼rÃ¼ltÃ¼
 non-conductive:iletken olmayan
-none:hiçbiri;yok
+none:hiÃ§biri;yok
 nonetheless:bununla beraber
 non-ferrous:demirsiz
-noon:öğle;öğle vakti
+noon:Ã¶ÄŸle;Ã¶ÄŸle vakti
 north:kuzey
-nose:burun;uç
+nose:burun;uÃ§
 not at all:asla;katiyen
-notation:gösterim;notasyon;simgelenim
+notation:gÃ¶sterim;notasyon;simgelenim
 notebook:defter
-noted:tanınmış
-notice:bildiri;dikkat;dikkat etmek;farketmek;uyarı
-noticeably:farkına varılacak derecede
-novel:alışılmışın dışında;tuhaf;yeni
+noted:tanÄ±nmÄ±ÅŸ
+notice:bildiri;dikkat;dikkat etmek;farketmek;uyarÄ±
+noticeably:farkÄ±na varÄ±lacak derecede
+novel:alÄ±ÅŸÄ±lmÄ±ÅŸÄ±n dÄ±ÅŸÄ±nda;tuhaf;yeni
 novelty:yenilik
-now:bu anda;işte;şimdi;şu an
-nozzle:ağızlık;hortum memesi/başlığı;nozul
-nucleus:çekirdek
-number:miktar;numara;rakam;sayı
+now:bu anda;iÅŸte;ÅŸimdi;ÅŸu an
+nozzle:aÄŸÄ±zlÄ±k;hortum memesi/baÅŸlÄ±ÄŸÄ±;nozul
+nucleus:Ã§ekirdek
+number:miktar;numara;rakam;sayÄ±
 numerator:pay
-nut:fındık;somun
-obligation:yükümlülük
-observatory:gözlemevi;rasathane
-obtain:almak;bulmak;ele geçirmek;sağlamak;elde etmek
-obvious:apaçık;belli
-occasion:durum;fırsat;hal;sebep;vesile
-occasionally:ara sıra;arada sırada;bazen
-occured:cereyan etmek;meydana gelmek;oluşmak;ortaya çıkmak
+nut:fÄ±ndÄ±k;somun
+obligation:yÃ¼kÃ¼mlÃ¼lÃ¼k
+observatory:gÃ¶zlemevi;rasathane
+obtain:almak;bulmak;ele geÃ§irmek;saÄŸlamak;elde etmek
+obvious:apaÃ§Ä±k;belli
+occasion:durum;fÄ±rsat;hal;sebep;vesile
+occasionally:ara sÄ±ra;arada sÄ±rada;bazen
+occured:cereyan etmek;meydana gelmek;oluÅŸmak;ortaya Ã§Ä±kmak
 occurence:olay;vaka
-occurred:cereyan etmek;görülmek;meydana gelmek;oluşmak;ortaya çıkmak
+occurred:cereyan etmek;gÃ¶rÃ¼lmek;meydana gelmek;oluÅŸmak;ortaya Ã§Ä±kmak
 ocean:okyanus
 odorless:kokusuz
-of:-in;-ın;nin;nın,-den;-dan;hakkında;ilgili
-oil:yağ
+of:-in;-Ä±n;nin;nÄ±n,-den;-dan;hakkÄ±nda;ilgili
+oil:yaÄŸ
 okay:onaylamak;tamam
-on occasion:ara sıra;fırsat buldukça
-on request:istek üzerine
+on occasion:ara sÄ±ra;fÄ±rsat buldukÃ§a
+on request:istek Ã¼zerine
 one another:birbirine
 one:bir;biri(si);tek
-only:ama;ancak;biricik;sadece;tek;yalnız;yalnızca
-opcode:işlem kodu
-operate:çalışmak;çalıştırmak;işletmek;kullanmak;iş görmek;işlemek
-operating:çalıştırma;işletme
-operation:çalışma;işlem;süreç
-operator:işletmen;operatör
-opinion:düşünce;fikir;kanı
-optical:görme;görüş;göz;optik;optikle ilgili
-option:seçenek;seçme
+only:ama;ancak;biricik;sadece;tek;yalnÄ±z;yalnÄ±zca
+opcode:iÅŸlem kodu
+operate:Ã§alÄ±ÅŸmak;Ã§alÄ±ÅŸtÄ±rmak;iÅŸletmek;kullanmak;iÅŸ gÃ¶rmek;iÅŸlemek
+operating:Ã§alÄ±ÅŸtÄ±rma;iÅŸletme
+operation:Ã§alÄ±ÅŸma;iÅŸlem;sÃ¼reÃ§
+operator:iÅŸletmen;operatÃ¶r
+opinion:dÃ¼ÅŸÃ¼nce;fikir;kanÄ±
+optical:gÃ¶rme;gÃ¶rÃ¼ÅŸ;gÃ¶z;optik;optikle ilgili
+option:seÃ§enek;seÃ§me
 or:veya;ya da
-order:düzen;düzenlemek
+order:dÃ¼zen;dÃ¼zenlemek
 orifice:delik;orifis
-origin:başlangıç;kaynak;kök;köken;soy
-out of date:tarihi geçmiş
-out:dış;dışarı
-outbreak:çıkma;patlak vermek;salgın
+origin:baÅŸlangÄ±Ã§;kaynak;kÃ¶k;kÃ¶ken;soy
+out of date:tarihi geÃ§miÅŸ
+out:dÄ±ÅŸ;dÄ±ÅŸarÄ±
+outbreak:Ã§Ä±kma;patlak vermek;salgÄ±n
 outline:taslak
-over:fazla;-in üstünde;üstünde;üzerine
-overclock:hızaştırma
-overcome:gidermek;üstesinden gelmek
+over:fazla;-in Ã¼stÃ¼nde;Ã¼stÃ¼nde;Ã¼zerine
+overclock:hÄ±zaÅŸtÄ±rma
+overcome:gidermek;Ã¼stesinden gelmek
 overhang:sarkmak
-overview:gözden geçirme;tanıtma
-owe:borcu olmak;borçlu olmak
-owing to:sebebiyle;yüzünden
-own:kendi;malik olmak;özel;sahip olmak
+overview:gÃ¶zden geÃ§irme;tanÄ±tma
+owe:borcu olmak;borÃ§lu olmak
+owing to:sebebiyle;yÃ¼zÃ¼nden
+own:kendi;malik olmak;Ã¶zel;sahip olmak
 oxidant:oksitleyici madde
 oxidise:okside etmek
 oxygen:oksijen
 oyster:istiridye
-pack:bohça;çıkın;paket (sigara)
+pack:bohÃ§a;Ã§Ä±kÄ±n;paket (sigara)
 packet:paket
 pagan:putperest
-page:sayfa;ulak;uşak
-paid:pay;ücretli
+page:sayfa;ulak;uÅŸak
+paid:pay;Ã¼cretli
 palm:palmiye
-paradise:cennet;cennet bahçesi
-part:kısım
-particle:partikül
-party:parti;şölen;toplantı
-pass:aşmak;geçiş;geçmek
-path:keçi yolu;patika;yol
-pattern:desen;kalıp;model;numune
-paw:pençe
-pawn:(satrançta) piyon
-pay:maaş;ödeme;ödemek;ücret
-peak:doruğa ulaşmak;doruk;uç;zirve
-pedestrian zone:yaya bölgesi
+paradise:cennet;cennet bahÃ§esi
+part:kÄ±sÄ±m
+particle:partikÃ¼l
+party:parti;ÅŸÃ¶len;toplantÄ±
+pass:aÅŸmak;geÃ§iÅŸ;geÃ§mek
+path:keÃ§i yolu;patika;yol
+pattern:desen;kalÄ±p;model;numune
+paw:penÃ§e
+pawn:(satranÃ§ta) piyon
+pay:maaÅŸ;Ã¶deme;Ã¶demek;Ã¼cret
+peak:doruÄŸa ulaÅŸmak;doruk;uÃ§;zirve
+pedestrian zone:yaya bÃ¶lgesi
 pedestrian:yaya
 peer:dikkatle bakmak
-penetrate:anlamak;dalmak;içinden geçmek;içine girmek;kavramak;nüfuz ederek girmek;nüfuz etmek
-penetration:içine işlemek;nüfuz etmek
-people:ahali;halk;insanlar;kimse;kişi
-percentile:yüzdebirlik;yüzdelik değer
+penetrate:anlamak;dalmak;iÃ§inden geÃ§mek;iÃ§ine girmek;kavramak;nÃ¼fuz ederek girmek;nÃ¼fuz etmek
+penetration:iÃ§ine iÅŸlemek;nÃ¼fuz etmek
+people:ahali;halk;insanlar;kimse;kiÅŸi
+percentile:yÃ¼zdebirlik;yÃ¼zdelik deÄŸer
 perforate:delmek
 perform:icra etmek;oynamak;rol almak;temsil etmek;yapmak;yerine getirmek
-performance:başarım;performans;randıman
-permanent:devamlı;kalıcı;perma;sürekli
-permeable:geçirgen
-permission:müsaade
+performance:baÅŸarÄ±m;performans;randÄ±man
+permanent:devamlÄ±;kalÄ±cÄ±;perma;sÃ¼rekli
+permeable:geÃ§irgen
+permission:mÃ¼saade
 permit:imkan vermek;izin vermek
-perpendicular:dikey;düşey
-perpendicularly:dik olarak;düşey olarak
-perquisite:ek ödenek;ikramiye
-persecute:acı çektirmek;rahat vermemek;zulmetmek
-persistent:geçmeyen;ısrarlı;kalıcı
+perpendicular:dikey;dÃ¼ÅŸey
+perpendicularly:dik olarak;dÃ¼ÅŸey olarak
+perquisite:ek Ã¶denek;ikramiye
+persecute:acÄ± Ã§ektirmek;rahat vermemek;zulmetmek
+persistent:geÃ§meyen;Ä±srarlÄ±;kalÄ±cÄ±
 personnel:personel
-perspective:bakış açısı;perspektif
+perspective:bakÄ±ÅŸ aÃ§Ä±sÄ±;perspektif
 perspiration:ter
-persuade:kandırmak
-persuasive:ikna edici;inandırıcı
-petty:küçük;önemsiz;ufak
-pharmacy:eczacılık;eczane
+persuade:kandÄ±rmak
+persuasive:ikna edici;inandÄ±rÄ±cÄ±
+petty:kÃ¼Ã§Ã¼k;Ã¶nemsiz;ufak
+pharmacy:eczacÄ±lÄ±k;eczane
 phase:evre;faz;safha
-phenomenal:olağanüstü
-phenomenon:fenomen;olağanüstü şey;olgu
-photo:fotoğraf
-photograph:fotoğraf
-photographer:fotoğrafçı
-pick:ayıklamak;seçmek;toplamak
+phenomenal:olaÄŸanÃ¼stÃ¼
+phenomenon:fenomen;olaÄŸanÃ¼stÃ¼ ÅŸey;olgu
+photo:fotoÄŸraf
+photograph:fotoÄŸraf
+photographer:fotoÄŸrafÃ§Ä±
+pick:ayÄ±klamak;seÃ§mek;toplamak
 pill:hap
-pillar:direk;kolon;sütun
-pine:çam;çam ağacı;güçten düşmek
-pioneer:çığır açan;öncü;önde giden;önder
+pillar:direk;kolon;sÃ¼tun
+pine:Ã§am;Ã§am aÄŸacÄ±;gÃ¼Ã§ten dÃ¼ÅŸmek
+pioneer:Ã§Ä±ÄŸÄ±r aÃ§an;Ã¶ncÃ¼;Ã¶nde giden;Ã¶nder
 pirate:korsan
-pity:acıma;merhamet;yazık
+pity:acÄ±ma;merhamet;yazÄ±k
 plague:bela;dert;veba
-plain:açık;basit;düz;sade;süssüz;yalın
-plant:bitki;fabrika;işletme;tesis
+plain:aÃ§Ä±k;basit;dÃ¼z;sade;sÃ¼ssÃ¼z;yalÄ±n
+plant:bitki;fabrika;iÅŸletme;tesis
 plasma coating:plazma kaplama
-plasma:kan plazması;plazma;yeşil çakmaktaşı
+plasma:kan plazmasÄ±;plazma;yeÅŸil Ã§akmaktaÅŸÄ±
 plate:kaplama;kaplamak;levha;plaka;tabak
-playmate:oyun arkadaşı
+playmate:oyun arkadaÅŸÄ±
 plenty:bolluk
-plug:tapa;tıkaç
-plump:dolgun;tıknaz;tombul
-pocket book:cep kitabı
-pocket knife:çakı
-pocket:cebe koymak;cebe yerleştirmek;cebine atmak;cep;çukur
+plug:tapa;tÄ±kaÃ§
+plump:dolgun;tÄ±knaz;tombul
+pocket book:cep kitabÄ±
+pocket knife:Ã§akÄ±
+pocket:cebe koymak;cebe yerleÅŸtirmek;cebine atmak;cep;Ã§ukur
 poisonous:zehirli
 police:polis
-polish:cila;cilalamak;cilalı yüzey;parlatmak
-polished:cilalı
-polymorphism:çokbiçimlilik;polimorfizm
+polish:cila;cilalamak;cilalÄ± yÃ¼zey;parlatmak
+polished:cilalÄ±
+polymorphism:Ã§okbiÃ§imlilik;polimorfizm
 polynomial:polinom
-ponder:düşünmek;zihninde tartmak
-population:nüfus
-porous:gözenekli
+ponder:dÃ¼ÅŸÃ¼nmek;zihninde tartmak
+population:nÃ¼fus
+porous:gÃ¶zenekli
 porridge:lapa
-portion:hisse;parça;pay;porsiyon
+portion:hisse;parÃ§a;pay;porsiyon
 position:durum;hal;konum;vaziyet;yer
 possess:sahip olmak
-possible:akla yatkın;makul;muhtemel;mümkün;olabilir;olanaklı;olası
+possible:akla yatkÄ±n;makul;muhtemel;mÃ¼mkÃ¼n;olabilir;olanaklÄ±;olasÄ±
 postfix:son ek
-postindustrial:sanayi-ötesi
-potential:muhtemel;olası;potansiyel
-pound:çarpmak;küt küt atmak;vurmak
+postindustrial:sanayi-Ã¶tesi
+potential:muhtemel;olasÄ±;potansiyel
+pound:Ã§arpmak;kÃ¼t kÃ¼t atmak;vurmak
 powder:barut;pudra;toz
-practitioner:belirli bir işi uygulayan kimse
+practitioner:belirli bir iÅŸi uygulayan kimse
 pray:dua etmek;yakarmak
-prayer:dua;yakarış
-precaution:ikaz;önlem;tedbir;uyarı
-precious:değerli;kıymetli
-precise:değişimi olmıyan;doğru olarak belirtilen;kesin;tam
+prayer:dua;yakarÄ±ÅŸ
+precaution:ikaz;Ã¶nlem;tedbir;uyarÄ±
+precious:deÄŸerli;kÄ±ymetli
+precise:deÄŸiÅŸimi olmÄ±yan;doÄŸru olarak belirtilen;kesin;tam
 precisely:kesinlikle;tam;tam olarak
-precision:dikkat;dikkatlilik;duyarlık;kesinlik
-pre-combustion chamber:ön yanma hücresi;ön yanma odası
-pre-combustion:ön yanma
-predator:yırtıcı hayvan
+precision:dikkat;dikkatlilik;duyarlÄ±k;kesinlik
+pre-combustion chamber:Ã¶n yanma hÃ¼cresi;Ã¶n yanma odasÄ±
+pre-combustion:Ã¶n yanma
+predator:yÄ±rtÄ±cÄ± hayvan
 predictable:tahmin edilebilir
-preface:önsöz;giriş
+preface:Ã¶nsÃ¶z;giriÅŸ
 preference:tercih
-prefix:ön ek
-prehistoric:tarihöncesi
-prejudice:önyargı
-preparation:hazırlama;hazırlık;preparat
-prepare:düzenlemek;hazırlamak
-prescription:reçete
+prefix:Ã¶n ek
+prehistoric:tarihÃ¶ncesi
+prejudice:Ã¶nyargÄ±
+preparation:hazÄ±rlama;hazÄ±rlÄ±k;preparat
+prepare:dÃ¼zenlemek;hazÄ±rlamak
+prescription:reÃ§ete
 presence:bulunma
 preservation:koruma
 preserve:korumak;muhafaza etmek
-pressure cooker:düdüklü tencere
-pressure gun:basınç tabancası;gres pompası;gres tabancası
-pressure:basınç;elektromotor kuvvet;kompresyon;sıkıştırılma;sıkıştırma;tazyik
-prevailing:galip gelen;hakim olan;üstün gelen
-prevent:engellemek;önlemek
-previous:geri;önceki
-primacy:öncelik
-primarily:aslında;herşeyden önce;öncelikle
-primary:ana;başlıca;birinci;birinci derecede;en başta gelen;temel
-principal:ana;baş;başlıca;en önemli;esas;temel
+pressure cooker:dÃ¼dÃ¼klÃ¼ tencere
+pressure gun:basÄ±nÃ§ tabancasÄ±;gres pompasÄ±;gres tabancasÄ±
+pressure:basÄ±nÃ§;elektromotor kuvvet;kompresyon;sÄ±kÄ±ÅŸtÄ±rÄ±lma;sÄ±kÄ±ÅŸtÄ±rma;tazyik
+prevailing:galip gelen;hakim olan;Ã¼stÃ¼n gelen
+prevent:engellemek;Ã¶nlemek
+previous:geri;Ã¶nceki
+primacy:Ã¶ncelik
+primarily:aslÄ±nda;herÅŸeyden Ã¶nce;Ã¶ncelikle
+primary:ana;baÅŸlÄ±ca;birinci;birinci derecede;en baÅŸta gelen;temel
+principal:ana;baÅŸ;baÅŸlÄ±ca;en Ã¶nemli;esas;temel
 principle:prensip
-prior:evvelki;önceki
+prior:evvelki;Ã¶nceki
 prisoner:esir;tutsak
-privacy:gizlilik;özellik
-privilege:ayrıcalık;imtiyaz
-probably:büyük olasılıkla;muhtemelen
-procedural:prosedürle ilgili;usule ait
-procedure:işlem;muamele
-process:celpname;dava;gelişme;gidiş;işlem;işlemek;metot;süreç;yöntem
-processing:işleme
+privacy:gizlilik;Ã¶zellik
+privilege:ayrÄ±calÄ±k;imtiyaz
+probably:bÃ¼yÃ¼k olasÄ±lÄ±kla;muhtemelen
+procedural:prosedÃ¼rle ilgili;usule ait
+procedure:iÅŸlem;muamele
+process:celpname;dava;geliÅŸme;gidiÅŸ;iÅŸlem;iÅŸlemek;metot;sÃ¼reÃ§;yÃ¶ntem
+processing:iÅŸleme
 proclamation:beyanname;bildirge;duyuru;ilan
-productive:üretken;verimli
+productive:Ã¼retken;verimli
 professional:mesleki;profesyonel
-progress:devam etme;gelişme;ilerleme;ilerlemek;iyileşme
-progressively:derece derece;ilerledikçe
+progress:devam etme;geliÅŸme;ilerleme;ilerlemek;iyileÅŸme
+progressively:derece derece;ilerledikÃ§e
 prohibit:engel olmak;yasaklamak
-project:plan;proje;tasarı
-proliferation:artma;hızlı çoğalma
-prompt:-e sevketmek;harekete geçirmek;teşvik etmek
-prone:başaşağı;eğimli;meyilli;yatkın;yüzükoyun
-proof:delil;deneme;ispat;kanıt;kanıtlama;sınama
-propagation:üreme;yayılma
-propel:ileri doğru itmek;sevketmek
-proportion:oran;orantı
-proposal:öneri;teklif
-proprietary:hususi;mal sahibine ait;markalı;tescilli
-prosecutor:davacı;savcı;şikayetçi
-prosperous:başarılı;zengin
+project:plan;proje;tasarÄ±
+proliferation:artma;hÄ±zlÄ± Ã§oÄŸalma
+prompt:-e sevketmek;harekete geÃ§irmek;teÅŸvik etmek
+prone:baÅŸaÅŸaÄŸÄ±;eÄŸimli;meyilli;yatkÄ±n;yÃ¼zÃ¼koyun
+proof:delil;deneme;ispat;kanÄ±t;kanÄ±tlama;sÄ±nama
+propagation:Ã¼reme;yayÄ±lma
+propel:ileri doÄŸru itmek;sevketmek
+proportion:oran;orantÄ±
+proposal:Ã¶neri;teklif
+proprietary:hususi;mal sahibine ait;markalÄ±;tescilli
+prosecutor:davacÄ±;savcÄ±;ÅŸikayetÃ§i
+prosperous:baÅŸarÄ±lÄ±;zengin
 protect:korumak;muhafaza etmek;saklamak
-protection:koruma;korunma aracı;koruyucu
-provide:sağlamak;tedarik etmek;temin etmek
-provided:-mek şartıyla;sağlanan;tedarik edilen
-pseudo:sahte;uydurma;yalancı
-pseudocode:sözde kod
-publish:basmak;yayımlamak
-pupil:gözbebeği;öğrenci
+protection:koruma;korunma aracÄ±;koruyucu
+provide:saÄŸlamak;tedarik etmek;temin etmek
+provided:-mek ÅŸartÄ±yla;saÄŸlanan;tedarik edilen
+pseudo:sahte;uydurma;yalancÄ±
+pseudocode:sÃ¶zde kod
+publish:basmak;yayÄ±mlamak
+pupil:gÃ¶zbebeÄŸi;Ã¶ÄŸrenci
 puppet:kukla
-purchase:alım;satın alınan şey;satın almak
-putrefaction:çürüme
+purchase:alÄ±m;satÄ±n alÄ±nan ÅŸey;satÄ±n almak
+putrefaction:Ã§Ã¼rÃ¼me
 quake:deprem;sallanmak;titreme;titremek
-qualify:değerlendirmek;hafifletmek;nitelendirmek;sınırlamak
+qualify:deÄŸerlendirmek;hafifletmek;nitelendirmek;sÄ±nÄ±rlamak
 qualitative:nitel
 quality:kalite;nitelik
 quantitative:nicel
-quantity:bolluk;çokluk;miktar;nicelik
-queen:(satrançta) vezir;kraliçe
+quantity:bolluk;Ã§okluk;miktar;nicelik
+queen:(satranÃ§ta) vezir;kraliÃ§e
 quenching:su verme
-queue:kuyruğa girmek;kuyruk;kuyruk oluşturmak;sıra
+queue:kuyruÄŸa girmek;kuyruk;kuyruk oluÅŸturmak;sÄ±ra
 quiet:sakin;sessiz
-quite:hayli;oldukça;tam;tamamen;tümüyle
-race:yarış;yarışmak
-radial velocity:radyal hız
-radial:ışınsal;radyal
+quite:hayli;oldukÃ§a;tam;tamamen;tÃ¼mÃ¼yle
+race:yarÄ±ÅŸ;yarÄ±ÅŸmak
+radial velocity:radyal hÄ±z
+radial:Ä±ÅŸÄ±nsal;radyal
 radially:radyal olarak
 radian:radyan
-radiation:radyasyon;yayılan ışınlar
-raisin:kuru üzüm
-random:gelişigüzel;rastgele;tesadüfi
-range:dizmek;menzil;mesafe;sıralamak;uzanmak;yetişmek
-rapidly:hızla;süratle
+radiation:radyasyon;yayÄ±lan Ä±ÅŸÄ±nlar
+raisin:kuru Ã¼zÃ¼m
+random:geliÅŸigÃ¼zel;rastgele;tesadÃ¼fi
+range:dizmek;menzil;mesafe;sÄ±ralamak;uzanmak;yetiÅŸmek
+rapidly:hÄ±zla;sÃ¼ratle
 rarely:nadiren;seyrek olarak
-rat:iri fare;sıçan
-rate:değer;hız;oran
-reach:erişmek;uzamak;yetişmek
-react:tepki göstermek
+rat:iri fare;sÄ±Ã§an
+rate:deÄŸer;hÄ±z;oran
+reach:eriÅŸmek;uzamak;yetiÅŸmek
+react:tepki gÃ¶stermek
 read:okumak
-readable:okunaklı
+readable:okunaklÄ±
 reader:okuyucu
-readily:kolayca;kolaylıkla
-realization:farketme;farkına varma;farkında olma
+readily:kolayca;kolaylÄ±kla
+realization:farketme;farkÄ±na varma;farkÄ±nda olma
 rear:arka;geri
-rearrange:yeniden düzenlemek
-reason:gerekçe;neden;sebep
+rearrange:yeniden dÃ¼zenlemek
+reason:gerekÃ§e;neden;sebep
 receive:almak;anlamak
-receiver:ahize;alıcı;reseptör
-recent:en son;son günlerdeki;yakında olmuş;yeni olmuş
-recently:bu aralar;bu yakında;geçenlerde;son zamanlarda
-recipe:çözüm;reçete;yemek tarifesi;yol
-reciprocal:işteş;karşılıklı;karşıt
-reckless:dikkatsiz;düşüncesiz;kayıtsız;pervasız;umursamaz
+receiver:ahize;alÄ±cÄ±;reseptÃ¶r
+recent:en son;son gÃ¼nlerdeki;yakÄ±nda olmuÅŸ;yeni olmuÅŸ
+recently:bu aralar;bu yakÄ±nda;geÃ§enlerde;son zamanlarda
+recipe:Ã§Ã¶zÃ¼m;reÃ§ete;yemek tarifesi;yol
+reciprocal:iÅŸteÅŸ;karÅŸÄ±lÄ±klÄ±;karÅŸÄ±t
+reckless:dikkatsiz;dÃ¼ÅŸÃ¼ncesiz;kayÄ±tsÄ±z;pervasÄ±z;umursamaz
 recklessly:dikkatsizce
-recoil:geri çekilmek;irkilmek
-reconnaissance:keşif
-record:kaydetmek;kayıt;tutanak;yazmak
+recoil:geri Ã§ekilmek;irkilmek
+reconnaissance:keÅŸif
+record:kaydetmek;kayÄ±t;tutanak;yazmak
 recorder:kaydedici
 recount:anlatmak
-recreate:yeniden canlandırmak;yeniden yaratmak
-reduce:azaltmak;düşürmek;indirmek
+recreate:yeniden canlandÄ±rmak;yeniden yaratmak
+reduce:azaltmak;dÃ¼ÅŸÃ¼rmek;indirmek
 reduction:azaltma;indirgeme;indirme
-refer to:göstermek;ilgili olmak
-refer:başvurmak;göndermek;ilgili olmak;kapsamak
-reference:başvuru;ilgi;referans
+refer to:gÃ¶stermek;ilgili olmak
+refer:baÅŸvurmak;gÃ¶ndermek;ilgili olmak;kapsamak
+reference:baÅŸvuru;ilgi;referans
 reflex:refleks;tepki
-refractory:ısıya dayanıklı
+refractory:Ä±sÄ±ya dayanÄ±klÄ±
 refresh:tazelemek;yenilemek
-refuge:barınak;orta kaldırım;refüj;sığınak
-regarding:hakkında;-e dair;ile ilgili;hususunda
-region:bölge;yöre
-regret:pişman olmak;pişmanlık;üzülmek
-regular:alışılmış;normal;olağan
+refuge:barÄ±nak;orta kaldÄ±rÄ±m;refÃ¼j;sÄ±ÄŸÄ±nak
+regarding:hakkÄ±nda;-e dair;ile ilgili;hususunda
+region:bÃ¶lge;yÃ¶re
+regret:piÅŸman olmak;piÅŸmanlÄ±k;Ã¼zÃ¼lmek
+regular:alÄ±ÅŸÄ±lmÄ±ÅŸ;normal;olaÄŸan
 reject:reddetmek
-relation:akraba;ilişki;bağlantı;anlatma;nakletme
-relational:ilişkisel
-relatively:göreceli olarak;nispeten
-release:çözme;deklanşör (foto. mak.);harekete geçirmek;kurtarma;kurtarmak;özgür bırakmak;salıverme;satışa çıkarmak;serbest bırakmak;yayım;yayınlama izni (kitap,haber, vb)
-relieve:azaltmak;bastırmak;hafifletmek;yatıştırmak
-reluctant:gönülsüz;isteksiz
-remaining:kalan;kalıcı
+relation:akraba;iliÅŸki;baÄŸlantÄ±;anlatma;nakletme
+relational:iliÅŸkisel
+relatively:gÃ¶receli olarak;nispeten
+release:Ã§Ã¶zme;deklanÅŸÃ¶r (foto. mak.);harekete geÃ§irmek;kurtarma;kurtarmak;Ã¶zgÃ¼r bÄ±rakmak;salÄ±verme;satÄ±ÅŸa Ã§Ä±karmak;serbest bÄ±rakmak;yayÄ±m;yayÄ±nlama izni (kitap,haber, vb)
+relieve:azaltmak;bastÄ±rmak;hafifletmek;yatÄ±ÅŸtÄ±rmak
+reluctant:gÃ¶nÃ¼lsÃ¼z;isteksiz
+remaining:kalan;kalÄ±cÄ±
 remelt:yeniden eritmek
-remind:andırmak;benzemek;hatırlatmak
-reminder:anımsatıcı;mektup;not;pusula
-remoteness:uzaklık
+remind:andÄ±rmak;benzemek;hatÄ±rlatmak
+reminder:anÄ±msatÄ±cÄ±;mektup;not;pusula
+remoteness:uzaklÄ±k
 remount:yeniden monte etmek
-remove:çıkar;kaldır;kaldırmak;taşınmak;uzaklaştırmak
+remove:Ã§Ä±kar;kaldÄ±r;kaldÄ±rmak;taÅŸÄ±nmak;uzaklaÅŸtÄ±rmak
 renovate:onarmak;yenilemek
-renown:ad;şan;şöhret;ün
-renowned:meşhur;ünlü
-rep:satıcı;satış memuru
-repair:(hatayı) düzeltmek;onarım;onarmak;tamir;tamir etmek
-repetition:tekerrür;tekrar etme;tekrarlama;yineleme
-repetitive:tekrarlamalı;tekrarlanan
-report:anlatmak;bildirmek;not karnesi;rapor;rapor etmek;söylemek
+renown:ad;ÅŸan;ÅŸÃ¶hret;Ã¼n
+renowned:meÅŸhur;Ã¼nlÃ¼
+rep:satÄ±cÄ±;satÄ±ÅŸ memuru
+repair:(hatayÄ±) dÃ¼zeltmek;onarÄ±m;onarmak;tamir;tamir etmek
+repetition:tekerrÃ¼r;tekrar etme;tekrarlama;yineleme
+repetitive:tekrarlamalÄ±;tekrarlanan
+report:anlatmak;bildirmek;not karnesi;rapor;rapor etmek;sÃ¶ylemek
 repository:veri havuzu
-represent:göstermek
-reproduce:çoğalmak;doğurmak;üremek
-reputation:isim;nam;şöhret;ün
+represent:gÃ¶stermek
+reproduce:Ã§oÄŸalmak;doÄŸurmak;Ã¼remek
+reputation:isim;nam;ÅŸÃ¶hret;Ã¼n
 request:rica;istek;talep;istemek
-require:-e muhtaç olmak;gerektirmek;istemek
-requirement:gereksinim;ihtiyaç
-reserve:ayırmak;korumak;saklamak
-resident:bir yerde oturan;sakin;yerleşik
-resin:çamsakızı;reçine;reçine ile işlemek;reçinelemek;sakız
-resist:direnmek;karşı koymak;mukavemet etmek
+require:-e muhtaÃ§ olmak;gerektirmek;istemek
+requirement:gereksinim;ihtiyaÃ§
+reserve:ayÄ±rmak;korumak;saklamak
+resident:bir yerde oturan;sakin;yerleÅŸik
+resin:Ã§amsakÄ±zÄ±;reÃ§ine;reÃ§ine ile iÅŸlemek;reÃ§inelemek;sakÄ±z
+resist:direnmek;karÅŸÄ± koymak;mukavemet etmek
 resource:kaynak
-response:cevap;karşılık;tepki;yanıt
+response:cevap;karÅŸÄ±lÄ±k;tepki;yanÄ±t
 responsibility:sorumluluk
 responsible:sorumlu
-restore:eski haline getirmek;geri yüklemek;onarmak
-restrict:sınırlamak
-result:meydana gelmek;son;sonuç
-resultant:sonucunda oluşan
-resume:devam etmek;-e yeniden başlamak;geri almak;kaldığı yerden devam etmek;sürdür;sürdürmek
+restore:eski haline getirmek;geri yÃ¼klemek;onarmak
+restrict:sÄ±nÄ±rlamak
+result:meydana gelmek;son;sonuÃ§
+resultant:sonucunda oluÅŸan
+resume:devam etmek;-e yeniden baÅŸlamak;geri almak;kaldÄ±ÄŸÄ± yerden devam etmek;sÃ¼rdÃ¼r;sÃ¼rdÃ¼rmek
 retain:sahip olmak;tutmak;yitirmemek
-retrieve:bulup getirmek;erişmek;tekrar ele geçirmek
+retrieve:bulup getirmek;eriÅŸmek;tekrar ele geÃ§irmek
 retro:geri;geride
-return:dönmek;dönüş;geri dönmek
-revise:değiştirmek
+return:dÃ¶nmek;dÃ¶nÃ¼ÅŸ;geri dÃ¶nmek
+revise:deÄŸiÅŸtirmek
 revolution:devir;devrim;dolanma;ihtilal
-ribcage:göğüs kafesi
-riddle:bilmece;esrar;sır
-ridiculous:gülünç;komik;saçma
-righteous:adil;doğru;dürüst
-rightful:gerçek;meşru;yasal
-rigid:değişmez;katı;sert
-rim:çerçeve;kenar
-ring:halka;yüzük
-ripe:olgun;olgunlaşmış;yetişmiş
-ripped:sökülmüş
-ripple:hafifce dalgalanmak;ufacık dalga
-rise:artış;artmak;kabarmak;yükseliş;yükselmek
-riveting:perçin;perçin eki;perçinleme
-robe:cüppe
-rogue:dolandırıcı;haydut;hırsız
-roller bearing:bilyalı yatak
-roller:küçük tekerlek;merdane;silindir
-rook:(satrançta) kale
+ribcage:gÃ¶ÄŸÃ¼s kafesi
+riddle:bilmece;esrar;sÄ±r
+ridiculous:gÃ¼lÃ¼nÃ§;komik;saÃ§ma
+righteous:adil;doÄŸru;dÃ¼rÃ¼st
+rightful:gerÃ§ek;meÅŸru;yasal
+rigid:deÄŸiÅŸmez;katÄ±;sert
+rim:Ã§erÃ§eve;kenar
+ring:halka;yÃ¼zÃ¼k
+ripe:olgun;olgunlaÅŸmÄ±ÅŸ;yetiÅŸmiÅŸ
+ripped:sÃ¶kÃ¼lmÃ¼ÅŸ
+ripple:hafifce dalgalanmak;ufacÄ±k dalga
+rise:artÄ±ÅŸ;artmak;kabarmak;yÃ¼kseliÅŸ;yÃ¼kselmek
+riveting:perÃ§in;perÃ§in eki;perÃ§inleme
+robe:cÃ¼ppe
+rogue:dolandÄ±rÄ±cÄ±;haydut;hÄ±rsÄ±z
+roller bearing:bilyalÄ± yatak
+roller:kÃ¼Ã§Ã¼k tekerlek;merdane;silindir
+rook:(satranÃ§ta) kale
 room:oda;yer
-root:çekirdek;kaynak;kök
+root:Ã§ekirdek;kaynak;kÃ¶k
 rope:halat;ip
-rose:gül
+rose:gÃ¼l
 roster:liste
-rotation:dönme;dönüş
-rough:aşağı yukarı;kaba;yaklaşık
-roughness:kabalık;pürüzlülük;sertlik
-row:dizi;satır;sıra
+rotation:dÃ¶nme;dÃ¶nÃ¼ÅŸ
+rough:aÅŸaÄŸÄ± yukarÄ±;kaba;yaklaÅŸÄ±k
+roughness:kabalÄ±k;pÃ¼rÃ¼zlÃ¼lÃ¼k;sertlik
+row:dizi;satÄ±r;sÄ±ra
 royal:kraliyet
-rub:ovalamak;ovmak;sürtmek
-rucksack:sırt çantası
+rub:ovalamak;ovmak;sÃ¼rtmek
+rucksack:sÄ±rt Ã§antasÄ±
 sacred:dini;dinsel;kutsal
 safeguard:koruma
-safety ring:emniyet halkası
-safety:güvenlik
-salvation:kurtarılma;kurtarma;kurtuluş
-sample:model;örnek
-sampling:örnekleme;seçme
+safety ring:emniyet halkasÄ±
+safety:gÃ¼venlik
+salvation:kurtarÄ±lma;kurtarma;kurtuluÅŸ
+sample:model;Ã¶rnek
+sampling:Ã¶rnekleme;seÃ§me
 satisfactory:tatmin edici;tatminkar;yeterli
 satisfy:ikna etmek;memnun etmek;tatmin etmek
-say:demek;söylemek
-scan:göz atmak;gözden geçirmek;incelemek;iyice incelemek;süzmek
+say:demek;sÃ¶ylemek
+scan:gÃ¶z atmak;gÃ¶zden geÃ§irmek;incelemek;iyice incelemek;sÃ¼zmek
 scar:yara izi
-scent:av kokusu;güzel koku;kokusunu almak;parfüm
-sceptical:kuşkucu;kuşkulu;septik;şüpheci
-scheduler:iş düzenleyici
+scent:av kokusu;gÃ¼zel koku;kokusunu almak;parfÃ¼m
+sceptical:kuÅŸkucu;kuÅŸkulu;septik;ÅŸÃ¼pheci
+scheduler:iÅŸ dÃ¼zenleyici
 school:okul
 scolding:azar;paylama
-scope:anlama yeteneği;kavrama gücü
+scope:anlama yeteneÄŸi;kavrama gÃ¼cÃ¼
 scorpion:akrep
-scratch:başlama çizgisi;eşelemek;kaşımak;tırmalamak
+scratch:baÅŸlama Ã§izgisi;eÅŸelemek;kaÅŸÄ±mak;tÄ±rmalamak
 screw:vida
-screwed plug:kör tapa
-scribe:katip;yazar;yazıcı;yazman
-seagull:martı
-seal:keçe
-secluded:gözden uzak;ıssız;tenha
+screwed plug:kÃ¶r tapa
+scribe:katip;yazar;yazÄ±cÄ±;yazman
+seagull:martÄ±
+seal:keÃ§e
+secluded:gÃ¶zden uzak;Ä±ssÄ±z;tenha
 secondary:ikincil
-secret:gizemli;gizli;saklı
-section:bölge;bölüm;kesit;kısım;parça
-see too:halletmek;ilgilenmek;uğraşmak
-see:görmek;anlamak;kavramak
-seek:aramak;araştırmak
-seep:sızmak
-select:seçme;seçmek
-selection:seçme;seçme şey;seçim
-sense:akıl;duyu;düşünce;fikir;his;zeka
-sentient:duyarlı;duygulu;hisli;önsezileri güçlü
-sentinel:gözcü;gözetlemek;koruyucu;nöbetçi
-sentry:nöbetçi
-separate:ayırmak;ayrı
-separated from sth/sb:ayrılmak;-den ayrı olmak
-sequence:ardışık;düzen;sıra;zincir;zincirleme gitme
-sequential:ardışık;dizisel;sıralı
-serendipity:beklenmedik şeyler bulma şansı;beklenmedik şeyleri tesadüfen bulma yeteneği
+secret:gizemli;gizli;saklÄ±
+section:bÃ¶lge;bÃ¶lÃ¼m;kesit;kÄ±sÄ±m;parÃ§a
+see too:halletmek;ilgilenmek;uÄŸraÅŸmak
+see:gÃ¶rmek;anlamak;kavramak
+seek:aramak;araÅŸtÄ±rmak
+seep:sÄ±zmak
+select:seÃ§me;seÃ§mek
+selection:seÃ§me;seÃ§me ÅŸey;seÃ§im
+sense:akÄ±l;duyu;dÃ¼ÅŸÃ¼nce;fikir;his;zeka
+sentient:duyarlÄ±;duygulu;hisli;Ã¶nsezileri gÃ¼Ã§lÃ¼
+sentinel:gÃ¶zcÃ¼;gÃ¶zetlemek;koruyucu;nÃ¶betÃ§i
+sentry:nÃ¶betÃ§i
+separate:ayÄ±rmak;ayrÄ±
+separated from sth/sb:ayrÄ±lmak;-den ayrÄ± olmak
+sequence:ardÄ±ÅŸÄ±k;dÃ¼zen;sÄ±ra;zincir;zincirleme gitme
+sequential:ardÄ±ÅŸÄ±k;dizisel;sÄ±ralÄ±
+serendipity:beklenmedik ÅŸeyler bulma ÅŸansÄ±;beklenmedik ÅŸeyleri tesadÃ¼fen bulma yeteneÄŸi
 serious:ciddi
 service:hizmet;servis
-set in:başlamak
-set:hazırlamak;koymak;kurmak;seri;takım
-settlement:göç;oturma;yeni küçük yerleşim bölgesi;yerleşme
-set-up:dikmek;işe başlamak;kurmak
+set in:baÅŸlamak
+set:hazÄ±rlamak;koymak;kurmak;seri;takÄ±m
+settlement:gÃ¶Ã§;oturma;yeni kÃ¼Ã§Ã¼k yerleÅŸim bÃ¶lgesi;yerleÅŸme
+set-up:dikmek;iÅŸe baÅŸlamak;kurmak
 seven:yedi
-severe:acı veren;ağır;katı;sert;şiddetli
+severe:acÄ± veren;aÄŸÄ±r;katÄ±;sert;ÅŸiddetli
 shackle:pranga;zincir
-shade:gölgelendirmek
-shaded:gölgelenmiş;gölgeli
-shadow:gölge;karanlık
-shaft:dingil;mil;şaft
-shake hands:el sıkışmak
-shake:çalkalamak;sallamak;silkmek;titremek
-shallow:dar;derin olmayan;sığ;yüzeysel
-shallower:daha yüzeysel
-shame:rezalet;utanç;utandırmak
-share:hisse;pay;paylaşmak;paylaştırmak
-she:o(dişil)
+shade:gÃ¶lgelendirmek
+shaded:gÃ¶lgelenmiÅŸ;gÃ¶lgeli
+shadow:gÃ¶lge;karanlÄ±k
+shaft:dingil;mil;ÅŸaft
+shake hands:el sÄ±kÄ±ÅŸmak
+shake:Ã§alkalamak;sallamak;silkmek;titremek
+shallow:dar;derin olmayan;sÄ±ÄŸ;yÃ¼zeysel
+shallower:daha yÃ¼zeysel
+shame:rezalet;utanÃ§;utandÄ±rmak
+share:hisse;pay;paylaÅŸmak;paylaÅŸtÄ±rmak
+she:o(diÅŸil)
 sheaf:demet;demetlemek;deste
 sheet:levha;yaprak
-shell:bina iskeleti;istiridye kabuğu;kabuğundan çıkarmak;kabuk;mermi kovanı;top mermisi
-shelter:barınak;barındırmak;korumak;sığınak;siper
+shell:bina iskeleti;istiridye kabuÄŸu;kabuÄŸundan Ã§Ä±karmak;kabuk;mermi kovanÄ±;top mermisi
+shelter:barÄ±nak;barÄ±ndÄ±rmak;korumak;sÄ±ÄŸÄ±nak;siper
 shield:kalkan;korumak;siper
 shielding:koruyucu
-shift:kaydırmak;vites geçirmek
-shiver:titreme;titremek;ürperti
-shooter:atıcı;nişancı;vurucu
+shift:kaydÄ±rmak;vites geÃ§irmek
+shiver:titreme;titremek;Ã¼rperti
+shooter:atÄ±cÄ±;niÅŸancÄ±;vurucu
 shop assistant:tezgahtar
-shorten:kısaltmak
+shorten:kÄ±saltmak
 shoulder:omuz
-shout:bağırış;bağırma;bağırmak;haykırmak;ses
+shout:baÄŸÄ±rÄ±ÅŸ;baÄŸÄ±rma;baÄŸÄ±rmak;haykÄ±rmak;ses
 shove:ittirmek
-shovel:kürek
-show:göstermek
-shriek:çığlık;feryat etmek;haykırmak;yaygara
-shrine:mabet;tapınak;türbe
-shroud:kaplamak;örtmek;örtü
-shudder:titremek;tüyleri ürpermek
+shovel:kÃ¼rek
+show:gÃ¶stermek
+shriek:Ã§Ä±ÄŸlÄ±k;feryat etmek;haykÄ±rmak;yaygara
+shrine:mabet;tapÄ±nak;tÃ¼rbe
+shroud:kaplamak;Ã¶rtmek;Ã¶rtÃ¼
+shudder:titremek;tÃ¼yleri Ã¼rpermek
 shut up:sus
 shut:kapamak;kapatmak
-sicken:iğrendirmek;midesini bulandırmak
+sicken:iÄŸrendirmek;midesini bulandÄ±rmak
 sidle:sokulmak;yan yan gitmek;yan yana gitmek
-siesta:öğle uykusu
-sigh:iç çekme
-sigmoid:S harfi şeklinde
-signed:imzalı;işaretli
+siesta:Ã¶ÄŸle uykusu
+sigh:iÃ§ Ã§ekme
+sigmoid:S harfi ÅŸeklinde
+signed:imzalÄ±;iÅŸaretli
 significant:belirgin
-significantly:önemli
-silhouette:gölge;karaltı;siluet
+significantly:Ã¶nemli
+silhouette:gÃ¶lge;karaltÄ±;siluet
 similar to:-e benzer
 similar:benzer
-simplicity:basitlik;kolaylık;sadelik;yalınlık
-simultaneously:eş zamanlı
-sink:batmak;dibe çökmek;lavabo
+simplicity:basitlik;kolaylÄ±k;sadelik;yalÄ±nlÄ±k
+simultaneously:eÅŸ zamanlÄ±
+sink:batmak;dibe Ã§Ã¶kmek;lavabo
 situation:durum;yer
-six:altı
+six:altÄ±
 skate:paten;patinaj yapmak
 skater:buz patencisi;patenci
-skilled:usta;tecrubeli;deneyimli;vasıflı
-skull:kafatası
-sledge:kızak
+skilled:usta;tecrubeli;deneyimli;vasÄ±flÄ±
+skull:kafatasÄ±
+sledge:kÄ±zak
 sledgehammer:balyoz
-sleeve:bilezik;elbise kolu;kol;kovan;manşon
+sleeve:bilezik;elbise kolu;kol;kovan;manÅŸon
 sleeveless:kolsuz
-slender:azıcık;ince;incecik;narin;ufak tefek
-slice:dilim;dilimlemek;dilimlere ayırmak;dilmek
-slightly:az;azıcık;biraz
-slope:bayır;eğim;eğimli olmak;meyil;meyilli olmak;yokuş
+slender:azÄ±cÄ±k;ince;incecik;narin;ufak tefek
+slice:dilim;dilimlemek;dilimlere ayÄ±rmak;dilmek
+slightly:az;azÄ±cÄ±k;biraz
+slope:bayÄ±r;eÄŸim;eÄŸimli olmak;meyil;meyilli olmak;yokuÅŸ
 slumber:uyku
-smart:şık;çabuk;çevik
-smooth:düz bir yüzeye sahip olan;sürtünmesiz
-sneeze:hapşırmak
+smart:ÅŸÄ±k;Ã§abuk;Ã§evik
+smooth:dÃ¼z bir yÃ¼zeye sahip olan;sÃ¼rtÃ¼nmesiz
+sneeze:hapÅŸÄ±rmak
 society:halk;millet;topluluk;toplum
-socket:manşon
-solid:katı
-solidify:katılaştırmak;sağlamlaştırmak;sertleştirmek;sıkılaştırmak
-solution:çare;çözelti;çözme;çözüm;eriyik;halletme
-some:bazı;biraz;birkaç;kimi
+socket:manÅŸon
+solid:katÄ±
+solidify:katÄ±laÅŸtÄ±rmak;saÄŸlamlaÅŸtÄ±rmak;sertleÅŸtirmek;sÄ±kÄ±laÅŸtÄ±rmak
+solution:Ã§are;Ã§Ã¶zelti;Ã§Ã¶zme;Ã§Ã¶zÃ¼m;eriyik;halletme
+some:bazÄ±;biraz;birkaÃ§;kimi
 somebody:biri;birisi
-something:bir şey
-sophisticated:gelişmiş;karmaşık
-sort:çeşit;tür
-sorter:ayırıcı;sınıflayıcı
+something:bir ÅŸey
+sophisticated:geliÅŸmiÅŸ;karmaÅŸÄ±k
+sort:Ã§eÅŸit;tÃ¼r
+sorter:ayÄ±rÄ±cÄ±;sÄ±nÄ±flayÄ±cÄ±
 soul:ruh
 source:kaynak;memba
-south:güney
-spade:bahçivan küreği;iskambilde maça
-span:aralık;mesafe;süre
+south:gÃ¼ney
+spade:bahÃ§ivan kÃ¼reÄŸi;iskambilde maÃ§a
+span:aralÄ±k;mesafe;sÃ¼re
 spare wheel:stepne;yedek tekerlek
-sparkle:canlılık;kıvılcım;parıltı;parlaklık;parlayış
-spartan:basit;lüks olmayan;sıradan
-spatter:serpmek;sıçratmak
-speak:bahsetmek;konuşmak
-specialized:uzmanlaşmış
-specialty:ihtisas;özellik;uzmanlık
-specific:kendine has;özel;özgü
-speechless:kelimelere dökülemeyen;sözsüz
-spider:örümcek
-spine:belkemiği;omurga
+sparkle:canlÄ±lÄ±k;kÄ±vÄ±lcÄ±m;parÄ±ltÄ±;parlaklÄ±k;parlayÄ±ÅŸ
+spartan:basit;lÃ¼ks olmayan;sÄ±radan
+spatter:serpmek;sÄ±Ã§ratmak
+speak:bahsetmek;konuÅŸmak
+specialized:uzmanlaÅŸmÄ±ÅŸ
+specialty:ihtisas;Ã¶zellik;uzmanlÄ±k
+specific:kendine has;Ã¶zel;Ã¶zgÃ¼
+speechless:kelimelere dÃ¶kÃ¼lemeyen;sÃ¶zsÃ¼z
+spider:Ã¶rÃ¼mcek
+spine:belkemiÄŸi;omurga
 spiral:sarmal
-spirit:can;cin;peri;ruh;yürek
-spit:şiş;şiş saplamak;tükürme;tükürük
-spooky:korkunç;ürkünç
-spoon:kaşık;kaşıklamak
-spoonful:kaşık dolusu
+spirit:can;cin;peri;ruh;yÃ¼rek
+spit:ÅŸiÅŸ;ÅŸiÅŸ saplamak;tÃ¼kÃ¼rme;tÃ¼kÃ¼rÃ¼k
+spooky:korkunÃ§;Ã¼rkÃ¼nÃ§
+spoon:kaÅŸÄ±k;kaÅŸÄ±klamak
+spoonful:kaÅŸÄ±k dolusu
 spot:benek;nokta
-spread:açmak;aöılmak;örtmek;sermek;yayılmak;yaymak
+spread:aÃ§mak;aÃ¶Ä±lmak;Ã¶rtmek;sermek;yayÄ±lmak;yaymak
 sprit:filiz;tomurcuk
-spurn:tekma atıp defetmek;tekme ile kovmak
+spurn:tekma atÄ±p defetmek;tekme ile kovmak
 spyware:ajan program
 square:kare
 squareness:karelik
-squeeze:sığdırmak;sıkıştırmak;tıkıştırmak
-stabilize:dengede tutmak;sağlamlaştırmak
-stack:yığın
+squeeze:sÄ±ÄŸdÄ±rmak;sÄ±kÄ±ÅŸtÄ±rmak;tÄ±kÄ±ÅŸtÄ±rmak
+stabilize:dengede tutmak;saÄŸlamlaÅŸtÄ±rmak
+stack:yÄ±ÄŸÄ±n
 stacking:istif
-staff:değnek;personel;sopa;personel;sopa;değnek
+staff:deÄŸnek;personel;sopa;personel;sopa;deÄŸnek
 stagger:sendelemek
-stagnant:akmaz;atıl;bayatlamış;bozulmuş;cansız;durağan;durgun;gelişmeyen;hareketsiz;kesat;tıkalı
-stainless steel:paslanmaz çelik
+stagnant:akmaz;atÄ±l;bayatlamÄ±ÅŸ;bozulmuÅŸ;cansÄ±z;duraÄŸan;durgun;geliÅŸmeyen;hareketsiz;kesat;tÄ±kalÄ±
+stainless steel:paslanmaz Ã§elik
 stainless:paslanmaz
 stammer:kekeleme;kekelemek
 stand:ayakta durmak;ayakta kalmak
-stand-alone:bağımsız
-stare:sabit bakış;uzun uzun bakmak
+stand-alone:baÄŸÄ±msÄ±z
+stare:sabit bakÄ±ÅŸ;uzun uzun bakmak
 state:belirtmek;beyan etmek;durum;eyalet;hal
-station:durak;istasyon;karabol;makam;rütbe;yer;yerleştirmek
+station:durak;istasyon;karabol;makam;rÃ¼tbe;yer;yerleÅŸtirmek
 status:durum;hal
 stay:durmak;kalma;kalmak
-steam:buhar;su buharı
-sterile:kısır;mikropsuz;steril;verimsiz
-stick to:bağlı kalmak (diyete söze vb);sadık kalmak
+steam:buhar;su buharÄ±
+sterile:kÄ±sÄ±r;mikropsuz;steril;verimsiz
+stick to:baÄŸlÄ± kalmak (diyete sÃ¶ze vb);sadÄ±k kalmak
 stick:baston;saplamak;sopa
-sticky:yapış yapış;yapışkan
-stiffer:daha katı
-stimulate:canlandırmak;teşvik etmek;uyarmak
-stock:kapital;sermaye hisseleri;stok;yığmak
-stomach:karın;mide
-stop:durak;durdurma;durdurmak;durma;durmak;engel;kesmek;nokta;önlemek;tıkamak
-store:ambar;biriktirmek;depo;depolamak;dükkan;mağaza;saklamak;stok
-storm:fırtına
-story:hikaye;masal;öykü;roman
-straightforward:açık;basit;direk;kolay
-strap:bant;kayış;şerit
-stream:akım;akıntı;çay;dere
-strengthen:desteklemek;güçlendirmek;kuvvetlendirmek;sağlamlaştırmak
-stress:bunalım;gerginlik;gerilim;sıkıntı;stres
+sticky:yapÄ±ÅŸ yapÄ±ÅŸ;yapÄ±ÅŸkan
+stiffer:daha katÄ±
+stimulate:canlandÄ±rmak;teÅŸvik etmek;uyarmak
+stock:kapital;sermaye hisseleri;stok;yÄ±ÄŸmak
+stomach:karÄ±n;mide
+stop:durak;durdurma;durdurmak;durma;durmak;engel;kesmek;nokta;Ã¶nlemek;tÄ±kamak
+store:ambar;biriktirmek;depo;depolamak;dÃ¼kkan;maÄŸaza;saklamak;stok
+storm:fÄ±rtÄ±na
+story:hikaye;masal;Ã¶ykÃ¼;roman
+straightforward:aÃ§Ä±k;basit;direk;kolay
+strap:bant;kayÄ±ÅŸ;ÅŸerit
+stream:akÄ±m;akÄ±ntÄ±;Ã§ay;dere
+strengthen:desteklemek;gÃ¼Ã§lendirmek;kuvvetlendirmek;saÄŸlamlaÅŸtÄ±rmak
+stress:bunalÄ±m;gerginlik;gerilim;sÄ±kÄ±ntÄ±;stres
 stretch:gerginlik;gerilme;gerinme;germe;germek
-strike down:aciz bırakmak;devirmek
-strike:çakmak;vurmak;vuruş
-striking:çarpıcı;dikkat çekici;göz alıcı
-strip:sıyırmak;soymak;şerit;yolmak
-stroll:dolaşmak;gezinmek
+strike down:aciz bÄ±rakmak;devirmek
+strike:Ã§akmak;vurmak;vuruÅŸ
+striking:Ã§arpÄ±cÄ±;dikkat Ã§ekici;gÃ¶z alÄ±cÄ±
+strip:sÄ±yÄ±rmak;soymak;ÅŸerit;yolmak
+stroll:dolaÅŸmak;gezinmek
 strong:kuvvetli
-struck:dövülmüş
-structure:bina;inşaat;yapı
-struggle:çaba;gayret;savaş;uğraş
+struck:dÃ¶vÃ¼lmÃ¼ÅŸ
+structure:bina;inÅŸaat;yapÄ±
+struggle:Ã§aba;gayret;savaÅŸ;uÄŸraÅŸ
 stud:saplama
-student:öğrenci
-study:araştırma;çalışma;inceleme;irdeleme;okuma;tetkik
+student:Ã¶ÄŸrenci
+study:araÅŸtÄ±rma;Ã§alÄ±ÅŸma;inceleme;irdeleme;okuma;tetkik
 stuff:malzeme
 stuffing:dolgu maddesi
-subdue:baskı yapmak;zorla itaat ettirmek;zorlamak
-submerged:batık;batırılmış;su altında olan
-submit:önermek;sunmak
-substance:cisim;esas;gerçek;madde;öz
-substantial:dayanıklı;değerli;miktarda/sayıda azımsanmayacak;önemli;sağlam
+subdue:baskÄ± yapmak;zorla itaat ettirmek;zorlamak
+submerged:batÄ±k;batÄ±rÄ±lmÄ±ÅŸ;su altÄ±nda olan
+submit:Ã¶nermek;sunmak
+substance:cisim;esas;gerÃ§ek;madde;Ã¶z
+substantial:dayanÄ±klÄ±;deÄŸerli;miktarda/sayÄ±da azÄ±msanmayacak;Ã¶nemli;saÄŸlam
 subtly:zekice
-subtraction:çıkarma
-successful:başarılı
-such:böyle;bu gibi;bunun gibi;öyle;şöyle
+subtraction:Ã§Ä±karma
+successful:baÅŸarÄ±lÄ±
+such:bÃ¶yle;bu gibi;bunun gibi;Ã¶yle;ÅŸÃ¶yle
 suction pump:emme basma tulumba
 suction stroke:emme devresi
-suction:emiş gücü;emme
-sufficient:elverişli;kafi;uygun;yeterli
-suicidal:intihara eğilimli
-sun:güneş
-sunset:gün batımı
-superb:harika;mükemmel;süper
-supplementary:bütünleyici;ek;ek olan;ilave olan
-supply:karşılamak;sağlamak;temin etmek
-support:ayak;dayanak;destek;destek olmak;desteklemek;yardım
-suppose:düşünmek;farzetmek;sanmak;saymak;tahmin etmek;varsaymak
-supreme:en üst yüce;en üstün;en yüksek;yüce
-surface:yüzey
-surge:aniden yükselme;büyük dalga;dalgalanma;yükselmek
-surgery:ameliyat;cerrahlık
-surplus:aşırı;gerğinden fazla;artık
-surrounding:civardaki;çevredeki;çevreleyen;saran
-survey:bakmak;incelemek;teftiş etmek
-survivor:bir kazadan sonra hayatta kalan şey/kimse
-suspect:şüphelenmek;şüpheli;şüpheye sokmak
-suspended:asılı;asılmış
+suction:emiÅŸ gÃ¼cÃ¼;emme
+sufficient:elveriÅŸli;kafi;uygun;yeterli
+suicidal:intihara eÄŸilimli
+sun:gÃ¼neÅŸ
+sunset:gÃ¼n batÄ±mÄ±
+superb:harika;mÃ¼kemmel;sÃ¼per
+supplementary:bÃ¼tÃ¼nleyici;ek;ek olan;ilave olan
+supply:karÅŸÄ±lamak;saÄŸlamak;temin etmek
+support:ayak;dayanak;destek;destek olmak;desteklemek;yardÄ±m
+suppose:dÃ¼ÅŸÃ¼nmek;farzetmek;sanmak;saymak;tahmin etmek;varsaymak
+supreme:en Ã¼st yÃ¼ce;en Ã¼stÃ¼n;en yÃ¼ksek;yÃ¼ce
+surface:yÃ¼zey
+surge:aniden yÃ¼kselme;bÃ¼yÃ¼k dalga;dalgalanma;yÃ¼kselmek
+surgery:ameliyat;cerrahlÄ±k
+surplus:aÅŸÄ±rÄ±;gerÄŸinden fazla;artÄ±k
+surrounding:civardaki;Ã§evredeki;Ã§evreleyen;saran
+survey:bakmak;incelemek;teftiÅŸ etmek
+survivor:bir kazadan sonra hayatta kalan ÅŸey/kimse
+suspect:ÅŸÃ¼phelenmek;ÅŸÃ¼pheli;ÅŸÃ¼pheye sokmak
+suspended:asÄ±lÄ±;asÄ±lmÄ±ÅŸ
 sustain:beslemek;desteklemek
 sweater:kazak
 sweaty:terletici;terli
-sweep:süpürmek;sürüklemek;temizlemek
-swiftly:hızlıca
-swirl:girdap;girdap gibi dönme
-switch:anahtar;şalter;devre anahtarı;elektrik düğmesi
-sword:kılıç
-swordfish:kılıçbalığı
+sweep:sÃ¼pÃ¼rmek;sÃ¼rÃ¼klemek;temizlemek
+swiftly:hÄ±zlÄ±ca
+swirl:girdap;girdap gibi dÃ¶nme
+switch:anahtar;ÅŸalter;devre anahtarÄ±;elektrik dÃ¼ÄŸmesi
+sword:kÄ±lÄ±Ã§
+swordfish:kÄ±lÄ±Ã§balÄ±ÄŸÄ±
 symbol:sembol;simge
-synonymous:eşanlamlı
-syntax:sentaks;sözdizimi
-system:dizge;sistem;şebeke;tertibat;tesis
-table:çizelge;masa;tablo
+synonymous:eÅŸanlamlÄ±
+syntax:sentaks;sÃ¶zdizimi
+system:dizge;sistem;ÅŸebeke;tertibat;tesis
+table:Ã§izelge;masa;tablo
 take the subway:metroya binmek
-talent:doğal yetenek;hüner
-tally:çetele;hesap;skor
-tamer:vahşi hayvan eğiticisi
+talent:doÄŸal yetenek;hÃ¼ner
+tally:Ã§etele;hesap;skor
+tamer:vahÅŸi hayvan eÄŸiticisi
 tangible:somut
-task:görev
-taunt:alay etmek;sataşmak
+task:gÃ¶rev
+taunt:alay etmek;sataÅŸmak
 tax:vergi
-taxonomy:sınıflandırma;taksonomi
-teach:öğretmek
-teacher:öğretmen
-tear:gözyaşı
+taxonomy:sÄ±nÄ±flandÄ±rma;taksonomi
+teach:Ã¶ÄŸretmek
+teacher:Ã¶ÄŸretmen
+tear:gÃ¶zyaÅŸÄ±
 tell off:azarlamak
-temper:çeliğe su vermek;huy;karakter;kıvamına getirmek;kızgınlık;meneviş;öfke;ruh hali;tabiat;tav;tavlamak (metalurji)
-temperature:sıcaklık
-template:şablon
+temper:Ã§eliÄŸe su vermek;huy;karakter;kÄ±vamÄ±na getirmek;kÄ±zgÄ±nlÄ±k;meneviÅŸ;Ã¶fke;ruh hali;tabiat;tav;tavlamak (metalurji)
+temperature:sÄ±caklÄ±k
+template:ÅŸablon
 ten:on
-tender:körpe;yumuşak
-tenet:doktrin;görüş;ilke;öğreti;prensip
-tepid:ılık
+tender:kÃ¶rpe;yumuÅŸak
+tenet:doktrin;gÃ¶rÃ¼ÅŸ;ilke;Ã¶ÄŸreti;prensip
+tepid:Ä±lÄ±k
 terminal:son;terminal
 terminate:bitirmek;bitmek;son vermek;sona ermek
-terms:şartlar
-terrific:dehşetli;korkunç
-terrified:dehşet içinde;dehşete düşmüş
-territorial division:bölgesel ayrım
-territorial:belirli bir bölgeye ait;bölgesel;karasal;karaya ait;mahalli
-territory:alan;bölge;ülke
-text:konu;metin;parça;tekst
-their:onların
+terms:ÅŸartlar
+terrific:dehÅŸetli;korkunÃ§
+terrified:dehÅŸet iÃ§inde;dehÅŸete dÃ¼ÅŸmÃ¼ÅŸ
+territorial division:bÃ¶lgesel ayrÄ±m
+territorial:belirli bir bÃ¶lgeye ait;bÃ¶lgesel;karasal;karaya ait;mahalli
+territory:alan;bÃ¶lge;Ã¼lke
+text:konu;metin;parÃ§a;tekst
+their:onlarÄ±n
 theoretical:kuramsal;teorik
-therefor:bu yüzden;bundan dolayı
+therefor:bu yÃ¼zden;bundan dolayÄ±
 thesis:iddia;tez
 they:onlar
-thick:kalın
-thicker:daha kalın
-thickness:kalınlık;katman;koyuluk;tabaka;yoğunluk
-third:üçte bir;üçüncü
-thirsty:susamış
+thick:kalÄ±n
+thicker:daha kalÄ±n
+thickness:kalÄ±nlÄ±k;katman;koyuluk;tabaka;yoÄŸunluk
+third:Ã¼Ã§te bir;Ã¼Ã§Ã¼ncÃ¼
+thirsty:susamÄ±ÅŸ
 thirty:otuz
 this:bu
-thread:iplik;iş parçacığı;lif;tel;vida dişi;yiv
-threaded:dişli;vidalı;vida dişli;dişli
-threat:gözdağı;tehdit;tehlike;tehlike işareti
-threaten:gözdağı vermek;tehdit etmek
-three:üç
-through:arasından;bir yandan öbür yana;boyunca;içinden
-throughout:başından sonuna;baştan başa;boyunca
-thumb:başparmak
-thus:böyle;böylece;bu suretle;bu şekilde
-tickle:gıdıklamak
-tiff:atışma;tartışma
+thread:iplik;iÅŸ parÃ§acÄ±ÄŸÄ±;lif;tel;vida diÅŸi;yiv
+threaded:diÅŸli;vidalÄ±;vida diÅŸli;diÅŸli
+threat:gÃ¶zdaÄŸÄ±;tehdit;tehlike;tehlike iÅŸareti
+threaten:gÃ¶zdaÄŸÄ± vermek;tehdit etmek
+three:Ã¼Ã§
+through:arasÄ±ndan;bir yandan Ã¶bÃ¼r yana;boyunca;iÃ§inden
+throughout:baÅŸÄ±ndan sonuna;baÅŸtan baÅŸa;boyunca
+thumb:baÅŸparmak
+thus:bÃ¶yle;bÃ¶ylece;bu suretle;bu ÅŸekilde
+tickle:gÄ±dÄ±klamak
+tiff:atÄ±ÅŸma;tartÄ±ÅŸma
 tiger:kaplan
-tilt:eğmek;yana yatırmak
-time:defa;saat;süre;vakit;zaman;zamanlamak
+tilt:eÄŸmek;yana yatÄ±rmak
+time:defa;saat;sÃ¼re;vakit;zaman;zamanlamak
 timing:zamanlama
 tissue:doku
-title page:baş sayfa;başlık sayfası
-title:başlık
-to:-e doğru;-e karşı;-e
-together:aralıksız;beraber;birlikte
-tolerance:hoşgörü;tolerans
-tool:alet;araç
-tooth:diş
+title page:baÅŸ sayfa;baÅŸlÄ±k sayfasÄ±
+title:baÅŸlÄ±k
+to:-e doÄŸru;-e karÅŸÄ±;-e
+together:aralÄ±ksÄ±z;beraber;birlikte
+tolerance:hoÅŸgÃ¶rÃ¼;tolerans
+tool:alet;araÃ§
+tooth:diÅŸ
 topic:konu
 torc:burulma kuvveti
-torch:asetilen beki;hamlaç;meşale;pilli el feneri;şaluma
+torch:asetilen beki;hamlaÃ§;meÅŸale;pilli el feneri;ÅŸaluma
 total:tam;toplam
 tour:tur
-tower:burç;kule
+tower:burÃ§;kule
 track:iz;izlemek;ray;tarama;yol
-transition:değişim;geçiş;geçme
-translation:çeviri;tercüme
-transportation:taşımacılık
+transition:deÄŸiÅŸim;geÃ§iÅŸ;geÃ§me
+translation:Ã§eviri;tercÃ¼me
+transportation:taÅŸÄ±macÄ±lÄ±k
 trap:tuzak;kapan
-trash:çerçöp;değersiz şey;süprüntü
+trash:Ã§erÃ§Ã¶p;deÄŸersiz ÅŸey;sÃ¼prÃ¼ntÃ¼
 tray:tabla;tepsi
-tread:ayak basmak;yürümek
+tread:ayak basmak;yÃ¼rÃ¼mek
 treat:ikram;ikram etmek;zevk
-tremble:titreme;titremek;ürperme;ürpermek
+tremble:titreme;titremek;Ã¼rperme;Ã¼rpermek
 trendy:modaya uyan
 trigger:tetik
 trill:ses titremesi
-trimming:kesilmiş parça;talaş
-trip:gezinti;hata yapmak;kısa yolculuk;tur
+trimming:kesilmiÅŸ parÃ§a;talaÅŸ
+trip:gezinti;hata yapmak;kÄ±sa yolculuk;tur
 tripoli:Trablusgarp
-trivial:önemsiz
-troop:alay;bölük;tabur
-trunk:ağaç gövdesi
-try:denemek;tecrübe etmek;uğraşmak
+trivial:Ã¶nemsiz
+troop:alay;bÃ¶lÃ¼k;tabur
+trunk:aÄŸaÃ§ gÃ¶vdesi
+try:denemek;tecrÃ¼be etmek;uÄŸraÅŸmak
 tundra:tundura
-tusk:azı dişi;fil dişi
+tusk:azÄ± diÅŸi;fil diÅŸi
 tuxedo:smokin
 twelve:on iki
 twenty:yirmi
-twisted:bükülmüş;çarpıtılmış;kıvrık;şaşkın
+twisted:bÃ¼kÃ¼lmÃ¼ÅŸ;Ã§arpÄ±tÄ±lmÄ±ÅŸ;kÄ±vrÄ±k;ÅŸaÅŸkÄ±n
 two:iki
 typhoon:tayfun
 unauthorized:yetkisiz
-unconscious:baygın
+unconscious:baygÄ±n
 under the pretext of:-bahanesiyle
-undercut:dip oyulması
-undergraduate:üniversite öğrencisi
-underneath:altına;altında;altından
+undercut:dip oyulmasÄ±
+undergraduate:Ã¼niversite Ã¶ÄŸrencisi
+underneath:altÄ±na;altÄ±nda;altÄ±ndan
 understand:anlamak
-undertake:(işe) girişmek;üstlenmek;yüklenmek
-unfasten:çözmek;gevşetmek
-unified:birleşmiş;birleştirilmiş
-uninvited:davet edilmemiş;davetsiz
-unique:eşsiz;nadir;tek
-uniquely:eşsiz derecede;eşsiz olarak
-unit:birim;takım
-unknown:bilinmeyen;meçhul;tanınmamış;tanınmayan
+undertake:(iÅŸe) giriÅŸmek;Ã¼stlenmek;yÃ¼klenmek
+unfasten:Ã§Ã¶zmek;gevÅŸetmek
+unified:birleÅŸmiÅŸ;birleÅŸtirilmiÅŸ
+uninvited:davet edilmemiÅŸ;davetsiz
+unique:eÅŸsiz;nadir;tek
+uniquely:eÅŸsiz derecede;eÅŸsiz olarak
+unit:birim;takÄ±m
+unknown:bilinmeyen;meÃ§hul;tanÄ±nmamÄ±ÅŸ;tanÄ±nmayan
 unwanted:istenilmeyen
 up to:-e kadar
-up:yukarıya;yukarıda
-update:güncellemek;güncelleştirme;yenile
-upper:üst;üstteki
+up:yukarÄ±ya;yukarÄ±da
+update:gÃ¼ncellemek;gÃ¼ncelleÅŸtirme;yenile
+upper:Ã¼st;Ã¼stteki
 uppity:kibirli
-usage:adet;kullanım;kullanış;usül
-usual:alışılmış;her zamanki;normal;olağan
+usage:adet;kullanÄ±m;kullanÄ±ÅŸ;usÃ¼l
+usual:alÄ±ÅŸÄ±lmÄ±ÅŸ;her zamanki;normal;olaÄŸan
 utilize:kullanmak;yararlanmak
 utilized:faydalanmak;kullanmak
 vacuum:vakum
-valid:geçerli;kanuni;makul;mantıklı;sağlam temele oturtulmuş;yasal;yürürlükte olan
-value:değer
-vanish:gözden kaybolmak;ortadan yok olmak
-variation:değişim;değişme miktarı;varyasyon
-variety:çeşitlilik
-vary:çeşitli olmak;değişik olmak;değişmek
-vast:çok geniş;engin
+valid:geÃ§erli;kanuni;makul;mantÄ±klÄ±;saÄŸlam temele oturtulmuÅŸ;yasal;yÃ¼rÃ¼rlÃ¼kte olan
+value:deÄŸer
+vanish:gÃ¶zden kaybolmak;ortadan yok olmak
+variation:deÄŸiÅŸim;deÄŸiÅŸme miktarÄ±;varyasyon
+variety:Ã§eÅŸitlilik
+vary:Ã§eÅŸitli olmak;deÄŸiÅŸik olmak;deÄŸiÅŸmek
+vast:Ã§ok geniÅŸ;engin
 vault:kubbe
 vee:V harfi
 vein:damar
-velocity:hız
+velocity:hÄ±z
 velvet:kadife
-version:sürüm;tür;uyarlama;versiyon
+version:sÃ¼rÃ¼m;tÃ¼r;uyarlama;versiyon
 veteran:deneyimli
-via:aracılığıyla;vasıtasıyla;yoluyla
-vice:mengene;sıkmaç
-vicinity:çevre;semt
+via:aracÄ±lÄ±ÄŸÄ±yla;vasÄ±tasÄ±yla;yoluyla
+vice:mengene;sÄ±kmaÃ§
+vicinity:Ã§evre;semt
 victim:kurban
-view:bakış;-e bakmak;görünüm;görüş;görüntüle;-i tetkik etmek;manzara
-vigorous:dinç;güçlü
-vile:aşağı;aşağılık;iğrenç;rezil
-violent:sert;şiddetli;zorlu
-virtually:aslında;gerçekte;hemen hemen;neredeyse
-vivid:berrak;çok parlak;hayat dolu
-vulnerable:hassas;kolay incinir;zayıf
+view:bakÄ±ÅŸ;-e bakmak;gÃ¶rÃ¼nÃ¼m;gÃ¶rÃ¼ÅŸ;gÃ¶rÃ¼ntÃ¼le;-i tetkik etmek;manzara
+vigorous:dinÃ§;gÃ¼Ã§lÃ¼
+vile:aÅŸaÄŸÄ±;aÅŸaÄŸÄ±lÄ±k;iÄŸrenÃ§;rezil
+violent:sert;ÅŸiddetli;zorlu
+virtually:aslÄ±nda;gerÃ§ekte;hemen hemen;neredeyse
+vivid:berrak;Ã§ok parlak;hayat dolu
+vulnerable:hassas;kolay incinir;zayÄ±f
 wag:sallama;sallamak;sallanmak
 wait:bekleme;beklemek
 waiter:garson
 want:arzulamak;istek;istemek;yokluk
-warning:ikaz;uyarı
-warrior:asker;savaşçı
+warning:ikaz;uyarÄ±
+warrior:asker;savaÅŸÃ§Ä±
 watch:izlemek;seyretmek
 wave:dalga;sallamak;sallanmak
 wax:balmumu
 we:biz
-wealth:bolluk;servet;varlık
+wealth:bolluk;servet;varlÄ±k
 weapon:silah
-wear:aşınma;dayanıklılık;giymek;yıpranma
-weaver:dokumacı
-weird:esrarlı;tuhaf
-weldable:kaynağa gelir;kaynak edilebilir;kaynaklanabilir
-welder:kaynakçı
+wear:aÅŸÄ±nma;dayanÄ±klÄ±lÄ±k;giymek;yÄ±pranma
+weaver:dokumacÄ±
+weird:esrarlÄ±;tuhaf
+weldable:kaynaÄŸa gelir;kaynak edilebilir;kaynaklanabilir
+welder:kaynakÃ§Ä±
 welding:kaynak etme;kaynak yapma
-west:batı
-wet:ıslak;yaş
+west:batÄ±
+wet:Ä±slak;yaÅŸ
 what:ne
-whatever:her çeşit;her türlü;herhengibir;hiç
+whatever:her Ã§eÅŸit;her tÃ¼rlÃ¼;herhengibir;hiÃ§
 wheel shaft:kasnak mili
-wheel:çark;tekerlek
-when:-dığı zaman;iken;ne zaman
+wheel:Ã§ark;tekerlek
+when:-dÄ±ÄŸÄ± zaman;iken;ne zaman
 whereas:halbuki;oysa
 which:hangi;hangisi;hangisini
-whilst:-dığı halde;-iken;oysa;rağmen;sırasında;süresince
-whisper:fısıldamak;fısıltı
+whilst:-dÄ±ÄŸÄ± halde;-iken;oysa;raÄŸmen;sÄ±rasÄ±nda;sÃ¼resince
+whisper:fÄ±sÄ±ldamak;fÄ±sÄ±ltÄ±
 who:kim
-whole:bütün;tam
-widen:genişlemek;genişletmek
-wider:daha geniş
-widespread:geniş alana yayılmış;yaygın
-windscreen:araba ön camı
+whole:bÃ¼tÃ¼n;tam
+widen:geniÅŸlemek;geniÅŸletmek
+wider:daha geniÅŸ
+widespread:geniÅŸ alana yayÄ±lmÄ±ÅŸ;yaygÄ±n
+windscreen:araba Ã¶n camÄ±
 wipe:silme;silmek;temizleme
 wire:tel
 wireless:telsiz
-wise:akıllı;akıllıca;mantıklı
-witch:büyücü;cadı
-withdrawal:para çekme
-within:içeride;içeriye;içinde
-withstand:-e dayanmak;karşı koymak;mukavemet etmek
-witted:anlayışlı;zeki
-wizard:büyücü;deha;sihirbaz;usta
+wise:akÄ±llÄ±;akÄ±llÄ±ca;mantÄ±klÄ±
+witch:bÃ¼yÃ¼cÃ¼;cadÄ±
+withdrawal:para Ã§ekme
+within:iÃ§eride;iÃ§eriye;iÃ§inde
+withstand:-e dayanmak;karÅŸÄ± koymak;mukavemet etmek
+witted:anlayÄ±ÅŸlÄ±;zeki
+wizard:bÃ¼yÃ¼cÃ¼;deha;sihirbaz;usta
 word:kelime
-worker:çalışan kimse;işçi
-workpiece:iş;işlenecek parça
-world:dünya
-worse:daha çok;daha kötü;daha kötü şey
-worth:bedel;değer;kıymet;layık
+worker:Ã§alÄ±ÅŸan kimse;iÅŸÃ§i
+workpiece:iÅŸ;iÅŸlenecek parÃ§a
+world:dÃ¼nya
+worse:daha Ã§ok;daha kÃ¶tÃ¼;daha kÃ¶tÃ¼ ÅŸey
+worth:bedel;deÄŸer;kÄ±ymet;layÄ±k
 wound:yara;yaralamak
-wrinkle:kırışıklık
+wrinkle:kÄ±rÄ±ÅŸÄ±klÄ±k
 write:yazmak
 yawn:esnemek
-yearn:hislenmek;özlemek;sevgi beslemek
-yell:bağırmak;haykırmak
-yellow:sarı
+yearn:hislenmek;Ã¶zlemek;sevgi beslemek
+yell:baÄŸÄ±rmak;haykÄ±rmak
+yellow:sarÄ±
 yes:evet
-yet:buna rağmen;daha;hâlâ;henüz;şimdiye kadar;yine de
-yield:kazanç;meydana çıkarmak;verimlilik
+yet:buna raÄŸmen;daha;hÃ¢lÃ¢;henÃ¼z;ÅŸimdiye kadar;yine de
+yield:kazanÃ§;meydana Ã§Ä±karmak;verimlilik
 you:sen;siz
-zany:komik;saçma ve gülünç;soytarı
+zany:komik;saÃ§ma ve gÃ¼lÃ¼nÃ§;soytarÄ±
 zeal:gayret
-zealot:bağnaz;fanatik
-zealous:coşkun;gayretli;istekli
+zealot:baÄŸnaz;fanatik
+zealous:coÅŸkun;gayretli;istekli
 zeis glands:zeis bezleri
-zero growth:sıfır büyüme
-zero point energy:sıfır noktası enerjisi
-zero:sıfır
+zero growth:sÄ±fÄ±r bÃ¼yÃ¼me
+zero point energy:sÄ±fÄ±r noktasÄ± enerjisi
+zero:sÄ±fÄ±r
 zest:lezzet;tat;zevk
-zinc:çinko;tutya
-zip:vızıltı
-zipcode:posta bölgesi numarası
+zinc:Ã§inko;tutya
+zip:vÄ±zÄ±ltÄ±
+zipcode:posta bÃ¶lgesi numarasÄ±
 zipper:fermuar
-zone:bölge;zon
+zone:bÃ¶lge;zon
