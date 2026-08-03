@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data'; // HATA ÇÖZÜMÜ: Eksik olan kütüphane eklendi.
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart'; // Arka plan işlemi (compute) için
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:archive/archive.dart';
 import 'models.dart';
@@ -48,6 +49,29 @@ class WordNetEntry {
   }
 }
 
+// UI'ı kitlemeden (RAM şişirmesini önleyerek) arka planda çalışacak Isolate fonksiyonu
+Map<String, WordNetEntry> _decodeZipInBackground(List<int> zipBytes) {
+  final archive = ZipDecoder().decodeBytes(zipBytes);
+  
+  ArchiveFile? jsonFile;
+  // ZIP'in içinde klasör varsa diye adından bağımsız doğrudan ilk .json dosyasını arıyoruz
+  for (var file in archive.files) {
+    if (file.isFile && file.name.toLowerCase().endsWith('.json')) {
+      jsonFile = file;
+      break;
+    }
+  }
+
+  if (jsonFile == null) {
+    throw Exception("ZIP arşivi içinde geçerli bir .json dosyası bulunamadı. Lütfen ZIP dosyasını kontrol edin.");
+  }
+  
+  final String response = utf8.decode(jsonFile.content as List<int>);
+  final Map<String, dynamic> data = json.decode(response);
+
+  return data.map((key, value) => MapEntry(key, WordNetEntry.fromJson(key, value)));
+}
+
 class WordNetService {
   static final WordNetService _instance = WordNetService._internal();
   factory WordNetService() => _instance;
@@ -55,6 +79,8 @@ class WordNetService {
 
   Map<String, WordNetEntry> _wordNetData = {};
   bool _isLoaded = false;
+  String errorMessage = ""; // Hatayı uygulamanın ekranına taşımak için
+
   bool get isLoaded => _isLoaded;
 
   Future<void> loadWordNetData() async {
@@ -62,30 +88,27 @@ class WordNetService {
     try {
       print("WordNet ZIP dosyası okunuyor...");
       final ByteData zipBytes = await rootBundle.load('assets/wordnet/wordnet_data.zip');
-      final archive = ZipDecoder().decodeBytes(zipBytes.buffer.asUint8List());
-      final jsonFile = archive.findFile('wordnet_data.json');
-      if (jsonFile == null) throw Exception("ZIP arşivi içinde wordnet_data.json bulunamadı.");
       
-      print("JSON verisi ayrıştırılıyor...");
-      final String response = utf8.decode(jsonFile.content as List<int>);
-      final Map<String, dynamic> data = json.decode(response);
-
-      _wordNetData = data.map((key, value) => MapEntry(key, WordNetEntry.fromJson(key, value)));
+      print("Arka planda (Isolate) ZIP çıkarılıyor ve JSON ayrıştırılıyor...");
+      // Devasa dosyayı çözerken UI'ı kitlememek ve RAM'i yormamak için compute kullanıyoruz
+      _wordNetData = await compute(_decodeZipInBackground, zipBytes.buffer.asUint8List().toList());
+      
       _isLoaded = true;
+      errorMessage = "";
       print("WordNet verisi ZIP'ten başarıyla çıkarıldı: ${_wordNetData.length} kayıt.");
     } catch (e) {
+      _isLoaded = false;
+      errorMessage = e.toString();
       print("WordNet yüklenirken hata oluştu: $e");
     }
   }
 
-  // Quiz ve Oyunlar için cihazı yormadan anlık kelime havuzu oluşturur
   List<WordModel> getRandomWords(int count) {
     if (!_isLoaded || _wordNetData.isEmpty) return [];
     var values = _wordNetData.values.toList()..shuffle();
     return values.take(count).map((e) => e.toWordModel()).toList();
   }
 
-  // WordNet Browser için arama motoru
   List<WordNetEntry> searchWord(String word) {
     final searchKeyword = word.toLowerCase();
     return _wordNetData.values.where((entry) {
