@@ -43,7 +43,7 @@ class LibraryManagerScreen extends StatefulWidget {
 
 class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
   bool _isDownloading = false;
-  bool _isUploading = false; // YENİ: Arka plan senkronizasyonu durumu
+  bool _isUploading = false; 
   String _lastSyncText = "Hiç senkronize edilmedi";
 
   @override
@@ -428,7 +428,61 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 
-  // YENİ OPTİMİZASYON: Firebase Gönderim İşlemi Arka Plana (Background) Alındı
+  // EKLENDİ: İndirme Menüsünü Gösteren Eksik Fonksiyon
+  void _showDownloadMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1))
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Wrap(
+                  children: [
+                    Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.5), borderRadius: BorderRadius.circular(10)))),
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text("Buluttan Havuz İndir", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
+                    ),
+                    ListTile(
+                      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.public, color: Colors.blue)),
+                      title: const Text("🌍 Standart Topluluk Havuzu", style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: const Text("Kullanıcıların oluşturduğu karma listeler", style: TextStyle(fontSize: 12)),
+                      onTap: () { 
+                        Navigator.pop(context); 
+                        _downloadLibrary('https://raw.githubusercontent.com/eldora25/Tayf-Sozluk-Pro/main/assets/user_recommended_library.json', 'Standart Topluluk Kütüphanesi'); 
+                      },
+                    ),
+                    ListTile(
+                      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.biotech, color: Colors.purple)),
+                      title: const Text("🧬 Global Mitoz Havuzu", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
+                      subtitle: const Text("Sadece tek anlamlı, saf ve eşsiz bilgi kartları", style: TextStyle(fontSize: 12)),
+                      onTap: () { 
+                        Navigator.pop(context); 
+                        _downloadLibrary('https://raw.githubusercontent.com/eldora25/Tayf-Sozluk-Pro/main/assets/global_mitosis_pool.json', 'Global Mitoz Havuzu'); 
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _executeCloudUpload({required bool isMitosis, String? targetLibraryName}) async {
     if (isMitosis) {
       int count = widget.allWords.where((w) => w.libraryName.startsWith('🧬')).length +
@@ -455,7 +509,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
       }
     }
 
-    // UI'ı kilitleyen modal yerine, sessiz bir arka plan işlemi başlatılıyor.
     setState(() => _isUploading = true);
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -473,7 +526,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
       ...widget.learnedWords,
     ];
 
-    // Fireabase işlemi arka planda yürütülür (Main Thread kilitlenmez)
     Map<String, dynamic> result = await FirebaseSyncService.syncCardsToCloud(
       allLocalWords, 
       isMitosisPool: isMitosis,
@@ -516,7 +568,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
           )
         );
       } else if (success && syncedCount == 0) {
-        // Eğer kart gönderilmediyse arayüzü rahatsız eden Dialog yerine temiz bir Snackbar kullan.
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Tüm kartlarınız bulut ile zaten güncel."), backgroundColor: Colors.blue)
         );
@@ -689,7 +740,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                       
                       double progress = total > 0 ? (learned / total) : 0;
 
-                      // YENİ OPTİMİZASYON: RepaintBoundary ile donmalar tamamen engellendi
                       return RepaintBoundary(
                         child: _buildAnimatedItem(
                           context, 
