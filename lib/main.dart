@@ -357,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<WordModel> _activeDeck = [];
   Map<String, int> _cardMistakes = {};
 
-  String selectedLibrary = 'Varsayılan';
+  String selectedLibrary = 'Test Paketi'; // Varsayılan olarak değiştirildi
   String selectedLevel = 'Genel';
   int dailyGoal = 10, quizThreshold = 10, quizQuestionCount = 10, currentCardIndex = 0;
   bool isFlipped = false;
@@ -460,11 +460,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
              });
              
              int batchSize = 5000;
+             // YENİ OPTİMİZASYON: UI Thread'in tamamen kitlenmemesi için kısa molalar
              for (int i = 0; i < wnList.length; i += batchSize) {
                 int end = (i + batchSize < wnList.length) ? i + batchSize : wnList.length;
                 await isar.writeTxn(() async {
                    await isar.wordModels.putAll(wnList.sublist(i, end));
                 });
+                await Future.delayed(const Duration(milliseconds: 10)); // Event Loop'a nefes aldır
              }
              GlobalLogger.addLog("WordNet Isar'a başarıyla kuruldu.");
          } else {
@@ -576,6 +578,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       if (needsSave) {
         await isar.writeTxn(() async { await isar.wordModels.putAll(toSRSRepeatWords); });
+      }
+
+      if (allWords.isEmpty && learnedWords.isEmpty && toRepeatWords.isEmpty && toSRSRepeatWords.isEmpty && learningWords.isEmpty) {
+        _createDefaultLibrary();
       }
 
       await _buildActiveDeck(); 
@@ -925,8 +931,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _activeDeck.removeWhere((w) => w.id == word.id);
     });
 
+    // YENİ OPTİMİZASYON: Veritabanı yazma işlemi asenkron yapıldı, buton basımı UI'ı dondurmaz.
     if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-       isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+       Future.microtask(() async {
+         await isar.writeTxn(() async { await isar.wordModels.put(word); });
+       });
     }
 
     if (!fromQuiz) _nextCard(increment: false); 
@@ -966,8 +975,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _activeDeck.add(word);
     });
 
+    // YENİ OPTİMİZASYON: Asenkron Isar Kaydı
     if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-       isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+       Future.microtask(() async {
+         await isar.writeTxn(() async { await isar.wordModels.put(word); });
+       });
     }
 
     if (!fromQuiz) _nextCard(increment: false); 
@@ -995,8 +1007,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       reviewWordsPool.add(word);
     });
 
+    // YENİ OPTİMİZASYON: Asenkron Isar Kaydı
     if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-      isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+      Future.microtask(() async {
+         await isar.writeTxn(() async { await isar.wordModels.put(word); });
+      });
     }
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1232,7 +1247,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _openEditScreen(WordModel word) async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
-      word: word, availableLibraries: _safeLibraries(),
+      word: word, availableLibraries: _safeLibraries(), 
       onAction: (action, updatedWord) async {
         setState(() {
           if (action == EditAction.delete) {
@@ -1272,6 +1287,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _savePreferencesOnly();
       },
     )));
+  }
+  
+  List<String> _safeLibraries() {
+    var libs = allWords.map((e) => e.libraryName).toSet()
+      ..addAll(learnedWords.map((e) => e.libraryName))
+      ..addAll(toRepeatWords.map((e) => e.libraryName))
+      ..addAll(toSRSRepeatWords.map((e) => e.libraryName))
+      ..addAll(learningWords.map((e) => e.libraryName)); 
+    var uniqueLibs = libs.toSet();
+    uniqueLibs.add('Tekrarlanması Gerekenler'); 
+    uniqueLibs.add('WordNet Veritabanı');
+    return uniqueLibs.toList();
   }
 
   Widget _buildCrown(int level, bool isMitosis) {
@@ -1650,6 +1677,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               children: [
                 Expanded(
                   child: ListView(
+                    physics: const BouncingScrollPhysics(),
                     padding: EdgeInsets.zero,
                     children: [
                       AnimatedBuilder(
