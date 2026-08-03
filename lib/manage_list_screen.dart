@@ -1,7 +1,7 @@
 import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:isar/isar.dart'; // DÜZELTİLDİ: Doğru paket yolu eklendi
+import 'package:isar/isar.dart'; 
 import 'models.dart';
 import 'main.dart'; 
 
@@ -124,7 +124,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
   Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index.clamp(0, 20) * 50)), 
+      // YENİ OPTİMİZASYON: Çok sayıda kelime varsa animasyonlar çok uzun sürmesin diye max limit eklendi.
+      duration: Duration(milliseconds: 400 + (min(index, 10) * 50)), 
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
@@ -262,11 +263,12 @@ class _ManageListScreenState extends State<ManageListScreen> {
     final String dismissKey = '${item.id}_$index';
     final String heroTag = 'hero_word_list_${item.word}_$index';
 
-    return _buildAnimatedItem(
-      context, 
-      index,
-      RepaintBoundary(
-        child: Dismissible(
+    // YENİ OPTİMİZASYON: Kaydırma sırasında ekranın donmasını engelleyen RepaintBoundary
+    return RepaintBoundary(
+      child: _buildAnimatedItem(
+        context, 
+        index,
+        Dismissible(
           key: Key(dismissKey),
           direction: widget.onLearned != null ? DismissDirection.horizontal : DismissDirection.endToStart,
           background: Container(
