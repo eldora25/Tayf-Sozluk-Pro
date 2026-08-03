@@ -1,4 +1,5 @@
 import 'dart:async'; 
+import 'dart:math'; // EKLENDİ: min() fonksiyonu için matematik kütüphanesi
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart'; 
@@ -124,8 +125,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
   Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      // YENİ OPTİMİZASYON: Çok sayıda kelime varsa animasyonlar çok uzun sürmesin diye max limit eklendi.
-      duration: Duration(milliseconds: 400 + (min(index, 10) * 50)), 
+      // GÜNCELLENDİ: min fonksiyonu için <int> tipi belirtildi ve math eklendi
+      duration: Duration(milliseconds: 400 + (min<int>(index, 10) * 50)), 
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
@@ -263,7 +264,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
     final String dismissKey = '${item.id}_$index';
     final String heroTag = 'hero_word_list_${item.word}_$index';
 
-    // YENİ OPTİMİZASYON: Kaydırma sırasında ekranın donmasını engelleyen RepaintBoundary
     return RepaintBoundary(
       child: _buildAnimatedItem(
         context, 
