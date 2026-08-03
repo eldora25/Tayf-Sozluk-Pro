@@ -816,6 +816,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return uniqueLibs.toList();
   }
 
+  // YENİ: WordNet kartlarının arka yüzündeki synonym, antonym ve anlamları sırasıyla seslendiren gelişmiş TTS fonksiyonu
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       await globalTts.stop(); 
@@ -823,6 +824,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       if (isMeaning) {
         List<String> combinedList = [...word.meanings, ...word.examples];
+        
+        // WordNet kartları için eş ve zıt anlamları da seslendirmeye ekle
+        bool isWordNet = word.libraryName == 'WordNet Veritabanı' || word.pos.isNotEmpty || word.synonyms.isNotEmpty || word.antonyms.isNotEmpty;
+        if (isWordNet) {
+          if (word.synonyms.isNotEmpty) {
+            combinedList.add("synonym: " + word.synonyms.take(4).join(', '));
+          }
+          if (word.antonyms.isNotEmpty) {
+            combinedList.add("antonym: " + word.antonyms.take(4).join(', '));
+          }
+        }
+
         if (combinedList.isEmpty) return;
         rawText = combinedList.join('. '); 
       } else {
