@@ -220,54 +220,99 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     _isCurrentWordNet = currentWord.pos.isNotEmpty || currentWord.synonyms.isNotEmpty || currentWord.antonyms.isNotEmpty;
     
-    List<String> qTypes = ['standard'];
-    if (_isCurrentWordNet) {
-      if (currentWord.meanings.isNotEmpty) qTypes.add('def2word');
-      if (currentWord.synonyms.isNotEmpty) qTypes.add('synonym');
-      if (currentWord.antonyms.isNotEmpty) qTypes.add('antonym');
+    // YENİ DİNAMİK SORU MOTORU BAŞLANGICI
+    List<String> qTypes = [];
+    
+    if (currentWord.meanings.isNotEmpty) {
+      qTypes.add('word2meaning'); // Kelime -> Anlam
+      qTypes.add('meaning2word'); // Anlam -> Kelime
     }
+    if (currentWord.examples.isNotEmpty) {
+      qTypes.add('word2example'); // Kelime -> Örnek (Örnek -> Kelime YASAK)
+    }
+    if (currentWord.synonyms.isNotEmpty) {
+      qTypes.add('word2synonym'); // Kelime -> Eş Anlam
+      qTypes.add('synonym2word'); // Eş Anlam -> Kelime
+    }
+    if (currentWord.antonyms.isNotEmpty) {
+      qTypes.add('word2antonym'); // Kelime -> Zıt Anlam
+      qTypes.add('antonym2word'); // Zıt Anlam -> Kelime
+    }
+
+    if (qTypes.isEmpty) qTypes.add('word2word'); // Güvenlik yedeği
 
     String selectedType = qTypes[random.nextInt(qTypes.length)];
     
-    if (selectedType == 'def2word') {
-      _questionSubtext = "İngilizce Tanımına Sahip Olan Kelime Hangisidir?";
-      _displayWordStr = currentWord.meanings.first;
-      correctOption = currentWord.word;
-    } else if (selectedType == 'synonym') {
-      _questionSubtext = "Aşağıdakilerden Hangisi Eş Anlamlısıdır (Synonym)?";
-      _displayWordStr = currentWord.word;
+    String rawWord = currentWord.word;
+    if (RegExp(r'^\d{8}-').hasMatch(rawWord) || rawWord.contains('[ID:')) {
+        rawWord = currentWord.synonyms.isNotEmpty ? currentWord.synonyms.first : (currentWord.meanings.isNotEmpty ? currentWord.meanings.first : "WordNet Terimi");
+    }
+
+    if (selectedType == 'word2meaning') {
+      _questionSubtext = "Bu Kelimenin Anlamı Nedir?";
+      _displayWordStr = rawWord;
+      correctOption = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
+    } else if (selectedType == 'meaning2word') {
+      _questionSubtext = "Bu Anlama Gelen Kelime Hangisidir?";
+      _displayWordStr = currentWord.meanings[random.nextInt(currentWord.meanings.length)];
+      correctOption = rawWord;
+    } else if (selectedType == 'word2example') {
+      _questionSubtext = "Hangi Cümlede Örnek Olarak Kullanılmıştır?";
+      _displayWordStr = rawWord;
+      correctOption = currentWord.examples[random.nextInt(currentWord.examples.length)];
+    } else if (selectedType == 'word2synonym') {
+      _questionSubtext = "Bu Kelimenin Eş Anlamlısı (Synonym) Nedir?";
+      _displayWordStr = rawWord;
       correctOption = currentWord.synonyms[random.nextInt(currentWord.synonyms.length)];
-    } else if (selectedType == 'antonym') {
-      _questionSubtext = "Aşağıdakilerden Hangisi Zıt Anlamlısıdır (Antonym)?";
-      _displayWordStr = currentWord.word;
+    } else if (selectedType == 'synonym2word') {
+      _questionSubtext = "Bu Kelimenin Eş Anlamlısı (Synonym) Hangisidir?";
+      _displayWordStr = currentWord.synonyms[random.nextInt(currentWord.synonyms.length)];
+      correctOption = rawWord;
+    } else if (selectedType == 'word2antonym') {
+      _questionSubtext = "Bu Kelimenin Zıt Anlamlısı (Antonym) Nedir?";
+      _displayWordStr = rawWord;
       correctOption = currentWord.antonyms[random.nextInt(currentWord.antonyms.length)];
+    } else if (selectedType == 'antonym2word') {
+      _questionSubtext = "Bu Kelimenin Zıt Anlamlısı (Antonym) Hangisidir?";
+      _displayWordStr = currentWord.antonyms[random.nextInt(currentWord.antonyms.length)];
+      correctOption = rawWord;
     } else {
-      _questionSubtext = "";
-      List<String> correctPool = [...currentWord.meanings, ...currentWord.examples];
-      correctOption = correctPool.isNotEmpty ? correctPool[random.nextInt(correctPool.length)] : currentWord.word;
-      
-      _displayWordStr = currentWord.word;
-      if (RegExp(r'^\d{8}-').hasMatch(_displayWordStr) || _displayWordStr.contains('[ID:')) {
-          _displayWordStr = currentWord.synonyms.isNotEmpty ? currentWord.synonyms.first : "WordNet Kaydı";
-      }
+      _questionSubtext = "Doğru Eşleşmeyi Bulun";
+      _displayWordStr = rawWord;
+      correctOption = rawWord;
     }
 
     Set<String> wOptions = {};
     int loops = 0;
-    while(wOptions.length < 3 && loops < 150) {
+    while(wOptions.length < 3 && loops < 200) {
       loops++;
       WordModel rw = widget.words[random.nextInt(widget.words.length)];
+      
       if (rw.word != currentWord.word) {
         String wOpt = "";
-        if (selectedType == 'def2word') {
-           wOpt = rw.word;
-        } else if (selectedType == 'synonym') {
-           wOpt = rw.synonyms.isNotEmpty ? rw.synonyms.first : rw.word;
-        } else if (selectedType == 'antonym') {
-           wOpt = rw.antonyms.isNotEmpty ? rw.antonyms.first : rw.word;
+        String rwRawWord = rw.word;
+        if (RegExp(r'^\d{8}-').hasMatch(rwRawWord) || rwRawWord.contains('[ID:')) {
+            rwRawWord = rw.synonyms.isNotEmpty ? rw.synonyms.first : rw.word;
+        }
+
+        if (selectedType == 'word2meaning') {
+           if (rw.meanings.isNotEmpty) wOpt = rw.meanings[random.nextInt(rw.meanings.length)];
+        } else if (selectedType == 'meaning2word') {
+           wOpt = rwRawWord;
+        } else if (selectedType == 'word2example') {
+           if (rw.examples.isNotEmpty) wOpt = rw.examples[random.nextInt(rw.examples.length)];
+        } else if (selectedType == 'word2synonym') {
+           if (rw.synonyms.isNotEmpty) wOpt = rw.synonyms[random.nextInt(rw.synonyms.length)];
+           else wOpt = rwRawWord; 
+        } else if (selectedType == 'synonym2word') {
+           wOpt = rwRawWord;
+        } else if (selectedType == 'word2antonym') {
+           if (rw.antonyms.isNotEmpty) wOpt = rw.antonyms[random.nextInt(rw.antonyms.length)];
+           else wOpt = rwRawWord; 
+        } else if (selectedType == 'antonym2word') {
+           wOpt = rwRawWord;
         } else {
-           List<String> wrongPool = [...rw.meanings, ...rw.examples];
-           if (wrongPool.isNotEmpty) wOpt = wrongPool[random.nextInt(wrongPool.length)];
+           wOpt = rwRawWord;
         }
         
         if (wOpt.isNotEmpty && wOpt != correctOption && !wOptions.contains(wOpt)) {
@@ -276,9 +321,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       }
     }
     
-    // YENİ: Eğer yeterli yanlış cevap bulunamazsa yedek olarak seçenekleri rastgele doldur
+    // Eğer yeterli yanlış cevap bulunamazsa yedek olarak seçenekleri rastgele doldur
     if (wOptions.length < 3) {
-      wOptions.addAll(["Entity", "Process", "Attribute", "Event"]);
+      wOptions.addAll(["Entity", "Process", "Attribute", "Event", "Condition", "State"]);
       wOptions = wOptions.take(3).toSet();
     }
     
@@ -288,8 +333,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     
     _entranceController.forward(from: 0.0); 
     
-    String readWord = _displayWordStr == "WordNet Kaydı" && currentWord.meanings.isNotEmpty ? currentWord.meanings.first : _displayWordStr;
-    _speakText(readWord, getSmartSourceLanguage(currentWord.libraryName, readWord));
+    _speakText(_displayWordStr, getSmartSourceLanguage(currentWord.libraryName, _displayWordStr));
   }
 
   String _getReadableLang(String code) {
@@ -324,7 +368,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         correctAnswers++; 
         
         if (_isCurrentWordNet) {
-          // WordNet ise veri tabanı harici olduğu için doğrudan Mastered olayına yolla.
           widget.onWordMastered(currentWord);
         } else {
           int totalOptions = currentWord.meanings.length + currentWord.examples.length;
@@ -607,7 +650,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           )
         ),
         child: ListView(
-          padding: EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 16), 
+          // YENİ: Alt kısma 120 padding verilerek uzun metinlerin ve kaydırmanın sorunsuz olması sağlandı.
+          padding: EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 120), 
+          physics: const BouncingScrollPhysics(),
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -677,9 +722,34 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                             ),
                             child: Column(
                               children: [
-                                Text(_displayWordStr, textAlign: TextAlign.center, style: TextStyle(fontSize: _isCurrentWordNet && _questionSubtext.contains("Tanım") ? 22 : 34, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
+                                Text(_displayWordStr, textAlign: TextAlign.center, style: TextStyle(fontSize: _isCurrentWordNet && _questionSubtext.contains("Tanım") ? 22 : 30, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
+                                
+                                // YENİ: Sorunun türünü açıklayan şık alt başlık rozeti
                                 if (_questionSubtext.isNotEmpty)
-                                  Padding(padding: const EdgeInsets.only(top: 16.0), child: Text(_questionSubtext, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orangeAccent.shade400))),
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 24.0),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).cardColor.withOpacity(0.9),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: Colors.orangeAccent.withOpacity(0.5)),
+                                      boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.15), blurRadius: 10)]
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.help_outline, color: Colors.orangeAccent.shade700, size: 16),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            _questionSubtext, 
+                                            textAlign: TextAlign.center, 
+                                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.orangeAccent.shade700)
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -721,7 +791,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                       child: Row(
                         children: [
                           Expanded(
-                            child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500), maxLines: 6, overflow: TextOverflow.ellipsis),
+                            // YENİ: Sınır (maxLines) kaldırılarak uzun paragrafların tamamen görünmesi sağlandı.
+                            child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500)),
                           ),
                           if (trailingIcon != null) ...[
                             const SizedBox(width: 12),
