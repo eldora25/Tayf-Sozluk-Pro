@@ -354,7 +354,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<WordModel> reviewWordsPool = []; 
   
   List<WordModel> _cachedWordNetDeck = [];
-  
   List<WordModel> _activeDeck = [];
   Map<String, int> _cardMistakes = {};
 
@@ -406,6 +405,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // YENİ: Işık hızında (RAM dostu) çalışan, donmaları engelleyen Deste Oluşturucu
   Future<void> _buildActiveDeck() async {
     _activeDeck.clear();
     _cardMistakes.clear(); 
@@ -414,16 +414,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _activeDeck.addAll(toSRSRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
       _activeDeck.addAll(toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
     } else if (selectedLibrary == 'WordNet Veritabanı') {
-      int dbCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
-      if (dbCount > 0) {
-        List<WordModel> randomWN = [];
-        final random = Random();
-        for(int i=0; i<200; i++){
-          int offset = random.nextInt(dbCount);
-          var rw = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').offset(offset).findFirst();
-          if (rw != null && !randomWN.any((w)=>w.id == rw.id)) randomWN.add(rw);
-        }
-        _activeDeck.addAll(randomWN);
+      // ÇÖZÜM: 150.000 kelimeden 200 tanesini "offset" ile aramak sistemi kilitliyordu.
+      // Sadece kelime ID'lerini çekip, rastgele olanları doğrudan GetAll() ile almak inanılmaz hızlıdır (O(1)).
+      List<int> allWordNetIds = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').idProperty().findAll();
+      
+      if (allWordNetIds.isNotEmpty) {
+        allWordNetIds.shuffle();
+        List<int> selectedIds = allWordNetIds.take(200).toList();
+        
+        List<WordModel?> fetchedWords = await isar.wordModels.getAll(selectedIds);
+        _cachedWordNetDeck = fetchedWords.whereType<WordModel>().toList();
+        _activeDeck.addAll(_cachedWordNetDeck);
       }
     } else {
       _activeDeck.addAll(toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
@@ -466,20 +467,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
          } else {
              GlobalLogger.addLog("HATA: WordNet verileri çıkarılamadı.");
          }
-      }
-
-      if (_cachedWordNetDeck.isEmpty) {
-        int dbCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
-        if (dbCount > 0) {
-           List<WordModel> randomWN = [];
-           final random = Random();
-           for(int i=0; i<200; i++){
-              int offset = random.nextInt(dbCount);
-              var rw = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').offset(offset).findFirst();
-              if (rw != null && !randomWN.any((w)=>w.id == rw.id)) randomWN.add(rw);
-           }
-           _cachedWordNetDeck = randomWN;
-        }
       }
 
       setState(() { _loadingText = "Kullanıcı Verileri Yükleniyor..."; });
@@ -787,20 +774,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _savePreferencesOnly();
   }
 
-  // YENİ: Tekrarsız ve çökmeyen açılır menü kütüphaneleri
-  List<String> get availableLibraries {
-    var libs = allWords.map((e) => e.libraryName).toSet()
-      ..addAll(learnedWords.map((e) => e.libraryName))
-      ..addAll(toRepeatWords.map((e) => e.libraryName))
-      ..addAll(toSRSRepeatWords.map((e) => e.libraryName))
-      ..addAll(learningWords.map((e) => e.libraryName)); 
-    
-    var uniqueLibs = libs.toSet();
-    uniqueLibs.add('Tekrarlanması Gerekenler'); 
-    uniqueLibs.add('WordNet Veritabanı');
-    return uniqueLibs.toList();
-  }
-
   Future<void> _speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       await globalTts.stop(); 
@@ -820,6 +793,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       if (rawText.isEmpty) return;
       
+      // YENİ: KUSURSUZ TTS İÇİN GELİŞMİŞ REGEX TEMİZLİĞİ
       String cleanText = rawText
           .replaceAll(RegExp(r'\[.*?\]'), ' ') 
           .replaceAll(RegExp(r'\(.*?\)'), ' ') 
@@ -903,6 +877,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         toSRSRepeatWords.removeWhere((w) => w.id == word.id);
       }
       
+      // YENİ ANTİ-SPAM: Eğer hiç "Tekrar" denmediyse (hatasızsa) puan ver
       int mistakes = _cardMistakes[word.word] ?? 0;
       if (mistakes == 0) {
          _recordActivity(1); 
@@ -910,6 +885,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
          _recordActivity(0); 
       }
 
+      // Kartı desteden tamamen sil
       _activeDeck.removeWhere((w) => w.id == word.id);
     });
 
@@ -941,6 +917,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         allWords.removeWhere((w) => w.id == word.id);
       }
 
+      // YENİ ANTİ-SPAM CEZA SİSTEMİ
       int currentMistakeCount = (_cardMistakes[word.word] ?? 0) + 1;
       _cardMistakes[word.word] = currentMistakeCount;
       int penalty = currentMistakeCount * 2; 
@@ -950,6 +927,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       
       _tpFlashController.forward(from: 0.0).then((_) => _tpFlashController.reverse());
 
+      // YENİ: Tekrar edilen kelimeyi destenin EN SONUNA at (sıradan çıkar, arkaya ekle)
       _activeDeck.removeWhere((w) => w.id == word.id);
       _activeDeck.add(word);
     });
@@ -958,7 +936,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
        isar.writeTxnSync(() { isar.wordModels.putSync(word); });
     }
 
-    if (!fromQuiz) _nextCard(increment: false); 
+    if (!fromQuiz) _nextCard(increment: false); // Tekrar destenin sonuna atıldığı için kayma olmaz
     else _savePreferencesOnly();
   }
 
@@ -1036,7 +1014,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             } catch(e) { continue; }
           }
 
-          setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; _buildActiveDeck(); });
+          setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
+          await _buildActiveDeck();
           
           await isar.writeTxn(() async { await isar.wordModels.putAll(newWords); });
           _savePreferencesOnly();
@@ -1101,7 +1080,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           } catch(e) { continue; }
         }
 
-        setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; _buildActiveDeck(); });
+        setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
+        await _buildActiveDeck();
         await isar.writeTxn(() async { await isar.wordModels.putAll(newWords); });
         _savePreferencesOnly();
         dialogMessage = "$customLibraryName başarıyla yüklendi!\n\n(${newWords.length} yeni kelime eklendi)";
@@ -1149,7 +1129,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _renameLibrary(String oldName, String newName) {
+  void _renameLibrary(String oldName, String newName) async {
     setState(() {
       for (var w in allWords) { if (w.libraryName == oldName) w.libraryName = newName; }
       for (var w in learnedWords) { if (w.libraryName == oldName) w.libraryName = newName; }
@@ -1159,9 +1139,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       for (var w in wrongWords) { if (w.libraryName == oldName) w.libraryName = newName; }
       for (var w in reviewWordsPool) { if (w.libraryName == oldName) w.libraryName = newName; } 
       if (selectedLibrary == oldName) selectedLibrary = newName;
-      _buildActiveDeck();
     });
     
+    await _buildActiveDeck();
     isar.writeTxn(() async {
       List<WordModel> toUpdate = await isar.wordModels.filter().libraryNameEqualTo(oldName).findAll();
       for (var w in toUpdate) { w.libraryName = newName; }
@@ -1170,7 +1150,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _savePreferencesOnly();
   }
 
-  void _deleteLibrary(String libName) {
+  void _deleteLibrary(String libName) async {
     setState(() {
       allWords.removeWhere((w) => w.libraryName == libName);
       learnedWords.removeWhere((w) => w.libraryName == libName);
@@ -1180,9 +1160,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       wrongWords.removeWhere((w) => w.libraryName == libName);
       reviewWordsPool.removeWhere((w) => w.libraryName == libName);
       if (selectedLibrary == libName) selectedLibrary = 'Varsayılan';
-      _buildActiveDeck();
     });
     
+    await _buildActiveDeck();
     isar.writeTxn(() async {
       await isar.wordModels.filter().libraryNameEqualTo(libName).deleteAll();
     });
@@ -1218,8 +1198,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _openEditScreen(WordModel word) async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
-      word: word, availableLibraries: availableLibraries,
-      onAction: (action, updatedWord) {
+      word: word, availableLibraries: _safeLibraries(), // YENİ: Tekrarsız liste kullanımı
+      onAction: (action, updatedWord) async {
         setState(() {
           if (action == EditAction.delete) {
             allWords.removeWhere((w) => w.id == word.id);
@@ -1253,11 +1233,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             if (updatedWord.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
           }
           currentCardIndex = 0;
-          _buildActiveDeck();
         });
+        await _buildActiveDeck();
         _savePreferencesOnly();
       },
     )));
+  }
+  
+  // Menüler için tekrarsız kütüphane listesini döndüren yardımcı metod
+  List<String> _safeLibraries() {
+    var libs = allWords.map((e) => e.libraryName).toSet()
+      ..addAll(learnedWords.map((e) => e.libraryName))
+      ..addAll(toRepeatWords.map((e) => e.libraryName))
+      ..addAll(toSRSRepeatWords.map((e) => e.libraryName))
+      ..addAll(learningWords.map((e) => e.libraryName)); 
+    var uniqueLibs = libs.toSet();
+    uniqueLibs.add('Tekrarlanması Gerekenler'); 
+    uniqueLibs.add('WordNet Veritabanı');
+    return uniqueLibs.toList();
   }
 
   Widget _buildCrown(int level, bool isMitosis) {
@@ -1397,7 +1390,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Expanded(
                   child: Stack(
                     children: [
-                      Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: _getTextColor(context, isDark, isMitosis)))))), 
+                      // YENİ: Uzun kelimelerde yazının DNA rozetine binmemesi için scroll eklendi
+                      SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.only(bottom: 80, top: 40, left: 16, right: 16),
+                        child: Center(child: Hero(tag: 'hero_word_${word.word}', child: Material(type: MaterialType.transparency, child: Text(displayWord, textAlign: TextAlign.center, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: _getTextColor(context, isDark, isMitosis)))))), 
+                      ),
                       Positioned(right: 5, top: 5, child: IconButton(icon: Icon(Icons.volume_up, size: 30, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.7)), onPressed: () => _speakWord(word, isMeaning: false))), 
                       Positioned(left: 5, top: 5, child: IconButton(icon: Icon(Icons.settings, size: 28, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.5)), onPressed: () => _openEditScreen(word))),
                       
@@ -1690,8 +1688,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       }
                     ),
                     
-                    ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: availableLibraries, onSave: (w) { setState(() => allWords.add(w)); _savePreferencesOnly(); }))); }),
-                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: _activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); }); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onLearned: _markAsLearned))); }),
+                    ListTile(leading: const Icon(Icons.add_box), title: const Text("Kelime Ekle"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => AddWordScreen(availableLibraries: _safeLibraries(), onSave: (w) { setState(() => allWords.add(w)); _buildActiveDeck(); _savePreferencesOnly(); }))); }),
+                    ListTile(leading: const Icon(Icons.list_alt), title: const Text("Kelime Listesi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordListScreen(words: _activeDeck, onDelete: (w) { setState(() { allWords.remove(w); toRepeatWords.remove(w); toSRSRepeatWords.remove(w); _activeDeck.remove(w); }); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onLearned: _markAsLearned))); }),
                     
                     ListTile(
                       leading: const Icon(Icons.settings), 
@@ -1700,10 +1698,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         HapticFeedback.lightImpact();
                         Navigator.pop(context); 
                         Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: availableLibraries, 
-                          onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) { 
+                          currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: _safeLibraries(), 
+                          onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) async { 
                             setState(() { dailyGoal = nG; quizThreshold = nT; quizQuestionCount = nQC; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
-                            _buildActiveDeck(); 
+                            await _buildActiveDeck(); 
                             _savePreferencesOnly(); 
                             Future.delayed(const Duration(milliseconds: 150), () {
                               _showCenteredDialog(
@@ -1770,7 +1768,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ))).then((_) => _loadData()); 
                     }),
                     
-                    ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: availableLibraries, totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
+                    ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: _safeLibraries(), totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
                     const Divider(),
                     ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () async { 
                       HapticFeedback.lightImpact(); 
@@ -2178,9 +2176,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Text("V2.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                          Text("V2.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
                                           const SizedBox(width: 16),
-                                          Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                          Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
