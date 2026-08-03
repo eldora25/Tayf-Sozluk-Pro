@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; 
 import 'models.dart';
-import 'wordnet.dart'; // YENİ: WordNet Servisi Bağlandı
 
 class StatisticsScreen extends StatelessWidget {
   final List<WordModel> allWords;
@@ -221,11 +220,7 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // YENİ: WordNet kapasitesini sisteme entegre ettik
-    bool isWordNetLoaded = WordNetService().isLoaded;
-    int wordNetCount = isWordNetLoaded ? 147306 : 0; 
-    
-    int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + toSRSRepeatWords.length + learningWords.length + wordNetCount;
+    int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + toSRSRepeatWords.length + learningWords.length;
     int totalWrongCount = wrongWords.fold(0, (a, b) => a + b.wrongCount);
 
     DateTime firstUse = DateTime.fromMillisecondsSinceEpoch(firstUseTimestamp);
@@ -497,71 +492,6 @@ class StatisticsScreen extends StatelessWidget {
                   String libName = availableLibraries[index];
                   if (libName == 'Tekrarlanması Gerekenler') return const SizedBox.shrink();
 
-                  // YENİ: WordNet Veritabanı için devasa istatistik kartı
-                  if (libName == 'WordNet Veritabanı') {
-                     int learned = learnedWords.where((e) => e.libraryName == libName).length;
-                     int wrong = wrongWords.where((e) => e.libraryName == libName).fold(0, (a, b) => a + b.wrongCount);
-                     double progress = 147306 > 0 ? (learned / 147306) : 0;
-
-                     return _buildStaggeredWrapper(index, Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.indigo.withOpacity(0.08), 
-                          borderRadius: BorderRadius.circular(20), 
-                          border: Border.all(color: Colors.indigo.withOpacity(0.3), width: 2), 
-                          boxShadow: [BoxShadow(color: Colors.indigo.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))]
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {}, // İstersen detay sayfasına bağlayabilirsin
-                            borderRadius: BorderRadius.circular(20),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.language, color: Colors.indigo, size: 28),
-                                      const SizedBox(width: 10),
-                                      const Expanded(child: Text("WordNet Veritabanı", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.indigo), overflow: TextOverflow.ellipsis)),
-                                    ],
-                                  ),
-                                  const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text("Toplam: 150.000+", style: TextStyle(fontWeight: FontWeight.w600, color: Colors.indigo)),
-                                        const SizedBox(width: 16),
-                                        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
-                                        const SizedBox(width: 16),
-                                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: LinearProgressIndicator(
-                                      value: progress,
-                                      backgroundColor: Colors.indigo.withOpacity(0.1),
-                                      color: Colors.indigoAccent,
-                                      minHeight: 6,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                     );
-                  }
-
                   int total = allWords.where((e) => e.libraryName == libName).length +
                               learnedWords.where((e) => e.libraryName == libName).length +
                               learningWords.where((e) => e.libraryName == libName).length +
@@ -582,9 +512,9 @@ class StatisticsScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.book, color: Colors.deepPurple, size: 24),
+                              Icon(libName == 'WordNet Veritabanı' ? Icons.language : Icons.book, color: libName == 'WordNet Veritabanı' ? Colors.indigo : Colors.deepPurple, size: 24),
                               const SizedBox(width: 10),
-                              Expanded(child: Text(libName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple))),
+                              Expanded(child: Text(libName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: libName == 'WordNet Veritabanı' ? Colors.indigo : Colors.deepPurple))),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -603,7 +533,7 @@ class StatisticsScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(value: progress, color: Colors.greenAccent.shade400, backgroundColor: Colors.grey.withOpacity(0.2), minHeight: 8)),
+                          ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(value: progress, color: libName == 'WordNet Veritabanı' ? Colors.indigoAccent : Colors.greenAccent.shade400, backgroundColor: Colors.grey.withOpacity(0.2), minHeight: 8)),
                         ],
                       ),
                     ),
