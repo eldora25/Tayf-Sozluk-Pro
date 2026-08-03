@@ -1,15 +1,16 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart'; // Arka plan işlemi (compute) için
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:archive/archive.dart';
 import 'models.dart';
+import 'logger_screen.dart'; // YENİ: Log servisi dahil edildi
 
 class WordNetEntry {
   final String id;
   final List<String> definition;
   final List<String> example;
-  final List<String> members; // Synonyms
+  final List<String> members; 
   final List<String> antonyms;
   final String partOfSpeech;
 
@@ -33,7 +34,6 @@ class WordNetEntry {
     );
   }
 
-  // ZIP'ten gelen ham veriyi uygulamanın anlayacağı WordModel'e çeviren köprü
   WordModel toWordModel() {
     return WordModel(
       word: members.isNotEmpty ? members.first : "Unknown",
@@ -49,12 +49,10 @@ class WordNetEntry {
   }
 }
 
-// UI'ı kitlemeden (RAM şişirmesini önleyerek) arka planda çalışacak Isolate fonksiyonu
 Map<String, WordNetEntry> _decodeZipInBackground(List<int> zipBytes) {
   final archive = ZipDecoder().decodeBytes(zipBytes);
   
   ArchiveFile? jsonFile;
-  // ZIP'in içinde klasör varsa diye adından bağımsız doğrudan ilk .json dosyasını arıyoruz
   for (var file in archive.files) {
     if (file.isFile && file.name.toLowerCase().endsWith('.json')) {
       jsonFile = file;
@@ -79,27 +77,26 @@ class WordNetService {
 
   Map<String, WordNetEntry> _wordNetData = {};
   bool _isLoaded = false;
-  String errorMessage = ""; // Hatayı uygulamanın ekranına taşımak için
+  String errorMessage = ""; 
 
   bool get isLoaded => _isLoaded;
 
   Future<void> loadWordNetData() async {
     if (_isLoaded) return;
     try {
-      print("WordNet ZIP dosyası okunuyor...");
+      GlobalLogger.addLog("WordNet Service: ZIP dosyası asset/wordnet dizininden okunuyor...");
       final ByteData zipBytes = await rootBundle.load('assets/wordnet/wordnet_data.zip');
       
-      print("Arka planda (Isolate) ZIP çıkarılıyor ve JSON ayrıştırılıyor...");
-      // Devasa dosyayı çözerken UI'ı kitlememek ve RAM'i yormamak için compute kullanıyoruz
+      GlobalLogger.addLog("WordNet Service: Isolate (Arka plan) aktarımı başlatıldı, ZIP çıkarılıyor...");
       _wordNetData = await compute(_decodeZipInBackground, zipBytes.buffer.asUint8List().toList());
       
       _isLoaded = true;
       errorMessage = "";
-      print("WordNet verisi ZIP'ten başarıyla çıkarıldı: ${_wordNetData.length} kayıt.");
+      GlobalLogger.addLog("WordNet Service BAŞARILI: ZIP'ten ${_wordNetData.length} kayıt RAM'e aktarıldı.");
     } catch (e) {
       _isLoaded = false;
       errorMessage = e.toString();
-      print("WordNet yüklenirken hata oluştu: $e");
+      GlobalLogger.addLog("WordNet Service HATA: Yükleme başarısız oldu. Detay: $e");
     }
   }
 
