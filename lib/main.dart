@@ -20,7 +20,7 @@ import 'firebase_options.dart';
 import 'firebase_sync_service.dart';
 
 import 'models.dart';
-import 'wordnet.dart'; 
+import 'wordnet.dart'; // YENİ: Installer eklendi
 import 'quiz_screen.dart';
 import 'add_word_screen.dart';
 import 'word_list_screen.dart';
@@ -351,8 +351,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<WordModel> toSRSRepeatWords = []; 
   List<WordModel> wrongWords = []; 
   List<WordModel> reviewWordsPool = []; 
-  
-  List<WordModel> _cachedWordNetDeck = [];
 
   String selectedLibrary = 'Varsayılan';
   String selectedLevel = 'Genel';
@@ -406,11 +404,39 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       final prefs = await SharedPreferences.getInstance();
       
-      setState(() { _loadingText = "WordNet Veritabanı Çıkarılıyor...\n(Bu işlem ilk açılışta biraz sürebilir)"; });
+      // YENİ YAPI: Isar'da WordNet Veritabanı yüklü mü kontrol et (150K kelimeden az ise tam yüklenmemiştir)
+      int wordNetCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
       
-      await WordNetService().loadWordNetData();
-      if (_cachedWordNetDeck.isEmpty) {
-        _cachedWordNetDeck = WordNetService().getRandomWords(200);
+      if (wordNetCount < 50000) {
+         setState(() { 
+           _loadingText = "WordNet İlk Kurulumu Yapılıyor...\n(Bu işlem sadece 1 kez yapılır\nve cihaz hızına göre 1-2 dk sürebilir)"; 
+         });
+         
+         // Yarım kalmış eski kalıntıları temizle
+         await isar.writeTxn(() async {
+            await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').deleteAll();
+         });
+         
+         // ZIP'ten çözüp listeye al
+         List<WordModel> wnList = await WordNetInstaller.getWordNetModels();
+         
+         if (wnList.isNotEmpty) {
+             setState(() { 
+               _loadingText = "Veritabanına Gömülüyor...\n(${wnList.length} Kelime)\nLütfen uygulamayı kapatmayın..."; 
+             });
+             
+             // Cihazı kitlememek ve OOM hatası almamak için 5000'erlik batchler halinde (Paket paket) kaydet
+             int batchSize = 5000;
+             for (int i = 0; i < wnList.length; i += batchSize) {
+                int end = (i + batchSize < wnList.length) ? i + batchSize : wnList.length;
+                await isar.writeTxn(() async {
+                   await isar.wordModels.putAll(wnList.sublist(i, end));
+                });
+             }
+             GlobalLogger.addLog("WordNet Isar'a başarıyla kuruldu.");
+         } else {
+             GlobalLogger.addLog("HATA: WordNet verileri çıkarılamadı.");
+         }
       }
 
       setState(() { _loadingText = "Kullanıcı Verileri Yükleniyor..."; });
@@ -510,21 +536,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _isAppLoading = false;
       });
 
-      // YENİ: Eğer WordNet yüklenirken (zip/klasör/hafıza vb.) hata oluştuysa ekrana yansıt
-      if (!WordNetService().isLoaded && WordNetService().errorMessage.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("WordNet Yüklenemedi: ${WordNetService().errorMessage}", style: const TextStyle(fontWeight: FontWeight.bold)),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 8),
-            )
-          );
-        });
-      }
-
     } catch (e) {
       debugPrint("Load Data Error: $e");
+      GlobalLogger.addLog("Load Data Error: $e");
       setState(() { _isAppLoading = false; });
     }
   }
@@ -735,7 +749,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       deck.addAll(toSRSRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
       deck.addAll(toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
     } else if (selectedLibrary == 'WordNet Veritabanı') {
-      deck.addAll(_cachedWordNetDeck);
+      // YENİ YAPI: WordNet kelimelerini Isar listesinden çekip her açılışta 200 taze rastgele kelime çıkar
+      var wnWords = allWords.where((w) => w.libraryName == 'WordNet Veritabanı').toList();
+      wnWords.shuffle();
+      deck.addAll(wnWords.take(200));
     } else {
       deck.addAll(toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
       deck.addAll(toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
@@ -745,6 +762,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   List<String> get availableLibraries {
+    // WordNet artık allWords listesinde olduğu için otomatik olarak buraya dahil edilecek!
     var libs = allWords.map((e) => e.libraryName).toSet().toList()
       ..addAll(learnedWords.map((e) => e.libraryName))
       ..addAll(toRepeatWords.map((e) => e.libraryName))
@@ -753,9 +771,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     var uniqueLibs = libs.toSet().toList();
     uniqueLibs.add('Tekrarlanması Gerekenler'); 
     
-    if (WordNetService().isLoaded) {
-      uniqueLibs.add('WordNet Veritabanı');
-    }
     return uniqueLibs;
   }
 
@@ -859,9 +874,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-      isar.writeTxnSync(() { isar.wordModels.putSync(word); });
-    }
+    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
 
     if (!fromQuiz) _nextCard(increment: false); 
     else _savePreferencesOnly(); 
@@ -891,9 +904,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-      isar.writeTxnSync(() { isar.wordModels.putSync(word); });
-    }
+    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
 
     if (!fromQuiz) _nextCard(increment: true);
     else _savePreferencesOnly();
@@ -901,6 +912,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _moveToReview(WordModel word) {
     HapticFeedback.heavyImpact();
+    
     FirebaseSyncService.reportCardErrorInCloud(word);
 
     setState(() {
@@ -917,9 +929,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       reviewWordsPool.add(word);
     });
 
-    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-      isar.writeTxnSync(() { isar.wordModels.putSync(word); });
-    }
+    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("⚠️ Kelime karantinaya alındı! Bulut güven skoru düşürüldü.", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
@@ -1161,7 +1171,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             wrongWords.removeWhere((w) => w.id == word.id);
             learnedWords.removeWhere((w) => w.id == word.id);
             reviewWordsPool.removeWhere((w) => w.id == word.id);
-            if (word.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.delete(word.id); });
+            isar.writeTxn(() async { await isar.wordModels.delete(word.id); });
           } else if (action == EditAction.update || action == EditAction.move) {
             allWords.removeWhere((w) => w.id == word.id);
             toRepeatWords.removeWhere((w) => w.id == word.id);
@@ -1179,10 +1189,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             } else { 
               allWords.add(updatedWord); 
             }
-            if (updatedWord.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
+            isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
           } else if (action == EditAction.copy) { 
             allWords.add(updatedWord); 
-            if (updatedWord.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
+            isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
           }
           currentCardIndex = 0;
         });
@@ -1709,7 +1719,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Navigator.pop(context); 
                       List<WordModel> fullPool = [];
                       if (selectedLibrary == 'WordNet Veritabanı') {
-                        fullPool = _cachedWordNetDeck;
+                        var wnList = allWords.where((w) => w.libraryName == 'WordNet Veritabanı').toList();
+                        wnList.shuffle();
+                        fullPool = wnList.take(200).toList();
                       } else {
                         fullPool = [...allWords, ...toRepeatWords, ...toSRSRepeatWords, ...learningWords, ...wrongWords].where((w) => selectedLibrary == 'Varsayılan' ? true : w.libraryName == selectedLibrary).toSet().toList();
                       }
