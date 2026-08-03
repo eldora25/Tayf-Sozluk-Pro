@@ -43,6 +43,7 @@ class LibraryManagerScreen extends StatefulWidget {
 
 class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
   bool _isDownloading = false;
+  bool _isUploading = false; // YENİ: Arka plan senkronizasyonu durumu
   String _lastSyncText = "Hiç senkronize edilmedi";
 
   @override
@@ -427,6 +428,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 
+  // YENİ OPTİMİZASYON: Firebase Gönderim İşlemi Arka Plana (Background) Alındı
   Future<void> _executeCloudUpload({required bool isMitosis, String? targetLibraryName}) async {
     if (isMitosis) {
       int count = widget.allWords.where((w) => w.libraryName.startsWith('🧬')).length +
@@ -453,28 +455,15 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
       }
     }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 120,
-              child: Lottie.network(
-                'https://assets9.lottiefiles.com/packages/lf20_5tl1xxic.json', 
-                errorBuilder: (context, error, stackTrace) => const CircularProgressIndicator(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text("Güvenli Buluta Aktarılıyor...", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
-            const Text("Veriler senkronize ediliyor, lütfen bekleyin.", style: TextStyle(color: Colors.grey, fontSize: 13), textAlign: TextAlign.center),
-          ],
-        ),
-      ),
+    // UI'ı kilitleyen modal yerine, sessiz bir arka plan işlemi başlatılıyor.
+    setState(() => _isUploading = true);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Arka planda buluta senkronize ediliyor..."), 
+        backgroundColor: Colors.deepPurple,
+        duration: Duration(seconds: 2),
+      )
     );
 
     var allLocalWords = [
@@ -484,6 +473,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
       ...widget.learnedWords,
     ];
 
+    // Fireabase işlemi arka planda yürütülür (Main Thread kilitlenmez)
     Map<String, dynamic> result = await FirebaseSyncService.syncCardsToCloud(
       allLocalWords, 
       isMitosisPool: isMitosis,
@@ -491,7 +481,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
 
     if (mounted) {
-      Navigator.pop(context); 
+      setState(() => _isUploading = false);
       await _loadLastSyncInfo(); 
 
       bool success = result["success"] ?? false;
@@ -526,93 +516,16 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
           )
         );
       } else if (success && syncedCount == 0) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Row(children: [Icon(Icons.info_outline, color: Colors.blue, size: 30), SizedBox(width: 8), Text("Zaten Güncel", style: TextStyle(color: Colors.blue))]),
-            content: const Text("Tüm kartlarınız bulut ile zaten güncel.\n\nYeni bir kart üretilmediği için ek TP kazanılamadı.", textAlign: TextAlign.center, style: TextStyle(fontSize: 15, height: 1.4)),
-            actions: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Anladım", style: TextStyle(fontWeight: FontWeight.bold))
-              )
-            ],
-          )
+        // Eğer kart gönderilmediyse arayüzü rahatsız eden Dialog yerine temiz bir Snackbar kullan.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Tüm kartlarınız bulut ile zaten güncel."), backgroundColor: Colors.blue)
         );
       } else {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Row(children: [Icon(Icons.warning, color: Colors.orange), SizedBox(width: 8), Text("Uyarı")]),
-            content: Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.4)),
-            actions: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Tamam")
-              )
-            ],
-          )
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.orange)
         );
       }
     }
-  }
-
-  void _showDownloadMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1))
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                child: Wrap(
-                  children: [
-                    Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.5), borderRadius: BorderRadius.circular(10)))),
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text("Buluttan Havuz İndir", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
-                    ),
-                    ListTile(
-                      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.public, color: Colors.blue)),
-                      title: const Text("🌍 Standart Topluluk Havuzu", style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text("Kullanıcıların oluşturduğu karma listeler", style: TextStyle(fontSize: 12)),
-                      onTap: () { 
-                        Navigator.pop(context); 
-                        _downloadLibrary('https://raw.githubusercontent.com/eldora25/Tayf-Sozluk-Pro/main/assets/user_recommended_library.json', 'Standart Topluluk Kütüphanesi'); 
-                      },
-                    ),
-                    ListTile(
-                      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.biotech, color: Colors.purple)),
-                      title: const Text("🧬 Global Mitoz Havuzu", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
-                      subtitle: const Text("Sadece tek anlamlı, saf ve eşsiz bilgi kartları", style: TextStyle(fontSize: 12)),
-                      onTap: () { 
-                        Navigator.pop(context); 
-                        _downloadLibrary('https://raw.githubusercontent.com/eldora25/Tayf-Sozluk-Pro/main/assets/global_mitosis_pool.json', 'Global Mitoz Havuzu'); 
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   void _showLibraryMenu(String libName) {
@@ -732,8 +645,10 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                    decoration: BoxDecoration(color: Colors.purpleAccent.withOpacity(0.2), shape: BoxShape.circle),
                    child: IconButton(
                     tooltip: "Buluta Senkronize Et (Gönder)",
-                    icon: const Icon(Icons.cloud_upload_rounded, color: Colors.purpleAccent),
-                    onPressed: _showUploadMenu,
+                    icon: _isUploading 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.purpleAccent, strokeWidth: 2))
+                        : const Icon(Icons.cloud_upload_rounded, color: Colors.purpleAccent),
+                    onPressed: _isUploading ? null : _showUploadMenu,
                    ),
                  ),
                ),
@@ -774,73 +689,76 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                       
                       double progress = total > 0 ? (learned / total) : 0;
 
-                      return _buildAnimatedItem(
-                        context, 
-                        index,
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: isMitosis ? Colors.purpleAccent.withOpacity(0.05) : Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.1) : Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
-                            border: Border.all(color: isMitosis ? Colors.purpleAccent.withOpacity(0.3) : Colors.grey.withOpacity(0.1), width: 1.5)
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => _showLibraryMenu(libName),
+                      // YENİ OPTİMİZASYON: RepaintBoundary ile donmalar tamamen engellendi
+                      return RepaintBoundary(
+                        child: _buildAnimatedItem(
+                          context, 
+                          index,
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: isMitosis ? Colors.purpleAccent.withOpacity(0.05) : Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(20),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              Icon(libName == 'WordNet Veritabanı' ? Icons.language : (isMitosis ? Icons.biotech : Icons.menu_book), color: libName == 'WordNet Veritabanı' ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Colors.deepPurple), size: 24),
-                                              const SizedBox(width: 10),
-                                              Expanded(child: Text(libName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: libName == 'WordNet Veritabanı' ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Colors.deepPurple)), overflow: TextOverflow.ellipsis)),
-                                            ],
-                                          ),
-                                        ),
-                                        Icon(Icons.more_vert, color: Colors.grey.shade400),
-                                      ],
-                                    ),
-                                    const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
-                                    FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      alignment: Alignment.centerLeft,
-                                      child: Row(
+                              boxShadow: [BoxShadow(color: isMitosis ? Colors.purpleAccent.withOpacity(0.1) : Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
+                              border: Border.all(color: isMitosis ? Colors.purpleAccent.withOpacity(0.3) : Colors.grey.withOpacity(0.1), width: 1.5)
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _showLibraryMenu(libName),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text("Toplam: $total", style: const TextStyle(fontWeight: FontWeight.w600)),
-                                          const SizedBox(width: 16),
-                                          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
-                                          const SizedBox(width: 16),
-                                          Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                Icon(libName == 'WordNet Veritabanı' ? Icons.language : (isMitosis ? Icons.biotech : Icons.menu_book), color: libName == 'WordNet Veritabanı' ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Colors.deepPurple), size: 24),
+                                                const SizedBox(width: 10),
+                                                Expanded(child: Text(libName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: libName == 'WordNet Veritabanı' ? Colors.indigo : (isMitosis ? Colors.purpleAccent : Colors.deepPurple)), overflow: TextOverflow.ellipsis)),
+                                              ],
+                                            ),
+                                          ),
+                                          Icon(Icons.more_vert, color: Colors.grey.shade400),
                                         ],
                                       ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: LinearProgressIndicator(
-                                        value: progress,
-                                        backgroundColor: Colors.grey.withOpacity(0.2),
-                                        color: libName == 'WordNet Veritabanı' ? Colors.indigoAccent : (isMitosis ? Colors.purpleAccent : Colors.greenAccent.shade400),
-                                        minHeight: 6,
+                                      const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text("Toplam: $total", style: const TextStyle(fontWeight: FontWeight.w600)),
+                                            const SizedBox(width: 16),
+                                            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
+                                            const SizedBox(width: 16),
+                                            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Yanlış: $wrong", style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 16),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: LinearProgressIndicator(
+                                          value: progress,
+                                          backgroundColor: Colors.grey.withOpacity(0.2),
+                                          color: libName == 'WordNet Veritabanı' ? Colors.indigoAccent : (isMitosis ? Colors.purpleAccent : Colors.greenAccent.shade400),
+                                          minHeight: 6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        )
+                          )
+                        ),
                       );
                     },
                     childCount: libs.length,
