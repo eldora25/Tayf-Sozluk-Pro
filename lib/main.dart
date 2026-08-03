@@ -250,6 +250,33 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   return parsedList;
 }
 
+// YENİ: M3 120 FPS Akıcı Sayfa Geçiş Motoru
+class Premium120FPSPageTransitionsBuilder extends PageTransitionsBuilder {
+  const Premium120FPSPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    // 120 FPS için M3 standart esneme eğrisi ve donanım hızlandırmalı (GPU) Slide+Fade kombinasyonu
+    return SlideTransition(
+      position: Tween<Offset>(begin: const Offset(0.0, 0.05), end: Offset.zero).animate(
+        CurvedAnimation(parent: animation, curve: Curves.fastLinearToSlowEaseIn),
+      ),
+      child: FadeTransition(
+        opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -279,10 +306,11 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
+    // YENİ: Akıcılığı artıran Global Geçiş Teması (Android: M3 120FPS, iOS: Native Cupertino)
     final PageTransitionsTheme smoothTransitions = const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
-        TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-        TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
+        TargetPlatform.android: Premium120FPSPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
       },
     );
 
@@ -1649,7 +1677,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 if (word.examples.isNotEmpty) ...[
                                   const SizedBox(height: 8),
                                   Row(children: [const Icon(Icons.format_quote, size: 14, color: Colors.orange), const SizedBox(width: 6), Text("Examples:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.orange.shade300))]),
-                                  ...word.examples.map((e) => Padding(padding: const EdgeInsets.only(top: 4.0, bottom: 4.0, left: 6), child: Text("» " + e, style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, height: 1.4, color: _getTextColor(context, isDark, isMitosis).withOpacity(0.8))))),
+                                  ...word.examples.map((e) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 6.0, left: 8.0),
+                                    child: Text("» $e", style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 14, height: 1.4)),
+                                  )),
                                 ]
                               ] else ...[
                                 ...word.meanings.map((m) => Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text("• " + m, style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w600, color: _getTextColor(context, isDark, isMitosis))))),
