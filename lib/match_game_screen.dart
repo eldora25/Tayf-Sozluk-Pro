@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'package:isar/isar.dart';
 import 'models.dart';
-import 'main.dart'; // Isar bağlantısı için
+import 'main.dart'; // Isar bağlantısı için eklendi
 
 class MatchGameScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -33,7 +33,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   bool isGameFinished = false;
   int score = 0;
   int mistakes = 0;
-  bool _isLoading = true; // YENİ: Kelime tamamlama süreci için loading state
+  bool _isLoading = true; 
   
   bool isDragging = false; 
   
@@ -59,14 +59,12 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     
     // YENİ: Eğer havuzda 15'ten az kelime varsa arka planda Isar'dan rastgele takviye yap!
     if (pool.length < 15) {
-      int needed = 15 - pool.length;
       int dbCount = await isar.wordModels.count();
-      
       if (dbCount > 0) {
+        int needed = 15 - pool.length;
         for (int i = 0; i < needed; i++) {
           int randomOffset = _random.nextInt(dbCount);
           WordModel? randomWord = await isar.wordModels.where().offset(randomOffset).findFirst();
-          
           if (randomWord != null && !pool.any((w) => w.word == randomWord.word)) {
             pool.add(randomWord);
           }
@@ -111,6 +109,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     isDragging = false;
     _isHoveringTarget.value = false;
     
+    // WordNet kelimeleri için hedefleri (Target) akıllı atama
     _targetDisplays.clear();
     for (var w in rightColumn) {
        bool isWordNet = w.pos.isNotEmpty || w.synonyms.isNotEmpty || w.antonyms.isNotEmpty;
@@ -191,6 +190,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
+        appBar: AppBar(title: const Text("Lexis Eldora | Eşleştirme"), elevation: 0),
         body: Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor)),
       );
     }
