@@ -723,7 +723,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
-                _speakText(_displayWordStr, _currentReadLang); // TTS Dil Hatası Çözüldü
+                // YENİ: _currentReadLang ile Türkçe veya İngilizceyi otomatik doğru okur
+                _speakText(_displayWordStr, _currentReadLang); 
               },
               child: AnimatedBuilder(
                 animation: _entranceController,
