@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; 
 import 'models.dart';
@@ -218,6 +219,63 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
+  // YENİ: Leitner Kutusu Kart Tasarımı
+  Widget _buildLeitnerBoxCard(BuildContext context, String boxName, String title, int count, int totalCount, IconData icon, Color color) {
+    double percent = totalCount > 0 ? (count / totalCount) : 0.0;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 5))],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(boxName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+                      Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _buildAnimatedNumber(count, TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: color)),
+                    Text("%${(percent * 100).toStringAsFixed(1)}", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+                  ],
+                )
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: percent,
+                backgroundColor: Colors.grey.withOpacity(0.15),
+                color: color,
+                minHeight: 6,
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + toSRSRepeatWords.length + learningWords.length;
@@ -242,6 +300,31 @@ class StatisticsScreen extends StatelessWidget {
       ...toSRSRepeatWords
     ].where((w) => w.libraryName.startsWith('\u{1F9EC} Mitoz')).length;
 
+    // Leitner (SRS 1-5) Kutu Hesaplamaları
+    int srs1Count = 0;
+    int srs2Count = 0;
+    int srs3Count = 0;
+    int srs4Count = 0;
+    int srs5Count = 0;
+
+    List<WordModel> activeSRS = [...learningWords, ...toSRSRepeatWords, ...toRepeatWords, ...allWords];
+    Set<int> countedIds = {};
+
+    for (var w in activeSRS) {
+      if (countedIds.contains(w.id)) continue;
+      countedIds.add(w.id);
+      
+      if (w.srsLevel == 1) srs1Count++;
+      else if (w.srsLevel == 2) srs2Count++;
+      else if (w.srsLevel == 3) srs3Count++;
+      else if (w.srsLevel == 4) srs4Count++;
+      else if (w.srsLevel == 5) srs5Count++;
+    }
+
+    int masteredCount = learnedWords.length;
+    int totalActiveSRS = srs1Count + srs2Count + srs3Count + srs4Count + srs5Count + masteredCount;
+    double maxBarVal = [srs1Count, srs2Count, srs3Count, srs4Count, srs5Count, masteredCount].reduce(max).toDouble();
+
     final List<int> streakMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300];
     final List<int> wordMilestones = [5, 7, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 500, 600, 700, 1000, 1500, 2000, 2500, 3000, 5000, 7000, 10000];
     
@@ -250,10 +333,10 @@ class StatisticsScreen extends StatelessWidget {
     final primaryColor = Theme.of(context).primaryColor;
 
     return DefaultTabController(
-      length: 5,
+      length: 6, // 5'ten 6'ya çıkarıldı (Leitner Kutusu eklendi)
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Lexis Eldora | Rozetler", style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text("Lexis Eldora | İstatistikler", style: TextStyle(fontWeight: FontWeight.bold)),
           elevation: 0,
           bottom: TabBar(
             isScrollable: true,
@@ -263,6 +346,7 @@ class StatisticsScreen extends StatelessWidget {
             tabs: const [
               Tab(text: "Başarılar", icon: Icon(Icons.emoji_events)),
               Tab(text: "Genel Özet", icon: Icon(Icons.pie_chart)),
+              Tab(text: "Leitner Kutusu", icon: Icon(Icons.inventory_2)), // YENİ SEKME
               Tab(text: "Öğrenme Grafiği", icon: Icon(Icons.auto_graph)), 
               Tab(text: "Quiz", icon: Icon(Icons.psychology)),
               Tab(text: "Kütüphaneler", icon: Icon(Icons.library_books)),
@@ -313,6 +397,107 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
               
+              // YENİ SEKME: Leitner Kutusu Hafıza Dağılım Grafiği
+              ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                children: [
+                  _buildStaggeredWrapper(0, Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [Colors.indigo.shade600, Colors.deepPurple.shade700], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))]
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Row(
+                          children: [
+                            Icon(Icons.inventory_2_rounded, color: Colors.white, size: 28),
+                            SizedBox(width: 12),
+                            Text("Leitner Kutusu (SRS)", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text("Kelimeler bildikçe üst kutulara geçer. 5. Kutuyu geçen kelimeler 'Mezun (Tam Hafıza)' seviyesine ulaşır.", style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
+                      ],
+                    ),
+                  )),
+                  const SizedBox(height: 20),
+
+                  // Canlı Bar Grafiği
+                  _buildStaggeredWrapper(1, Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
+                      border: Border.all(color: Colors.grey.withOpacity(0.15))
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Hafıza Dağılım Grafiği", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          height: 180,
+                          child: BarChart(
+                            BarChartData(
+                              alignment: BarChartAlignment.spaceAround,
+                              maxY: maxBarVal > 0 ? maxBarVal * 1.25 : 10,
+                              barTouchData: BarTouchData(enabled: true),
+                              titlesData: FlTitlesData(
+                                show: true,
+                                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    getTitlesWidget: (value, meta) {
+                                      switch (value.toInt()) {
+                                        case 0: return const Text("K1", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFFFEA00)));
+                                        case 1: return const Text("K2", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFD500F9)));
+                                        case 2: return const Text("K3", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF00E5FF)));
+                                        case 3: return const Text("K4", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFFF3D00)));
+                                        case 4: return const Text("K5", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF00E676)));
+                                        case 5: return const Text("Mezun", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.amber));
+                                      }
+                                      return const Text("");
+                                    },
+                                  ),
+                                ),
+                              ),
+                              gridData: const FlGridData(show: false),
+                              borderData: FlBorderData(show: false),
+                              barGroups: [
+                                BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: srs1Count.toDouble(), color: const Color(0xFFFFEA00), width: 18, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)))]),
+                                BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: srs2Count.toDouble(), color: const Color(0xFFD500F9), width: 18, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)))]),
+                                BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: srs3Count.toDouble(), color: const Color(0xFF00E5FF), width: 18, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)))]),
+                                BarChartGroupData(x: 3, barRods: [BarChartRodData(toY: srs4Count.toDouble(), color: const Color(0xFFFF3D00), width: 18, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)))]),
+                                BarChartGroupData(x: 4, barRods: [BarChartRodData(toY: srs5Count.toDouble(), color: const Color(0xFF00E676), width: 18, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)))]),
+                                BarChartGroupData(x: 5, barRods: [BarChartRodData(toY: masteredCount.toDouble(), color: Colors.amber, width: 18, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)))]),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                  const SizedBox(height: 20),
+
+                  // Kutular Detaylı Liste
+                  _buildStaggeredWrapper(2, _buildLeitnerBoxCard(context, "1. Kutu (1 Gün Tekrar)", "Geçici Hafıza • İlk Adım", srs1Count, totalActiveSRS, Icons.change_history, const Color(0xFFFFEA00))),
+                  _buildStaggeredWrapper(3, _buildLeitnerBoxCard(context, "2. Kutu (2 Gün Tekrar)", "Başlangıç Seviyesi", srs2Count, totalActiveSRS, Icons.spa, const Color(0xFFD500F9))),
+                  _buildStaggeredWrapper(4, _buildLeitnerBoxCard(context, "3. Kutu (4 Gün Tekrar)", "Orta Düzey Hafıza", srs3Count, totalActiveSRS, Icons.workspace_premium, const Color(0xFF00E5FF))),
+                  _buildStaggeredWrapper(5, _buildLeitnerBoxCard(context, "4. Kutu (9 Gün Tekrar)", "Güçlü Hafıza", srs4Count, totalActiveSRS, Icons.military_tech, const Color(0xFFFF3D00))),
+                  _buildStaggeredWrapper(6, _buildLeitnerBoxCard(context, "5. Kutu (14 Gün Tekrar)", "Kalıcı Hafıza Eşiği", srs5Count, totalActiveSRS, Icons.diamond, const Color(0xFF00E676))),
+                  _buildStaggeredWrapper(7, _buildLeitnerBoxCard(context, "Mezun (Tam Hafıza)", "Kalıcı Ezber Yapıldı", masteredCount, totalActiveSRS, Icons.verified, Colors.amber)),
+                  const SizedBox(height: 40),
+                ],
+              ),
+
               ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
