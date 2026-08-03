@@ -36,6 +36,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _themeIndex;
   late String _library;
   late String _level;
+  
+  // YENİ: Kırmızı Ekran çökmesini önleyen, tekrarsız ve güvenli kütüphane listesi
+  late List<String> _safeLibraries;
 
   final List<Color> _themeColors = [
     Colors.grey.shade900, Colors.grey.shade300, Colors.blue, Colors.teal,                  
@@ -54,14 +57,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _goalValue = widget.currentGoal.toDouble();
-    _thresholdValue = widget.currentThreshold.toDouble();
-    _questionCountValue = widget.currentQuestionCount.toDouble();
-    _themeIndex = widget.currentThemeIndex;
-    _library = widget.availableLibraries.contains(widget.selectedLibrary) 
+    
+    // YENİ: Listede aynı kütüphaneden birden fazla varsa teke düşür (Çökme Engellendi)
+    _safeLibraries = widget.availableLibraries.toSet().toList();
+    if (_safeLibraries.isEmpty) {
+      _safeLibraries = ['Varsayılan'];
+    }
+
+    // YENİ: Slider değerlerinin limit dışına çıkmasını engelle (Çökme Engellendi)
+    _goalValue = widget.currentGoal.toDouble().clamp(5.0, 100.0);
+    _thresholdValue = widget.currentThreshold.toDouble().clamp(2.0, 50.0);
+    _questionCountValue = widget.currentQuestionCount.toDouble().clamp(5.0, 100.0);
+    _themeIndex = widget.currentThemeIndex.clamp(0, _themeNames.length - 1);
+    
+    _library = _safeLibraries.contains(widget.selectedLibrary) 
         ? widget.selectedLibrary 
-        : widget.availableLibraries.first;
+        : _safeLibraries.first;
+        
     _level = widget.selectedLevel;
+    if (!['A1','A2','B1','B2','C1','C2','Genel'].contains(_level)) {
+      _level = 'Genel';
+    }
   }
 
   Widget _buildSectionTitle(String title, IconData icon) {
@@ -100,6 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Stack(
         children: [
           ListView(
+            physics: const BouncingScrollPhysics(),
             padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0 + MediaQuery.of(context).padding.bottom),
             children: [
               _buildSectionTitle("Görünüm & Tema", Icons.palette),
@@ -160,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       isExpanded: true, 
                       value: _library,
                       decoration: InputDecoration(labelText: "Aktif Kütüphane", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Theme.of(context).scaffoldBackgroundColor),
-                      items: widget.availableLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis))).toList(),
+                      items: _safeLibraries.map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis))).toList(),
                       onChanged: (v) => setState(() => _library = v!),
                     ),
                     const SizedBox(height: 16),
@@ -224,8 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text("Boyutu büyük paketlerin yüklenmesi birkaç saniye sürebilir.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                     const SizedBox(height: 16),
-                    // YENİ: Eski WordNet JSON Import butonu yerine bilgi kartı
-                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet Veritabanı (Aktif)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), subtitle: const Text("150.000+ kelimelik devasa sözlük ZIP formatında belleğe yüklendi. Yukarıdaki 'Aktif Kütüphane' menüsünden seçebilirsiniz."), trailing: const Icon(Icons.check_circle, color: Colors.indigo, size: 32)),
+                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet Veritabanı (Aktif)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), subtitle: const Text("150.000+ kelimelik devasa sözlük Isar veritabanına kalıcı olarak yüklendi. 'Aktif Kütüphane' menüsünden seçebilirsiniz."), trailing: const Icon(Icons.check_circle, color: Colors.indigo, size: 32)),
                     const SizedBox(height: 10),
                     ListTile(tileColor: Colors.orange.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kısa Temel Kelimeler"), trailing: const Icon(Icons.download_for_offline, color: Colors.orange, size: 32), onTap: () { widget.onAddPackage("assets/EN-TR_tayf.txt", "txt", "Tayf İng-Tr"); }),
                     const SizedBox(height: 10),
@@ -255,6 +271,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label: const Text("AYARLARI KAYDET", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
                 style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18), backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white, elevation: 5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                 onPressed: () {
+                  HapticFeedback.heavyImpact();
                   widget.onSaveSettings(_goalValue.toInt(), _thresholdValue.toInt(), _questionCountValue.toInt(), _themeIndex, _library, _level);
                   Navigator.pop(context);
                 },
