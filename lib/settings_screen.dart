@@ -144,9 +144,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             HapticFeedback.selectionClick();
                             setState(() => _themeIndex = index);
                           },
+                          // DÜZELTİLDİ: AnimatedContainer'ın oluşturduğu negatif değerler sıfırlanıyor (RSOD Çözümü)
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOutBack,
+                            // Curves.easeOutBack negatif değer (ör: blurRadius -0.2) ürettiği için Curves.easeOut ile değiştirildi.
+                            curve: Curves.easeOut, 
                             height: isSelected ? 50 : 42,
                             width: isSelected ? 50 : 42,
                             decoration: BoxDecoration(
@@ -154,6 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               shape: BoxShape.circle,
                               border: isSelected ? Border.all(color: Theme.of(context).primaryColor, width: 3) : Border.all(color: Colors.grey.withOpacity(0.4), width: 1),
                               boxShadow: isSelected 
+                                  // Eğer isSelected true ise pozitif değerler uygulanır, negatif ihtimali ortadan kalkar
                                   ? [BoxShadow(color: _themeColors[index].withOpacity(0.5), blurRadius: 10.0, spreadRadius: 2.0)] 
                                   : const [],
                             ),
