@@ -250,7 +250,7 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   return parsedList;
 }
 
-// YENİ: M3 120 FPS Akıcı Sayfa Geçiş Motoru
+// 120 FPS Akıcı Sayfa Geçiş Motoru
 class Premium120FPSPageTransitionsBuilder extends PageTransitionsBuilder {
   const Premium120FPSPageTransitionsBuilder();
 
@@ -262,7 +262,6 @@ class Premium120FPSPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    // 120 FPS için M3 standart esneme eğrisi ve donanım hızlandırmalı (GPU) Slide+Fade kombinasyonu
     return SlideTransition(
       position: Tween<Offset>(begin: const Offset(0.0, 0.05), end: Offset.zero).animate(
         CurvedAnimation(parent: animation, curve: Curves.fastLinearToSlowEaseIn),
@@ -306,10 +305,10 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
-    // YENİ: Akıcılığı artıran Global Geçiş Teması (Android: M3 120FPS, iOS: Native Cupertino)
-    final PageTransitionsTheme smoothTransitions = const PageTransitionsTheme(
+    // DÜZELTİLDİ: 'const' anahtar kelimesi kaldırılarak derleme (compile-time) hatası çözüldü.
+    final PageTransitionsTheme smoothTransitions = PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
-        TargetPlatform.android: Premium120FPSPageTransitionsBuilder(),
+        TargetPlatform.android: const Premium120FPSPageTransitionsBuilder(),
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
       },
     );
@@ -1653,7 +1652,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Center(child: Text(displayWord, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _getTextColor(context, isDark, isMitosis)))), 
-                              // DÜZELTİLDİ: Fazla parantezler ve hatalı kapanış kaldırıldı
                               Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Divider(color: _getTextColor(context, isDark, isMitosis).withOpacity(0.3))), 
                               
                               if (isWordNet) ...[
