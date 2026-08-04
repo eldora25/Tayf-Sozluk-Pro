@@ -428,7 +428,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 
-  // EKLENDİ: İndirme Menüsünü Gösteren Eksik Fonksiyon
   void _showDownloadMenu() {
     showModalBottomSheet(
       context: context,
@@ -585,7 +584,14 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(children: [Icon(Icons.info_outline, color: Colors.indigo, size: 30), SizedBox(width: 8), Text("Sistem Kütüphanesi", style: TextStyle(color: Colors.indigo))]),
+          // DÜZELTİLDİ: Taşmayı önlemek için Row içindeki metin Expanded ile sarıldı.
+          title: Row(
+            children: const [
+              Icon(Icons.info_outline, color: Colors.indigo, size: 30), 
+              SizedBox(width: 8), 
+              Expanded(child: Text("Sistem Kütüphanesi", style: TextStyle(color: Colors.indigo)))
+            ]
+          ),
           content: const Text("WordNet Veritabanı (150.000+ Kelime) Isar veritabanına kalıcı olarak gömülmüştür.\n\nBu kütüphaneyi yeniden adlandıramaz, dışa aktaramaz veya silebilirsiniz.", style: TextStyle(fontSize: 15, height: 1.4)),
           actions: [
             ElevatedButton(
