@@ -45,14 +45,13 @@ class _ManageListScreenState extends State<ManageListScreen> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel(); // OPTİMİZE: Timer sızmasını engeller
+    _debounceTimer?.cancel(); 
     super.dispose();
   }
 
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
     
-    // GÜNCELLENDİ: Süre 400ms'ye çıkarıldı ki sistem tam dinlensin
     _debounceTimer = Timer(const Duration(milliseconds: 400), () {
       if (mounted) {
         setState(() {
@@ -60,11 +59,21 @@ class _ManageListScreenState extends State<ManageListScreen> {
           if (query.trim().isEmpty) {
             _filteredList = widget.words;
           } else {
-            String lowerQuery = query.toLowerCase();
+            String lowerQuery = query.toLowerCase().trim();
+            
+            // DÜZELTİLDİ: Sadece kelimenin kendisinde ve baştan başlayanları bulur.
             _filteredList = widget.words.where((w) {
-              return w.word.toLowerCase().contains(lowerQuery) || 
-                     w.meanings.join(' ').toLowerCase().contains(lowerQuery);
+              return w.word.toLowerCase().startsWith(lowerQuery);
             }).toList();
+
+            // ZEKİ SIRALAMA: Önce tam eşleşen (cat), sonra uzayanlar (caterpillar).
+            _filteredList.sort((a, b) {
+              String aWord = a.word.toLowerCase();
+              String bWord = b.word.toLowerCase();
+              if (aWord == lowerQuery && bWord != lowerQuery) return -1;
+              if (bWord == lowerQuery && aWord != lowerQuery) return 1;
+              return aWord.compareTo(bWord);
+            });
           }
         });
       }
@@ -147,8 +156,11 @@ class _ManageListScreenState extends State<ManageListScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Row(
-          mainAxisSize: MainAxisSize.min,
+        // DÜZELTİLDİ: Taşmayı önlemek için Row yerine Wrap kullanıldı
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Transform.rotate(
               angle: -0.5,
@@ -178,7 +190,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
@@ -338,6 +349,10 @@ class _ManageListScreenState extends State<ManageListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (searchQuery.isEmpty && _filteredList.length != widget.words.length) {
+      _filteredList = widget.words;
+    }
+
     return Scaffold(
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -364,19 +379,19 @@ class _ManageListScreenState extends State<ManageListScreen> {
               padding: const EdgeInsets.all(12.0),
               child: TextField(
                 decoration: InputDecoration(
-                  labelText: "Kelime veya Anlam Ara...",
+                  labelText: "İngilizce Kelime Ara (Örn: cat)...",
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                   filled: true,
                   fillColor: Theme.of(context).primaryColor.withOpacity(0.05),
                 ),
-                onChanged: _onSearchChanged, // GÜNCELLENDİ
+                onChanged: _onSearchChanged,
               ),
             ),
           ),
           _filteredList.isEmpty 
             ? const SliverFillRemaining(
-                child: Center(child: Text("Bu liste şu an boş.", style: TextStyle(fontSize: 16, color: Colors.grey))),
+                child: Center(child: Text("Bu liste şu an boş veya sonuç bulunamadı.", style: TextStyle(fontSize: 16, color: Colors.grey))),
               )
             : SliverList(
                 delegate: SliverChildBuilderDelegate(
