@@ -584,20 +584,23 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          // DÜZELTİLDİ: Taşmayı önlemek için Row içindeki metin Expanded ile sarıldı.
-          title: Row(
+          // DÜZELTİLDİ: Taşmayı önlemek için başlık dikey bir formata (Column) alındı.
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
             children: const [
-              Icon(Icons.info_outline, color: Colors.indigo, size: 30), 
-              SizedBox(width: 8), 
-              Expanded(child: Text("Sistem Kütüphanesi", style: TextStyle(color: Colors.indigo)))
+              Icon(Icons.info_outline, color: Colors.indigo, size: 40), 
+              SizedBox(height: 12), 
+              Text("Sistem Kütüphanesi", textAlign: TextAlign.center, style: TextStyle(color: Colors.indigo, fontSize: 18))
             ]
           ),
-          content: const Text("WordNet Veritabanı (150.000+ Kelime) Isar veritabanına kalıcı olarak gömülmüştür.\n\nBu kütüphaneyi yeniden adlandıramaz, dışa aktaramaz veya silebilirsiniz.", style: TextStyle(fontSize: 15, height: 1.4)),
+          content: const Text("WordNet Veritabanı (150.000+ Kelime) Isar veritabanına kalıcı olarak gömülmüştür.\n\nBu kütüphaneyi yeniden adlandıramaz, dışa aktaramaz veya silebilirsiniz.", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, height: 1.4)),
           actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text("Anladım", style: TextStyle(fontWeight: FontWeight.bold))
+            Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Anladım", style: TextStyle(fontWeight: FontWeight.bold))
+              ),
             )
           ],
         )
