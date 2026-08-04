@@ -251,7 +251,6 @@ List<String> parseLibraryDataInBackground(Map<String, dynamic> params) {
   return parsedList;
 }
 
-// 120 FPS Akıcı Sayfa Geçiş Motoru
 class Premium120FPSPageTransitionsBuilder extends PageTransitionsBuilder {
   const Premium120FPSPageTransitionsBuilder();
 
@@ -277,7 +276,6 @@ class Premium120FPSPageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
-// YENİ: Premium Shimmer Efektini Yöneten Sınıflar
 class SlideGradientTransform extends GradientTransform {
   final double percent;
   const SlideGradientTransform({required this.percent});
@@ -458,13 +456,14 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
-    final PageTransitionsTheme smoothTransitions = const PageTransitionsTheme(
+    final PageTransitionsTheme smoothTransitions = PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
-        TargetPlatform.android: Premium120FPSPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(), 
+        TargetPlatform.android: const Premium120FPSPageTransitionsBuilder(),
+        TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(), 
       },
     );
 
+    // DÜZELTİLDİ: themeAnimationDuration: Duration.zero kaldırıldı (Kırmızı ekran hatasını çözer).
     switch (themeIndex) {
       case 0: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 1: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: Colors.deepPurple, scaffoldBackgroundColor: const Color(0xFFF8F9FA), colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions);
@@ -492,7 +491,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Lexis Eldora',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
-      themeAnimationDuration: Duration.zero, 
       home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
     );
   }
@@ -1077,6 +1075,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() => isFlipped = !isFlipped);
   }
 
+  // DÜZELTİLDİ: Hedef tamamlandığında kazanılan TP artık sabit 30 değil, dinamik (dailyGoal kadar). Butondaki taşma engellendi.
   void _checkDailyGoalBonus() async {
     final prefs = await SharedPreferences.getInstance();
     final todayStr = DateTime.now().toIso8601String().split('T').first;
@@ -1093,8 +1092,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (learnedToday >= dailyGoal) {
       prefs.setString('daily_goal_bonus_date', todayStr);
       
+      int dynamicBonusTp = dailyGoal; // Dinamik bonus TP (Kullanıcı hedefi neyse o kadar kazanır)
+      
       setState(() {
-        tayfPoints += 30; 
+        tayfPoints += dynamicBonusTp; 
       });
       _savePreferencesOnly();
 
@@ -1125,18 +1126,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const SizedBox(height: 16),
                       const Text("GÜNLÜK HEDEF TAMAMLANDI! 🔥", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                       const SizedBox(height: 10),
-                      const Text("Harika bir iş çıkardın! Günlük hedefini tamamladığın için cömert bir alev bonusu kazandın.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
+                      Text("Harika bir iş çıkardın! Hedefini tamamladığın için cömert bir alev bonusu kazandın.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
                       const SizedBox(height: 20),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(20)),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 20),
-                            SizedBox(width: 8),
-                            Text("+30 Alev Bonusu TP", style: TextStyle(color: Colors.lightBlueAccent, fontSize: 16, fontWeight: FontWeight.bold)),
-                          ],
+                        child: FittedBox( // DÜZELTİLDİ: Taşmayı (Overflow) engeller
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 20),
+                              const SizedBox(width: 8),
+                              Text("+$dynamicBonusTp Alev Bonusu TP", style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -2171,7 +2175,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     if (_isAppLoading) {
-      // YENİ: Harici paket gerektirmeyen, %100 Native 120FPS Lüks Shimmer (İskelet Yükleme Ekranı)
       return PremiumShimmerLoading(loadingText: _loadingText);
     }
 
