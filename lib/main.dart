@@ -926,12 +926,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     showDialog(context: context, barrierDismissible: false, builder: (_) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$_username geçmişi buluta kilitleniyor..."))])));
     
     try {
+      // DÜZELTİLDİ: Sadece Gelişimi Olan veya Manuel Eklenen kelimeleri yedekler
       var customOrProgressWords = await isar.wordModels.filter()
-          .libraryNameNotEqualTo('WordNet Veritabanı')
+          .not().libraryNameEqualTo('WordNet Veritabanı')
           .or().srsLevelGreaterThan(0)
           .or().wrongCountGreaterThan(0)
           .or().correctCountGreaterThan(0)
-          .or().listTypeNotEqualTo('all')
+          .or().not().listTypeEqualTo('all')
           .findAll();
 
       Map<String, dynamic> statsMap = {
@@ -983,6 +984,87 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
         }
       }
+
+    } catch(e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dışa aktarma başarısız: $e"), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  Future<void> _exportProgress() async {
+    showDialog(context: context, barrierDismissible: false, builder: (_) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$_username verileri şifreleniyor..."))])));
+    
+    try {
+      // DÜZELTİLDİ: Sadece Gelişimi Olan veya Manuel Eklenen kelimeleri dosyaya yedekler
+      var customOrProgressWords = await isar.wordModels.filter()
+          .not().libraryNameEqualTo('WordNet Veritabanı')
+          .or().srsLevelGreaterThan(0)
+          .or().wrongCountGreaterThan(0)
+          .or().correctCountGreaterThan(0)
+          .or().not().listTypeEqualTo('all')
+          .findAll();
+
+      List<Map<String, dynamic>> wordsJson = customOrProgressWords.map((w) {
+        return {
+          "word": w.word,
+          "meanings": w.meanings,
+          "examples": w.examples,
+          "libraryName": w.libraryName,
+          "level": w.level,
+          "correctCount": w.correctCount,
+          "wrongCount": w.wrongCount,
+          "listType": w.listType,
+          "srsLevel": w.srsLevel,
+          "nextReviewDate": w.nextReviewDate,
+          "sourceLanguage": w.sourceLanguage,
+          "targetLanguage": w.targetLanguage,
+          "pos": w.pos,
+          "synonyms": w.synonyms,
+          "antonyms": w.antonyms
+        };
+      }).toList();
+
+      Map<String, dynamic> backupData = {
+        "app": "LexisEldora",
+        "version": "2.0",
+        "username": _username,
+        "timestamp": DateTime.now().millisecondsSinceEpoch,
+        "stats": {
+          "tayfPoints": tayfPoints,
+          "currentStreak": currentStreak,
+          "bestStreak": bestStreak,
+          "streakFreezes": streakFreezes,
+          "dailyGoal": dailyGoal,
+          "quizThreshold": quizThreshold,
+          "quizQuestionCount": quizQuestionCount,
+          "themeIndex": widget.themeIndex,
+          "selectedLibrary": selectedLibrary,
+          "selectedLevel": selectedLevel,
+          "totalCompletedQuizzes": totalCompletedQuizzes,
+          "totalQuizTimeSeconds": totalQuizTimeSeconds,
+          "totalQuizQuestions": totalQuizQuestions,
+          "totalQuizWrong": totalQuizWrong,
+          "firstUseTimestamp": firstUseTimestamp
+        },
+        "arrays": {
+          "learnedWordTimestamps": learnedWordTimestamps,
+          "completedQuizTimestamps": completedQuizTimestamps,
+          "viewedCardTimestamps": viewedCardTimestamps,
+          "wrongAnswerTimestamps": wrongAnswerTimestamps
+        },
+        "words": wordsJson
+      };
+
+      String jsonStr = json.encode(backupData);
+      final dir = await getTemporaryDirectory();
+      String dateStr = DateTime.now().toIso8601String().split('T').first;
+      File file = File('${dir.path}/${_username}_ilerleme_$dateStr.json');
+      await file.writeAsString(jsonStr);
+
+      if (mounted) Navigator.pop(context); 
+      await Share.shareXFiles([XFile(file.path)], subject: 'Lexis Eldora İlerleme Yedeği');
 
     } catch(e) {
       if (mounted) {
@@ -1094,6 +1176,85 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ağ hatası: $e"), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  Future<void> _importProgress() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    if (result != null && result.files.single.path != null) {
+      File file = File(result.files.single.path!);
+      
+      try {
+        String content = await file.readAsString();
+        Map<String, dynamic> data = json.decode(content);
+
+        if (data['app'] != "LexisEldora") throw Exception("Geçersiz yedek dosyası!");
+
+        String backupUser = data['username'] ?? "Bilinmeyen";
+        int timestamp = data['timestamp'] ?? 0;
+        String backupDate = "Bilinmeyen Tarih";
+        if (timestamp > 0) {
+          DateTime dt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+          backupDate = "${dt.day.toString().padLeft(2,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.year} ${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}";
+        }
+
+        if (mounted) {
+          showGeneralDialog(
+            context: context,
+            barrierDismissible: false,
+            transitionDuration: const Duration(milliseconds: 500),
+            pageBuilder: (context, a1, a2) => const SizedBox(),
+            transitionBuilder: (context, a1, a2, child) {
+              return Transform.scale(
+                scale: Curves.easeOutBack.transform(a1.value),
+                child: AlertDialog(
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Theme.of(context).primaryColor, width: 2)),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.folder_zip, color: Colors.green, size: 50)),
+                      const SizedBox(height: 16),
+                      const Text("Dosyadan Yükleniyor", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 15, height: 1.5),
+                          children: [
+                            TextSpan(text: "'$backupUser'", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, fontSize: 18)),
+                            const TextSpan(text: " adlı kullanıcının\n"),
+                            TextSpan(text: "$backupDate", style: const TextStyle(fontWeight: FontWeight.bold)),
+                            const TextSpan(text: "\ntarihli ilerleme geçmişini (TP, Kalkanlar, SRS Kelimeleri, Seri ve Rozetler) yüklemek istiyor musunuz?"),
+                          ]
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)))),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                              onPressed: () async {
+                                Navigator.pop(context);
+                                await _executeImportMerge(data);
+                              }, 
+                              child: const Text("YÜKLE", style: TextStyle(fontWeight: FontWeight.bold))
+                            ),
+                          )
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              );
+            }
+          );
+        }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dosya okunamadı: $e"), backgroundColor: Colors.red));
       }
     }
   }
@@ -2515,7 +2676,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar (Ham Veri)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _importFile(); }),
                       ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _exportLibrary(selectedLibrary); }),
                       
-                      // DÜZELTİLDİ: "Ateşli Seri ve Rozetler" yedeklemeye dâhil olduğu kullanıcıya açıkça belirtildi.
                       ListTile(
                         leading: const Icon(Icons.cloud_upload, color: Colors.blueAccent), 
                         title: const Text("Buluta Yedekle", style: TextStyle(fontWeight: FontWeight.bold)), 
