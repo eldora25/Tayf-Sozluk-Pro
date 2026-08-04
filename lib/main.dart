@@ -552,7 +552,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)
   ];
 
-  String _username = 'Eldora25'; // Lüks kullanıcı adı entegrasyonu
+  String _username = 'Eldora25';
 
   @override
   void initState() {
@@ -783,7 +783,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _isAppLoading = false;
       });
 
-      // İlk Açılışta Bulut Restore Hatırlatıcı Mesajı
       bool hasSeenImportPrompt = prefs.getBool('has_seen_import_prompt') ?? false;
       if (!hasSeenImportPrompt) {
         prefs.setBool('has_seen_import_prompt', true);
@@ -904,7 +903,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // YENİ: Firebase 6 Saat Limitli Bulut Yedekleme (Cloud Backup)
   Future<void> _cloudBackupProgress() async {
     final prefs = await SharedPreferences.getInstance();
     int lastBackupTime = prefs.getInt('last_cloud_backup_time') ?? 0;
@@ -994,7 +992,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // YENİ: Firebase Bulut Geri Yükleme (Cloud Restore)
   Future<void> _cloudRestoreProgress() async {
     TextEditingController userCtrl = TextEditingController(text: _username);
     String? targetUser = await showDialog<String>(
@@ -1066,7 +1063,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 15, height: 1.5),
                         children: [
                           TextSpan(text: "'$targetUser'", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, fontSize: 18)),
-                          const TextSpan(text: " adlı kullanıcının ilerleme geçmişini (TP, Kalkanlar, SRS Kelimeleri) bu cihaza yüklemek istiyor musunuz?"),
+                          const TextSpan(text: " adlı kullanıcının ilerleme geçmişini (TP, Kalkanlar, SRS Kelimeleri, Ateşli Seri ve Rozetler) bu cihaza yüklemek istiyor musunuz?"),
                         ]
                       ),
                     ),
@@ -1197,7 +1194,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const SizedBox(height: 16),
                   const Text("Geri Döndünüz!", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  const Text("Bulutta kayıtlı bir ilerleme geçmişiniz (Tayf Puanı, Buz Kalkanı, SRS Seviyeleri) varsa, şimdi cihazınıza aktarabilirsiniz.", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, height: 1.4)),
+                  const Text("Daha önce kaydettiğiniz bir ilerleme geçmişiniz (Tayf Puanı, Buz Kalkanı, SRS Seviyeleri, Ateşli Seri ve Rozetler) varsa, şimdi cihazınıza aktarabilirsiniz.", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, height: 1.4)),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -2372,7 +2369,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         }
                       ),
                       
-                      // YENİ EKLENDİ: Lüks Kullanıcı Adı Arayüzü
                       Material(
                         color: Colors.transparent,
                         child: InkWell(
@@ -2519,9 +2515,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar (Ham Veri)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _importFile(); }),
                       ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _exportLibrary(selectedLibrary); }),
                       
-                      // YENİ: Geçmiş Yükleme ve Dışa Aktarma Butonları
-                      ListTile(leading: const Icon(Icons.cloud_upload, color: Colors.blueAccent), title: const Text("Buluta Yedekle", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kullanıcı adınızla ilerlemenizi şifreleyin", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _cloudBackupProgress(); }),
-                      ListTile(leading: const Icon(Icons.cloud_download, color: Colors.green), title: const Text("Buluttan Geri Yükle", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Buluttaki yedeği cihazınıza çekin", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _cloudRestoreProgress(); }),
+                      // DÜZELTİLDİ: "Ateşli Seri ve Rozetler" yedeklemeye dâhil olduğu kullanıcıya açıkça belirtildi.
+                      ListTile(
+                        leading: const Icon(Icons.cloud_upload, color: Colors.blueAccent), 
+                        title: const Text("Buluta Yedekle", style: TextStyle(fontWeight: FontWeight.bold)), 
+                        subtitle: const Text("SRS, TP, Rozetler ve özel kartları dışa aktar", style: TextStyle(fontSize: 12)), 
+                        onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _cloudBackupProgress(); }
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.cloud_download, color: Colors.green), 
+                        title: const Text("Buluttan Geri Yükle", style: TextStyle(fontWeight: FontWeight.bold)), 
+                        subtitle: const Text("Buluttaki yedeği cihazınıza çekin", style: TextStyle(fontSize: 12)), 
+                        onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); _cloudRestoreProgress(); }
+                      ),
                       
                       ListTile(leading: const Icon(Icons.bug_report_outlined, color: Colors.redAccent), title: const Text("İstek / Hata Bildir", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportScreen())); }),
                       const SizedBox(height: 20),
