@@ -41,7 +41,6 @@ class InfoScreen extends StatelessWidget {
           ),
           const SizedBox(height: 30),
 
-          // YENİ: Şık WordNet Bilgi Kartı
           _buildFeatureCard(
             context,
             icon: Icons.language,
@@ -76,6 +75,15 @@ class InfoScreen extends StatelessWidget {
             color: Colors.amber,
             title: "İncelenecekler (Karantina)",
             description: "Ana ekranda çalışırken hatalı olduğunu düşündüğünüz bir karta denk gelirseniz, '!' (Sarı Ünlem) butonuna basarak onu anında eski havuzundan koparıp İncelenecekler listesine atabilirsiniz. Bu işlem, buluttaki güven skorunu da otonom olarak düşürür.",
+          ),
+
+          // YENİ EKLENDİ: Parçalama (Split) Bilgisi
+          _buildFeatureCard(
+            context,
+            icon: Icons.call_split_rounded,
+            color: Colors.teal,
+            title: "🛠️ Kartları Ayrıştır ve Parçala (Split)",
+            description: "Kelime listelerinizde veya karantinada birleşik/hatalı kaydedilmiş kartlar görürseniz (Örn: Kelime: Apple, Apples) bu kelimeyi düzenle diyerek 'PARÇALA' butonuna basın. Tek dokunuşla bu kartı bağımsız kök kelimelere ayırıp, eşsiz DNA'ları ile sisteme saf kartlar olarak geri kazandırabilirsiniz.",
           ),
           
           const SizedBox(height: 16),
@@ -154,6 +162,70 @@ class InfoScreen extends StatelessWidget {
                     Colors.blue, 
                     "Buluttan Havuz İndir (Çek):", 
                     "Kütüphane Yönetimi ekranındaki Bulut ikonuna dokunarak isterseniz Standart Topluluk Havuzunu, isterseniz de %100 saf kartlardan oluşan Global Mitoz Havuzunu doğrudan güncel olarak indirebilirsiniz."
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // YENİ EKLENDİ: İlerleme ve Username Bilgisi
+          Container(
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [isDark ? Colors.blueGrey.shade900 : Colors.lightBlue.shade50, isDark ? Colors.cyan.shade900.withOpacity(0.5) : Colors.cyan.shade50],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.cyan.shade400.withOpacity(0.5), width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.cyan.shade400.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 6))],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.badge, color: Colors.cyan.shade700, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "İlerleme Geçmişi (Bulut Yedekleme)",
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.cyan.shade700),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Emek vererek ulaştığınız SRS (Hafıza) seviyeleri, Tayf Puanları (TP), Ateşli Serileriniz ve satın aldığınız Buz Kalkanları artık tamamen güvende!",
+                    style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSubFeatureRow(
+                    context, 
+                    Icons.person_pin_circle, 
+                    Colors.cyan.shade600, 
+                    "Sana Özel Kullanıcı Adı (Username):", 
+                    "Yan menünün (Drawer) en üstünden 3-11 haneli büyük/küçük harf duyarlı şık bir Kullanıcı Adı (Örn: Tayfun25) belirleyebilirsiniz. Tüm kayıtlarınız bulutta sadece bu anahtarla şifrelenir."
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSubFeatureRow(
+                    context, 
+                    Icons.cloud_upload, 
+                    Colors.blueAccent, 
+                    "Günde 4 Kez Buluta Kilit (6 Saat Limiti):", 
+                    "Yan menüdeki 'Buluta Yedekle' seçeneği ile o anki tüm gelişiminizi kendi adınızla Firebase'e gönderebilirsiniz. Adil kullanım için bu işlem günde sadece 4 kez (6 saatte bir) yapılabilir."
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSubFeatureRow(
+                    context, 
+                    Icons.sync_rounded, 
+                    Colors.green, 
+                    "Her Cihazda Anında Geri Yükleme:", 
+                    "Cihaz değiştirdiğinizde veya uygulamayı sildiğinizde, 'Buluttan Geri Yükle' sekmesine belirlediğiniz Kullanıcı Adını girmeniz yeterlidir. Tüm ilerlemeniz otonom olarak yeni cihaza taşınır. (Geri yüklemede süre sınırı yoktur)."
                   ),
                 ],
               ),
