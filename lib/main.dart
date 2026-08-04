@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:io';
 import 'dart:ui'; 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart'; // EKLENDİ: iOS Page Transitions için zorunlu kütüphane
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -305,11 +306,10 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
-    // DÜZELTİLDİ: 'const' anahtar kelimesi kaldırılarak derleme (compile-time) hatası çözüldü.
     final PageTransitionsTheme smoothTransitions = PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
         TargetPlatform.android: const Premium120FPSPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(), // Artık hata vermeyecektir
       },
     );
 
