@@ -451,19 +451,25 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   @override
   void initState() { super.initState(); _loadTheme(); }
   void _loadTheme() async { final prefs = await SharedPreferences.getInstance(); setState(() => themeIndex = prefs.getInt('themeIndex') ?? 0); }
-  void _toggleTheme(int value) async { final prefs = await SharedPreferences.getInstance(); setState(() => themeIndex = value); prefs.setInt('themeIndex', value); }
+  
+  // Tema değiştirilirken state'i güvenli (gecikmeli) günceller.
+  void _toggleTheme(int value) async { 
+    final prefs = await SharedPreferences.getInstance(); 
+    prefs.setInt('themeIndex', value);
+    setState(() => themeIndex = value); 
+  }
 
   ThemeData _getTheme() {
     final baseTextTheme = GoogleFonts.nunitoTextTheme();
     
-    final PageTransitionsTheme smoothTransitions = PageTransitionsTheme(
+    final PageTransitionsTheme smoothTransitions = const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
-        TargetPlatform.android: const Premium120FPSPageTransitionsBuilder(),
-        TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(), 
+        TargetPlatform.android: Premium120FPSPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(), 
       },
     );
 
-    // DÜZELTİLDİ: themeAnimationDuration: Duration.zero kaldırıldı (Kırmızı ekran hatasını çözer).
+    // DÜZELTİLDİ: Kırmızı Ekran (RSOD) hatasını önlemek için Theme objesinin default animation süresi 300ms yapıldı.
     switch (themeIndex) {
       case 0: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 1: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: Colors.deepPurple, scaffoldBackgroundColor: const Color(0xFFF8F9FA), colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions);
@@ -491,6 +497,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Lexis Eldora',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
+      themeAnimationDuration: const Duration(milliseconds: 300), // DÜZELTİLDİ: Kırmızı Ekran Önlemi
       home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
     );
   }
@@ -1075,7 +1082,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() => isFlipped = !isFlipped);
   }
 
-  // DÜZELTİLDİ: Hedef tamamlandığında kazanılan TP artık sabit 30 değil, dinamik (dailyGoal kadar). Butondaki taşma engellendi.
   void _checkDailyGoalBonus() async {
     final prefs = await SharedPreferences.getInstance();
     final todayStr = DateTime.now().toIso8601String().split('T').first;
@@ -1092,7 +1098,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (learnedToday >= dailyGoal) {
       prefs.setString('daily_goal_bonus_date', todayStr);
       
-      int dynamicBonusTp = dailyGoal; // Dinamik bonus TP (Kullanıcı hedefi neyse o kadar kazanır)
+      // DÜZELTİLDİ: Sabit 30 TP yerine kullanıcının hedefine orantılı Dinamik TP verilir.
+      int dynamicBonusTp = dailyGoal; 
       
       setState(() {
         tayfPoints += dynamicBonusTp; 
@@ -1126,12 +1133,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const SizedBox(height: 16),
                       const Text("GÜNLÜK HEDEF TAMAMLANDI! 🔥", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                       const SizedBox(height: 10),
-                      Text("Harika bir iş çıkardın! Hedefini tamamladığın için cömert bir alev bonusu kazandın.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
+                      const Text("Harika bir iş çıkardın! Hedefini tamamladığın için cömert bir alev bonusu kazandın.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
                       const SizedBox(height: 20),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(20)),
-                        child: FittedBox( // DÜZELTİLDİ: Taşmayı (Overflow) engeller
+                        // DÜZELTİLDİ: Metnin ekrandan taşmasını engellemek için FittedBox kullanıldı
+                        child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -2112,16 +2120,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("V2.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-                              Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                              Text("V2.0.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                              const SizedBox(width: 16),
+                              Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                            decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.purpleAccent.shade400, Colors.deepPurple]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)]),
-                            child: const Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0)),
-                          ),
+                          const SizedBox(height: 6),
+                          Text("✨ Tayfun (Eldora) ✨", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor.withOpacity(0.5))),
                         ],
                       ),
                     ),
