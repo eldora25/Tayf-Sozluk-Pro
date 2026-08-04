@@ -1,4 +1,4 @@
-import 'dart:async'; // EKLENDİ: Timer için
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'models.dart';
@@ -18,21 +18,20 @@ class WordListScreen extends StatefulWidget {
 class _WordListScreenState extends State<WordListScreen> {
   String searchQuery = '';
   List<WordModel> _filteredList = [];
-  Timer? _debounceTimer; // EKLENDİ: Timer
+  Timer? _debounceTimer; 
 
   @override
   void initState() {
     super.initState();
-    _filteredList = widget.words; // İlk açılışta tüm liste görünmeli
+    _filteredList = widget.words; 
   }
 
   @override
   void dispose() {
-    _debounceTimer?.cancel(); // EKLENDİ: Bellek temizliği
+    _debounceTimer?.cancel(); 
     super.dispose();
   }
 
-  // EKLENDİ: Sıçrama önleyici 400ms gecikme
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
     
@@ -43,11 +42,21 @@ class _WordListScreenState extends State<WordListScreen> {
           if (query.trim().isEmpty) {
             _filteredList = widget.words;
           } else {
-            String lowerQuery = query.toLowerCase();
+            String lowerQuery = query.toLowerCase().trim();
+            
+            // DÜZELTİLDİ: Sadece kelimenin kendisinde ve baştan başlayanları bulur.
             _filteredList = widget.words.where((w) {
-              return w.word.toLowerCase().contains(lowerQuery) || 
-                     w.meanings.join(' ').toLowerCase().contains(lowerQuery);
+              return w.word.toLowerCase().startsWith(lowerQuery);
             }).toList();
+
+            // ZEKİ SIRALAMA
+            _filteredList.sort((a, b) {
+              String aWord = a.word.toLowerCase();
+              String bWord = b.word.toLowerCase();
+              if (aWord == lowerQuery && bWord != lowerQuery) return -1;
+              if (bWord == lowerQuery && aWord != lowerQuery) return 1;
+              return aWord.compareTo(bWord);
+            });
           }
         });
       }
@@ -94,8 +103,10 @@ class _WordListScreenState extends State<WordListScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Row(
-          mainAxisSize: MainAxisSize.min,
+        Wrap( // DÜZELTİLDİ: Taşmayı önlemek için Row yerine Wrap kullanıldı
+          spacing: 6,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Transform.rotate(
               angle: -0.5,
@@ -125,7 +136,6 @@ class _WordListScreenState extends State<WordListScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
@@ -275,6 +285,7 @@ class _WordListScreenState extends State<WordListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Sadece UI çizilirken değil, arama fonksiyonu içinde listeyi filtreliyoruz.
     bool hasWordNet = widget.words.any((w) => w.libraryName == 'WordNet Veritabanı');
 
     return Scaffold(
@@ -319,19 +330,19 @@ class _WordListScreenState extends State<WordListScreen> {
               padding: const EdgeInsets.all(12.0),
               child: TextField(
                 decoration: InputDecoration(
-                  labelText: "Kelime veya Anlam Ara...",
+                  labelText: "İngilizce Kelime Ara (Örn: cat)...",
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                   filled: true,
                   fillColor: Theme.of(context).primaryColor.withOpacity(0.05),
                 ),
-                onChanged: _onSearchChanged, // GÜNCELLENDİ: Timer tetiklenir
+                onChanged: _onSearchChanged, 
               ),
             ),
           ),
           _filteredList.isEmpty
               ? const SliverFillRemaining(
-                  child: Center(child: Text("Kelime bulunamadı.", style: TextStyle(fontSize: 16, color: Colors.grey))),
+                  child: Center(child: Text("Sonuç bulunamadı.", style: TextStyle(fontSize: 16, color: Colors.grey))),
                 )
               : SliverList(
                   delegate: SliverChildBuilderDelegate(
