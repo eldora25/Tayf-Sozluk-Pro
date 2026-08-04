@@ -249,7 +249,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
     );
   }
 
-  // YENİ: Akıllı Kart Parçalama (Split) Arayüzü
+  // YENİ: Karantina ve Düzenleme Ekranı İçin "KART PARÇALAMA" Özelliği
   void _showSplitBottomSheet() {
     TextEditingController mainWordCtrl = TextEditingController(text: _wordText);
     TextEditingController mainMeaningsCtrl = TextEditingController(text: _meaningControllers.map((c) => c.text).join(', '));
@@ -333,13 +333,13 @@ class _EditWordScreenState extends State<EditWordScreen> {
                                         ],
                                       ),
                                       const SizedBox(height: 12),
-                                      TextField(controller: controllers['word'], decoration: _buildInputDeco("Yeni Kelime (Örn: Banana)")),
+                                      TextField(controller: controllers['word'], decoration: _buildInputDeco("Yeni Kelime")),
                                       const SizedBox(height: 12),
                                       TextField(controller: controllers['meanings'], decoration: _buildInputDeco("Anlamları (Virgülle Ayırın)")),
                                     ],
                                   ),
                                 );
-                              }),
+                              }).toList(), // EKSİK TOLIST EKLENDİ
                               TextButton.icon(
                                 onPressed: () => setModalState(() => extraCards.add({'word': TextEditingController(), 'meanings': TextEditingController()})), 
                                 icon: const Icon(Icons.add_circle, color: Colors.teal), 
@@ -580,7 +580,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
                           icon: const Icon(Icons.call_split, size: 18),
                           label: const Text("PARÇALA", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), elevation: 3, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                          onPressed: _showSplitBottomSheet, // YENİ EKLENDİ
+                          onPressed: _showSplitBottomSheet,
                         ),
                       ),
                       const SizedBox(width: 8),
