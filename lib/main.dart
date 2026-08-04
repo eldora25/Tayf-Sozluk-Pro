@@ -14,7 +14,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -452,7 +451,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
   void initState() { super.initState(); _loadTheme(); }
   void _loadTheme() async { final prefs = await SharedPreferences.getInstance(); setState(() => themeIndex = prefs.getInt('themeIndex') ?? 0); }
   
-  // Tema değiştirilirken state'i güvenli (gecikmeli) günceller.
   void _toggleTheme(int value) async { 
     final prefs = await SharedPreferences.getInstance(); 
     prefs.setInt('themeIndex', value);
@@ -469,7 +467,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       },
     );
 
-    // DÜZELTİLDİ: Kırmızı Ekran (RSOD) hatasını önlemek için Theme objesinin default animation süresi 300ms yapıldı.
     switch (themeIndex) {
       case 0: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), primaryColor: Colors.deepPurple, colorScheme: const ColorScheme.dark(primary: Colors.deepPurple, secondary: Colors.purpleAccent), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions);
       case 1: return ThemeData.light().copyWith(textTheme: baseTextTheme, primaryColor: Colors.deepPurple, scaffoldBackgroundColor: const Color(0xFFF8F9FA), colorScheme: const ColorScheme.light(primary: Colors.deepPurple, secondary: Colors.deepPurpleAccent), appBarTheme: const AppBarTheme(elevation: 0), pageTransitionsTheme: smoothTransitions);
@@ -497,7 +494,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       title: 'Lexis Eldora',
       debugShowCheckedModeBanner: false,
       theme: _getTheme(),
-      themeAnimationDuration: const Duration(milliseconds: 300), // DÜZELTİLDİ: Kırmızı Ekran Önlemi
       home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
     );
   }
@@ -1082,6 +1078,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() => isFlipped = !isFlipped);
   }
 
+  // DÜZELTİLDİ: Dinamik TP ataması ve taşmayı tamamen engelleyen Column tabanlı Dialog tasarımı.
   void _checkDailyGoalBonus() async {
     final prefs = await SharedPreferences.getInstance();
     final todayStr = DateTime.now().toIso8601String().split('T').first;
@@ -1098,8 +1095,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (learnedToday >= dailyGoal) {
       prefs.setString('daily_goal_bonus_date', todayStr);
       
-      // DÜZELTİLDİ: Sabit 30 TP yerine kullanıcının hedefine orantılı Dinamik TP verilir.
-      int dynamicBonusTp = dailyGoal; 
+      int dynamicBonusTp = dailyGoal; // Dinamik Hedef Bonusu
       
       setState(() {
         tayfPoints += dynamicBonusTp; 
@@ -1136,19 +1132,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const Text("Harika bir iş çıkardın! Hedefini tamamladığın için cömert bir alev bonusu kazandın.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
                       const SizedBox(height: 20),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(20)),
-                        // DÜZELTİLDİ: Metnin ekrandan taşmasını engellemek için FittedBox kullanıldı
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 20),
-                              const SizedBox(width: 8),
-                              Text("+$dynamicBonusTp Alev Bonusu TP", style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 16, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 28),
+                            const SizedBox(height: 8),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text("+$dynamicBonusTp TP KAZANDIN!", textAlign: TextAlign.center, style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 18, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 24),
