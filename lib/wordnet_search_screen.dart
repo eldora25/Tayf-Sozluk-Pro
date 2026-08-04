@@ -53,7 +53,8 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
     String lowerQuery = query.toLowerCase().trim();
 
     try {
-      // DÜZELTİLDİ: wordContains yerine wordStartsWith kullanıldı
+      // DÜZELTİLDİ: wordContains yerine wordStartsWith kullanıldı.
+      // Sadece kelimenin kendisinde ve en baştan itibaren arama yapar (Çok daha hızlıdır)
       List<WordModel> results = await isar.wordModels
           .filter()
           .libraryNameEqualTo('WordNet Veritabanı')
@@ -62,7 +63,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
           .limit(50)
           .findAll();
 
-      // ZEKİ SIRALAMA
+      // ZEKİ SIRALAMA: Önce "cat" gibi birebir eşleşenleri öne alır, sonra "caterpillar" gibi uzayanları dizer.
       results.sort((a, b) {
         String aWord = a.word.toLowerCase();
         String bWord = b.word.toLowerCase();
