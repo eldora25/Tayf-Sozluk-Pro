@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'dart:async'; // EKLENDİ: Timer için
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart';
@@ -19,7 +19,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
   List<WordModel> _searchResults = [];
   bool _isLoading = false;
   late AnimationController _fadeController;
-  Timer? _debounceTimer; // EKLENDİ: Debouncer timer
+  Timer? _debounceTimer; 
 
   @override
   void initState() {
@@ -30,13 +30,12 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
 
   @override
   void dispose() {
-    _debounceTimer?.cancel(); // EKLENDİ: Timer temizliği
+    _debounceTimer?.cancel(); 
     _searchController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
 
-  // EKLENDİ: Arama öncesi Debounce katmanı (400ms)
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 400), () {
@@ -54,14 +53,23 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
     String lowerQuery = query.toLowerCase().trim();
 
     try {
-      // Işık hızında Isar araması
+      // DÜZELTİLDİ: wordContains yerine wordStartsWith kullanıldı
       List<WordModel> results = await isar.wordModels
           .filter()
           .libraryNameEqualTo('WordNet Veritabanı')
           .and()
-          .wordContains(lowerQuery, caseSensitive: false)
+          .wordStartsWith(lowerQuery, caseSensitive: false)
           .limit(50)
           .findAll();
+
+      // ZEKİ SIRALAMA
+      results.sort((a, b) {
+        String aWord = a.word.toLowerCase();
+        String bWord = b.word.toLowerCase();
+        if (aWord == lowerQuery && bWord != lowerQuery) return -1;
+        if (bWord == lowerQuery && aWord != lowerQuery) return 1;
+        return aWord.compareTo(bWord);
+      });
 
       if (mounted) {
         setState(() {
@@ -182,7 +190,7 @@ class _WordNetSearchScreenState extends State<WordNetSearchScreen> with SingleTi
                         filled: true,
                         fillColor: Colors.transparent,
                       ),
-                      onChanged: _onSearchChanged, // GÜNCELLENDİ: Doğrudan Isar'ı çağırmak yerine Debouncer tetiklenir
+                      onChanged: _onSearchChanged, 
                     ),
                   ),
                 ),
