@@ -44,12 +44,12 @@ class _WordListScreenState extends State<WordListScreen> {
           } else {
             String lowerQuery = query.toLowerCase().trim();
             
-            // DÜZELTİLDİ: Sadece kelimenin kendisinde ve baştan başlayanları bulur.
+            // DÜZELTİLDİ: Sadece kelimenin kendisinde ve baştan başlayanları bulur. Anlamlarda arama yapmaz.
             _filteredList = widget.words.where((w) {
               return w.word.toLowerCase().startsWith(lowerQuery);
             }).toList();
 
-            // ZEKİ SIRALAMA
+            // ZEKİ SIRALAMA: Önce tam eşleşen (cat), sonra uzayanlar (caterpillar).
             _filteredList.sort((a, b) {
               String aWord = a.word.toLowerCase();
               String bWord = b.word.toLowerCase();
@@ -285,8 +285,12 @@ class _WordListScreenState extends State<WordListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Sadece UI çizilirken değil, arama fonksiyonu içinde listeyi filtreliyoruz.
     bool hasWordNet = widget.words.any((w) => w.libraryName == 'WordNet Veritabanı');
+
+    // DÜZELTİLDİ: Build içinde re-filtering yapılarak debounce bozuluyordu. Sadece boşken ana listeyi çeker.
+    if (searchQuery.isEmpty && _filteredList.length != widget.words.length) {
+      _filteredList = widget.words;
+    }
 
     return Scaffold(
       body: CustomScrollView(
