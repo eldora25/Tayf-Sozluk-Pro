@@ -903,7 +903,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // 1. DÜZELTİLDİ: Arka Plan Optimizeli Bulut Yedekleme (Dondurma Yapmaz)
+  // YENİ EKLENDİ: Arka planda çalışan, uygulamayı dondurmayan bulut yedekleme motoru
   Future<void> _cloudBackupProgress() async {
     final prefs = await SharedPreferences.getInstance();
     int lastBackupTime = prefs.getInt('last_cloud_backup_time') ?? 0;
@@ -924,7 +924,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return;
     }
 
-    // UI'ı kilitleyen dialogu kaldırdık, yerine SnackBar koyduk (Background Process)
+    // UI'ı kilitleyen dialog kaldırıldı, SnackBar (Background Information) eklendi
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -956,7 +956,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         "currentStreak": currentStreak,
         "bestStreak": bestStreak,
         "streakFreezes": streakFreezes,
-        "srsWordCount": srsWordCount, // YENİ: Restore ekranında göstermek için SRS sayısı
+        "srsWordCount": srsWordCount, // Restore ekranında göstermek için eklendi
         "dailyGoal": dailyGoal,
         "quizThreshold": quizThreshold,
         "quizQuestionCount": quizQuestionCount,
@@ -977,7 +977,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         "wrongAnswerTimestamps": wrongAnswerTimestamps
       };
 
-      // Asenkron çalışır, uygulamayı kitlemez
+      // Future.then ile arka planda asenkron devam ediyor
       FirebaseSyncService.backupUserProgress(_username, statsMap, arraysMap, customOrProgressWords).then((result) async {
          if (result["success"] == true) {
             await prefs.setInt('last_cloud_backup_time', DateTime.now().millisecondsSinceEpoch);
@@ -1004,6 +1004,253 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch(e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dışa aktarma başarısız: $e"), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  // YENİ EKLENDİ: Akıllı Sorgulama ve Premium Detaylı Onay Ekranı
+  Future<void> _cloudRestoreProgress() async {
+    TextEditingController userCtrl = TextEditingController(text: _username);
+    String? targetUser = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Buluttan Geri Yükle", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+        content: TextField(
+          controller: userCtrl,
+          decoration: InputDecoration(
+            hintText: "Kurtarılacak Kullanıcı Adı",
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            filled: true,
+            fillColor: Colors.blueAccent.withOpacity(0.05),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            onPressed: () {
+              if (userCtrl.text.trim().isNotEmpty) {
+                Navigator.pop(context, userCtrl.text.trim());
+              }
+            }, 
+            child: const Text("Sorgula", style: TextStyle(fontWeight: FontWeight.bold))
+          ),
+        ],
+      ),
+    );
+
+    if (targetUser == null || targetUser.isEmpty) return;
+
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(content: Row(children: [CircularProgressIndicator(), SizedBox(width: 20), Expanded(child: Text("Bulutta ilerleme aranıyor..."))])));
+
+    try {
+      // Sadece özet veriyi (Metadata) çektiğimiz için işlem saniyesinde biter ve kitlenmez
+      Map<String, dynamic>? metaData = await FirebaseSyncService.checkUserProgressMetadata(targetUser);
+      
+      if (mounted) Navigator.pop(context);
+
+      if (metaData == null) {
+        if (mounted) _showCenteredDialog(title: "Bulunamadı", message: "'$targetUser' adlı kullanıcıya ait bir bulut yedeği bulunamadı.", icon: Icons.cloud_off, color: Colors.orange);
+        return;
+      }
+
+      int timestamp = metaData['backup_timestamp_ms'] ?? 0;
+      String backupDate = "Bilinmeyen Tarih";
+      if (timestamp > 0) {
+        DateTime dt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        backupDate = "${dt.day.toString().padLeft(2,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.year} ${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}";
+      }
+      
+      final stats = metaData['stats'] ?? {};
+      int backupTp = stats['tayfPoints'] ?? 0;
+      int backupShields = stats['streakFreezes'] ?? 0;
+      int backupBestStreak = stats['bestStreak'] ?? 0;
+      int backupSrsCount = stats['srsWordCount'] ?? 0;
+
+      if (mounted) {
+        showGeneralDialog(
+          context: context,
+          barrierDismissible: false,
+          transitionDuration: const Duration(milliseconds: 500),
+          pageBuilder: (context, a1, a2) => const SizedBox(),
+          transitionBuilder: (context, a1, a2, child) {
+            return Transform.scale(
+              scale: Curves.easeOutBack.transform(a1.value),
+              child: AlertDialog(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Theme.of(context).primaryColor, width: 2)),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.cloud_done, color: Colors.green, size: 50)),
+                    const SizedBox(height: 16),
+                    const Text("Bulut Yedeği Bulundu!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    Text("'$targetUser' kullanıcısına ait yedek bilgileri:", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    const SizedBox(height: 12),
+                    
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.black.withOpacity(0.05), borderRadius: BorderRadius.circular(16)),
+                      child: Column(
+                        children: [
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("📅 Tarih:", style: TextStyle(fontWeight: FontWeight.bold)), Text(backupDate, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent))]),
+                          const Divider(),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("💎 Tayf Puanı (TP):", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupTp", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))]),
+                          const SizedBox(height: 4),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("❄️ Kalkanlar:", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupShields", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.cyan))]),
+                          const SizedBox(height: 4),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("🔥 Ateşli Seri:", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupBestStreak Gün", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange))]),
+                          const SizedBox(height: 4),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("🧠 Aktif SRS Kartı:", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupSrsCount", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.purpleAccent))]),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text("Bu ilerlemeyi cihazınıza geri yüklemek istiyor musunuz?", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)))),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              _executeCloudRestore(targetUser, metaData); // Asıl indirmeyi başlat
+                            }, 
+                            child: const Text("EVET, YÜKLE", style: TextStyle(fontWeight: FontWeight.bold))
+                          ),
+                        )
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            );
+          }
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ağ hatası: $e"), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  // YENİ EKLENDİ: Onay sonrası arkaplanda veriyi çeker ve birleştirir.
+  Future<void> _executeCloudRestore(String targetUser, Map<String, dynamic> metadata) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: const [
+            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+            SizedBox(width: 16),
+            Expanded(child: Text("Veriler buluttan indiriliyor, lütfen bekleyin..."))
+          ],
+        ),
+        duration: const Duration(seconds: 5),
+        backgroundColor: Colors.blueAccent,
+        behavior: SnackBarBehavior.floating,
+      )
+    );
+
+    try {
+      Map<String, dynamic>? fullData = await FirebaseSyncService.downloadUserProgressWords(targetUser, metadata);
+      
+      if (fullData != null) {
+        await _executeImportMerge(fullData, isCloud: true);
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime verileri indirilemedi."), backgroundColor: Colors.red));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İndirme hatası: $e"), backgroundColor: Colors.red));
+    }
+  }
+
+  // YENİ EKLENDİ: Merge işlemi bittiğinde tam başarı raporu sunar
+  Future<void> _executeImportMerge(Map<String, dynamic> data, {bool isCloud = false}) async {
+    if (mounted && !isCloud) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yerel dosya birleştiriliyor, lütfen bekleyin..."), backgroundColor: Colors.orange));
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stats = data['stats'];
+      final arrays = data['arrays'];
+      final wordsList = data['words'] as List<dynamic>? ?? [];
+
+      if (stats != null) {
+        await prefs.setInt('tayfPoints', stats['tayfPoints'] ?? 0);
+        await prefs.setInt('currentStreak', stats['currentStreak'] ?? 0);
+        await prefs.setInt('bestStreak', stats['bestStreak'] ?? 0);
+        await prefs.setInt('streakFreezes', stats['streakFreezes'] ?? 0);
+        await prefs.setInt('dailyGoal', stats['dailyGoal'] ?? 10);
+        await prefs.setInt('quizThreshold', stats['quizThreshold'] ?? 10);
+        await prefs.setInt('quizQuestionCount', stats['quizQuestionCount'] ?? 10);
+        await prefs.setInt('totalCompletedQuizzes', stats['totalCompletedQuizzes'] ?? 0);
+        await prefs.setInt('totalQuizTimeSeconds', stats['totalQuizTimeSeconds'] ?? 0);
+        await prefs.setInt('totalQuizQuestions', stats['totalQuizQuestions'] ?? 0);
+        await prefs.setInt('totalQuizWrong', stats['totalQuizWrong'] ?? 0);
+        await prefs.setInt('firstUseTimestamp', stats['firstUseTimestamp'] ?? 0);
+      }
+
+      if (arrays != null) {
+        await prefs.setStringList('learnedWordTimestamps', List<String>.from(arrays['learnedWordTimestamps'] ?? []));
+        await prefs.setStringList('completedQuizTimestamps', List<String>.from(arrays['completedQuizTimestamps'] ?? []));
+        await prefs.setStringList('viewedCardTimestamps', List<String>.from(arrays['viewedCardTimestamps'] ?? []));
+        await prefs.setStringList('wrongAnswerTimestamps', List<String>.from(arrays['wrongAnswerTimestamps'] ?? []));
+      }
+
+      List<WordModel> wordsToUpdate = [];
+      List<WordModel> wordsToInsert = [];
+
+      for(var wMap in wordsList) {
+        WordModel imported = WordModel.fromJson(json.encode(wMap));
+        var existing = await isar.wordModels.filter().wordEqualTo(imported.word, caseSensitive: false).libraryNameEqualTo(imported.libraryName, caseSensitive: false).findFirst();
+        
+        if (existing != null) {
+          existing.correctCount = imported.correctCount;
+          existing.wrongCount = imported.wrongCount;
+          existing.listType = imported.listType;
+          existing.srsLevel = imported.srsLevel;
+          existing.nextReviewDate = imported.nextReviewDate;
+          wordsToUpdate.add(existing);
+        } else {
+          wordsToInsert.add(imported);
+        }
+      }
+
+      await isar.writeTxn(() async {
+        if(wordsToUpdate.isNotEmpty) await isar.wordModels.putAll(wordsToUpdate);
+        if(wordsToInsert.isNotEmpty) await isar.wordModels.putAll(wordsToInsert);
+      });
+
+      if (mounted) {
+        setState(() {
+          _isAppLoading = true;
+          _loadingText = "Yedekler Uygulanıyor...";
+        });
+        await _loadData(); 
+
+        int finalTp = stats?['tayfPoints'] ?? 0;
+        int finalShields = stats?['streakFreezes'] ?? 0;
+        int finalStreak = stats?['bestStreak'] ?? 0;
+        int totalProcessed = wordsToUpdate.length + wordsToInsert.length;
+
+        _showCenteredDialog(
+           title: "İşlem Tamamlandı!", 
+           message: "Geçmiş başarıyla cihazınıza yüklendi.\n\n$finalTp Tayf Puanı (TP)\n$finalShields Buz Kalkanı\n$finalStreak Ateşli Seri\n\n$totalProcessed adet aktif SRS/Öğrenilmiş kelime verisi sisteme işlendi.", 
+           icon: Icons.check_circle, 
+           color: Colors.green
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Geçmiş birleştirilirken hata: $e"), backgroundColor: Colors.red));
       }
     }
   }
@@ -1088,256 +1335,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // 2. DÜZELTİLDİ: Akıllı Sorgulama ve Premium Detaylı Onay Ekranı
-  Future<void> _cloudRestoreProgress() async {
-    TextEditingController userCtrl = TextEditingController(text: _username);
-    String? targetUser = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Buluttan Geri Yükle", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
-        content: TextField(
-          controller: userCtrl,
-          decoration: InputDecoration(
-            hintText: "Kurtarılacak Kullanıcı Adı",
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-            filled: true,
-            fillColor: Colors.blueAccent.withOpacity(0.05),
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            onPressed: () {
-              if (userCtrl.text.trim().isNotEmpty) {
-                Navigator.pop(context, userCtrl.text.trim());
-              }
-            }, 
-            child: const Text("Sorgula", style: TextStyle(fontWeight: FontWeight.bold))
-          ),
-        ],
-      ),
-    );
-
-    if (targetUser == null || targetUser.isEmpty) return;
-
-    // AĞ OPTİMİZASYONU: Sadece Metadata (Özet Bilgi) aranıyor. Donma yapmaz.
-    showDialog(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(content: Row(children: [CircularProgressIndicator(), SizedBox(width: 20), Expanded(child: Text("Bulutta ilerleme aranıyor..."))])));
-
-    try {
-      Map<String, dynamic>? metaData = await FirebaseSyncService.checkUserProgressMetadata(targetUser);
-      
-      if (mounted) Navigator.pop(context); // Arama dialogunu kapat
-
-      if (metaData == null) {
-        if (mounted) _showCenteredDialog(title: "Bulunamadı", message: "'$targetUser' adlı kullanıcıya ait bir bulut yedeği bulunamadı.", icon: Icons.cloud_off, color: Colors.orange);
-        return;
-      }
-
-      // Detaylı Bilgileri Çıkar
-      int timestamp = metaData['backup_timestamp_ms'] ?? 0;
-      String backupDate = "Bilinmeyen Tarih";
-      if (timestamp > 0) {
-        DateTime dt = DateTime.fromMillisecondsSinceEpoch(timestamp);
-        backupDate = "${dt.day.toString().padLeft(2,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.year} ${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}";
-      }
-      
-      final stats = metaData['stats'] ?? {};
-      int backupTp = stats['tayfPoints'] ?? 0;
-      int backupShields = stats['streakFreezes'] ?? 0;
-      int backupBestStreak = stats['bestStreak'] ?? 0;
-      int backupSrsCount = stats['srsWordCount'] ?? 0;
-
-      if (mounted) {
-        showGeneralDialog(
-          context: context,
-          barrierDismissible: false,
-          transitionDuration: const Duration(milliseconds: 500),
-          pageBuilder: (context, a1, a2) => const SizedBox(),
-          transitionBuilder: (context, a1, a2, child) {
-            return Transform.scale(
-              scale: Curves.easeOutBack.transform(a1.value),
-              child: AlertDialog(
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Theme.of(context).primaryColor, width: 2)),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.cloud_done, color: Colors.green, size: 50)),
-                    const SizedBox(height: 16),
-                    const Text("Bulut Yedeği Bulundu!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    Text("'$targetUser' kullanıcısına ait yedek bilgileri:", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                    const SizedBox(height: 12),
-                    
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.black.withOpacity(0.05), borderRadius: BorderRadius.circular(16)),
-                      child: Column(
-                        children: [
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("📅 Tarih:", style: TextStyle(fontWeight: FontWeight.bold)), Text(backupDate, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent))]),
-                          const Divider(),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("💎 Tayf Puanı (TP):", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupTp", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))]),
-                          const SizedBox(height: 4),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("❄️ Kalkanlar:", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupShields", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.cyan))]),
-                          const SizedBox(height: 4),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("🔥 Ateşli Seri:", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupBestStreak Gün", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange))]),
-                          const SizedBox(height: 4),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("🧠 Aktif SRS Kartı:", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupSrsCount", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.purpleAccent))]),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text("Bu ilerlemeyi cihazınıza geri yüklemek istiyor musunuz?", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)))),
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                            onPressed: () async {
-                              Navigator.pop(context);
-                              _executeCloudRestore(targetUser, metaData); // Asıl indirme işlemini başlat
-                            }, 
-                            child: const Text("EVET, YÜKLE", style: TextStyle(fontWeight: FontWeight.bold))
-                          ),
-                        )
-                      ],
-                    )
-                  ],
-                ),
-              ),
-            );
-          }
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ağ hatası: $e"), backgroundColor: Colors.red));
-      }
-    }
-  }
-
-  // 3. DÜZELTİLDİ: Onay sonrası arkaplanda veriyi çeker ve birleştirir.
-  Future<void> _executeCloudRestore(String targetUser, Map<String, dynamic> metadata) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: const [
-            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-            SizedBox(width: 16),
-            Expanded(child: Text("Veriler buluttan indiriliyor, lütfen bekleyin..."))
-          ],
-        ),
-        duration: const Duration(seconds: 5),
-        backgroundColor: Colors.blueAccent,
-        behavior: SnackBarBehavior.floating,
-      )
-    );
-
-    try {
-      Map<String, dynamic>? fullData = await FirebaseSyncService.downloadUserProgressWords(targetUser, metadata);
-      
-      if (fullData != null) {
-        await _executeImportMerge(fullData, isCloud: true);
-      } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime verileri indirilemedi."), backgroundColor: Colors.red));
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İndirme hatası: $e"), backgroundColor: Colors.red));
-    }
-  }
-
-  // 4. DÜZELTİLDİ: Merge işlemi bittiğinde tam başarı raporu sunar
-  Future<void> _executeImportMerge(Map<String, dynamic> data, {bool isCloud = false}) async {
-    // UI kilitlenmesini engellemek için arka planda SnackBar ile devam ediyoruz
-    if (mounted && !isCloud) {
-       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yerel dosya birleştiriliyor, lütfen bekleyin..."), backgroundColor: Colors.orange));
-    }
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final stats = data['stats'];
-      final arrays = data['arrays'];
-      final wordsList = data['words'] as List<dynamic>? ?? [];
-
-      if (stats != null) {
-        await prefs.setInt('tayfPoints', stats['tayfPoints'] ?? 0);
-        await prefs.setInt('currentStreak', stats['currentStreak'] ?? 0);
-        await prefs.setInt('bestStreak', stats['bestStreak'] ?? 0);
-        await prefs.setInt('streakFreezes', stats['streakFreezes'] ?? 0);
-        await prefs.setInt('dailyGoal', stats['dailyGoal'] ?? 10);
-        await prefs.setInt('quizThreshold', stats['quizThreshold'] ?? 10);
-        await prefs.setInt('quizQuestionCount', stats['quizQuestionCount'] ?? 10);
-        await prefs.setInt('totalCompletedQuizzes', stats['totalCompletedQuizzes'] ?? 0);
-        await prefs.setInt('totalQuizTimeSeconds', stats['totalQuizTimeSeconds'] ?? 0);
-        await prefs.setInt('totalQuizQuestions', stats['totalQuizQuestions'] ?? 0);
-        await prefs.setInt('totalQuizWrong', stats['totalQuizWrong'] ?? 0);
-        await prefs.setInt('firstUseTimestamp', stats['firstUseTimestamp'] ?? 0);
-      }
-
-      if (arrays != null) {
-        await prefs.setStringList('learnedWordTimestamps', List<String>.from(arrays['learnedWordTimestamps'] ?? []));
-        await prefs.setStringList('completedQuizTimestamps', List<String>.from(arrays['completedQuizTimestamps'] ?? []));
-        await prefs.setStringList('viewedCardTimestamps', List<String>.from(arrays['viewedCardTimestamps'] ?? []));
-        await prefs.setStringList('wrongAnswerTimestamps', List<String>.from(arrays['wrongAnswerTimestamps'] ?? []));
-      }
-
-      List<WordModel> wordsToUpdate = [];
-      List<WordModel> wordsToInsert = [];
-
-      for(var wMap in wordsList) {
-        WordModel imported = WordModel.fromJson(json.encode(wMap));
-        var existing = await isar.wordModels.filter().wordEqualTo(imported.word, caseSensitive: false).libraryNameEqualTo(imported.libraryName, caseSensitive: false).findFirst();
-        
-        if (existing != null) {
-          existing.correctCount = imported.correctCount;
-          existing.wrongCount = imported.wrongCount;
-          existing.listType = imported.listType;
-          existing.srsLevel = imported.srsLevel;
-          existing.nextReviewDate = imported.nextReviewDate;
-          wordsToUpdate.add(existing);
-        } else {
-          wordsToInsert.add(imported);
-        }
-      }
-
-      await isar.writeTxn(() async {
-        if(wordsToUpdate.isNotEmpty) await isar.wordModels.putAll(wordsToUpdate);
-        if(wordsToInsert.isNotEmpty) await isar.wordModels.putAll(wordsToInsert);
-      });
-
-      if (mounted) {
-        setState(() {
-          _isAppLoading = true;
-          _loadingText = "Yedekler Uygulanıyor...";
-        });
-        await _loadData(); 
-
-        // İşlem tamamen bittiğinde detaylı rapor Dialogu göster.
-        int finalTp = stats?['tayfPoints'] ?? 0;
-        int finalShields = stats?['streakFreezes'] ?? 0;
-        int finalStreak = stats?['bestStreak'] ?? 0;
-        int totalProcessed = wordsToUpdate.length + wordsToInsert.length;
-
-        _showCenteredDialog(
-           title: "İşlem Tamamlandı!", 
-           message: "Geçmiş başarıyla cihazınıza yüklendi.\n\n$finalTp Tayf Puanı (TP)\n$finalShields Buz Kalkanı\n$finalStreak Ateşli Seri ve Rozetler\n\n$totalProcessed adet aktif SRS/Öğrenilmiş kelime verisi sisteme işlendi.", 
-           icon: Icons.check_circle, 
-           color: Colors.green
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Geçmiş birleştirilirken hata: $e"), backgroundColor: Colors.red));
-      }
-    }
-  }
-
   Future<void> _importProgress() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (result != null && result.files.single.path != null) {
@@ -1384,7 +1381,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             TextSpan(text: "'$backupUser'", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, fontSize: 18)),
                             const TextSpan(text: " adlı kullanıcının\n"),
                             TextSpan(text: "$backupDate", style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const TextSpan(text: "\ntarihli ilerleme geçmişini yüklemek istiyor musunuz?"),
+                            const TextSpan(text: "\ntarihli ilerleme geçmişini (TP, Kalkanlar, SRS Kelimeleri, Seri ve Rozetler) yüklemek istiyor musunuz?"),
                           ]
                         ),
                       ),
