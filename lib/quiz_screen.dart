@@ -12,15 +12,18 @@ class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
   final int threshold;
   final int questionCount;
+  final bool isWordNet; // YENİ: WordNet Çifte Bonus Kontrolü
   final Function(WordModel) onWordMastered;
   final Function(WordModel) onWrongWord;
-  final Function(int timeElapsed, int answered, int wrong, int earnedTP) onQuizFinished;
+  // YENİ: Rekor hesabı için firstTryCorrect (İlk seferde doğru) parametresi eklendi
+  final Function(int timeElapsed, int answered, int wrong, int earnedTP, int firstTryCorrect) onQuizFinished;
 
   const QuizScreen({
     super.key,
     required this.words,
     required this.threshold,
     required this.questionCount,
+    required this.isWordNet,
     required this.onWordMastered,
     required this.onWrongWord,
     required this.onQuizFinished,
@@ -53,6 +56,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   
   int _sessionEarnedTP = 0; 
   int _currentQuestionAttempts = 0; 
+
+  // YENİ: Combo ve Detaylı Puan Takip Sistemi
+  int _combo = 0;
+  int _normalTP = 0;
+  int _wordNetNormalBonus = 0;
+  int _comboTP = 0;
+  int _wordNetComboBonus = 0;
 
   String _questionSubtext = "";
   late String _displayWordStr; 
@@ -125,7 +135,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _shakeController.dispose();
     _scaleController.dispose();
     if (!_isStatsSaved && answeredQuestions > 0) {
-      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP);
+      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers);
     }
     super.dispose();
   }
@@ -161,6 +171,40 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     else if (lang == 'tr-TR') text = isCorrect ? "Doğru" : "Yanlış";
     else text = isCorrect ? "Correct" : "Wrong";
     _speakText(text, lang);
+  }
+
+  // YENİ: Combo Animasyonu (Ekrana Çarparak Gelen Efekt)
+  void _showComboAnimation(int multiplier, int tp) {
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 1500),
+        curve: Curves.elasticOut,
+        onEnd: () => overlayEntry?.remove(),
+        builder: (context, value, child) {
+          return Positioned(
+            top: MediaQuery.of(context).size.height * 0.3 - (value * 50),
+            left: 0,
+            right: 0,
+            child: Opacity(
+              opacity: value < 0.8 ? 1.0 : (1.0 - ((value - 0.8) * 5)).clamp(0.0, 1.0),
+              child: Transform.scale(
+                scale: value < 0.5 ? (value * 2) : 1.0 + (sin((value - 0.5) * pi) * 0.2),
+                child: Column(
+                  children: [
+                    Text("🔥 ${multiplier}X COMBO! 🔥", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.orangeAccent, shadows: [Shadow(color: Colors.red, blurRadius: 20)], decoration: TextDecoration.none)),
+                    Text("+$tp TP", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.lightBlueAccent, shadows: [Shadow(color: Colors.blue, blurRadius: 20)], decoration: TextDecoration.none)),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      )
+    );
+    Overlay.of(context).insert(overlayEntry);
+    HapticFeedback.vibrate();
   }
   
   void _flyDiamondAnimation() {
@@ -212,7 +256,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       setState(() { isQuizFinished = true; _timer?.cancel(); });
       if (!_isStatsSaved) {
         _isStatsSaved = true;
-        widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP);
+        widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers);
       }
       _speakText("Congratulations", "en-US");
       return;
@@ -373,9 +417,36 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         HapticFeedback.mediumImpact(); 
         _scaleController.forward(from: 0.0); 
         
+        // YENİ: COMBO VE WORDNET BONUS SİSTEMİ
         if (_currentQuestionAttempts == 0) {
-           _sessionEarnedTP += 3; 
-           _flyDiamondAnimation();
+           _combo++;
+           int multiplier = 1;
+           if (_combo == 3) multiplier = 3;
+           else if (_combo == 5) multiplier = 5;
+           else if (_combo >= 10 && _combo % 5 == 0) multiplier = _combo; // 10, 15, 20...
+           
+           int baseReward = 3;
+           int earnedNormal = baseReward;
+           int earnedCombo = (baseReward * multiplier) - baseReward; // Sadece bonus olan kısım
+           
+           _normalTP += earnedNormal;
+           _comboTP += earnedCombo;
+           
+           if (widget.isWordNet) {
+              _wordNetNormalBonus += earnedNormal;
+              _wordNetComboBonus += earnedCombo;
+           }
+           
+           int totalEarnedThisQuestion = (earnedNormal + earnedCombo) * (widget.isWordNet ? 2 : 1);
+           _sessionEarnedTP += totalEarnedThisQuestion;
+           
+           if (multiplier > 1) {
+              _showComboAnimation(multiplier, totalEarnedThisQuestion);
+           } else {
+              _flyDiamondAnimation();
+           }
+        } else {
+           _combo = 0; // Hata yaptıysa kombo kırılır
         }
       });
 
@@ -471,6 +542,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       
     } else {
       setState(() {
+        _combo = 0; // Hata yaptı, kombo sıfırlandı
         selectedWrongOptions.add(option);
         wrongAnswers++; 
         HapticFeedback.heavyImpact(); 
@@ -572,6 +644,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     HapticFeedback.lightImpact();
     setState(() {
       correctAnswers = 0; wrongAnswers = 0; answeredQuestions = 0; _secondsElapsed = 0; _sessionEarnedTP = 0;
+      _combo = 0; _normalTP = 0; _wordNetNormalBonus = 0; _comboTP = 0; _wordNetComboBonus = 0;
       isQuizFinished = false; _isStatsSaved = false;
       List<WordModel> pool = List.from(widget.words)..shuffle();
       quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
@@ -596,7 +669,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               children: [
                 const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
                 const SizedBox(height: 10),
-                // EKLENDİ: Havai Fişek Başarı Kutlama Lottie Animasyonu Geri Getirildi
                 Lottie.network(
                   'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', 
                   height: 180, 
@@ -616,14 +688,25 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       children: [
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Doğru Sayısı:", style: TextStyle(fontSize: 20)), Text("$correctAnswers", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green))]),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Doğru Sayısı:", style: TextStyle(fontSize: 18)), Text("$correctAnswers", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green))]),
+                        const Divider(height: 15),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Yanlış Sayısı:", style: TextStyle(fontSize: 18)), Text("$wrongAnswers", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red))]),
+                        const Divider(height: 15),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Geçen Süre:", style: TextStyle(fontSize: 18)), Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue))]),
                         const Divider(height: 30),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Yanlış Sayısı:", style: TextStyle(fontSize: 20)), Text("$wrongAnswers", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red))]),
-                        const Divider(height: 30),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Geçen Süre:", style: TextStyle(fontSize: 20)), Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue))]),
+                        
+                        // YENİ: Detaylı TP Dökümü
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Normal TP:", style: TextStyle(fontSize: 16)), Text("+$_normalTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
+                        if (widget.isWordNet)
+                          Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Bonusu:", style: TextStyle(fontSize: 16, color: Colors.indigo)), Text("+$_wordNetNormalBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigoAccent))])),
+                        if (_comboTP > 0)
+                          Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Combo Ödülü:", style: TextStyle(fontSize: 16, color: Colors.orange)), Text("+$_comboTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orangeAccent))])),
+                        if (widget.isWordNet && _wordNetComboBonus > 0)
+                          Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Combo:", style: TextStyle(fontSize: 16, color: Colors.deepPurple)), Text("+$_wordNetComboBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent))])),
+                        
                         const Divider(height: 30),
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Text("Kazanılan TP:", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), 
+                          const Text("Toplam TP:", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), 
                           Row(
                             children: [
                               Icon(Icons.diamond, color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.green, size: 24),
