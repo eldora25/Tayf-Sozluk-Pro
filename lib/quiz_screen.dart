@@ -13,8 +13,10 @@ class QuizScreen extends StatefulWidget {
   final int threshold;
   final int questionCount;
   final bool isWordNet; 
+  
   final int currentBestTime;
   final int currentBestCorrect;
+  
   final Function(WordModel) onWordMastered;
   final Function(WordModel) onWrongWord;
   final Function(int timeElapsed, int answered, int wrong, int earnedTP, int firstTryCorrect, bool isNewRecord) onQuizFinished;
@@ -178,29 +180,27 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _speakText(text, lang);
   }
 
-  // YENİ DÜZELTME: Okunabilir Yavaşlıkta ve Yukarı Kayan Combo
+  // YUKARI KAYAN COMBO EFEKTİ
   void _showComboAnimation(int multiplier, int tp) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
       builder: (context) => TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.0, end: 1.0),
-        duration: const Duration(milliseconds: 2500), // Daha yavaş ve okunaklı
+        duration: const Duration(milliseconds: 2500),
         curve: Curves.easeOutQuart,
         onEnd: () => overlayEntry?.remove(),
         builder: (context, value, child) {
-          // Fade In -> Stay -> Fade Out
           double opacity = 1.0;
           if (value < 0.1) opacity = value * 10;
           else if (value > 0.7) opacity = (1.0 - value) * 3.33;
 
-          // Ekranda yukarı doğru süzülme
           double topOffset = 100.0 - (value * 80.0);
 
           return Positioned(
             top: MediaQuery.of(context).padding.top + topOffset,
             left: 0,
             right: 0,
-            child: IgnorePointer( // UI Kilitlenmesini Önler
+            child: IgnorePointer(
               child: Opacity(
                 opacity: opacity.clamp(0.0, 1.0),
                 child: Center(
@@ -241,6 +241,59 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     HapticFeedback.vibrate();
   }
   
+  // YENİ: SABİT, CANLI VE NEON COMBO ROZETİ (Üst Bar İçin)
+  Widget _buildLiveComboBadge() {
+    if (_combo < 2) return const SizedBox.shrink(); 
+    
+    Color comboColor = Colors.orangeAccent;
+    double blur = 8.0;
+    if (_combo >= 15) {
+      comboColor = Colors.pinkAccent;
+      blur = 20.0;
+    } else if (_combo >= 10) {
+      comboColor = Colors.redAccent;
+      blur = 16.0;
+    } else if (_combo >= 5) {
+      comboColor = Colors.deepOrangeAccent;
+      blur = 12.0;
+    }
+
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(_combo), 
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 1.0 + (sin(value * pi) * 0.15), 
+          child: Container(
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: comboColor, width: 1.5),
+              boxShadow: [
+                BoxShadow(color: comboColor.withOpacity(0.6 * value), blurRadius: blur, spreadRadius: 1)
+              ]
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.local_fire_department, color: comboColor, size: 14),
+                const SizedBox(width: 4),
+                Text(
+                  "COMBO ${_combo}X", 
+                  style: TextStyle(color: comboColor, fontWeight: FontWeight.w900, fontSize: 12, shadows: [Shadow(color: comboColor, blurRadius: blur)])
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _flyDiamondAnimation() {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
@@ -840,31 +893,36 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 10),
             
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
-                  style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)
-                ),
-                const SizedBox(width: 20),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black87,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _sessionEarnedTP < 0 ? Colors.redAccent.withOpacity(0.5) : Colors.lightBlueAccent.withOpacity(0.5)),
-                    boxShadow: [BoxShadow(color: _sessionEarnedTP < 0 ? Colors.redAccent.withOpacity(0.2) : Colors.lightBlueAccent.withOpacity(0.2), blurRadius: 8)]
+            // DÜZELTİLDİ: FittedBox ve Combo Rozeti eklendi, taşma önlendi
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_combo >= 2) _buildLiveComboBadge(),
+                  Text(
+                    "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
+                    style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.diamond, color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.lightBlueAccent, size: 14),
-                      const SizedBox(width: 4),
-                      Text("$_sessionEarnedTP", style: TextStyle(color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.lightBlueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
-                    ],
-                  ),
-                )
-              ],
+                  const SizedBox(width: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _sessionEarnedTP < 0 ? Colors.redAccent.withOpacity(0.5) : Colors.lightBlueAccent.withOpacity(0.5)),
+                      boxShadow: [BoxShadow(color: _sessionEarnedTP < 0 ? Colors.redAccent.withOpacity(0.2) : Colors.lightBlueAccent.withOpacity(0.2), blurRadius: 8)]
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.diamond, color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.lightBlueAccent, size: 14),
+                        const SizedBox(width: 4),
+                        Text("$_sessionEarnedTP", style: TextStyle(color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.lightBlueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                      ],
+                    ),
+                  )
+                ],
+              ),
             ),
             
             const SizedBox(height: 8),
