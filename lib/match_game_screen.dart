@@ -45,7 +45,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   Map<String, String> _targetDisplays = {};
   Map<String, int> _wordMistakeCounts = {}; 
 
-  // YENİ: Combo ve Detaylı Puan Takip Sistemi
   int _combo = 0;
   int _normalTP = 0;
   int _wordNetNormalBonus = 0;
@@ -144,7 +143,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     });
   }
 
-  // YENİ DÜZELTME: Okunabilir Yavaşlıkta ve Yukarı Kayan Combo
+  // YUKARI KAYAN COMBO EFEKTİ
   void _showComboAnimation(int multiplier, int tp) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
@@ -205,6 +204,59 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     HapticFeedback.vibrate();
   }
 
+  // YENİ: SABİT, CANLI VE NEON COMBO ROZETİ (Üst Bar İçin)
+  Widget _buildLiveComboBadge() {
+    if (_combo < 2) return const SizedBox.shrink(); 
+    
+    Color comboColor = Colors.orangeAccent;
+    double blur = 8.0;
+    if (_combo >= 15) {
+      comboColor = Colors.pinkAccent;
+      blur = 20.0;
+    } else if (_combo >= 10) {
+      comboColor = Colors.redAccent;
+      blur = 16.0;
+    } else if (_combo >= 5) {
+      comboColor = Colors.deepOrangeAccent;
+      blur = 12.0;
+    }
+
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(_combo), 
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 1.0 + (sin(value * pi) * 0.15), 
+          child: Container(
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: comboColor, width: 1.5),
+              boxShadow: [
+                BoxShadow(color: comboColor.withOpacity(0.6 * value), blurRadius: blur, spreadRadius: 1)
+              ]
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.local_fire_department, color: comboColor, size: 14),
+                const SizedBox(width: 4),
+                Text(
+                  "COMBO ${_combo}X", 
+                  style: TextStyle(color: comboColor, fontWeight: FontWeight.w900, fontSize: 12, shadows: [Shadow(color: comboColor, blurRadius: blur)])
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _handleDrop(WordModel dragged, WordModel target) {
     _isHoveringTarget.value = false;
     setState(() => isDragging = false);
@@ -220,7 +272,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
            int multiplier = 1;
            if (_combo == 3) multiplier = 3;
            else if (_combo == 5) multiplier = 5;
-           else if (_combo >= 10 && _combo % 5 == 0) multiplier = _combo; // 10, 15, 20...
+           else if (_combo >= 10 && _combo % 5 == 0) multiplier = _combo; 
            
            int baseReward = 10;
            int earnedNormal = baseReward;
@@ -433,11 +485,22 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
             padding: const EdgeInsets.only(top: 100, bottom: 16.0, left: 8.0, right: 8.0), 
             child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
-                  child: Text("Raunt: ${currentRound + 1} / $totalRounds", style: TextStyle(fontSize: 16, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                // DÜZELTİLDİ: FittedBox ve Combo Rozeti eklendi, taşma önlendi
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_combo >= 2) _buildLiveComboBadge(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
+                        child: Text("Raunt: ${currentRound + 1} / $totalRounds", style: TextStyle(fontSize: 16, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                      ),
+                    ]
+                  )
                 ),
+                
                 const SizedBox(height: 8),
                 Text("Cevabın üzerindeyken okumak için bekleyin.", style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
                 const SizedBox(height: 12),
