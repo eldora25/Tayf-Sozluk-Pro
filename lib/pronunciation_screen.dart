@@ -10,11 +10,13 @@ import 'main.dart';
 
 class PronunciationScreen extends StatefulWidget {
   final List<WordModel> words;
+  final bool isWordNet; // YENİ: WordNet Çifte Bonus Kontrolü
   final Function(int pointsEarned) onGameFinished;
 
   const PronunciationScreen({
     super.key,
     required this.words,
+    required this.isWordNet,
     required this.onGameFinished,
   });
 
@@ -40,6 +42,13 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
 
   late AnimationController _pulseController;
 
+  // YENİ: Combo ve Detaylı Puan Takip Sistemi
+  int _combo = 0;
+  int _normalTP = 0;
+  int _wordNetNormalBonus = 0;
+  int _comboTP = 0;
+  int _wordNetComboBonus = 0;
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +58,6 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
     _prepareGame();
   }
 
-  // YENİ: Havuzda kelime yoksa veya azsa doğrudan Isar veritabanından rastgele çeker
   Future<void> _prepareGame() async {
     List<WordModel> pool = List.from(widget.words);
     
@@ -103,8 +111,41 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
     if (RegExp(r'^\d{8}-').hasMatch(targetWord) || targetWord.contains('[ID:')) {
         targetWord = currentWord.synonyms.isNotEmpty ? currentWord.synonyms.first : (currentWord.meanings.isNotEmpty ? currentWord.meanings.first : "word");
     }
-    // WordNet açıklamalarını ve özel karakterleri siliyoruz
     return targetWord.replaceAll(RegExp(r'\[.*?\]'), '').replaceAll(RegExp(r'\(.*?\)'), '').replaceAll(RegExp(r'[\[\]\{\}\\|_»•:;*+><=~]'), '').trim();
+  }
+
+  // YENİ: Combo Animasyonu
+  void _showComboAnimation(int multiplier, int tp) {
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 1500),
+        curve: Curves.elasticOut,
+        onEnd: () => overlayEntry?.remove(),
+        builder: (context, value, child) {
+          return Positioned(
+            top: MediaQuery.of(context).size.height * 0.3 - (value * 50),
+            left: 0,
+            right: 0,
+            child: Opacity(
+              opacity: value < 0.8 ? 1.0 : (1.0 - ((value - 0.8) * 5)).clamp(0.0, 1.0),
+              child: Transform.scale(
+                scale: value < 0.5 ? (value * 2) : 1.0 + (sin((value - 0.5) * pi) * 0.2),
+                child: Column(
+                  children: [
+                    Text("🔥 ${multiplier}X COMBO! 🔥", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.orangeAccent, shadows: [Shadow(color: Colors.red, blurRadius: 20)], decoration: TextDecoration.none)),
+                    Text("+$tp TP", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.lightBlueAccent, shadows: [Shadow(color: Colors.blue, blurRadius: 20)], decoration: TextDecoration.none)),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      )
+    );
+    Overlay.of(context).insert(overlayEntry);
+    HapticFeedback.vibrate();
   }
 
   void _listen() async {
@@ -149,11 +190,11 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
       setState(() => _isListening = false);
       _speech.stop();
       
-      // Kullanıcı dinlemeyi bıraktıysa ve kelimeyi henüz doğru okumadıysa CEZA KES
       if (!_isSuccessAnim && _text != 'Mikrofona basılı tut ve kelimeyi oku...' && _text != "Dinleniyor, konuşmaya başla...") {
          setState(() {
+            _combo = 0; // Hata yapıldı kombo sıfırlandı
             _currentWordMistakes++;
-            int penalty = _currentWordMistakes * 3; // 1. hata -3, 2. hata -6 TP vb.
+            int penalty = _currentWordMistakes * 3; 
             score -= penalty;
             _text = "Hatalı Telaffuz! (-$penalty TP)\nOkunan: '$_text'";
             HapticFeedback.heavyImpact();
@@ -177,9 +218,32 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
         _isListening = false;
         _isSuccessAnim = true;
         
-        // YENİ: Sadece hiç hata yapmadıysa tam puan ver
+        // YENİ: COMBO VE WORDNET BONUS SİSTEMİ
         if (_currentWordMistakes == 0) {
-          score += 15; 
+           _combo++;
+           int multiplier = 1;
+           if (_combo == 3) multiplier = 3;
+           else if (_combo == 5) multiplier = 5;
+           else if (_combo >= 10 && _combo % 5 == 0) multiplier = _combo; 
+           
+           int baseReward = 15;
+           int earnedNormal = baseReward;
+           int earnedCombo = (baseReward * multiplier) - baseReward;
+           
+           _normalTP += earnedNormal;
+           _comboTP += earnedCombo;
+           
+           if (widget.isWordNet) {
+              _wordNetNormalBonus += earnedNormal;
+              _wordNetComboBonus += earnedCombo;
+           }
+           
+           int totalEarnedThisMatch = (earnedNormal + earnedCombo) * (widget.isWordNet ? 2 : 1);
+           score += totalEarnedThisMatch;
+           
+           if (multiplier > 1) {
+              _showComboAnimation(multiplier, totalEarnedThisMatch);
+           }
         }
         
         _text = "Mükemmel Telaffuz! 👏";
@@ -197,14 +261,13 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
         currentIndex++;
         currentWord = gameWords[currentIndex];
         _isSuccessAnim = false;
-        _currentWordMistakes = 0; // Hata sayacını yeni kelime için sıfırla
+        _currentWordMistakes = 0; 
         _text = 'Mikrofona basılı tut ve kelimeyi oku...';
       });
     } else {
       setState(() {
         isFinished = true;
       });
-      // Sınav bittiğinde negatif puana düşülmüşse sıfırla
       widget.onGameFinished(score > 0 ? score : 0);
     }
   }
@@ -251,7 +314,7 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
     }
 
     if (isFinished) {
-      int finalPoints = score > 0 ? score : 0; // Negatifse sıfır göster
+      int finalPoints = score > 0 ? score : 0; 
       return Scaffold(
         appBar: AppBar(title: const Text("Sınav Bitti", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
         body: Container(
@@ -266,14 +329,24 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                   Lottie.network('https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', height: 180, repeat: true),
                   const SizedBox(height: 20),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))]),
                     child: Column(
                       children: [
-                        const Text("Kazanılan Tayf Puanı", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
+                        // YENİ: Detaylı TP Dökümü
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Normal TP:", style: TextStyle(fontSize: 16)), Text("+$_normalTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
+                        if (widget.isWordNet)
+                          Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Bonusu:", style: TextStyle(fontSize: 16, color: Colors.indigo)), Text("+$_wordNetNormalBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigoAccent))])),
+                        if (_comboTP > 0)
+                          Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Combo Ödülü:", style: TextStyle(fontSize: 16, color: Colors.orange)), Text("+$_comboTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orangeAccent))])),
+                        if (widget.isWordNet && _wordNetComboBonus > 0)
+                          Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Combo:", style: TextStyle(fontSize: 16, color: Colors.deepPurple)), Text("+$_wordNetComboBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent))])),
+                        
+                        const Divider(height: 30),
+                        const Text("Toplam Kazanılan Tayf Puanı", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
                         const SizedBox(height: 12),
                         Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.diamond, color: finalPoints > 0 ? Colors.green : Colors.redAccent, size: 36),
                             const SizedBox(width: 12),
@@ -297,6 +370,7 @@ class _PronunciationScreenState extends State<PronunciationScreen> with TickerPr
                           currentIndex = 0;
                           score = 0;
                           _currentWordMistakes = 0;
+                          _combo = 0; _normalTP = 0; _wordNetNormalBonus = 0; _comboTP = 0; _wordNetComboBonus = 0;
                           _isLoading = true;
                           _prepareGame();
                         });
