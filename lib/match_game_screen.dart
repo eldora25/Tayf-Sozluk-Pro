@@ -144,29 +144,56 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     });
   }
 
-  // YENİ: Combo Animasyonu
+  // YENİ DÜZELTME: Okunabilir Yavaşlıkta ve Yukarı Kayan Combo
   void _showComboAnimation(int multiplier, int tp) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
       builder: (context) => TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.0, end: 1.0),
-        duration: const Duration(milliseconds: 1500),
-        curve: Curves.elasticOut,
+        duration: const Duration(milliseconds: 2500), 
+        curve: Curves.easeOutQuart,
         onEnd: () => overlayEntry?.remove(),
         builder: (context, value, child) {
+          double opacity = 1.0;
+          if (value < 0.1) opacity = value * 10;
+          else if (value > 0.7) opacity = (1.0 - value) * 3.33;
+
+          double topOffset = 100.0 - (value * 80.0);
+
           return Positioned(
-            top: MediaQuery.of(context).size.height * 0.4 - (value * 50),
+            top: MediaQuery.of(context).padding.top + topOffset,
             left: 0,
             right: 0,
-            child: Opacity(
-              opacity: value < 0.8 ? 1.0 : (1.0 - ((value - 0.8) * 5)).clamp(0.0, 1.0),
-              child: Transform.scale(
-                scale: value < 0.5 ? (value * 2) : 1.0 + (sin((value - 0.5) * pi) * 0.2),
-                child: Column(
-                  children: [
-                    Text("🔥 ${multiplier}X COMBO! 🔥", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.orangeAccent, shadows: [Shadow(color: Colors.red, blurRadius: 20)], decoration: TextDecoration.none)),
-                    Text("+$tp TP", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.lightBlueAccent, shadows: [Shadow(color: Colors.blue, blurRadius: 20)], decoration: TextDecoration.none)),
-                  ],
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: opacity.clamp(0.0, 1.0),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(40),
+                      border: Border.all(color: Colors.orangeAccent, width: 2),
+                      boxShadow: [
+                        BoxShadow(color: Colors.orangeAccent.withOpacity(0.6), blurRadius: 15, spreadRadius: 3),
+                        BoxShadow(color: Colors.pinkAccent.withOpacity(0.4), blurRadius: 20, spreadRadius: 5),
+                      ]
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "COMBO ${multiplier}X", 
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.orangeAccent, shadows: [Shadow(color: Colors.red, blurRadius: 15)], decoration: TextDecoration.none, fontFamily: 'sans-serif', letterSpacing: 1.5)
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "+$tp TP", 
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.lightBlueAccent, shadows: [Shadow(color: Colors.blue, blurRadius: 10)], decoration: TextDecoration.none, fontFamily: 'sans-serif')
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -225,7 +252,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     } else {
       HapticFeedback.heavyImpact();
       setState(() {
-        _combo = 0; // Hata yaptı, kombo sıfırlandı
+        _combo = 0; 
         wrongTargetWord = target.word;
         mistakes++;
         
@@ -313,7 +340,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                           ]),
                           const Divider(height: 15),
                           
-                          // YENİ: Detaylı TP Dökümü
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Normal TP:", style: TextStyle(fontSize: 16)), Text("+$_normalTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
                           if (widget.isWordNet)
                             Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Bonusu:", style: TextStyle(fontSize: 16, color: Colors.indigo)), Text("+$_wordNetNormalBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigoAccent))])),
@@ -351,8 +377,8 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                           currentRound = 0;
                           score = 0;
                           mistakes = 0;
-                          _combo = 0; _normalTP = 0; _wordNetNormalBonus = 0; _comboTP = 0; _wordNetComboBonus = 0;
                           _wordMistakeCounts.clear();
+                          _combo = 0; _normalTP = 0; _wordNetNormalBonus = 0; _comboTP = 0; _wordNetComboBonus = 0;
                           _isLoading = true;
                           _prepareGame();
                         });
