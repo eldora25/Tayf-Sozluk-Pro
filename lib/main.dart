@@ -941,12 +941,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
     
     try {
+      // DÜZELTİLDİ: Sadece Gelişimi Olan veya Manuel Eklenen kelimeleri yedekler
       var customOrProgressWords = await isar.wordModels.filter()
           .not().libraryNameEqualTo('WordNet Veritabanı')
-          .or().srsLevelGreaterThan(0)
-          .or().wrongCountGreaterThan(0)
-          .or().correctCountGreaterThan(0)
-          .or().not().listTypeEqualTo('all')
+          .and()
+          .group((q) => q.srsLevelGreaterThan(0).or().wrongCountGreaterThan(0).or().correctCountGreaterThan(0).or().not().listTypeEqualTo('all'))
           .findAll();
           
       int srsWordCount = customOrProgressWords.where((w) => w.srsLevel > 0).length;
@@ -1003,6 +1002,85 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     } catch(e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dışa aktarma başarısız: $e"), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  Future<void> _exportProgress() async {
+    showDialog(context: context, barrierDismissible: false, builder: (_) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$_username verileri şifreleniyor..."))])));
+    
+    try {
+      // DÜZELTİLDİ: Sadece Gelişimi Olan veya Manuel Eklenen kelimeleri dosyaya yedekler
+      var customOrProgressWords = await isar.wordModels.filter()
+          .not().libraryNameEqualTo('WordNet Veritabanı')
+          .and()
+          .group((q) => q.srsLevelGreaterThan(0).or().wrongCountGreaterThan(0).or().correctCountGreaterThan(0).or().not().listTypeEqualTo('all'))
+          .findAll();
+
+      List<Map<String, dynamic>> wordsJson = customOrProgressWords.map((w) {
+        return {
+          "word": w.word,
+          "meanings": w.meanings,
+          "examples": w.examples,
+          "libraryName": w.libraryName,
+          "level": w.level,
+          "correctCount": w.correctCount,
+          "wrongCount": w.wrongCount,
+          "listType": w.listType,
+          "srsLevel": w.srsLevel,
+          "nextReviewDate": w.nextReviewDate,
+          "sourceLanguage": w.sourceLanguage,
+          "targetLanguage": w.targetLanguage,
+          "pos": w.pos,
+          "synonyms": w.synonyms,
+          "antonyms": w.antonyms
+        };
+      }).toList();
+
+      Map<String, dynamic> backupData = {
+        "app": "LexisEldora",
+        "version": "2.0",
+        "username": _username,
+        "timestamp": DateTime.now().millisecondsSinceEpoch,
+        "stats": {
+          "tayfPoints": tayfPoints,
+          "currentStreak": currentStreak,
+          "bestStreak": bestStreak,
+          "streakFreezes": streakFreezes,
+          "dailyGoal": dailyGoal,
+          "quizThreshold": quizThreshold,
+          "quizQuestionCount": quizQuestionCount,
+          "themeIndex": widget.themeIndex,
+          "selectedLibrary": selectedLibrary,
+          "selectedLevel": selectedLevel,
+          "totalCompletedQuizzes": totalCompletedQuizzes,
+          "totalQuizTimeSeconds": totalQuizTimeSeconds,
+          "totalQuizQuestions": totalQuizQuestions,
+          "totalQuizWrong": totalQuizWrong,
+          "firstUseTimestamp": firstUseTimestamp
+        },
+        "arrays": {
+          "learnedWordTimestamps": learnedWordTimestamps,
+          "completedQuizTimestamps": completedQuizTimestamps,
+          "viewedCardTimestamps": viewedCardTimestamps,
+          "wrongAnswerTimestamps": wrongAnswerTimestamps
+        },
+        "words": wordsJson
+      };
+
+      String jsonStr = json.encode(backupData);
+      final dir = await getTemporaryDirectory();
+      String dateStr = DateTime.now().toIso8601String().split('T').first;
+      File file = File('${dir.path}/${_username}_ilerleme_$dateStr.json');
+      await file.writeAsString(jsonStr);
+
+      if (mounted) Navigator.pop(context); 
+      await Share.shareXFiles([XFile(file.path)], subject: 'Lexis Eldora İlerleme Yedeği');
+
+    } catch(e) {
+      if (mounted) {
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dışa aktarma başarısız: $e"), backgroundColor: Colors.red));
       }
     }
@@ -1119,7 +1197,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                             onPressed: () async {
                               Navigator.pop(context);
-                              _executeCloudRestore(targetUser, metaData); // Asıl indirmeyi başlat
+                              _executeCloudRestore(targetUser, metaData); // Asıl indirme işlemini başlat
                             }, 
                             child: const Text("EVET, YÜKLE", style: TextStyle(fontWeight: FontWeight.bold))
                           ),
@@ -1168,170 +1246,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İndirme hatası: $e"), backgroundColor: Colors.red));
-    }
-  }
-
-  // YENİ EKLENDİ: Merge işlemi bittiğinde tam başarı raporu sunar
-  Future<void> _executeImportMerge(Map<String, dynamic> data, {bool isCloud = false}) async {
-    if (mounted && !isCloud) {
-       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yerel dosya birleştiriliyor, lütfen bekleyin..."), backgroundColor: Colors.orange));
-    }
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final stats = data['stats'];
-      final arrays = data['arrays'];
-      final wordsList = data['words'] as List<dynamic>? ?? [];
-
-      if (stats != null) {
-        await prefs.setInt('tayfPoints', stats['tayfPoints'] ?? 0);
-        await prefs.setInt('currentStreak', stats['currentStreak'] ?? 0);
-        await prefs.setInt('bestStreak', stats['bestStreak'] ?? 0);
-        await prefs.setInt('streakFreezes', stats['streakFreezes'] ?? 0);
-        await prefs.setInt('dailyGoal', stats['dailyGoal'] ?? 10);
-        await prefs.setInt('quizThreshold', stats['quizThreshold'] ?? 10);
-        await prefs.setInt('quizQuestionCount', stats['quizQuestionCount'] ?? 10);
-        await prefs.setInt('totalCompletedQuizzes', stats['totalCompletedQuizzes'] ?? 0);
-        await prefs.setInt('totalQuizTimeSeconds', stats['totalQuizTimeSeconds'] ?? 0);
-        await prefs.setInt('totalQuizQuestions', stats['totalQuizQuestions'] ?? 0);
-        await prefs.setInt('totalQuizWrong', stats['totalQuizWrong'] ?? 0);
-        await prefs.setInt('firstUseTimestamp', stats['firstUseTimestamp'] ?? 0);
-      }
-
-      if (arrays != null) {
-        await prefs.setStringList('learnedWordTimestamps', List<String>.from(arrays['learnedWordTimestamps'] ?? []));
-        await prefs.setStringList('completedQuizTimestamps', List<String>.from(arrays['completedQuizTimestamps'] ?? []));
-        await prefs.setStringList('viewedCardTimestamps', List<String>.from(arrays['viewedCardTimestamps'] ?? []));
-        await prefs.setStringList('wrongAnswerTimestamps', List<String>.from(arrays['wrongAnswerTimestamps'] ?? []));
-      }
-
-      List<WordModel> wordsToUpdate = [];
-      List<WordModel> wordsToInsert = [];
-
-      for(var wMap in wordsList) {
-        WordModel imported = WordModel.fromJson(json.encode(wMap));
-        var existing = await isar.wordModels.filter().wordEqualTo(imported.word, caseSensitive: false).libraryNameEqualTo(imported.libraryName, caseSensitive: false).findFirst();
-        
-        if (existing != null) {
-          existing.correctCount = imported.correctCount;
-          existing.wrongCount = imported.wrongCount;
-          existing.listType = imported.listType;
-          existing.srsLevel = imported.srsLevel;
-          existing.nextReviewDate = imported.nextReviewDate;
-          wordsToUpdate.add(existing);
-        } else {
-          wordsToInsert.add(imported);
-        }
-      }
-
-      await isar.writeTxn(() async {
-        if(wordsToUpdate.isNotEmpty) await isar.wordModels.putAll(wordsToUpdate);
-        if(wordsToInsert.isNotEmpty) await isar.wordModels.putAll(wordsToInsert);
-      });
-
-      if (mounted) {
-        setState(() {
-          _isAppLoading = true;
-          _loadingText = "Yedekler Uygulanıyor...";
-        });
-        await _loadData(); 
-
-        int finalTp = stats?['tayfPoints'] ?? 0;
-        int finalShields = stats?['streakFreezes'] ?? 0;
-        int finalStreak = stats?['bestStreak'] ?? 0;
-        int totalProcessed = wordsToUpdate.length + wordsToInsert.length;
-
-        _showCenteredDialog(
-           title: "İşlem Tamamlandı!", 
-           message: "Geçmiş başarıyla cihazınıza yüklendi.\n\n$finalTp Tayf Puanı (TP)\n$finalShields Buz Kalkanı\n$finalStreak Ateşli Seri\n\n$totalProcessed adet aktif SRS/Öğrenilmiş kelime verisi sisteme işlendi.", 
-           icon: Icons.check_circle, 
-           color: Colors.green
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Geçmiş birleştirilirken hata: $e"), backgroundColor: Colors.red));
-      }
-    }
-  }
-
-  Future<void> _exportProgress() async {
-    showDialog(context: context, barrierDismissible: false, builder: (_) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$_username verileri şifreleniyor..."))])));
-    
-    try {
-      var customOrProgressWords = await isar.wordModels.filter()
-          .not().libraryNameEqualTo('WordNet Veritabanı')
-          .or().srsLevelGreaterThan(0)
-          .or().wrongCountGreaterThan(0)
-          .or().correctCountGreaterThan(0)
-          .or().not().listTypeEqualTo('all')
-          .findAll();
-
-      List<Map<String, dynamic>> wordsJson = customOrProgressWords.map((w) {
-        return {
-          "word": w.word,
-          "meanings": w.meanings,
-          "examples": w.examples,
-          "libraryName": w.libraryName,
-          "level": w.level,
-          "correctCount": w.correctCount,
-          "wrongCount": w.wrongCount,
-          "listType": w.listType,
-          "srsLevel": w.srsLevel,
-          "nextReviewDate": w.nextReviewDate,
-          "sourceLanguage": w.sourceLanguage,
-          "targetLanguage": w.targetLanguage,
-          "pos": w.pos,
-          "synonyms": w.synonyms,
-          "antonyms": w.antonyms
-        };
-      }).toList();
-
-      Map<String, dynamic> backupData = {
-        "app": "LexisEldora",
-        "version": "2.0",
-        "username": _username,
-        "timestamp": DateTime.now().millisecondsSinceEpoch,
-        "stats": {
-          "tayfPoints": tayfPoints,
-          "currentStreak": currentStreak,
-          "bestStreak": bestStreak,
-          "streakFreezes": streakFreezes,
-          "dailyGoal": dailyGoal,
-          "quizThreshold": quizThreshold,
-          "quizQuestionCount": quizQuestionCount,
-          "themeIndex": widget.themeIndex,
-          "selectedLibrary": selectedLibrary,
-          "selectedLevel": selectedLevel,
-          "totalCompletedQuizzes": totalCompletedQuizzes,
-          "totalQuizTimeSeconds": totalQuizTimeSeconds,
-          "totalQuizQuestions": totalQuizQuestions,
-          "totalQuizWrong": totalQuizWrong,
-          "firstUseTimestamp": firstUseTimestamp
-        },
-        "arrays": {
-          "learnedWordTimestamps": learnedWordTimestamps,
-          "completedQuizTimestamps": completedQuizTimestamps,
-          "viewedCardTimestamps": viewedCardTimestamps,
-          "wrongAnswerTimestamps": wrongAnswerTimestamps
-        },
-        "words": wordsJson
-      };
-
-      String jsonStr = json.encode(backupData);
-      final dir = await getTemporaryDirectory();
-      String dateStr = DateTime.now().toIso8601String().split('T').first;
-      File file = File('${dir.path}/${_username}_ilerleme_$dateStr.json');
-      await file.writeAsString(jsonStr);
-
-      if (mounted) Navigator.pop(context); 
-      await Share.shareXFiles([XFile(file.path)], subject: 'Lexis Eldora İlerleme Yedeği');
-
-    } catch(e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dışa aktarma başarısız: $e"), backgroundColor: Colors.red));
-      }
     }
   }
 
@@ -1410,6 +1324,91 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
       } catch (e) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dosya okunamadı: $e"), backgroundColor: Colors.red));
+      }
+    }
+  }
+  // YENİ EKLENDİ: Merge işlemi bittiğinde tam başarı raporu sunar
+  Future<void> _executeImportMerge(Map<String, dynamic> data, {bool isCloud = false}) async {
+    // UI kilitlenmesini engellemek için arka planda SnackBar ile devam ediyoruz
+    if (mounted && !isCloud) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yerel dosya birleştiriliyor, lütfen bekleyin..."), backgroundColor: Colors.orange));
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stats = data['stats'];
+      final arrays = data['arrays'];
+      final wordsList = data['words'] as List<dynamic>? ?? [];
+
+      if (stats != null) {
+        await prefs.setInt('tayfPoints', stats['tayfPoints'] ?? 0);
+        await prefs.setInt('currentStreak', stats['currentStreak'] ?? 0);
+        await prefs.setInt('bestStreak', stats['bestStreak'] ?? 0);
+        await prefs.setInt('streakFreezes', stats['streakFreezes'] ?? 0);
+        await prefs.setInt('dailyGoal', stats['dailyGoal'] ?? 10);
+        await prefs.setInt('quizThreshold', stats['quizThreshold'] ?? 10);
+        await prefs.setInt('quizQuestionCount', stats['quizQuestionCount'] ?? 10);
+        await prefs.setInt('totalCompletedQuizzes', stats['totalCompletedQuizzes'] ?? 0);
+        await prefs.setInt('totalQuizTimeSeconds', stats['totalQuizTimeSeconds'] ?? 0);
+        await prefs.setInt('totalQuizQuestions', stats['totalQuizQuestions'] ?? 0);
+        await prefs.setInt('totalQuizWrong', stats['totalQuizWrong'] ?? 0);
+        await prefs.setInt('firstUseTimestamp', stats['firstUseTimestamp'] ?? 0);
+      }
+
+      if (arrays != null) {
+        await prefs.setStringList('learnedWordTimestamps', List<String>.from(arrays['learnedWordTimestamps'] ?? []));
+        await prefs.setStringList('completedQuizTimestamps', List<String>.from(arrays['completedQuizTimestamps'] ?? []));
+        await prefs.setStringList('viewedCardTimestamps', List<String>.from(arrays['viewedCardTimestamps'] ?? []));
+        await prefs.setStringList('wrongAnswerTimestamps', List<String>.from(arrays['wrongAnswerTimestamps'] ?? []));
+      }
+
+      List<WordModel> wordsToUpdate = [];
+      List<WordModel> wordsToInsert = [];
+
+      for(var wMap in wordsList) {
+        WordModel imported = WordModel.fromJson(json.encode(wMap));
+        var existing = await isar.wordModels.filter().wordEqualTo(imported.word, caseSensitive: false).libraryNameEqualTo(imported.libraryName, caseSensitive: false).findFirst();
+        
+        if (existing != null) {
+          existing.correctCount = imported.correctCount;
+          existing.wrongCount = imported.wrongCount;
+          existing.listType = imported.listType;
+          existing.srsLevel = imported.srsLevel;
+          existing.nextReviewDate = imported.nextReviewDate;
+          wordsToUpdate.add(existing);
+        } else {
+          wordsToInsert.add(imported);
+        }
+      }
+
+      await isar.writeTxn(() async {
+        if(wordsToUpdate.isNotEmpty) await isar.wordModels.putAll(wordsToUpdate);
+        if(wordsToInsert.isNotEmpty) await isar.wordModels.putAll(wordsToInsert);
+      });
+
+      if (mounted) {
+        setState(() {
+          _isAppLoading = true;
+          _loadingText = "Yedekler Uygulanıyor...";
+        });
+        await _loadData(); 
+
+        // İşlem tamamen bittiğinde detaylı rapor Dialogu göster.
+        int finalTp = stats?['tayfPoints'] ?? 0;
+        int finalShields = stats?['streakFreezes'] ?? 0;
+        int finalStreak = stats?['bestStreak'] ?? 0;
+        int totalProcessed = wordsToUpdate.length + wordsToInsert.length;
+
+        _showCenteredDialog(
+           title: "İşlem Tamamlandı!", 
+           message: "Geçmiş başarıyla cihazınıza yüklendi.\n\n$finalTp Tayf Puanı (TP)\n$finalShields Buz Kalkanı\n$finalStreak Ateşli Seri ve Rozetler\n\n$totalProcessed adet aktif SRS/Öğrenilmiş kelime verisi sisteme işlendi.", 
+           icon: Icons.check_circle, 
+           color: Colors.green
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Geçmiş birleştirilirken hata: $e"), backgroundColor: Colors.red));
       }
     }
   }
