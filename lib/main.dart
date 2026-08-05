@@ -903,6 +903,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  // 1. DÜZELTİLDİ: Arka Plan Optimizeli Bulut Yedekleme (Dondurma Yapmaz)
   Future<void> _cloudBackupProgress() async {
     final prefs = await SharedPreferences.getInstance();
     int lastBackupTime = prefs.getInt('last_cloud_backup_time') ?? 0;
@@ -923,10 +924,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return;
     }
 
-    showDialog(context: context, barrierDismissible: false, builder: (_) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$_username geçmişi buluta kilitleniyor..."))])));
+    // UI'ı kilitleyen dialogu kaldırdık, yerine SnackBar koyduk (Background Process)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+            const SizedBox(width: 16),
+            Expanded(child: Text("$_username geçmişi arka planda buluta yedekleniyor..."))
+          ],
+        ),
+        duration: const Duration(seconds: 4),
+        backgroundColor: Colors.deepPurple,
+        behavior: SnackBarBehavior.floating,
+      )
+    );
     
     try {
-      // DÜZELTİLDİ: Sadece Gelişimi Olan veya Manuel Eklenen kelimeleri yedekler
       var customOrProgressWords = await isar.wordModels.filter()
           .not().libraryNameEqualTo('WordNet Veritabanı')
           .or().srsLevelGreaterThan(0)
@@ -934,12 +948,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           .or().correctCountGreaterThan(0)
           .or().not().listTypeEqualTo('all')
           .findAll();
+          
+      int srsWordCount = customOrProgressWords.where((w) => w.srsLevel > 0).length;
 
       Map<String, dynamic> statsMap = {
         "tayfPoints": tayfPoints,
         "currentStreak": currentStreak,
         "bestStreak": bestStreak,
         "streakFreezes": streakFreezes,
+        "srsWordCount": srsWordCount, // YENİ: Restore ekranında göstermek için SRS sayısı
         "dailyGoal": dailyGoal,
         "quizThreshold": quizThreshold,
         "quizQuestionCount": quizQuestionCount,
@@ -960,34 +977,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         "wrongAnswerTimestamps": wrongAnswerTimestamps
       };
 
-      Map<String, dynamic> result = await FirebaseSyncService.backupUserProgress(_username, statsMap, arraysMap, customOrProgressWords);
-
-      if (mounted) Navigator.pop(context); 
-
-      if (result["success"] == true) {
-        await prefs.setInt('last_cloud_backup_time', now);
-        if (mounted) {
-          _showCenteredDialog(
-            title: "Yedekleme Başarılı!", 
-            message: result["message"], 
-            icon: Icons.cloud_done, 
-            color: Colors.green
-          );
-        }
-      } else {
-        if (mounted) {
-          _showCenteredDialog(
-            title: "Hata", 
-            message: result["message"], 
-            icon: Icons.error_outline, 
-            color: Colors.red
-          );
-        }
-      }
+      // Asenkron çalışır, uygulamayı kitlemez
+      FirebaseSyncService.backupUserProgress(_username, statsMap, arraysMap, customOrProgressWords).then((result) async {
+         if (result["success"] == true) {
+            await prefs.setInt('last_cloud_backup_time', DateTime.now().millisecondsSinceEpoch);
+            if (mounted) {
+              _showCenteredDialog(
+                title: "Yedekleme Başarılı!", 
+                message: result["message"], 
+                icon: Icons.cloud_done, 
+                color: Colors.green
+              );
+            }
+         } else {
+            if (mounted) {
+              _showCenteredDialog(
+                title: "Hata", 
+                message: result["message"], 
+                icon: Icons.error_outline, 
+                color: Colors.red
+              );
+            }
+         }
+      });
 
     } catch(e) {
       if (mounted) {
-        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dışa aktarma başarısız: $e"), backgroundColor: Colors.red));
       }
     }
@@ -997,7 +1012,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     showDialog(context: context, barrierDismissible: false, builder: (_) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$_username verileri şifreleniyor..."))])));
     
     try {
-      // DÜZELTİLDİ: Sadece Gelişimi Olan veya Manuel Eklenen kelimeleri dosyaya yedekler
       var customOrProgressWords = await isar.wordModels.filter()
           .not().libraryNameEqualTo('WordNet Veritabanı')
           .or().srsLevelGreaterThan(0)
@@ -1074,6 +1088,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  // 2. DÜZELTİLDİ: Akıllı Sorgulama ve Premium Detaylı Onay Ekranı
   Future<void> _cloudRestoreProgress() async {
     TextEditingController userCtrl = TextEditingController(text: _username);
     String? targetUser = await showDialog<String>(
@@ -1108,17 +1123,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     if (targetUser == null || targetUser.isEmpty) return;
 
+    // AĞ OPTİMİZASYONU: Sadece Metadata (Özet Bilgi) aranıyor. Donma yapmaz.
     showDialog(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(content: Row(children: [CircularProgressIndicator(), SizedBox(width: 20), Expanded(child: Text("Bulutta ilerleme aranıyor..."))])));
 
     try {
-      Map<String, dynamic>? data = await FirebaseSyncService.restoreUserProgress(targetUser);
+      Map<String, dynamic>? metaData = await FirebaseSyncService.checkUserProgressMetadata(targetUser);
       
-      if (mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context); // Arama dialogunu kapat
 
-      if (data == null) {
+      if (metaData == null) {
         if (mounted) _showCenteredDialog(title: "Bulunamadı", message: "'$targetUser' adlı kullanıcıya ait bir bulut yedeği bulunamadı.", icon: Icons.cloud_off, color: Colors.orange);
         return;
       }
+
+      // Detaylı Bilgileri Çıkar
+      int timestamp = metaData['backup_timestamp_ms'] ?? 0;
+      String backupDate = "Bilinmeyen Tarih";
+      if (timestamp > 0) {
+        DateTime dt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        backupDate = "${dt.day.toString().padLeft(2,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.year} ${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}";
+      }
+      
+      final stats = metaData['stats'] ?? {};
+      int backupTp = stats['tayfPoints'] ?? 0;
+      int backupShields = stats['streakFreezes'] ?? 0;
+      int backupBestStreak = stats['bestStreak'] ?? 0;
+      int backupSrsCount = stats['srsWordCount'] ?? 0;
 
       if (mounted) {
         showGeneralDialog(
@@ -1135,20 +1165,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.cloud_download, color: Colors.green, size: 50)),
+                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.cloud_done, color: Colors.green, size: 50)),
                     const SizedBox(height: 16),
-                    const Text("İlerleme Yükleniyor", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const Text("Bulut Yedeği Bulundu!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
-                    RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 15, height: 1.5),
+                    Text("'$targetUser' kullanıcısına ait yedek bilgileri:", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    const SizedBox(height: 12),
+                    
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.black.withOpacity(0.05), borderRadius: BorderRadius.circular(16)),
+                      child: Column(
                         children: [
-                          TextSpan(text: "'$targetUser'", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, fontSize: 18)),
-                          const TextSpan(text: " adlı kullanıcının ilerleme geçmişini (TP, Kalkanlar, SRS Kelimeleri, Ateşli Seri ve Rozetler) bu cihaza yüklemek istiyor musunuz?"),
-                        ]
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("📅 Tarih:", style: TextStyle(fontWeight: FontWeight.bold)), Text(backupDate, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent))]),
+                          const Divider(),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("💎 Tayf Puanı (TP):", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupTp", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))]),
+                          const SizedBox(height: 4),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("❄️ Kalkanlar:", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupShields", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.cyan))]),
+                          const SizedBox(height: 4),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("🔥 Ateşli Seri:", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupBestStreak Gün", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange))]),
+                          const SizedBox(height: 4),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("🧠 Aktif SRS Kartı:", style: TextStyle(fontWeight: FontWeight.bold)), Text("$backupSrsCount", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.purpleAccent))]),
+                        ],
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    const Text("Bu ilerlemeyi cihazınıza geri yüklemek istiyor musunuz?", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 24),
                     Row(
                       children: [
@@ -1158,9 +1200,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                             onPressed: () async {
                               Navigator.pop(context);
-                              await _executeImportMerge(data);
+                              _executeCloudRestore(targetUser, metaData); // Asıl indirme işlemini başlat
                             }, 
-                            child: const Text("YÜKLE", style: TextStyle(fontWeight: FontWeight.bold))
+                            child: const Text("EVET, YÜKLE", style: TextStyle(fontWeight: FontWeight.bold))
                           ),
                         )
                       ],
@@ -1180,87 +1222,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _importProgress() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
-    if (result != null && result.files.single.path != null) {
-      File file = File(result.files.single.path!);
+  // 3. DÜZELTİLDİ: Onay sonrası arkaplanda veriyi çeker ve birleştirir.
+  Future<void> _executeCloudRestore(String targetUser, Map<String, dynamic> metadata) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: const [
+            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+            SizedBox(width: 16),
+            Expanded(child: Text("Veriler buluttan indiriliyor, lütfen bekleyin..."))
+          ],
+        ),
+        duration: const Duration(seconds: 5),
+        backgroundColor: Colors.blueAccent,
+        behavior: SnackBarBehavior.floating,
+      )
+    );
+
+    try {
+      Map<String, dynamic>? fullData = await FirebaseSyncService.downloadUserProgressWords(targetUser, metadata);
       
-      try {
-        String content = await file.readAsString();
-        Map<String, dynamic> data = json.decode(content);
-
-        if (data['app'] != "LexisEldora") throw Exception("Geçersiz yedek dosyası!");
-
-        String backupUser = data['username'] ?? "Bilinmeyen";
-        int timestamp = data['timestamp'] ?? 0;
-        String backupDate = "Bilinmeyen Tarih";
-        if (timestamp > 0) {
-          DateTime dt = DateTime.fromMillisecondsSinceEpoch(timestamp);
-          backupDate = "${dt.day.toString().padLeft(2,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.year} ${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}";
-        }
-
-        if (mounted) {
-          showGeneralDialog(
-            context: context,
-            barrierDismissible: false,
-            transitionDuration: const Duration(milliseconds: 500),
-            pageBuilder: (context, a1, a2) => const SizedBox(),
-            transitionBuilder: (context, a1, a2, child) {
-              return Transform.scale(
-                scale: Curves.easeOutBack.transform(a1.value),
-                child: AlertDialog(
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Theme.of(context).primaryColor, width: 2)),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.folder_zip, color: Colors.green, size: 50)),
-                      const SizedBox(height: 16),
-                      const Text("Dosyadan Yükleniyor", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 16),
-                      RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 15, height: 1.5),
-                          children: [
-                            TextSpan(text: "'$backupUser'", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, fontSize: 18)),
-                            const TextSpan(text: " adlı kullanıcının\n"),
-                            TextSpan(text: "$backupDate", style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const TextSpan(text: "\ntarihli ilerleme geçmişini (TP, Kalkanlar, SRS Kelimeleri, Seri ve Rozetler) yüklemek istiyor musunuz?"),
-                          ]
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)))),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                              onPressed: () async {
-                                Navigator.pop(context);
-                                await _executeImportMerge(data);
-                              }, 
-                              child: const Text("YÜKLE", style: TextStyle(fontWeight: FontWeight.bold))
-                            ),
-                          )
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-              );
-            }
-          );
-        }
-      } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dosya okunamadı: $e"), backgroundColor: Colors.red));
+      if (fullData != null) {
+        await _executeImportMerge(fullData, isCloud: true);
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kelime verileri indirilemedi."), backgroundColor: Colors.red));
       }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İndirme hatası: $e"), backgroundColor: Colors.red));
     }
   }
 
-  Future<void> _executeImportMerge(Map<String, dynamic> data) async {
-    showDialog(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(content: Row(children: [CircularProgressIndicator(), SizedBox(width: 20), Expanded(child: Text("Geçmiş cihazınıza birleştiriliyor..."))])));
+  // 4. DÜZELTİLDİ: Merge işlemi bittiğinde tam başarı raporu sunar
+  Future<void> _executeImportMerge(Map<String, dynamic> data, {bool isCloud = false}) async {
+    // UI kilitlenmesini engellemek için arka planda SnackBar ile devam ediyoruz
+    if (mounted && !isCloud) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yerel dosya birleştiriliyor, lütfen bekleyin..."), backgroundColor: Colors.orange));
+    }
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -1315,20 +1312,107 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
 
       if (mounted) {
-        Navigator.pop(context); 
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Geçmiş başarıyla geri yüklendi! Veriler yenileniyor..."), backgroundColor: Colors.green));
-        
         setState(() {
           _isAppLoading = true;
-          _loadingText = "Geçmiş Veriler Yükleniyor...";
+          _loadingText = "Yedekler Uygulanıyor...";
         });
-        
         await _loadData(); 
+
+        // İşlem tamamen bittiğinde detaylı rapor Dialogu göster.
+        int finalTp = stats?['tayfPoints'] ?? 0;
+        int finalShields = stats?['streakFreezes'] ?? 0;
+        int finalStreak = stats?['bestStreak'] ?? 0;
+        int totalProcessed = wordsToUpdate.length + wordsToInsert.length;
+
+        _showCenteredDialog(
+           title: "İşlem Tamamlandı!", 
+           message: "Geçmiş başarıyla cihazınıza yüklendi.\n\n$finalTp Tayf Puanı (TP)\n$finalShields Buz Kalkanı\n$finalStreak Ateşli Seri ve Rozetler\n\n$totalProcessed adet aktif SRS/Öğrenilmiş kelime verisi sisteme işlendi.", 
+           icon: Icons.check_circle, 
+           color: Colors.green
+        );
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Geçmiş birleştirilirken hata: $e"), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  Future<void> _importProgress() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    if (result != null && result.files.single.path != null) {
+      File file = File(result.files.single.path!);
+      
+      try {
+        String content = await file.readAsString();
+        Map<String, dynamic> data = json.decode(content);
+
+        if (data['app'] != "LexisEldora") throw Exception("Geçersiz yedek dosyası!");
+
+        String backupUser = data['username'] ?? "Bilinmeyen";
+        int timestamp = data['timestamp'] ?? 0;
+        String backupDate = "Bilinmeyen Tarih";
+        if (timestamp > 0) {
+          DateTime dt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+          backupDate = "${dt.day.toString().padLeft(2,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.year} ${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}";
+        }
+
+        if (mounted) {
+          showGeneralDialog(
+            context: context,
+            barrierDismissible: false,
+            transitionDuration: const Duration(milliseconds: 500),
+            pageBuilder: (context, a1, a2) => const SizedBox(),
+            transitionBuilder: (context, a1, a2, child) {
+              return Transform.scale(
+                scale: Curves.easeOutBack.transform(a1.value),
+                child: AlertDialog(
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Theme.of(context).primaryColor, width: 2)),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.folder_zip, color: Colors.green, size: 50)),
+                      const SizedBox(height: 16),
+                      const Text("Dosyadan Yükleniyor", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 15, height: 1.5),
+                          children: [
+                            TextSpan(text: "'$backupUser'", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, fontSize: 18)),
+                            const TextSpan(text: " adlı kullanıcının\n"),
+                            TextSpan(text: "$backupDate", style: const TextStyle(fontWeight: FontWeight.bold)),
+                            const TextSpan(text: "\ntarihli ilerleme geçmişini yüklemek istiyor musunuz?"),
+                          ]
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)))),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                              onPressed: () async {
+                                Navigator.pop(context);
+                                await _executeImportMerge(data);
+                              }, 
+                              child: const Text("YÜKLE", style: TextStyle(fontWeight: FontWeight.bold))
+                            ),
+                          )
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              );
+            }
+          );
+        }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dosya okunamadı: $e"), backgroundColor: Colors.red));
       }
     }
   }
@@ -1645,463 +1729,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _savePreferencesOnly();
     }
     setState(() => isFlipped = !isFlipped);
-  }
-
-  void _checkDailyGoalBonus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final todayStr = DateTime.now().toIso8601String().split('T').first;
-    final lastClaimedDate = prefs.getString('daily_goal_bonus_date') ?? '';
-
-    if (lastClaimedDate == todayStr) return;
-
-    int learnedToday = learnedWordTimestamps.where((ts) {
-      final dt = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
-      final dtStr = dt.toIso8601String().split('T').first;
-      return dtStr == todayStr;
-    }).length;
-
-    if (learnedToday >= dailyGoal) {
-      prefs.setString('daily_goal_bonus_date', todayStr);
-      
-      int dynamicBonusTp = dailyGoal; 
-      
-      setState(() {
-        tayfPoints += dynamicBonusTp; 
-      });
-      _savePreferencesOnly();
-
-      if (mounted) {
-        showGeneralDialog(
-          context: context,
-          barrierDismissible: true,
-          barrierLabel: "Kapat",
-          transitionDuration: const Duration(milliseconds: 500),
-          pageBuilder: (context, a1, a2) => const SizedBox(),
-          transitionBuilder: (context, a1, a2, child) {
-            return Transform.scale(
-              scale: Curves.easeOutBack.transform(a1.value),
-              child: AlertDialog(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                content: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [Colors.deepOrange.shade600, Colors.orangeAccent.shade400], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [BoxShadow(color: Colors.deepOrange.withOpacity(0.6), blurRadius: 30, spreadRadius: 5)]
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.local_fire_department, color: Colors.white, size: 70),
-                      const SizedBox(height: 16),
-                      const Text("GÜNLÜK HEDEF TAMAMLANDI! 🔥", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                      const SizedBox(height: 10),
-                      const Text("Harika bir iş çıkardın! Hedefini tamamladığın için cömert bir alev bonusu kazandın.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(20)),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.diamond, color: Colors.lightBlueAccent, size: 28),
-                            const SizedBox(height: 8),
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text("+$dynamicBonusTp TP KAZANDIN!", textAlign: TextAlign.center, style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 18, fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepOrange, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("Süper!", style: TextStyle(fontWeight: FontWeight.bold))
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
-        );
-      }
-    }
-  }
-
-  void _markAsLearned(WordModel word, {bool fromQuiz = false}) {
-    HapticFeedback.heavyImpact(); 
-    learnedWordTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
-    
-    _checkDailyGoalBonus();
-
-    setState(() {
-      if (word.srsLevel == 0) {
-        word.srsLevel = 1;
-        word.listType = 'learning';
-        word.nextReviewDate = DateTime.now().millisecondsSinceEpoch + getNextReviewOffset(1);
-        if (!learningWords.any((w) => w.id == word.id)) learningWords.add(word);
-        allWords.removeWhere((w) => w.id == word.id);
-        toRepeatWords.removeWhere((w) => w.id == word.id);
-      } else {
-        word.srsLevel++;
-        
-        if (word.srsLevel == 5 && !fromQuiz) {
-          _triggerLevel5Celebration();
-          _recordActivity(10); 
-        }
-
-        if (word.srsLevel > 5) {
-          word.listType = 'learned';
-          if (!learnedWords.any((w) => w.id == word.id)) learnedWords.add(word);
-        } else {
-          word.listType = 'learning';
-          word.nextReviewDate = DateTime.now().millisecondsSinceEpoch + getNextReviewOffset(word.srsLevel);
-          if (!learningWords.any((w) => w.id == word.id)) learningWords.add(word);
-        }
-        toSRSRepeatWords.removeWhere((w) => w.id == word.id);
-      }
-      
-      int mistakes = _cardMistakes[word.word] ?? 0;
-      if (mistakes == 0) {
-         _recordActivity(1); 
-      } else {
-         _recordActivity(0); 
-      }
-
-      _activeDeck.removeWhere((w) => w.id == word.id);
-    });
-
-    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-       Future.microtask(() async {
-         await isar.writeTxn(() async { await isar.wordModels.put(word); });
-       });
-    }
-
-    if (!fromQuiz) _nextCard(increment: false); 
-    else _savePreferencesOnly(); 
-  }
-
-  void _markAsToRepeat(WordModel word, {bool fromQuiz = false}) {
-    HapticFeedback.mediumImpact(); 
-    wrongAnswerTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString());
-    
-    setState(() {
-      word.wrongCount++;
-      if (!wrongWords.any((w) => w.id == word.id)) wrongWords.add(word);
-
-      if (word.srsLevel > 0) {
-        word.srsLevel = 1; 
-        word.nextReviewDate = 0; 
-        word.listType = 'toSRSRepeat';
-        if (!toSRSRepeatWords.any((w) => w.id == word.id)) toSRSRepeatWords.add(word);
-        learningWords.removeWhere((w) => w.id == word.id);
-      } else {
-        word.listType = 'toRepeat';
-        if (!toRepeatWords.any((w) => w.id == word.id)) toRepeatWords.add(word);
-        allWords.removeWhere((w) => w.id == word.id);
-      }
-
-      int currentMistakeCount = (_cardMistakes[word.word] ?? 0) + 1;
-      _cardMistakes[word.word] = currentMistakeCount;
-      int penalty = currentMistakeCount * 2; 
-      
-      tayfPoints -= penalty;
-      if (tayfPoints < 0) tayfPoints = 0;
-      
-      _tpFlashController.forward(from: 0.0).then((_) => _tpFlashController.reverse());
-
-      _activeDeck.removeWhere((w) => w.id == word.id);
-      _activeDeck.add(word);
-    });
-
-    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-       Future.microtask(() async {
-         await isar.writeTxn(() async { await isar.wordModels.put(word); });
-       });
-    }
-
-    if (!fromQuiz) _nextCard(increment: false); 
-    else _savePreferencesOnly();
-  }
-
-  void _moveToReview(WordModel word) {
-    HapticFeedback.heavyImpact();
-    
-    FirebaseSyncService.reportCardErrorInCloud(word);
-
-    setState(() {
-      word.libraryName = 'İncelenecek Kelimeler';
-      word.listType = 'all';
-
-      allWords.removeWhere((w) => w.id == word.id);
-      learningWords.removeWhere((w) => w.id == word.id);
-      toRepeatWords.removeWhere((w) => w.id == word.id);
-      toSRSRepeatWords.removeWhere((w) => w.id == word.id);
-      wrongWords.removeWhere((w) => w.id == word.id);
-      learnedWords.removeWhere((w) => w.id == word.id);
-      
-      _activeDeck.removeWhere((w) => w.id == word.id);
-      
-      reviewWordsPool.add(word);
-    });
-
-    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
-      Future.microtask(() async {
-         await isar.writeTxn(() async { await isar.wordModels.put(word); });
-      });
-    }
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("⚠️ Kelime karantinaya alındı! Bulut güven skoru düşürüldü.", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.orange)
-    );
-    
-    _nextCard(increment: false);
-  }
-
-  Future<void> _importFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'json', 'txt']);
-    if (result != null && result.files.single.path != null) {
-      File file = File(result.files.single.path!);
-      String fileName = result.files.single.name.split('.').first;
-      String? customLibraryName = await _showInputDialog("Kütüphane Adı", fileName);
-      if (customLibraryName == null) return;
-      
-      showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName aktarılıyor..."))])));
-      
-      String? dialogMessage;
-      bool isSuccess = false;
-
-      try {
-        List<int> bytes = await file.readAsBytes();
-        String content;
-        try { content = utf8.decode(bytes); } catch (e) { content = String.fromCharCodes(bytes); }
-        
-        final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': content, 'extension': result.files.single.extension ?? '', 'libraryName': customLibraryName, 'originalFileName': fileName});
-        
-        if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
-          dialogMessage = json.decode(parsedJsons.first)['error'];
-        } else {
-          Set<String> existingWords = {
-            ...allWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-            ...learnedWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-            ...toRepeatWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-            ...toSRSRepeatWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-            ...learningWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-          };
-
-          List<WordModel> newWords = [];
-          for (var jsonStr in parsedJsons) {
-            try {
-              var w = WordModel.fromJson(jsonStr)..listType = 'all';
-              if (!existingWords.contains(w.word)) {
-                 newWords.add(w);
-                 existingWords.add(w.word); 
-              }
-            } catch(e) { continue; }
-          }
-
-          setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
-          await _buildActiveDeck();
-          
-          await isar.writeTxn(() async { await isar.wordModels.putAll(newWords); });
-          _savePreferencesOnly();
-          dialogMessage = "$customLibraryName başarıyla yüklendi!\n\n(${newWords.length} yeni kelime eklendi)";
-          isSuccess = true;
-        }
-      } catch (e) {
-        dialogMessage = "Sistem Hatası:\n$e";
-      } finally {
-        Navigator.pop(context); 
-        if (dialogMessage != null) {
-          Future.delayed(const Duration(milliseconds: 150), () {
-            _showCenteredDialog(
-              title: isSuccess ? "Tebrikler" : "Uyarı",
-              message: dialogMessage!,
-              icon: isSuccess ? Icons.check_circle : Icons.warning_amber_rounded,
-              color: isSuccess ? Colors.green : Colors.orange
-            );
-          });
-        }
-      }
-    }
-  }
-
-  Future<void> _loadPackageFromAssets(String assetPath, String extension, String customLibraryName) async {
-    showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text("$customLibraryName yükleniyor..."))])));
-    
-    String? dialogMessage;
-    bool isSuccess = false;
-
-    try {
-      ByteData data = await rootBundle.load(assetPath);
-      List<int> bytes = data.buffer.asUint8List();
-      String content;
-      try {
-        content = utf8.decode(bytes);
-      } catch (e) {
-        content = String.fromCharCodes(bytes); 
-      }
-      
-      final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {'content': content, 'extension': extension, 'libraryName': customLibraryName, 'originalFileName': assetPath.split('/').last});
-      
-      if (parsedJsons.isNotEmpty && parsedJsons.first.contains('"error":')) {
-          dialogMessage = json.decode(parsedJsons.first)['error'];
-      } else {
-        Set<String> existingWords = {
-          ...allWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-          ...learnedWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-          ...toRepeatWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-          ...toSRSRepeatWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-          ...learningWords.where((w) => w.libraryName == customLibraryName).map((w) => w.word),
-        };
-
-        List<WordModel> newWords = [];
-        for (var jsonStr in parsedJsons) {
-          try {
-            var w = WordModel.fromJson(jsonStr)..listType = 'all';
-            if (!existingWords.contains(w.word)) {
-               newWords.add(w);
-               existingWords.add(w.word);
-            }
-          } catch(e) { continue; }
-        }
-
-        setState(() { allWords.addAll(newWords); selectedLibrary = customLibraryName; currentCardIndex = 0; });
-        await _buildActiveDeck();
-        await isar.writeTxn(() async { await isar.wordModels.putAll(newWords); });
-        _savePreferencesOnly();
-        dialogMessage = "$customLibraryName başarıyla yüklendi!\n\n(${newWords.length} yeni kelime eklendi)";
-        isSuccess = true;
-      }
-    } catch (e) {
-      dialogMessage = "Sistem Hatası:\n$e";
-    } finally {
-      Navigator.pop(context); 
-      if (dialogMessage != null) {
-        Future.delayed(const Duration(milliseconds: 150), () {
-          _showCenteredDialog(
-            title: isSuccess ? "Tebrikler" : "Uyarı",
-            message: dialogMessage!,
-            icon: isSuccess ? Icons.check_circle : Icons.warning_amber_rounded,
-            color: isSuccess ? Colors.green : Colors.orange
-          );
-        });
-      }
-    }
-  }
-
-  void _renameLibrary(String oldName, String newName) async {
-    setState(() {
-      for (var w in allWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in learnedWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in toRepeatWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in toSRSRepeatWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in learningWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in wrongWords) { if (w.libraryName == oldName) w.libraryName = newName; }
-      for (var w in reviewWordsPool) { if (w.libraryName == oldName) w.libraryName = newName; } 
-      if (selectedLibrary == oldName) selectedLibrary = newName;
-    });
-    
-    await _buildActiveDeck();
-    isar.writeTxn(() async {
-      List<WordModel> toUpdate = await isar.wordModels.filter().libraryNameEqualTo(oldName).findAll();
-      for (var w in toUpdate) { w.libraryName = newName; }
-      await isar.wordModels.putAll(toUpdate);
-    });
-    _savePreferencesOnly();
-  }
-
-  void _deleteLibrary(String libName) async {
-    setState(() {
-      allWords.removeWhere((w) => w.libraryName == libName);
-      learnedWords.removeWhere((w) => w.libraryName == libName);
-      toRepeatWords.removeWhere((w) => w.libraryName == libName);
-      toSRSRepeatWords.removeWhere((w) => w.libraryName == libName);
-      learningWords.removeWhere((w) => w.libraryName == libName);
-      wrongWords.removeWhere((w) => w.libraryName == libName);
-      reviewWordsPool.removeWhere((w) => w.libraryName == libName);
-      if (selectedLibrary == libName) selectedLibrary = 'Varsayılan';
-    });
-    
-    await _buildActiveDeck();
-    isar.writeTxn(() async {
-      await isar.wordModels.filter().libraryNameEqualTo(libName).deleteAll();
-    });
-    _savePreferencesOnly();
-  }
-
-  Future<void> _exportLibrary(String libName) async {
-    if (libName == 'Tekrarlanması Gerekenler') return;
-    List<WordModel> exportList = allWords.where((w) => w.libraryName == libName).toList()
-                               ..addAll(learnedWords.where((w) => w.libraryName == libName).toList())
-                               ..addAll(toRepeatWords.where((w) => w.libraryName == libName).toList())
-                               ..addAll(toSRSRepeatWords.where((w) => w.libraryName == libName).toList())
-                               ..addAll(learningWords.where((w) => w.libraryName == libName).toList())
-                               ..addAll(reviewWordsPool.where((w) => w.libraryName == libName).toList());
-    if (exportList.isEmpty) return;
-    List<List<dynamic>> rows = exportList.map((w) => [w.word, w.meanings.join('|||'), w.examples.join('|||'), w.level]).toList();
-    
-    try {
-      final dir = await getTemporaryDirectory();
-      String safeName = libName.replaceAll(RegExp(r'[<>:"/\\|?*\u{1F9EC} ]'), '_');
-      final file = File('${dir.path}/$safeName.csv');
-      await file.writeAsString(const ListToCsvConverter().convert(rows));
-      await Share.shareXFiles([XFile(file.path, mimeType: 'text/csv')], subject: '$libName Yedeği');
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dışa aktarma hatası: $e")));
-    }
-  }
-
-  Future<String?> _showInputDialog(String title, String defVal) {
-    TextEditingController ctrl = TextEditingController(text: defVal);
-    return showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: TextField(controller: ctrl), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text("Kaydet"))]));
-  }
-
-  Future<void> _openEditScreen(WordModel word) async {
-    await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
-      word: word, availableLibraries: _safeLibraries(), 
-      onAction: (action, updatedWord) async {
-        setState(() {
-          if (action == EditAction.delete) {
-            allWords.removeWhere((w) => w.id == word.id);
-            toRepeatWords.removeWhere((w) => w.id == word.id);
-            toSRSRepeatWords.removeWhere((w) => w.id == word.id);
-            learningWords.removeWhere((w) => w.id == word.id);
-            wrongWords.removeWhere((w) => w.id == word.id);
-            learnedWords.removeWhere((w) => w.id == word.id);
-            reviewWordsPool.removeWhere((w) => w.id == word.id);
-            if (word.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.delete(word.id); });
-          } else if (action == EditAction.update || action == EditAction.move) {
-            allWords.removeWhere((w) => w.id == word.id);
-            toRepeatWords.removeWhere((w) => w.id == word.id);
-            toSRSRepeatWords.removeWhere((w) => w.id == word.id);
-            learningWords.removeWhere((w) => w.id == word.id);
-            wrongWords.removeWhere((w) => w.id == word.id);
-            learnedWords.removeWhere((w) => w.id == word.id);
-            reviewWordsPool.removeWhere((w) => w.id == word.id);
-            
-            if (selectedLibrary == 'Tekrarlanması Gerekenler') {
-              if (updatedWord.srsLevel > 0) toSRSRepeatWords.add(updatedWord); 
-              else toRepeatWords.add(updatedWord);
-            } else if (updatedWord.libraryName == 'İncelenecek Kelimeler') {
-              reviewWordsPool.add(updatedWord);
-            } else { 
-              allWords.add(updatedWord); 
-            }
-            if (updatedWord.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
-          } else if (action == EditAction.copy) { 
-            allWords.add(updatedWord); 
-            if (updatedWord.id != Isar.autoIncrement) isar.writeTxn(() async { await isar.wordModels.put(updatedWord); });
-          }
-          currentCardIndex = 0;
-        });
-        await _buildActiveDeck();
-        _savePreferencesOnly();
-      },
-    )));
   }
 
   Widget _buildCrown(int level, bool isMitosis) {
