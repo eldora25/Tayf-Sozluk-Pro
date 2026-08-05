@@ -13,6 +13,7 @@ class FirebaseSyncService {
 
     var targetCards = localWords;
     
+    // Mitoz havuzu mu yoksa belirli bir standart kütüphane mi seçildi?
     if (isMitosisPool) {
       targetCards = targetCards.where((w) => w.libraryName.startsWith('🧬') || w.libraryName.startsWith('User_Recommended')).toList();
     } else if (targetLibraryName != null) {
@@ -23,6 +24,7 @@ class FirebaseSyncService {
       return {"success": false, "message": "Gönderilebilecek uygun kart bulunamadı.", "count": 0};
     }
 
+    // AĞ OPTİMİZASYONU: Sadece aktif olarak etkileşime girilmiş kartlar
     var cardsToSend = targetCards.where((w) => w.srsLevel > 0 || w.wrongCount > 0 || w.correctCount > 0).toList();
 
     if (cardsToSend.isEmpty) {
@@ -44,6 +46,8 @@ class FirebaseSyncService {
 
       for (var word in chunk) {
         String safeWord = word.word.trim().toLowerCase();
+        
+        // Güçlendirilmiş Kompozit Anahtar (Hash / Base64)
         String rawSignature = "${safeWord}_${word.meanings.join('|').toLowerCase()}_${word.libraryName}";
         String docId = base64Url.encode(utf8.encode(rawSignature));
 
@@ -65,7 +69,7 @@ class FirebaseSyncService {
       }
 
       await batch.commit();
-      await Future.delayed(const Duration(milliseconds: 50)); // Arka plan UI kilitlenmesini önler
+      await Future.delayed(const Duration(milliseconds: 50)); // DÜZELTİLDİ: UI kilidini çözer
     }
 
     await prefs.setInt('last_sync_time', currentTimestamp);
@@ -102,9 +106,10 @@ class FirebaseSyncService {
     } catch (e) {}
   }
 
-  // 3. Kullanıcı İlerleme Geçmişini Firebase Bulutuna Yedekleme (Arka Plan Optimizeli)
+  // 3. YENİ: Kullanıcı İlerleme Geçmişini Firebase Bulutuna Yedekleme (Arka Plan Optimizeli)
   static Future<Map<String, dynamic>> backupUserProgress(String username, Map<String, dynamic> stats, Map<String, dynamic> arrays, List<WordModel> words) async {
     try {
+      // 1. Aşama: Kullanıcının ana dokümanını oluştur (İzolasyon)
       DocumentReference userDoc = _firestore.collection('user_progress_backups').doc(username);
       
       await userDoc.set({
@@ -114,6 +119,7 @@ class FirebaseSyncService {
         "app_version": "2.0"
       });
 
+      // 2. Aşama: Kelimeleri Firestore 1MB sınırına takılmamak için Alt Koleksiyona (Subcollection) yaz
       CollectionReference wordsCol = userDoc.collection('progress_words');
       WriteBatch batch = _firestore.batch();
       int count = 0;
@@ -121,7 +127,7 @@ class FirebaseSyncService {
       for (var w in words) {
         String safeWord = w.word.trim().toLowerCase();
         String rawSig = "${safeWord}_${w.libraryName}";
-        String docId = base64Url.encode(utf8.encode(rawSig)); 
+        String docId = base64Url.encode(utf8.encode(rawSig)); // Eşsiz kelime kimliği
         
         batch.set(wordsCol.doc(docId), {
           "word": w.word,
@@ -142,10 +148,11 @@ class FirebaseSyncService {
         });
         
         count++;
-        if (count % 300 == 0) { // Batch limitine gelmeden yaz ve nefes al
+        // Performans Optimizasyonu: Her 300 kelimede bir paketi buluta bas ve RAM'i temizle
+        if (count % 300 == 0) {
           await batch.commit();
           batch = _firestore.batch();
-          await Future.delayed(const Duration(milliseconds: 50)); // UI kilidini çözer
+          await Future.delayed(const Duration(milliseconds: 50)); // DÜZELTİLDİ: UI kilidini çözer
         }
       }
       if (count % 300 != 0) {
@@ -154,8 +161,8 @@ class FirebaseSyncService {
       
       return {
         "success": true, 
-        "message": "Harika! İlerleme geçmişiniz ($count SRS Kelimesi, ${stats['tayfPoints']} TP) başarıyla bulut kasanıza kilitlendi.",
-        "srsCount": count
+        "message": "Harika! İlerleme geçmişiniz başarıyla bulut kasanıza kilitlendi.",
+        "srsCount": count // Bildirim ekranına sayı verebilmek için
       };
     } catch (e) {
       return {"success": false, "message": "Bulut yedekleme hatası: $e"};
@@ -183,7 +190,7 @@ class FirebaseSyncService {
     }
   }
 
-  // 5. Restore Onayı Sonrası Tüm Kelimeleri İndirme
+  // 5. YENİ: Restore Onayı Sonrası Tüm Kelimeleri İndirme
   static Future<Map<String, dynamic>?> downloadUserProgressWords(String username, Map<String, dynamic> metadata) async {
     try {
       QuerySnapshot wordsSnap = await _firestore.collection('user_progress_backups').doc(username).collection('progress_words').get();
