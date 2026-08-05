@@ -13,10 +13,15 @@ class QuizScreen extends StatefulWidget {
   final int threshold;
   final int questionCount;
   final bool isWordNet; // YENİ: WordNet Çifte Bonus Kontrolü
+  
+  // YENİ: Rekor Sistemi Parametreleri
+  final int currentBestTime;
+  final int currentBestCorrect;
+  
   final Function(WordModel) onWordMastered;
   final Function(WordModel) onWrongWord;
-  // YENİ: Rekor hesabı için firstTryCorrect (İlk seferde doğru) parametresi eklendi
-  final Function(int timeElapsed, int answered, int wrong, int earnedTP, int firstTryCorrect) onQuizFinished;
+  // Callback'e firstTryCorrect (İlk seferde doğru) ve isNewRecord (Rekor Kırıldı mı?) parametreleri eklendi.
+  final Function(int timeElapsed, int answered, int wrong, int earnedTP, int firstTryCorrect, bool isNewRecord) onQuizFinished;
 
   const QuizScreen({
     super.key,
@@ -24,6 +29,8 @@ class QuizScreen extends StatefulWidget {
     required this.threshold,
     required this.questionCount,
     required this.isWordNet,
+    required this.currentBestTime,
+    required this.currentBestCorrect,
     required this.onWordMastered,
     required this.onWrongWord,
     required this.onQuizFinished,
@@ -57,12 +64,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   int _sessionEarnedTP = 0; 
   int _currentQuestionAttempts = 0; 
 
-  // YENİ: Combo ve Detaylı Puan Takip Sistemi
+  // YENİ: Combo, WordNet ve Rekor Takip Sistemi
   int _combo = 0;
   int _normalTP = 0;
   int _wordNetNormalBonus = 0;
   int _comboTP = 0;
   int _wordNetComboBonus = 0;
+  
+  bool _isNewRecord = false;
+  int _recordBonus = 0;
 
   String _questionSubtext = "";
   late String _displayWordStr; 
@@ -135,7 +145,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _shakeController.dispose();
     _scaleController.dispose();
     if (!_isStatsSaved && answeredQuestions > 0) {
-      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers);
+      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers, _isNewRecord);
     }
     super.dispose();
   }
@@ -173,7 +183,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _speakText(text, lang);
   }
 
-  // YENİ: Combo Animasyonu (Ekrana Çarparak Gelen Efekt)
+  // YENİ: Combo Animasyonu
   void _showComboAnimation(int multiplier, int tp) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
@@ -253,10 +263,26 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     if (!mounted) return; 
     if (answeredQuestions >= totalQuestions) {
       HapticFeedback.heavyImpact(); 
+      
+      // YENİ: Zamana ve Doğru Sayısına Karşı Rekor Kontrolü
+      if (correctAnswers > 0) {
+        if (correctAnswers > widget.currentBestCorrect) {
+          _isNewRecord = true;
+        } else if (correctAnswers == widget.currentBestCorrect && _secondsElapsed < widget.currentBestTime) {
+          _isNewRecord = true;
+        }
+      }
+
+      if (_isNewRecord) {
+        _recordBonus = 25;
+        _sessionEarnedTP += _recordBonus;
+      }
+
       setState(() { isQuizFinished = true; _timer?.cancel(); });
+      
       if (!_isStatsSaved) {
         _isStatsSaved = true;
-        widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers);
+        widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers, _isNewRecord);
       }
       _speakText("Congratulations", "en-US");
       return;
@@ -423,11 +449,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
            int multiplier = 1;
            if (_combo == 3) multiplier = 3;
            else if (_combo == 5) multiplier = 5;
-           else if (_combo >= 10 && _combo % 5 == 0) multiplier = _combo; // 10, 15, 20...
+           else if (_combo >= 10 && _combo % 5 == 0) multiplier = _combo; 
            
            int baseReward = 3;
            int earnedNormal = baseReward;
-           int earnedCombo = (baseReward * multiplier) - baseReward; // Sadece bonus olan kısım
+           int earnedCombo = (baseReward * multiplier) - baseReward;
            
            _normalTP += earnedNormal;
            _comboTP += earnedCombo;
@@ -446,7 +472,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               _flyDiamondAnimation();
            }
         } else {
-           _combo = 0; // Hata yaptıysa kombo kırılır
+           _combo = 0;
         }
       });
 
@@ -645,6 +671,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     setState(() {
       correctAnswers = 0; wrongAnswers = 0; answeredQuestions = 0; _secondsElapsed = 0; _sessionEarnedTP = 0;
       _combo = 0; _normalTP = 0; _wordNetNormalBonus = 0; _comboTP = 0; _wordNetComboBonus = 0;
+      _isNewRecord = false; _recordBonus = 0;
       isQuizFinished = false; _isStatsSaved = false;
       List<WordModel> pool = List.from(widget.words)..shuffle();
       quizWords = pool.take(min(widget.questionCount, pool.length)).toList();
@@ -667,17 +694,33 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
-                const SizedBox(height: 10),
-                Lottie.network(
-                  'https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', 
-                  height: 180, 
-                  repeat: true, 
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber)
-                ),
-                const SizedBox(height: 10),
-                const Text("Congratulations!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 30),
+                if (_isNewRecord) ...[
+                   const Text("🏆 YENİ REKOR KIRDINIZ!", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.amber, shadows: [Shadow(color: Colors.orange, blurRadius: 10)])),
+                   const SizedBox(height: 8),
+                   Text("$_secondsElapsed Saniyede $correctAnswers Doğru Bildin!", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                   const SizedBox(height: 10),
+                   Container(
+                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                     decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.amber)),
+                     child: Row(
+                       mainAxisSize: MainAxisSize.min,
+                       children: [
+                         const Icon(Icons.stars, color: Colors.amber, size: 24),
+                         const SizedBox(width: 8),
+                         Text("REKOR ÖDÜLÜ: +$_recordBonus TP", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 16)),
+                       ],
+                     ),
+                   ),
+                   const SizedBox(height: 20),
+                ] else ...[
+                   const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+                   const SizedBox(height: 10),
+                   Lottie.network('https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', height: 150, repeat: true, errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber)),
+                   const SizedBox(height: 10),
+                   const Text("Congratulations!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                   const SizedBox(height: 20),
+                ],
+
                 Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
