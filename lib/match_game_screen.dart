@@ -9,11 +9,13 @@ import 'main.dart';
 
 class MatchGameScreen extends StatefulWidget {
   final List<WordModel> words;
+  final bool isWordNet; // YENİ: WordNet Çifte Bonus Kontrolü
   final Function(int pointsEarned) onGameFinished;
 
   const MatchGameScreen({
     super.key,
     required this.words,
+    required this.isWordNet,
     required this.onGameFinished,
   });
 
@@ -41,9 +43,14 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
   final Random _random = Random();
   
   Map<String, String> _targetDisplays = {};
-  
-  // YENİ: Artan ceza sistemi için hata kayıt defteri
   Map<String, int> _wordMistakeCounts = {}; 
+
+  // YENİ: Combo ve Detaylı Puan Takip Sistemi
+  int _combo = 0;
+  int _normalTP = 0;
+  int _wordNetNormalBonus = 0;
+  int _comboTP = 0;
+  int _wordNetComboBonus = 0;
 
   @override
   void initState() {
@@ -95,7 +102,6 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
         isGameFinished = true;
       });
       
-      // Toplam kazanç eksi puana düşerse 0'da tut. 
       int finalPoints = score > 0 ? score : 0;
       widget.onGameFinished(finalPoints);
       return;
@@ -138,6 +144,40 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     });
   }
 
+  // YENİ: Combo Animasyonu
+  void _showComboAnimation(int multiplier, int tp) {
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 1500),
+        curve: Curves.elasticOut,
+        onEnd: () => overlayEntry?.remove(),
+        builder: (context, value, child) {
+          return Positioned(
+            top: MediaQuery.of(context).size.height * 0.4 - (value * 50),
+            left: 0,
+            right: 0,
+            child: Opacity(
+              opacity: value < 0.8 ? 1.0 : (1.0 - ((value - 0.8) * 5)).clamp(0.0, 1.0),
+              child: Transform.scale(
+                scale: value < 0.5 ? (value * 2) : 1.0 + (sin((value - 0.5) * pi) * 0.2),
+                child: Column(
+                  children: [
+                    Text("🔥 ${multiplier}X COMBO! 🔥", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.orangeAccent, shadows: [Shadow(color: Colors.red, blurRadius: 20)], decoration: TextDecoration.none)),
+                    Text("+$tp TP", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.lightBlueAccent, shadows: [Shadow(color: Colors.blue, blurRadius: 20)], decoration: TextDecoration.none)),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      )
+    );
+    Overlay.of(context).insert(overlayEntry);
+    HapticFeedback.vibrate();
+  }
+
   void _handleDrop(WordModel dragged, WordModel target) {
     _isHoveringTarget.value = false;
     setState(() => isDragging = false);
@@ -147,10 +187,34 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
       setState(() {
         matchedWords.add(dragged.word);
         
-        // YENİ ANTİ-SPAM: Sadece sıfır hatayla bulunursa puan ver
         int previousMistakes = _wordMistakeCounts[target.word] ?? 0;
         if (previousMistakes == 0) {
-          score += 10;
+           _combo++;
+           int multiplier = 1;
+           if (_combo == 3) multiplier = 3;
+           else if (_combo == 5) multiplier = 5;
+           else if (_combo >= 10 && _combo % 5 == 0) multiplier = _combo; // 10, 15, 20...
+           
+           int baseReward = 10;
+           int earnedNormal = baseReward;
+           int earnedCombo = (baseReward * multiplier) - baseReward;
+           
+           _normalTP += earnedNormal;
+           _comboTP += earnedCombo;
+           
+           if (widget.isWordNet) {
+              _wordNetNormalBonus += earnedNormal;
+              _wordNetComboBonus += earnedCombo;
+           }
+           
+           int totalEarnedThisMatch = (earnedNormal + earnedCombo) * (widget.isWordNet ? 2 : 1);
+           score += totalEarnedThisMatch;
+           
+           if (multiplier > 1) {
+              _showComboAnimation(multiplier, totalEarnedThisMatch);
+           }
+        } else {
+           _combo = 0;
         }
       });
 
@@ -161,14 +225,14 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     } else {
       HapticFeedback.heavyImpact();
       setState(() {
+        _combo = 0; // Hata yaptı, kombo sıfırlandı
         wrongTargetWord = target.word;
         mistakes++;
         
-        // YENİ ARTAN CEZA SİSTEMİ
         int currentMistakeCount = (_wordMistakeCounts[target.word] ?? 0) + 1;
         _wordMistakeCounts[target.word] = currentMistakeCount;
         
-        int penalty = currentMistakeCount * 5; // 1. hata -5, 2. hata -10, 3. hata -15
+        int penalty = currentMistakeCount * 5; 
         score -= penalty; 
       });
       Future.delayed(const Duration(milliseconds: 400), () {
@@ -216,7 +280,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
     }
 
     if (isGameFinished) {
-      int finalPoints = score > 0 ? score : 0; // Negatif puana düştüyse sıfırla
+      int finalPoints = score > 0 ? score : 0; 
 
       return Scaffold(
         appBar: AppBar(title: const Text("Oyun Bitti", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
@@ -244,17 +308,23 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                       child: Column(
                         children: [
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            const Text("Ham Skor:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                            Text("$score", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: score < 0 ? Colors.red : Colors.blue)),
-                          ]),
-                          const Divider(height: 30),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                             const Text("Hatalı Sürükleme:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                             Text("$mistakes", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                           ]),
+                          const Divider(height: 15),
+                          
+                          // YENİ: Detaylı TP Dökümü
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Normal TP:", style: TextStyle(fontSize: 16)), Text("+$_normalTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
+                          if (widget.isWordNet)
+                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Bonusu:", style: TextStyle(fontSize: 16, color: Colors.indigo)), Text("+$_wordNetNormalBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigoAccent))])),
+                          if (_comboTP > 0)
+                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Combo Ödülü:", style: TextStyle(fontSize: 16, color: Colors.orange)), Text("+$_comboTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orangeAccent))])),
+                          if (widget.isWordNet && _wordNetComboBonus > 0)
+                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Combo:", style: TextStyle(fontSize: 16, color: Colors.deepPurple)), Text("+$_wordNetComboBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent))])),
+                          
                           const Divider(height: 30),
                           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            const Text("Kazanılan Tayf Puanı:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text("Toplam TP:", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                             Row(
                               children: [
                                 Icon(Icons.diamond, color: finalPoints > 0 ? Colors.green : Colors.redAccent, size: 28),
@@ -281,6 +351,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> with TickerProviderSt
                           currentRound = 0;
                           score = 0;
                           mistakes = 0;
+                          _combo = 0; _normalTP = 0; _wordNetNormalBonus = 0; _comboTP = 0; _wordNetComboBonus = 0;
                           _wordMistakeCounts.clear();
                           _isLoading = true;
                           _prepareGame();
