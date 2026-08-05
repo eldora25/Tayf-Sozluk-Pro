@@ -102,7 +102,7 @@ class FirebaseSyncService {
     } catch (e) {}
   }
 
-  // 3. Kullanıcı İlerleme Geçmişini Firebase Bulutuna Yedekleme (Tüm Listeler)
+  // 3. Kullanıcı İlerleme Geçmişini Firebase Bulutuna Yedekleme (DÜZELTİLDİ: Otonom Batch Delete Eklendi)
   static Future<Map<String, dynamic>> backupUserProgress(String username, Map<String, dynamic> stats, Map<String, dynamic> arrays, List<WordModel> words) async {
     try {
       DocumentReference userDoc = _firestore.collection('user_progress_backups').doc(username);
@@ -111,16 +111,26 @@ class FirebaseSyncService {
         "stats": stats,
         "arrays": arrays,
         "last_backup_date": FieldValue.serverTimestamp(),
-        "app_version": "2.1" 
+        "app_version": "2.2" 
       });
 
       CollectionReference wordsCol = userDoc.collection('progress_words');
       
+      // Önceki yedekleri temizle (Çakışmayı önler)
       var snapshot = await wordsCol.get();
+      WriteBatch deleteBatch = _firestore.batch();
+      int delCount = 0;
       for (var doc in snapshot.docs) {
-        await doc.reference.delete();
+        deleteBatch.delete(doc.reference);
+        delCount++;
+        if(delCount % 400 == 0) {
+           await deleteBatch.commit();
+           deleteBatch = _firestore.batch();
+        }
       }
+      if(delCount % 400 != 0) await deleteBatch.commit();
 
+      // Yeni kelimeleri yaz
       WriteBatch batch = _firestore.batch();
       int count = 0;
       
@@ -148,13 +158,13 @@ class FirebaseSyncService {
         });
         
         count++;
-        if (count % 300 == 0) {
+        if (count % 400 == 0) {
           await batch.commit();
           batch = _firestore.batch();
           await Future.delayed(const Duration(milliseconds: 50)); 
         }
       }
-      if (count % 300 != 0) {
+      if (count % 400 != 0) {
         await batch.commit();
       }
       
