@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'dart:ui'; // Bulanıklaştırma (Blur) efekti için eklendi
+import 'dart:ui'; 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; 
 import 'models.dart';
@@ -27,7 +27,6 @@ class StatisticsScreen extends StatelessWidget {
   final int bestStreak;
   final int tayfPoints;
 
-  // YENİ: Quiz Rekoru için Parametreler
   final int bestQuizTime;
   final int bestQuizCorrect;
   final String bestQuizDate;
@@ -775,7 +774,7 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
 
-              // YENİ EKLENDİ: Quiz Sekmesinde Rekor Gösterimi
+              // YENİ EKLENDİ: Overflow Hatası Düzeltildi (FittedBox kullanıldı)
               ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
@@ -791,13 +790,16 @@ class StatisticsScreen extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.emoji_events, color: Colors.white, size: 32),
-                              SizedBox(width: 10),
-                              Text("Tüm Zamanların Quiz Rekoru", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                            ],
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.emoji_events, color: Colors.white, size: 32),
+                                SizedBox(width: 10),
+                                Text("Tüm Zamanların Quiz Rekoru", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                           ),
                           const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(color: Colors.white30)),
                           Row(
