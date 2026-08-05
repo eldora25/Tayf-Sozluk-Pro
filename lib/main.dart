@@ -284,6 +284,7 @@ class SlideGradientTransform extends GradientTransform {
     return Matrix4.translationValues(bounds.width * (percent * 2 - 1), 0, 0);
   }
 }
+
 class PremiumShimmerLoading extends StatefulWidget {
   final String loadingText;
   const PremiumShimmerLoading({super.key, required this.loadingText});
@@ -547,7 +548,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<String> learnedWordTimestamps = [], completedQuizTimestamps = [], viewedCardTimestamps = [], wrongAnswerTimestamps = [];
   int firstUseTimestamp = 0, currentStreak = 0, bestStreak = 0, tayfPoints = 0, streakFreezes = 0;
 
-  // YENİ EKLENDİ: Rekor Sistemi Parametreleri
   int bestQuizTime = 999999;
   int bestQuizCorrect = 0;
   String bestQuizDate = "Henüz rekor yok";
@@ -629,7 +629,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final prefs = await SharedPreferences.getInstance();
       
       _username = prefs.getString('username') ?? 'Eldora25'; 
-      // YENİ EKLENDİ: Rekor yükleme
       bestQuizTime = prefs.getInt('bestQuizTime') ?? 999999;
       bestQuizCorrect = prefs.getInt('bestQuizCorrect') ?? 0;
       bestQuizDate = prefs.getString('bestQuizDate') ?? "Henüz rekor yok";
@@ -811,7 +810,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final prefs = await SharedPreferences.getInstance();
       
       prefs.setString('username', _username); 
-      // YENİ EKLENDİ: Rekor Kaydetme
       prefs.setInt('bestQuizTime', bestQuizTime);
       prefs.setInt('bestQuizCorrect', bestQuizCorrect);
       prefs.setString('bestQuizDate', bestQuizDate);
@@ -953,10 +951,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       var customOrProgressWords = await isar.wordModels.filter()
           .not().libraryNameEqualTo('WordNet Veritabanı')
           .and()
-          .group((q) => q.srsLevelGreaterThan(0).or().wrongCountGreaterThan(0).or().correctCountGreaterThan(0).or().not().listTypeEqualTo('all'))
+          .group((q) => q.srsLevelGreaterThan(0)
+                        .or().wrongCountGreaterThan(0)
+                        .or().correctCountGreaterThan(0)
+                        .or().listTypeEqualTo('learned')
+                        .or().listTypeEqualTo('learning')
+                        .or().listTypeEqualTo('toRepeat')
+                        .or().listTypeEqualTo('toSRSRepeat')
+                        .or().libraryNameEqualTo('İncelenecek Kelimeler')
+                        .or().not().listTypeEqualTo('all'))
           .findAll();
           
-      int srsWordCount = customOrProgressWords.where((w) => w.srsLevel > 0).length;
+      int srsWordCount = customOrProgressWords.length;
 
       Map<String, dynamic> statsMap = {
         "tayfPoints": tayfPoints,
@@ -1012,9 +1018,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     } catch(e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dışa aktarma başarısız: $e"), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Yedekleme başarısız: $e"), backgroundColor: Colors.red));
       }
     }
+  }
+
+  static String _encodeWordsJson(List<Map<String, dynamic>> words) {
+    return json.encode(words);
   }
 
   Future<void> _exportProgress() async {
@@ -1024,10 +1034,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
             const SizedBox(width: 16),
-            Expanded(child: Text("$_username verileri şifreleniyor..."))
+            Expanded(child: Text("$_username verileri arka planda şifreleniyor..."))
           ],
         ),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 4),
         backgroundColor: Colors.blueGrey,
         behavior: SnackBarBehavior.floating,
       )
@@ -1037,7 +1047,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       var customOrProgressWords = await isar.wordModels.filter()
           .not().libraryNameEqualTo('WordNet Veritabanı')
           .and()
-          .group((q) => q.srsLevelGreaterThan(0).or().wrongCountGreaterThan(0).or().correctCountGreaterThan(0).or().not().listTypeEqualTo('all'))
+          .group((q) => q.srsLevelGreaterThan(0)
+                        .or().wrongCountGreaterThan(0)
+                        .or().correctCountGreaterThan(0)
+                        .or().listTypeEqualTo('learned')
+                        .or().listTypeEqualTo('learning')
+                        .or().listTypeEqualTo('toRepeat')
+                        .or().listTypeEqualTo('toSRSRepeat')
+                        .or().libraryNameEqualTo('İncelenecek Kelimeler')
+                        .or().not().listTypeEqualTo('all'))
           .findAll();
 
       List<Map<String, dynamic>> wordsJson = customOrProgressWords.map((w) {
@@ -1062,7 +1080,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       Map<String, dynamic> backupData = {
         "app": "LexisEldora",
-        "version": "2.0",
+        "version": "2.1",
         "username": _username,
         "timestamp": DateTime.now().millisecondsSinceEpoch,
         "stats": {
@@ -1094,11 +1112,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         "words": wordsJson
       };
 
-      String jsonStr = json.encode(backupData);
+      String jsonStr = await compute(_encodeWordsJson, [backupData]); 
       final dir = await getTemporaryDirectory();
       String dateStr = DateTime.now().toIso8601String().split('T').first;
       File file = File('${dir.path}/${_username}_ilerleme_$dateStr.json');
-      await file.writeAsString(jsonStr);
+      await file.writeAsString(jsonStr.substring(1, jsonStr.length - 1));
 
       await Share.shareXFiles([XFile(file.path)], subject: 'Lexis Eldora İlerleme Yedeği');
 
@@ -1257,7 +1275,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: const [
             SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
             SizedBox(width: 16),
-            Expanded(child: Text("Veriler buluttan indiriliyor, lütfen bekleyin..."))
+            Expanded(child: Text("Kelime listeleri buluttan indiriliyor, arka planda uygulanacak..."))
           ],
         ),
         duration: const Duration(seconds: 5),
@@ -1291,7 +1309,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               children: const [
                 SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
                 SizedBox(width: 16),
-                Expanded(child: Text("Dosya analiz ediliyor..."))
+                Expanded(child: Text("Dosya arka planda analiz ediliyor..."))
               ],
             ),
             duration: const Duration(seconds: 3),
@@ -1375,7 +1393,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _executeImportMerge(Map<String, dynamic> data, {bool isCloud = false}) async {
     if (mounted && !isCloud) {
-       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yerel dosya birleştiriliyor, lütfen bekleyin..."), backgroundColor: Colors.orange));
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yerel dosya arka planda birleştiriliyor..."), backgroundColor: Colors.orange));
     }
 
     try {
@@ -1419,7 +1437,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (existing != null) {
           existing.correctCount = imported.correctCount;
           existing.wrongCount = imported.wrongCount;
-          existing.listType = imported.listType;
+          existing.listType = imported.listType; 
           existing.srsLevel = imported.srsLevel;
           existing.nextReviewDate = imported.nextReviewDate;
           wordsToUpdate.add(existing);
@@ -1434,22 +1452,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
 
       if (mounted) {
-        setState(() {
-          _isAppLoading = true;
-          _loadingText = "Geçmiş Veriler Yükleniyor...";
-        });
-        await _loadData(); 
-
         int finalTp = stats?['tayfPoints'] ?? 0;
         int finalShields = stats?['streakFreezes'] ?? 0;
         int finalStreak = stats?['bestStreak'] ?? 0;
         int totalProcessed = wordsToUpdate.length + wordsToInsert.length;
 
-        _showCenteredDialog(
-           title: "İşlem Tamamlandı!", 
-           message: "Geçmiş başarıyla cihazınıza yüklendi.\n\n$finalTp Tayf Puanı (TP)\n$finalShields Buz Kalkanı\n$finalStreak Ateşli Seri ve Rozetler\n\n$totalProcessed adet aktif SRS/Öğrenilmiş kelime verisi sisteme işlendi.", 
-           icon: Icons.check_circle, 
-           color: Colors.green
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+             title: const Row(
+               children: [
+                 Icon(Icons.check_circle, color: Colors.green, size: 30),
+                 SizedBox(width: 8),
+                 Text("İşlem Tamamlandı!", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))
+               ],
+             ),
+             content: Text("Tüm yedek bilgiler cihazınıza işlendi:\n\n💎 $finalTp TP\n❄️ $finalShields Kalkan\n🔥 $finalStreak Ateşli Seri\n📦 $totalProcessed SRS / Özel Liste Kartı\n\nDeğişiklikleri görmek için uygulamayı şimdi yenileyelim mi?", style: const TextStyle(fontSize: 15, height: 1.4)),
+             actions: [
+               ElevatedButton(
+                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                 onPressed: () async {
+                   Navigator.pop(ctx);
+                   setState(() {
+                     _isAppLoading = true;
+                     _loadingText = "Yedekler Uygulanıyor. Lütfen Bekleyin...";
+                     
+                     allWords.clear();
+                     learningWords.clear();
+                     learnedWords.clear();
+                     toRepeatWords.clear();
+                     toSRSRepeatWords.clear();
+                     wrongWords.clear();
+                     reviewWordsPool.clear();
+                   });
+                   await _loadData(); 
+                 },
+                 child: const Text("Uygulamayı Yenile", style: TextStyle(fontWeight: FontWeight.bold))
+               )
+             ]
+          )
         );
       }
     } catch (e) {
@@ -2186,7 +2229,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: TextField(controller: ctrl), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text("Kaydet"))]));
   }
 
-  // DÜZELTİLDİ: Derleyici tarafından beklenen _openEditScreen metodu eksiksiz sağlandı.
   Future<void> _openEditScreen(WordModel word) async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: _safeLibraries(), 
@@ -2904,7 +2946,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // EN ALTTAKİ ANA BUILD METODU (DÜZELTİLMİŞ)
   @override
   Widget build(BuildContext context) {
     if (_isAppLoading) {
