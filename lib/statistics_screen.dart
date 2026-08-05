@@ -27,6 +27,11 @@ class StatisticsScreen extends StatelessWidget {
   final int bestStreak;
   final int tayfPoints;
 
+  // YENİ: Quiz Rekoru için Parametreler
+  final int bestQuizTime;
+  final int bestQuizCorrect;
+  final String bestQuizDate;
+
   const StatisticsScreen({
     super.key,
     required this.allWords,
@@ -47,6 +52,9 @@ class StatisticsScreen extends StatelessWidget {
     required this.firstUseTimestamp,
     required this.bestStreak,
     required this.tayfPoints,
+    required this.bestQuizTime,
+    required this.bestQuizCorrect,
+    required this.bestQuizDate,
   });
 
   String _formatTime(int seconds) {
@@ -54,7 +62,7 @@ class StatisticsScreen extends StatelessWidget {
     int h = (seconds % (24 * 3600)) ~/ 3600;
     int m = (seconds % 3600) ~/ 60;
     int s = seconds % 60;
-    return '${d.toString().padLeft(2, '0')}:${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    return '${d > 0 ? d.toString().padLeft(2, '0') + ':' : ''}${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   int _countInPeriod(List<String> timestamps, Duration period) {
@@ -184,7 +192,6 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
-  // YENİ: Mitoz Ağacı Modal Fonksiyonu
   void _showMitosisTreeModal(BuildContext context, List<MapEntry<String, int>> treeData) {
     showModalBottomSheet(
       context: context,
@@ -396,7 +403,6 @@ class StatisticsScreen extends StatelessWidget {
 
     List<String> trueGraduationTimestamps = learnedWords.map((w) => w.nextReviewDate.toString()).toList();
 
-    // Mitoz Ağacı Hesaplaması
     int totalMitosisCount = 0;
     Map<String, int> mitosisTree = {};
 
@@ -417,7 +423,6 @@ class StatisticsScreen extends StatelessWidget {
     
     var sortedMitosis = mitosisTree.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
-    // Leitner (SRS 1-5) Kutu Hesaplamaları
     int srs1Count = 0;
     int srs2Count = 0;
     int srs3Count = 0;
@@ -770,15 +775,63 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
 
+              // YENİ EKLENDİ: Quiz Sekmesinde Rekor Gösterimi
               ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
                 children: [
-                  _buildStaggeredWrapper(0, _buildStatCard(context, "Tamamlanan Quiz", totalCompletedQuizzes, Icons.done_all, Colors.orange)),
-                  _buildStaggeredWrapper(1, _buildTextStatCard(context, "Toplam Quiz Süresi", _formatTime(totalQuizTimeSeconds), Icons.timer, Colors.teal)),
-                  _buildStaggeredWrapper(2, _buildStatCard(context, "Cevaplanan Soru", totalQuizQuestions, Icons.question_answer, Colors.blueAccent)),
-                  _buildStaggeredWrapper(3, _buildStatCard(context, "Quiz Yanlışları", totalQuizWrong, Icons.error_outline, Colors.redAccent)),
-                  _buildStaggeredWrapper(4, _buildTextStatCard(context, "Soru Çözme Hızı", "${quizSpeed.toStringAsFixed(1)} Soru / Dk", Icons.speed, Colors.purpleAccent)),
+                  if (bestQuizCorrect > 0)
+                    _buildStaggeredWrapper(0, Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [Colors.amber.shade400, Colors.orangeAccent], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [BoxShadow(color: Colors.amber.withOpacity(0.5), blurRadius: 15, offset: const Offset(0, 5))]
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.emoji_events, color: Colors.white, size: 32),
+                              SizedBox(width: 10),
+                              Text("Tüm Zamanların Quiz Rekoru", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(color: Colors.white30)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Column(
+                                children: [
+                                  const Text("İlk Seferde Doğru", style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  Text("$bestQuizCorrect Soru", style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  const Text("Rekor Süre", style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  Text(_formatTime(bestQuizTime), style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(20)),
+                            child: Text("Kırılma Tarihi: $bestQuizDate", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                          )
+                        ],
+                      ),
+                    )),
+                  
+                  _buildStaggeredWrapper(1, _buildStatCard(context, "Tamamlanan Quiz", totalCompletedQuizzes, Icons.done_all, Colors.orange)),
+                  _buildStaggeredWrapper(2, _buildTextStatCard(context, "Toplam Quiz Süresi", _formatTime(totalQuizTimeSeconds), Icons.timer, Colors.teal)),
+                  _buildStaggeredWrapper(3, _buildStatCard(context, "Cevaplanan Soru", totalQuizQuestions, Icons.question_answer, Colors.blueAccent)),
+                  _buildStaggeredWrapper(4, _buildStatCard(context, "Quiz Yanlışları", totalQuizWrong, Icons.error_outline, Colors.redAccent)),
+                  _buildStaggeredWrapper(5, _buildTextStatCard(context, "Soru Çözme Hızı", "${quizSpeed.toStringAsFixed(1)} Soru / Dk", Icons.speed, Colors.purpleAccent)),
                 ],
               ),
               
