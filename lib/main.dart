@@ -284,7 +284,6 @@ class SlideGradientTransform extends GradientTransform {
     return Matrix4.translationValues(bounds.width * (percent * 2 - 1), 0, 0);
   }
 }
-
 class PremiumShimmerLoading extends StatefulWidget {
   final String loadingText;
   const PremiumShimmerLoading({super.key, required this.loadingText});
@@ -488,7 +487,19 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       default: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), pageTransitionsTheme: smoothTransitions);
     }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Lexis Eldora',
+      debugShowCheckedModeBanner: false,
+      theme: _getTheme(),
+      themeAnimationDuration: const Duration(milliseconds: 300), 
+      home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
+    );
+  }
 }
+
 class HomeScreen extends StatefulWidget {
   final int themeIndex;
   final ValueChanged<int> onThemeChanged;
@@ -903,7 +914,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-
   Future<void> _cloudBackupProgress() async {
     final prefs = await SharedPreferences.getInstance();
     int lastBackupTime = prefs.getInt('last_cloud_backup_time') ?? 0;
@@ -965,7 +975,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         "totalQuizQuestions": totalQuizQuestions,
         "totalQuizWrong": totalQuizWrong,
         "firstUseTimestamp": firstUseTimestamp,
-        // YENİ EKLENDİ: Rekorları Buluta Bas
         "bestQuizTime": bestQuizTime,
         "bestQuizCorrect": bestQuizCorrect,
         "bestQuizDate": bestQuizDate
@@ -1134,12 +1143,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     if (targetUser == null || targetUser.isEmpty) return;
 
-    showDialog(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(content: Row(children: [CircularProgressIndicator(), SizedBox(width: 20), Expanded(child: Text("Bulutta ilerleme aranıyor..."))])));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: const [
+            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+            SizedBox(width: 16),
+            Expanded(child: Text("Bulutta ilerleme aranıyor..."))
+          ],
+        ),
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.blueAccent,
+        behavior: SnackBarBehavior.floating,
+      )
+    );
 
     try {
       Map<String, dynamic>? metaData = await FirebaseSyncService.checkUserProgressMetadata(targetUser);
-
-      if (mounted) Navigator.pop(context);
 
       if (metaData == null) {
         if (mounted) _showCenteredDialog(title: "Bulunamadı", message: "'$targetUser' adlı kullanıcıya ait bir bulut yedeği bulunamadı.", icon: Icons.cloud_off, color: Colors.orange);
@@ -1174,7 +1194,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.cloud_download, color: Colors.green, size: 50)),
+                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.cloud_done, color: Colors.green, size: 50)),
                     const SizedBox(height: 16),
                     const Text("Bulut Yedeği Bulundu!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
@@ -1377,7 +1397,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         await prefs.setInt('totalQuizQuestions', stats['totalQuizQuestions'] ?? 0);
         await prefs.setInt('totalQuizWrong', stats['totalQuizWrong'] ?? 0);
         await prefs.setInt('firstUseTimestamp', stats['firstUseTimestamp'] ?? 0);
-        // YENİ EKLENDİ: Rekorları Yükle
         await prefs.setInt('bestQuizTime', stats['bestQuizTime'] ?? 999999);
         await prefs.setInt('bestQuizCorrect', stats['bestQuizCorrect'] ?? 0);
         await prefs.setString('bestQuizDate', stats['bestQuizDate'] ?? "Henüz rekor yok");
@@ -1489,6 +1508,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     );
   }
+
   void _triggerLevel5Celebration() {
     for (int i = 0; i < 40; i++) { 
       Future.delayed(Duration(milliseconds: i * 50), () {
@@ -2166,6 +2186,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: TextField(controller: ctrl), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text("Kaydet"))]));
   }
 
+  // DÜZELTİLDİ: Derleyici tarafından beklenen _openEditScreen metodu eksiksiz sağlandı.
   Future<void> _openEditScreen(WordModel word) async {
     await Navigator.push(context, MaterialPageRoute(builder: (context) => EditWordScreen(
       word: word, availableLibraries: _safeLibraries(), 
@@ -2713,7 +2734,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       
                       const Divider(),
-                      // DÜZELTİLDİ: Fonksiyon Çağrıları Hata Vermemesi İçin _openEditScreen Olarak Tamamlandı
                       ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => learnedWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                       ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                       ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
@@ -2733,11 +2753,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const Divider(),
                       ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary, onPointsEarned: (points) => _recordActivity(points)))); }),
                       
-                      // DÜZELTİLDİ: Oyun Modlarına isWordNet Parametresi Eklendi
                       ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: _activeDeck, isWordNet: selectedLibrary == 'WordNet Veritabanı', onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
                       ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: _activeDeck, isWordNet: selectedLibrary == 'WordNet Veritabanı', onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
                       
-                      // DÜZELTİLDİ: Quiz Ekranı İçin Rekor Parametreleri Geçildi
                       ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
                         HapticFeedback.lightImpact();
                         Navigator.pop(context); 
@@ -2765,7 +2783,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               tayfPoints += tp; 
                               completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
                               
-                              // YENİ: Rekor Kaydetme
                               if (isNewRecord) {
                                 bestQuizTime = t;
                                 bestQuizCorrect = firstTryCorrect;
@@ -2778,7 +2795,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ))).then((_) => _loadData()); 
                       }),
                       
-                      // DÜZELTİLDİ: Statistics Ekranına Quiz Rekor Verileri Gönderildi
                       ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: _safeLibraries(), totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints, bestQuizTime: bestQuizTime, bestQuizCorrect: bestQuizCorrect, bestQuizDate: bestQuizDate))); }), 
                       const Divider(),
                       ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () async { 
@@ -2888,6 +2904,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  // EN ALTTAKİ ANA BUILD METODU (DÜZELTİLMİŞ)
   @override
   Widget build(BuildContext context) {
     if (_isAppLoading) {
@@ -3203,4 +3220,4 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-}
+} // State ve Class Kapanışı
