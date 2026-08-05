@@ -488,19 +488,7 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       default: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), pageTransitionsTheme: smoothTransitions);
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Lexis Eldora',
-      debugShowCheckedModeBanner: false,
-      theme: _getTheme(),
-      themeAnimationDuration: const Duration(milliseconds: 300), 
-      home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
-    );
-  }
 }
-
 class HomeScreen extends StatefulWidget {
   final int themeIndex;
   final ValueChanged<int> onThemeChanged;
@@ -547,6 +535,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int totalCompletedQuizzes = 0, totalQuizTimeSeconds = 0, totalQuizQuestions = 0, totalQuizWrong = 0;
   List<String> learnedWordTimestamps = [], completedQuizTimestamps = [], viewedCardTimestamps = [], wrongAnswerTimestamps = [];
   int firstUseTimestamp = 0, currentStreak = 0, bestStreak = 0, tayfPoints = 0, streakFreezes = 0;
+
+  // YENİ EKLENDİ: Rekor Sistemi Parametreleri
+  int bestQuizTime = 999999;
+  int bestQuizCorrect = 0;
+  String bestQuizDate = "Henüz rekor yok";
 
   final List<Color> distinctColors = const [
     Color(0xFFFFEA00), Color(0xFFD500F9), Color(0xFF00E5FF), Color(0xFFFF3D00), Color(0xFF00E676)
@@ -625,6 +618,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final prefs = await SharedPreferences.getInstance();
       
       _username = prefs.getString('username') ?? 'Eldora25'; 
+      // YENİ EKLENDİ: Rekor yükleme
+      bestQuizTime = prefs.getInt('bestQuizTime') ?? 999999;
+      bestQuizCorrect = prefs.getInt('bestQuizCorrect') ?? 0;
+      bestQuizDate = prefs.getString('bestQuizDate') ?? "Henüz rekor yok";
 
       int wordNetCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
       
@@ -803,6 +800,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final prefs = await SharedPreferences.getInstance();
       
       prefs.setString('username', _username); 
+      // YENİ EKLENDİ: Rekor Kaydetme
+      prefs.setInt('bestQuizTime', bestQuizTime);
+      prefs.setInt('bestQuizCorrect', bestQuizCorrect);
+      prefs.setString('bestQuizDate', bestQuizDate);
 
       if (learnedWordTimestamps.length > 5000) learnedWordTimestamps.removeRange(0, learnedWordTimestamps.length - 5000);
       if (completedQuizTimestamps.length > 5000) completedQuizTimestamps.removeRange(0, completedQuizTimestamps.length - 5000);
@@ -963,7 +964,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         "totalQuizTimeSeconds": totalQuizTimeSeconds,
         "totalQuizQuestions": totalQuizQuestions,
         "totalQuizWrong": totalQuizWrong,
-        "firstUseTimestamp": firstUseTimestamp
+        "firstUseTimestamp": firstUseTimestamp,
+        // YENİ EKLENDİ: Rekorları Buluta Bas
+        "bestQuizTime": bestQuizTime,
+        "bestQuizCorrect": bestQuizCorrect,
+        "bestQuizDate": bestQuizDate
       };
 
       Map<String, dynamic> arraysMap = {
@@ -1066,7 +1071,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           "totalQuizTimeSeconds": totalQuizTimeSeconds,
           "totalQuizQuestions": totalQuizQuestions,
           "totalQuizWrong": totalQuizWrong,
-          "firstUseTimestamp": firstUseTimestamp
+          "firstUseTimestamp": firstUseTimestamp,
+          "bestQuizTime": bestQuizTime,
+          "bestQuizCorrect": bestQuizCorrect,
+          "bestQuizDate": bestQuizDate
         },
         "arrays": {
           "learnedWordTimestamps": learnedWordTimestamps,
@@ -1126,23 +1134,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     if (targetUser == null || targetUser.isEmpty) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: const [
-            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-            SizedBox(width: 16),
-            Expanded(child: Text("Bulutta ilerleme aranıyor..."))
-          ],
-        ),
-        duration: const Duration(seconds: 3),
-        backgroundColor: Colors.blueAccent,
-        behavior: SnackBarBehavior.floating,
-      )
-    );
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(content: Row(children: [CircularProgressIndicator(), SizedBox(width: 20), Expanded(child: Text("Bulutta ilerleme aranıyor..."))])));
 
     try {
       Map<String, dynamic>? metaData = await FirebaseSyncService.checkUserProgressMetadata(targetUser);
+
+      if (mounted) Navigator.pop(context);
 
       if (metaData == null) {
         if (mounted) _showCenteredDialog(title: "Bulunamadı", message: "'$targetUser' adlı kullanıcıya ait bir bulut yedeği bulunamadı.", icon: Icons.cloud_off, color: Colors.orange);
@@ -1177,7 +1174,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.cloud_done, color: Colors.green, size: 50)),
+                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.cloud_download, color: Colors.green, size: 50)),
                     const SizedBox(height: 16),
                     const Text("Bulut Yedeği Bulundu!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
@@ -1380,6 +1377,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         await prefs.setInt('totalQuizQuestions', stats['totalQuizQuestions'] ?? 0);
         await prefs.setInt('totalQuizWrong', stats['totalQuizWrong'] ?? 0);
         await prefs.setInt('firstUseTimestamp', stats['firstUseTimestamp'] ?? 0);
+        // YENİ EKLENDİ: Rekorları Yükle
+        await prefs.setInt('bestQuizTime', stats['bestQuizTime'] ?? 999999);
+        await prefs.setInt('bestQuizCorrect', stats['bestQuizCorrect'] ?? 0);
+        await prefs.setString('bestQuizDate', stats['bestQuizDate'] ?? "Henüz rekor yok");
       }
 
       if (arrays != null) {
@@ -2712,6 +2713,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       
                       const Divider(),
+                      // DÜZELTİLDİ: Fonksiyon Çağrıları Hata Vermemesi İçin _openEditScreen Olarak Tamamlandı
                       ListTile(leading: const Icon(Icons.check_circle_outline, color: Colors.green), title: const Text("Öğrenilen Kelimeler"), subtitle: Text("${learnedWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Öğrenilen Kelimeler", words: learnedWords, onDelete: (w) { setState(() => learnedWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => learnedWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                       ListTile(leading: const Icon(Icons.repeat, color: Colors.orange), title: const Text("Tekrar Listesi (Normal)"), subtitle: Text("${toRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "Tekrar Listesi", words: toRepeatWords, onDelete: (w) { setState(() => toRepeatWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
                       ListTile(leading: const Icon(Icons.schedule, color: Colors.blue), title: const Text("SRS Tekrar Listesi"), subtitle: Text("${toSRSRepeatWords.length} kelime"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(title: "SRS Tekrar Listesi", words: toSRSRepeatWords, showSrsLevel: true, onDelete: (w) { setState(() => toSRSRepeatWords.remove(w)); isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); _savePreferencesOnly(); }, onClearAll: () { setState(() => toSRSRepeatWords.clear()); _savePreferencesOnly(); }, onEdit: _openEditScreen))).then((_) => setState((){})); }),
@@ -2730,9 +2732,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                       const Divider(),
                       ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary, onPointsEarned: (points) => _recordActivity(points)))); }),
-                      ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: _activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
-                      ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: _activeDeck, onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
                       
+                      // DÜZELTİLDİ: Oyun Modlarına isWordNet Parametresi Eklendi
+                      ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: _activeDeck, isWordNet: selectedLibrary == 'WordNet Veritabanı', onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
+                      ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: _activeDeck, isWordNet: selectedLibrary == 'WordNet Veritabanı', onGameFinished: (points) { _recordActivity(points); _savePreferencesOnly(); }))); }),
+                      
+                      // DÜZELTİLDİ: Quiz Ekranı İçin Rekor Parametreleri Geçildi
                       ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
                         HapticFeedback.lightImpact();
                         Navigator.pop(context); 
@@ -2746,9 +2751,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         }
                         Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(
                           words: fullPool, threshold: quizThreshold, questionCount: quizQuestionCount, 
+                          isWordNet: selectedLibrary == 'WordNet Veritabanı',
+                          currentBestTime: bestQuizTime,
+                          currentBestCorrect: bestQuizCorrect,
                           onWordMastered: (w) => _markAsLearned(w, fromQuiz: true), 
                           onWrongWord: (w) => _markAsToRepeat(w, fromQuiz: true), 
-                          onQuizFinished: (t, a, w, tp) { 
+                          onQuizFinished: (t, a, w, tp, firstTryCorrect, isNewRecord) { 
                             setState(() { 
                               totalCompletedQuizzes++; 
                               totalQuizTimeSeconds += t; 
@@ -2756,13 +2764,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               totalQuizWrong += w; 
                               tayfPoints += tp; 
                               completedQuizTimestamps.add(DateTime.now().millisecondsSinceEpoch.toString()); 
+                              
+                              // YENİ: Rekor Kaydetme
+                              if (isNewRecord) {
+                                bestQuizTime = t;
+                                bestQuizCorrect = firstTryCorrect;
+                                final now = DateTime.now();
+                                bestQuizDate = "${now.day.toString().padLeft(2,'0')}/${now.month.toString().padLeft(2,'0')}/${now.year}";
+                              }
                             });
                             _savePreferencesOnly(); 
                           }
                         ))).then((_) => _loadData()); 
                       }),
                       
-                      ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: _safeLibraries(), totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints))); }), 
+                      // DÜZELTİLDİ: Statistics Ekranına Quiz Rekor Verileri Gönderildi
+                      ListTile(leading: const Icon(Icons.analytics), title: const Text("İstatistikler & Rozetler"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => StatisticsScreen(allWords: allWords, learningWords: learningWords, toRepeatWords: toRepeatWords, toSRSRepeatWords: toSRSRepeatWords, learnedWords: learnedWords, wrongWords: wrongWords, availableLibraries: _safeLibraries(), totalCompletedQuizzes: totalCompletedQuizzes, totalQuizTimeSeconds: totalQuizTimeSeconds, totalQuizQuestions: totalQuizQuestions, totalQuizWrong: totalQuizWrong, learnedWordTimestamps: learnedWordTimestamps, completedQuizTimestamps: completedQuizTimestamps, viewedCardTimestamps: viewedCardTimestamps, wrongAnswerTimestamps: wrongAnswerTimestamps, firstUseTimestamp: firstUseTimestamp, bestStreak: bestStreak, tayfPoints: tayfPoints, bestQuizTime: bestQuizTime, bestQuizCorrect: bestQuizCorrect, bestQuizDate: bestQuizDate))); }), 
                       const Divider(),
                       ListTile(leading: const Icon(Icons.science, color: Colors.purple), title: const Text("Sistem & SRS Demo", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)), subtitle: const Text("Görünüm ve fonksiyon testleri", style: TextStyle(fontSize: 12)), onTap: () async { 
                         HapticFeedback.lightImpact(); 
