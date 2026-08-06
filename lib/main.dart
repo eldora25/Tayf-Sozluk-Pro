@@ -747,12 +747,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       wrongWords = results[5];
       reviewWordsPool = results[6];
 
-      allWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
-      learningWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
-      learnedWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
-      toRepeatWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
-      toSRSRepeatWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
-      wrongWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler');
+      allWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler' || w.libraryName == 'Kara Liste');
+      learningWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler' || w.libraryName == 'Kara Liste');
+      learnedWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler' || w.libraryName == 'Kara Liste');
+      toRepeatWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler' || w.libraryName == 'Kara Liste');
+      toSRSRepeatWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler' || w.libraryName == 'Kara Liste');
+      wrongWords.removeWhere((w) => w.libraryName == 'İncelenecek Kelimeler' || w.libraryName == 'Kara Liste');
 
       int now = DateTime.now().millisecondsSinceEpoch;
       bool needsSave = false;
@@ -805,6 +805,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  // YENİ: TÜM EKSİK AYARLAR KAYDEDİLİYOR (Madde 1 ve 2 Çözümü)
   Future<void> _savePreferencesOnly() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -821,6 +822,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       prefs.setString('selectedLibrary', selectedLibrary);
       prefs.setString('selectedLevel', selectedLevel);
+      prefs.setInt('dailyGoal', dailyGoal); 
+      prefs.setInt('quizQuestionCount', quizQuestionCount); 
       prefs.setInt('quizThreshold', quizThreshold);
       prefs.setInt('tayfPoints', tayfPoints);
       prefs.setInt('currentCardIndex', currentCardIndex);
@@ -948,7 +951,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
     
     try {
-      // YENİ: Sadece ilerlemiş olanlar DEĞİL; tüm "Öğrenilmiş, Karantina, Yanlış" listeleri toplanır
       var customOrProgressWords = await isar.wordModels.filter()
           .not().libraryNameEqualTo('WordNet Veritabanı')
           .and()
@@ -960,6 +962,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         .or().listTypeEqualTo('toRepeat')
                         .or().listTypeEqualTo('toSRSRepeat')
                         .or().libraryNameEqualTo('İncelenecek Kelimeler')
+                        .or().libraryNameEqualTo('Kara Liste')
                         .or().not().listTypeEqualTo('all'))
           .findAll();
           
@@ -1024,7 +1027,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // --- COMPUTE FONKSİYONLARI ARKA PLAN KİLİTLENMELERİ İÇİN ---
   static String _encodeWordsJson(List<Map<String, dynamic>> words) {
     return json.encode(words);
   }
@@ -1057,6 +1059,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         .or().listTypeEqualTo('toRepeat')
                         .or().listTypeEqualTo('toSRSRepeat')
                         .or().libraryNameEqualTo('İncelenecek Kelimeler')
+                        .or().libraryNameEqualTo('Kara Liste')
                         .or().not().listTypeEqualTo('all'))
           .findAll();
 
@@ -1082,7 +1085,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       Map<String, dynamic> backupData = {
         "app": "LexisEldora",
-        "version": "2.2",
+        "version": "2.3",
         "username": _username,
         "timestamp": DateTime.now().millisecondsSinceEpoch,
         "stats": {
@@ -1393,7 +1396,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // YENİ UYARLAMA: UI Kilitlenmesini Önleyen, Tam Liste Geri Yükleme Motoru
+  // YENİ: REFRESH SİSTEMLİ MERGE MOTORU (Madde 2)
   Future<void> _executeImportMerge(Map<String, dynamic> data, {bool isCloud = false}) async {
     if (mounted && !isCloud) {
        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yerel dosya arka planda birleştiriliyor..."), backgroundColor: Colors.orange));
@@ -1418,9 +1421,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         await prefs.setInt('totalQuizQuestions', stats['totalQuizQuestions'] ?? 0);
         await prefs.setInt('totalQuizWrong', stats['totalQuizWrong'] ?? 0);
         await prefs.setInt('firstUseTimestamp', stats['firstUseTimestamp'] ?? 0);
-        await prefs.setInt('bestQuizTime', stats['bestQuizTime'] ?? 999999);
-        await prefs.setInt('bestQuizCorrect', stats['bestQuizCorrect'] ?? 0);
-        await prefs.setString('bestQuizDate', stats['bestQuizDate'] ?? "Henüz rekor yok");
+        
+        int incomingBestTime = stats['bestQuizTime'] ?? 999999;
+        int incomingBestCorrect = stats['bestQuizCorrect'] ?? 0;
+        
+        if (incomingBestCorrect > bestQuizCorrect || (incomingBestCorrect == bestQuizCorrect && incomingBestTime < bestQuizTime)) {
+          bestQuizTime = incomingBestTime;
+          bestQuizCorrect = incomingBestCorrect;
+          bestQuizDate = stats['bestQuizDate'] ?? "Bilinmiyor";
+          await prefs.setInt('bestQuizTime', bestQuizTime);
+          await prefs.setInt('bestQuizCorrect', bestQuizCorrect);
+          await prefs.setString('bestQuizDate', bestQuizDate);
+        }
       }
 
       if (arrays != null) {
@@ -1430,7 +1442,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         await prefs.setStringList('wrongAnswerTimestamps', List<String>.from(arrays['wrongAnswerTimestamps'] ?? []));
       }
 
-      // Veritabanı Belleğini Otonom Olarak Güncelle
       List<WordModel> wordsToUpdate = [];
       List<WordModel> wordsToInsert = [];
 
@@ -1441,7 +1452,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (existing != null) {
           existing.correctCount = imported.correctCount;
           existing.wrongCount = imported.wrongCount;
-          existing.listType = imported.listType; // Geri yüklemede doğru listeye gitmesi için.
+          existing.listType = imported.listType; 
           existing.srsLevel = imported.srsLevel;
           existing.nextReviewDate = imported.nextReviewDate;
           wordsToUpdate.add(existing);
@@ -1456,7 +1467,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
 
       if (mounted) {
-        // İŞLEM BİTİNCE ONAY VE REFRESH DİALOGU
         int finalTp = stats?['tayfPoints'] ?? 0;
         int finalShields = stats?['streakFreezes'] ?? 0;
         int finalStreak = stats?['bestStreak'] ?? 0;
@@ -1484,7 +1494,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                      _isAppLoading = true;
                      _loadingText = "Yedekler Uygulanıyor. Lütfen Bekleyin...";
                      
-                     // Belleği tamamen temizleyip yeni verileri basmak için boşaltıyoruz.
                      allWords.clear();
                      learningWords.clear();
                      learnedWords.clear();
@@ -2278,6 +2287,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
     )));
   }
+  // YENİ: KARA LİSTE FONKSİYONU (MADDE 7)
+  void _moveToBlacklist(WordModel word) {
+    HapticFeedback.heavyImpact();
+    setState(() {
+      word.libraryName = 'Kara Liste';
+      word.listType = 'blacklist';
+
+      allWords.removeWhere((w) => w.id == word.id);
+      learningWords.removeWhere((w) => w.id == word.id);
+      toRepeatWords.removeWhere((w) => w.id == word.id);
+      toSRSRepeatWords.removeWhere((w) => w.id == word.id);
+      wrongWords.removeWhere((w) => w.id == word.id);
+      learnedWords.removeWhere((w) => w.id == word.id);
+      reviewWordsPool.removeWhere((w) => w.id == word.id);
+      
+      _activeDeck.removeWhere((w) => w.id == word.id);
+    });
+
+    if (word.id != Isar.autoIncrement && word.libraryName != 'WordNet Veritabanı') {
+      Future.microtask(() async {
+         await isar.writeTxn(() async { await isar.wordModels.put(word); });
+      });
+    }
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Kelime KARA LİSTE'ye eklendi ve tüm sistemlerden gizlendi.", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.red)
+    );
+    
+    _nextCard(increment: false);
+  }
+
   Widget _buildCrown(int level, bool isMitosis) {
     if (level == 0) return const SizedBox.shrink();
     List<Widget> pieces = [];
@@ -2697,7 +2737,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                                 const SizedBox(height: 14),
                                 const Text("Lexis Eldora", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                                Text("Build v2.2.$buildNo", style: const TextStyle(color: Colors.white70, fontSize: 13))
+                                Text("Build v2.3.$buildNo", style: const TextStyle(color: Colors.white70, fontSize: 13))
                               ],
                             ),
                           );
@@ -2798,6 +2838,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         }
                       ),
 
+                      // YENİ: KARA LİSTE ÇEKMECE MENÜSÜ (Madde 7)
+                      ListTile(
+                        leading: const Icon(Icons.dangerous, color: Colors.redAccent), 
+                        title: const Text("Bir daha görmek istemiyorum", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)), 
+                        subtitle: const Text("Kara liste (İzole edilmiş kelimeler)"), 
+                        onTap: () async { 
+                          HapticFeedback.lightImpact(); 
+                          Navigator.pop(context); 
+                          
+                          List<WordModel> blacklistWords = await isar.wordModels.filter().listTypeEqualTo('blacklist').findAll();
+
+                          if (mounted) {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => ManageListScreen(
+                              title: "Kara Liste", 
+                              words: blacklistWords, 
+                              availableLibraries: _safeLibraries(),
+                              onDelete: (w) { 
+                                setState(() { }); 
+                                isar.writeTxnSync(() { isar.wordModels.deleteSync(w.id); }); 
+                                _savePreferencesOnly(); 
+                              }, 
+                              onClearAll: () { 
+                                setState(() { }); 
+                                _savePreferencesOnly(); 
+                              }, 
+                              onEdit: _openEditScreen
+                            ))).then((_) { 
+                               setState((){}); 
+                               _loadData(); 
+                            });
+                          }
+                        }
+                      ),
+
                       const Divider(),
                       ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: _renameLibrary, onDelete: _deleteLibrary, onExport: _exportLibrary, onPointsEarned: (points) => _recordActivity(points)))); }),
                       
@@ -2892,7 +2966,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("V2.2.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                              Text("V2.3.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
                               Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
                             ],
                           ),
@@ -3180,31 +3254,61 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    AnimatedBuilder(
-                                      animation: _warningPulseController,
-                                      builder: (context, child) {
-                                        return GestureDetector(
-                                          onTap: () => _moveToReview(currentWord),
+                                    
+                                    // YENİ: KARANTİNA VE BİOHAZARD BUTONU BİRLEŞİMİ (MADDE 7)
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        AnimatedBuilder(
+                                          animation: _warningPulseController,
+                                          builder: (context, child) {
+                                            return GestureDetector(
+                                              onTap: () => _moveToReview(currentWord),
+                                              child: Container(
+                                                width: 55, height: 55,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: Colors.black,
+                                                  border: Border.all(color: Colors.redAccent, width: 3.5),
+                                                  boxShadow: [
+                                                    BoxShadow(color: Colors.yellowAccent.withOpacity(0.7 * _warningPulseController.value), blurRadius: 15, spreadRadius: 3)
+                                                  ]
+                                                ),
+                                                child: const Center(
+                                                  child: Text(
+                                                    "!", 
+                                                    style: TextStyle(color: Colors.yellowAccent, fontSize: 32, fontWeight: FontWeight.w900, shadows: [Shadow(color: Colors.yellowAccent, blurRadius: 10)])
+                                                  )
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        ),
+                                        const SizedBox(height: 12),
+                                        GestureDetector(
+                                          onTap: () => _moveToBlacklist(currentWord),
                                           child: Container(
-                                            width: 55, height: 55,
+                                            width: 45, height: 45,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
                                               color: Colors.black,
-                                              border: Border.all(color: Colors.redAccent, width: 3.5),
+                                              border: Border.all(color: Colors.red, width: 2),
                                               boxShadow: [
-                                                BoxShadow(color: Colors.yellowAccent.withOpacity(0.7 * _warningPulseController.value), blurRadius: 15, spreadRadius: 3)
+                                                BoxShadow(color: Colors.red.withOpacity(0.5), blurRadius: 10, spreadRadius: 2)
                                               ]
                                             ),
-                                            child: const Center(
-                                              child: Text(
-                                                "!", 
-                                                style: TextStyle(color: Colors.yellowAccent, fontSize: 32, fontWeight: FontWeight.w900, shadows: [Shadow(color: Colors.yellowAccent, blurRadius: 10)])
-                                              )
+                                            child: ClipOval(
+                                              child: Image.asset(
+                                                'assets/biohazardicon.jpg',
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.coronavirus, color: Colors.yellowAccent, size: 28),
+                                              ),
                                             ),
                                           ),
-                                        );
-                                      }
+                                        ),
+                                      ],
                                     ),
+                                    
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Container(
@@ -3244,7 +3348,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Text("V2.2.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
+                                          Text("V2.3.$buildNo", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
                                           const SizedBox(width: 16),
                                           Text("Tayfun YAMAK©", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6))),
                                         ],
