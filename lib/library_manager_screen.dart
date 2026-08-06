@@ -132,6 +132,113 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 
+  // YENİ: KÜTÜPHANELERİ BİRLEŞTİR (Madde 8)
+  void _showMergeDialog(String initialLib) {
+    List<String> selectedLibs = [initialLib];
+    TextEditingController nameCtrl = TextEditingController(text: "Birlestirilmis01");
+    List<String> mergeableLibs = _libraries.where((l) => l != 'WordNet Veritabanı').toList();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.merge_type, color: Colors.teal),
+                SizedBox(width: 8),
+                Text("Kütüphaneleri Birleştir", style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Hedef Kütüphane Adı:", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: nameCtrl, 
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true, fillColor: Colors.grey.withOpacity(0.1)
+                    )
+                  ),
+                  const SizedBox(height: 16),
+                  const Text("Birleştirilecek Kütüphaneler:", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(12)
+                      ),
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: mergeableLibs.map((lib) {
+                          return CheckboxListTile(
+                            title: Text(lib, style: const TextStyle(fontSize: 14)),
+                            value: selectedLibs.contains(lib),
+                            activeColor: Colors.teal,
+                            onChanged: (val) {
+                              setDialogState(() {
+                                if (val == true) selectedLibs.add(lib);
+                                else selectedLibs.remove(lib);
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  )
+                ],
+              )
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold))),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                onPressed: () async {
+                  if (nameCtrl.text.trim().isEmpty || selectedLibs.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Geçerli bir isim girin ve en az bir kütüphane seçin!")));
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  _executeMerge(selectedLibs, nameCtrl.text.trim());
+                },
+                child: const Text("BİRLEŞTİR", style: TextStyle(fontWeight: FontWeight.bold))
+              )
+            ]
+          );
+        }
+      )
+    );
+  }
+
+  void _executeMerge(List<String> libsToMerge, String newName) {
+    setState(() {
+      for (var w in widget.allWords) { if (libsToMerge.contains(w.libraryName)) w.libraryName = newName; }
+      for (var w in widget.learnedWords) { if (libsToMerge.contains(w.libraryName)) w.libraryName = newName; }
+      for (var w in widget.toRepeatWords) { if (libsToMerge.contains(w.libraryName)) w.libraryName = newName; }
+      for (var w in widget.learningWords) { if (libsToMerge.contains(w.libraryName)) w.libraryName = newName; }
+      for (var w in widget.wrongWords) { if (libsToMerge.contains(w.libraryName)) w.libraryName = newName; }
+    });
+    
+    isar.writeTxnSync(() {
+      for (String lib in libsToMerge) {
+        List<WordModel> toUpdate = isar.wordModels.filter().libraryNameEqualTo(lib).findAllSync();
+        for (var w in toUpdate) { w.libraryName = newName; }
+        isar.wordModels.putAllSync(toUpdate);
+      }
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("${libsToMerge.length} adet kütüphane başarıyla '$newName' olarak birleştirildi."), backgroundColor: Colors.teal)
+    );
+  }
+
   void _showDeleteConfirm(String libName) {
     showDialog(
       context: context,
@@ -584,10 +691,9 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          // DÜZELTİLDİ: Taşmayı önlemek için başlık dikey bir formata (Column) alındı.
-          title: Column(
+          title: const Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Icon(Icons.info_outline, color: Colors.indigo, size: 40), 
               SizedBox(height: 12), 
               Text("Sistem Kütüphanesi", textAlign: TextAlign.center, style: TextStyle(color: Colors.indigo, fontSize: 18))
@@ -633,6 +739,11 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text("'$libName' Seçenekleri", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
+                    ),
+                    ListTile(
+                      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.merge_type, color: Colors.teal)),
+                      title: const Text("Kütüphaneleri Birleştir", style: TextStyle(fontWeight: FontWeight.w600)),
+                      onTap: () { Navigator.pop(context); _showMergeDialog(libName); },
                     ),
                     ListTile(
                       leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.edit, color: Colors.blue)),
@@ -793,7 +904,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text("Toplam: $total", style: const TextStyle(fontWeight: FontWeight.w600)),
+                                            Text("Toplam: $total", style: const TextStyle(fontWeight: FontWeight.bold)),
                                             const SizedBox(width: 16),
                                             Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text("Öğrenilen: $learned", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
                                             const SizedBox(width: 16),
