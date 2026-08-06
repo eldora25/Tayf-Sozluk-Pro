@@ -15,6 +15,7 @@ class ManageListScreen extends StatefulWidget {
   final Function(WordModel)? onLearned; 
   final Function() onClearAll;
   final Future<void> Function(WordModel)? onEdit;
+  final List<String>? availableLibraries; // YENİ: Kara Liste Geri Yükleme İçin
 
   const ManageListScreen({
     super.key,
@@ -26,6 +27,7 @@ class ManageListScreen extends StatefulWidget {
     this.onLearned,
     required this.onClearAll,
     this.onEdit,
+    this.availableLibraries,
   });
 
   @override
@@ -61,12 +63,10 @@ class _ManageListScreenState extends State<ManageListScreen> {
           } else {
             String lowerQuery = query.toLowerCase().trim();
             
-            // DÜZELTİLDİ: Sadece kelimenin kendisinde ve baştan başlayanları bulur.
             _filteredList = widget.words.where((w) {
               return w.word.toLowerCase().startsWith(lowerQuery);
             }).toList();
 
-            // ZEKİ SIRALAMA: Önce tam eşleşen (cat), sonra uzayanlar (caterpillar).
             _filteredList.sort((a, b) {
               String aWord = a.word.toLowerCase();
               String bWord = b.word.toLowerCase();
@@ -121,6 +121,80 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
+  // YENİ: KARA LİSTEDEN GERİ YÜKLEME 
+  void _restoreFromBlacklist(WordModel? word) {
+    String selectedLib = widget.availableLibraries?.first ?? 'Varsayılan';
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.settings_backup_restore, color: Colors.green),
+                SizedBox(width: 8),
+                Text("Kütüphaneye Döndür", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(word == null ? "Listedeki TÜM kelimeler hangi kütüphaneye taşınsın?" : "'${word.word}' kelimesi hangi kütüphaneye taşınsın?"),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: selectedLib,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: Colors.grey.withOpacity(0.1)
+                  ),
+                  items: widget.availableLibraries?.map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis))).toList() ?? [],
+                  onChanged: (v) => setDialogState(() => selectedLib = v!),
+                )
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold))),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  HapticFeedback.mediumImpact();
+                  
+                  if (word == null) {
+                    // Tümü
+                    for(var w in widget.words) {
+                      w.listType = 'all';
+                      w.libraryName = selectedLib;
+                    }
+                    isar.writeTxnSync(() { isar.wordModels.putAllSync(widget.words); });
+                    widget.onClearAll(); 
+                    setState(() { _filteredList.clear(); });
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Tüm kelimeler '$selectedLib' kütüphanesine taşındı."), backgroundColor: Colors.green));
+                  } else {
+                    // Tekli
+                    setState(() {
+                      word.listType = 'all';
+                      word.libraryName = selectedLib;
+                      widget.words.remove(word);
+                      _filteredList.remove(word);
+                    });
+                    isar.writeTxnSync(() { isar.wordModels.putSync(word); });
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Kelime '$selectedLib' kütüphanesine taşındı."), backgroundColor: Colors.green));
+                  }
+                }, 
+                child: const Text("TAŞI", style: TextStyle(fontWeight: FontWeight.bold))
+              )
+            ],
+          );
+        }
+      )
+    );
+  }
+
   String _getSrsDayText(int level) {
     switch (level) {
       case 1: return "1. Gün";
@@ -156,57 +230,59 @@ class _ManageListScreenState extends State<ManageListScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        // DÜZELTİLDİ: Taşmayı önlemek için Row yerine Wrap kullanıldı
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Transform.rotate(
-              angle: -0.5,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.white30, width: 1),
-                  boxShadow: [
-                    BoxShadow(color: Colors.orangeAccent.withOpacity(0.9), blurRadius: 12, spreadRadius: 2, offset: const Offset(-2, 0)),
-                    BoxShadow(color: Colors.purpleAccent.withOpacity(0.9), blurRadius: 12, spreadRadius: 2, offset: const Offset(2, 0)),
-                  ],
-                ),
-                child: Transform.rotate(
-                  angle: 0.5, 
-                  child: const Text(
-                    "\u{1F9EC}", 
-                    style: TextStyle(
-                      fontSize: 12, 
-                      shadows: [
-                        Shadow(color: Colors.orangeAccent, blurRadius: 15),
-                        Shadow(color: Colors.purpleAccent, blurRadius: 15),
-                      ],
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Transform.rotate(
+                angle: -0.5,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white30, width: 1),
+                    boxShadow: [
+                      BoxShadow(color: Colors.orangeAccent.withOpacity(0.9), blurRadius: 12, spreadRadius: 2, offset: const Offset(-2, 0)),
+                      BoxShadow(color: Colors.purpleAccent.withOpacity(0.9), blurRadius: 12, spreadRadius: 2, offset: const Offset(2, 0)),
+                    ],
+                  ),
+                  child: Transform.rotate(
+                    angle: 0.5, 
+                    child: const Text(
+                      "\u{1F9EC}", 
+                      style: TextStyle(
+                        fontSize: 12, 
+                        shadows: [
+                          Shadow(color: Colors.orangeAccent, blurRadius: 15),
+                          Shadow(color: Colors.purpleAccent, blurRadius: 15),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
+                    const SizedBox(width: 4),
+                    Text(dnaCode, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                  ],
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 10),
-                  const SizedBox(width: 4),
-                  Text(dnaCode, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -215,57 +291,67 @@ class _ManageListScreenState extends State<ManageListScreen> {
   Widget _buildTrailingActions(WordModel item) {
     final String errorText = "Hata: " + item.wrongCount.toString();
     final String srsText = _getSrsDayText(item.srsLevel);
+    bool isBlacklistMode = widget.title == "Kara Liste";
     
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (widget.showWrongCount)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-            child: Text(errorText, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
-          ),
-        
-        if (widget.showSrsLevel && item.srsLevel > 0)
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
-            child: Text(srsText, style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
-          ),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.showWrongCount)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+              child: Text(errorText, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
+          
+          if (widget.showSrsLevel && item.srsLevel > 0)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+              child: Text(srsText, style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
+            
+          if (isBlacklistMode)
+            IconButton(
+              icon: const Icon(Icons.settings_backup_restore, color: Colors.green),
+              tooltip: 'Kütüphaneye Döndür',
+              onPressed: () => _restoreFromBlacklist(item),
+            )
+          else ...[
+            if (widget.onEdit != null)
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                tooltip: 'Düzenle',
+                onPressed: () async {
+                  final editCb = widget.onEdit;
+                  if (editCb != null) {
+                    await editCb(item);
+                    setState(() { _filteredList = widget.words; });
+                  }
+                },
+              ),
+      
+            IconButton(
+              icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+              tooltip: 'İnceleneceklere Taşı',
+              onPressed: () => _moveToReview(item),
+            ),
+          ],
   
-        if (widget.onEdit != null)
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.blueAccent),
-            tooltip: 'Düzenle',
-            onPressed: () async {
-              final editCb = widget.onEdit;
-              if (editCb != null) {
-                await editCb(item);
-                setState(() {
-                  _filteredList = widget.words;
-                });
-              }
+            icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+            tooltip: 'Listeden Çıkar',
+            onPressed: () {
+              widget.onDelete(item);
+              setState(() {
+                _filteredList.remove(item);
+              });
             },
           ),
-  
-        IconButton(
-          icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
-          tooltip: 'İnceleneceklere Taşı',
-          onPressed: () => _moveToReview(item),
-        ),
-
-        IconButton(
-          icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
-          tooltip: 'Listeden Çıkar',
-          onPressed: () {
-            widget.onDelete(item);
-            setState(() {
-              _filteredList.remove(item);
-            });
-          },
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -352,6 +438,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
     if (searchQuery.isEmpty && _filteredList.length != widget.words.length) {
       _filteredList = widget.words;
     }
+    
+    bool isBlacklistMode = widget.title == "Kara Liste";
 
     return Scaffold(
       body: CustomScrollView(
@@ -367,6 +455,12 @@ class _ManageListScreenState extends State<ManageListScreen> {
               centerTitle: false,
             ),
             actions: [
+              if (isBlacklistMode)
+                IconButton(
+                  icon: const Icon(Icons.settings_backup_restore, color: Colors.green),
+                  tooltip: 'Tümünü Döndür',
+                  onPressed: widget.words.isNotEmpty ? () => _restoreFromBlacklist(null) : null,
+                ),
               IconButton(
                 icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
                 tooltip: 'Tümünü Çıkar',
