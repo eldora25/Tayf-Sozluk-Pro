@@ -388,8 +388,19 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int totalSystemWords = allWords.length + learnedWords.length + toRepeatWords.length + toSRSRepeatWords.length + learningWords.length;
-    int totalWrongCount = wrongWords.fold(0, (a, b) => a + b.wrongCount);
+    // DÜZELTİLDİ: Toplam istatistikler hesaplanırken tüm aktif listeler tek bir havuza alınır
+    var allActiveWords = [
+      ...allWords,
+      ...learnedWords,
+      ...learningWords,
+      ...toRepeatWords,
+      ...toSRSRepeatWords,
+      ...wrongWords // Hata Düzeltildi: Yanlış kelimeler de kapsama eklendi
+    ].toSet().toList();
+
+    int totalSystemWords = allActiveWords.length;
+    int totalWrongCount = allActiveWords.fold(0, (a, b) => a + b.wrongCount);
+    int totalCorrectCount = allActiveWords.fold(0, (a, b) => a + b.correctCount);
 
     DateTime firstUse = DateTime.fromMillisecondsSinceEpoch(firstUseTimestamp);
     int daysUsed = DateTime.now().difference(firstUse).inDays;
@@ -404,14 +415,6 @@ class StatisticsScreen extends StatelessWidget {
 
     int totalMitosisCount = 0;
     Map<String, int> mitosisTree = {};
-
-    var allActiveWords = [
-      ...allWords,
-      ...learnedWords,
-      ...learningWords,
-      ...toRepeatWords,
-      ...toSRSRepeatWords
-    ];
 
     for (var w in allActiveWords) {
       if (w.libraryName.startsWith('\u{1F9EC} Mitoz')) {
@@ -510,10 +513,10 @@ class StatisticsScreen extends StatelessWidget {
                   _buildStaggeredWrapper(0, _buildMitosisCard(context, totalMitosisCount, sortedMitosis)), 
                   _buildStaggeredWrapper(1, _buildStatCard(context, "Mevcut Tayf Puan (TP)", tayfPoints, Icons.diamond, Colors.blueAccent)),
                   _buildStaggeredWrapper(2, _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1), Icons.my_library_books, Colors.deepPurple)),
-                  _buildStaggeredWrapper(3, _buildStatCard(context, "Toplam Kelime", totalSystemWords, Icons.format_list_bulleted, Colors.cyan)),
+                  _buildStaggeredWrapper(3, _buildStatCard(context, "Sistemdeki Kelime", totalSystemWords, Icons.format_list_bulleted, Colors.cyan)),
                   _buildStaggeredWrapper(4, _buildStatCard(context, "Öğrenilen (Mezun)", learnedWords.length, Icons.workspace_premium, Colors.green)),
-                  _buildStaggeredWrapper(5, _buildStatCard(context, "Eğitimde (SRS)", (learningWords.length + toSRSRepeatWords.length), Icons.psychology, Colors.orange)), 
-                  _buildStaggeredWrapper(6, _buildStatCard(context, "Toplam Yanlış", totalWrongCount, Icons.gpp_bad, Colors.redAccent)),
+                  _buildStaggeredWrapper(5, _buildStatCard(context, "Tüm Zamanlar Doğru", totalCorrectCount, Icons.check_circle, Colors.teal)), 
+                  _buildStaggeredWrapper(6, _buildStatCard(context, "Tüm Zamanlar Yanlış", totalWrongCount, Icons.gpp_bad, Colors.redAccent)),
                 ],
               ),
               
@@ -774,7 +777,6 @@ class StatisticsScreen extends StatelessWidget {
                 ],
               ),
 
-              // YENİ EKLENDİ: Overflow Hatası Düzeltildi (FittedBox kullanıldı)
               ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20),
