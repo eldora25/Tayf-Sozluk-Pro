@@ -8,7 +8,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
-import 'main.dart'; 
+import 'core/db_helper.dart'; // EKLENDİ: Isar hatası çözüldü
+import 'firebase_sync_service.dart';
 
 class LibraryManagerScreen extends StatefulWidget {
   final List<WordModel> allWords;
