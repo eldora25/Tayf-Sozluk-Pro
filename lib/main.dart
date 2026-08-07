@@ -4,49 +4,40 @@ import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sentry_flutter/sentry_flutter.dart'; // YENİ: Sentry Gerçek Zamanlı Hata Takibi
-import 'package:easy_localization/easy_localization.dart'; // YENİ: Çoklu Dil (i18n)
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // YENİ: State Management
-import 'package:home_widget/home_widget.dart'; // YENİ: Günün Kelimesi Widget'ı
+import 'package:easy_localization/easy_localization.dart'; 
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
+import 'package:home_widget/home_widget.dart'; 
 
 import 'firebase_options.dart';
 import 'models.dart';
 import 'core/db_helper.dart'; 
-import 'core/locator.dart'; // YENİ: GetIt Dependency Injection
+import 'core/locator.dart'; 
 import 'theme/theme_manager.dart'; 
 import 'notification_service.dart';
 import 'screens/home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await EasyLocalization.ensureInitialized(); // i18n Başlatma
+  await EasyLocalization.ensureInitialized(); 
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   await NotificationService.init();
-  setupLocator(); // GetIt Bağımlılık Enjeksiyonu Başlatma
-  HomeWidget.setAppGroupId('com.eldora.tayfsozlukpro'); // Widget Grubu Başlatma
+  setupLocator(); 
+  HomeWidget.setAppGroupId('com.eldora.tayfsozlukpro'); 
 
   final dir = await getApplicationDocumentsDirectory();
   isar = await Isar.open([WordModelSchema], directory: dir.path);
   
-  // Sentry Entegrasyonu
-  await SentryFlutter.init(
-    (options) {
-      // DİKKAT: sentry.io üzerinden kendi projenizi oluşturup DSN kodunuzu buraya yapıştırın.
-      options.dsn = 'https://ornek_dsn_kodunuz@sentry.io/projeniz'; 
-      options.tracesSampleRate = 1.0;
-    },
-    appRunner: () => runApp(
-      ProviderScope( // Riverpod State Yönetimi Kapsamı
-        child: EasyLocalization(
-          supportedLocales: const [Locale('tr', 'TR'), Locale('en', 'US')],
-          path: 'assets/translations', // Çeviri dosyalarının yolu (Klasörü oluşturmanız gerekecek)
-          fallbackLocale: const Locale('tr', 'TR'),
-          child: const TayfSozlukApp(),
-        ),
+  runApp(
+    ProviderScope( 
+      child: EasyLocalization(
+        supportedLocales: const [Locale('tr', 'TR'), Locale('en', 'US')],
+        path: 'assets/translations', 
+        fallbackLocale: const Locale('tr', 'TR'),
+        child: const TayfSozlukApp(),
       ),
     ),
   );
@@ -83,7 +74,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
     return MaterialApp(
       title: 'Lexis Eldora',
       debugShowCheckedModeBanner: false,
-      // YENİ: Çoklu Dil Delegeleri
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
