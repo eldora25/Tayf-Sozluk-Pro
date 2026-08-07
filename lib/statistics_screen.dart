@@ -237,7 +237,7 @@ class StatisticsScreen extends StatelessWidget {
                             physics: const BouncingScrollPhysics(),
                             itemCount: treeData.length,
                             itemBuilder: (ctx, i) {
-                              String word = treeData[i].key; // YENİ: Kök Kelime (rootWord)
+                              String word = treeData[i].key; 
                               int count = treeData[i].value;
                               return Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -415,7 +415,6 @@ class StatisticsScreen extends StatelessWidget {
     int totalMitosisCount = 0;
     Map<String, int> mitosisTree = {};
 
-    // YENİ: Mitoz klonları kök kelimeye (rootWord) göre gruplanır
     for (var w in allActiveWords) {
       if (w.libraryName.startsWith('\u{1F9EC} Mitoz')) {
         totalMitosisCount++;
@@ -516,8 +515,12 @@ class StatisticsScreen extends StatelessWidget {
                   _buildStaggeredWrapper(2, _buildStatCard(context, "Toplam Kütüphane", (availableLibraries.length - 1), Icons.my_library_books, Colors.deepPurple)),
                   _buildStaggeredWrapper(3, _buildStatCard(context, "Sistemdeki Kelime", totalSystemWords, Icons.format_list_bulleted, Colors.cyan)),
                   _buildStaggeredWrapper(4, _buildStatCard(context, "Öğrenilen (Mezun)", learnedWords.length, Icons.workspace_premium, Colors.green)),
-                  _buildStaggeredWrapper(5, _buildStatCard(context, "Tüm Zamanlar Doğru", totalCorrectCount, Icons.check_circle, Colors.teal)), 
-                  _buildStaggeredWrapper(6, _buildStatCard(context, "Tüm Zamanlar Yanlış", totalWrongCount, Icons.gpp_bad, Colors.redAccent)),
+                  
+                  // ÇÖZÜM: KAYBOLAN EĞİTİMDE (SRS) KARTI GERİ EKLENDİ
+                  _buildStaggeredWrapper(5, _buildStatCard(context, "Eğitimde (SRS)", totalActiveSRS, Icons.psychology, Colors.orange)),
+                  
+                  _buildStaggeredWrapper(6, _buildStatCard(context, "Tüm Zamanlar Doğru", totalCorrectCount, Icons.check_circle, Colors.teal)), 
+                  _buildStaggeredWrapper(7, _buildStatCard(context, "Tüm Zamanlar Yanlış", totalWrongCount, Icons.gpp_bad, Colors.redAccent)),
                 ],
               ),
               
