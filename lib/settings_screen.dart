@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
-import 'core/db_helper.dart';
-import 'core/tts_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   final int currentGoal;
@@ -10,8 +8,9 @@ class SettingsScreen extends StatefulWidget {
   final int currentThemeIndex;
   final String selectedLibrary;
   final String selectedLevel;
+  final bool isGlobalSrsEnabled; // YENİ
   final List<String> availableLibraries;
-  final Function(int, int, int, int, String, String) onSaveSettings;
+  final Function(int, int, int, int, String, String, bool) onSaveSettings; // YENİ: bool eklendi
   final Function(String, String, String) onAddPackage; 
 
   const SettingsScreen({
@@ -22,6 +21,7 @@ class SettingsScreen extends StatefulWidget {
     required this.currentThemeIndex,
     required this.selectedLibrary,
     required this.selectedLevel,
+    required this.isGlobalSrsEnabled,
     required this.availableLibraries,
     required this.onSaveSettings,
     required this.onAddPackage,
@@ -38,6 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _themeIndex;
   late String _library;
   late String _level;
+  late bool _globalSrs; // YENİ
   
   late List<String> _safeLibraries;
 
@@ -68,6 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _thresholdValue = widget.currentThreshold.toDouble().clamp(2.0, 50.0);
     _questionCountValue = widget.currentQuestionCount.toDouble().clamp(5.0, 100.0);
     _themeIndex = widget.currentThemeIndex.clamp(0, _themeNames.length - 1);
+    _globalSrs = widget.isGlobalSrsEnabled; // YENİ
     
     _library = _safeLibraries.contains(widget.selectedLibrary) 
         ? widget.selectedLibrary 
@@ -92,7 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildCard({required Widget child}) {
+  Widget _buildCard({required Widget child, EdgeInsets padding = const EdgeInsets.all(20)}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
@@ -102,7 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: padding,
         child: child,
       ),
     );
@@ -118,6 +120,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             physics: const BouncingScrollPhysics(),
             padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0 + MediaQuery.of(context).padding.bottom),
             children: [
+              
+              _buildSectionTitle("Aralıklı Tekrar (SRS) Motoru", Icons.schedule),
+              _buildCard(
+                padding: const EdgeInsets.all(8),
+                child: SwitchListTile(
+                  activeColor: Colors.purpleAccent,
+                  secondary: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: Colors.purpleAccent.withOpacity(0.1), shape: BoxShape.circle),
+                    child: const Icon(Icons.public, color: Colors.purpleAccent),
+                  ),
+                  title: const Text("Global SRS Modu", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  subtitle: const Text("Açık: Tüm kütüphanelerdeki tekrarı gelmiş kelimeler öncelikli olarak ana ekrana düşer.\n\nKapalı: Sadece ana ekrandaki rozet ve bildirimlerle uyarılırsınız.", style: TextStyle(fontSize: 12, height: 1.4)),
+                  value: _globalSrs,
+                  onChanged: (val) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _globalSrs = val);
+                  },
+                ),
+              ),
+
               _buildSectionTitle("Görünüm & Tema", Icons.palette),
               _buildCard(
                 child: Column(
@@ -240,7 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text("Boyutu büyük paketlerin yüklenmesi birkaç saniye sürebilir.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                     const SizedBox(height: 16),
-                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet Veritabanı (Aktif)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), subtitle: const Text("150.000+ kelimelik devasa sözlük Isar veritabanına kalıcı olarak yüklendi. 'Aktif Kütüphane' menüsünden seçebilirsiniz."), trailing: const Icon(Icons.check_circle, color: Colors.indigo, size: 32)),
+                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet Veritabanı", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), subtitle: const Text("150.000+ kelimelik devasa sözlük Isar veritabanına kalıcı olarak yüklendi. 'Aktif Kütüphane' menüsünden seçebilirsiniz."), trailing: const Icon(Icons.check_circle, color: Colors.indigo, size: 32)),
                     const SizedBox(height: 10),
                     ListTile(tileColor: Colors.orange.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kısa Temel Kelimeler"), trailing: const Icon(Icons.download_for_offline, color: Colors.orange, size: 32), onTap: () { widget.onAddPackage("assets/EN-TR_tayf.txt", "txt", "Tayf İng-Tr"); }),
                     const SizedBox(height: 10),
@@ -277,11 +300,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   final ti = _themeIndex;
                   final lib = _library;
                   final lvl = _level;
+                  final glSrs = _globalSrs; // YENİ
                   
                   Navigator.pop(context);
                   
                   Future.delayed(const Duration(milliseconds: 150), () {
-                    widget.onSaveSettings(g, t, qc, ti, lib, lvl);
+                    widget.onSaveSettings(g, t, qc, ti, lib, lvl, glSrs);
                   });
                 },
               ),
