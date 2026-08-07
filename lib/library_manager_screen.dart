@@ -223,8 +223,8 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     
     await isar.writeTxn(() async {
       for (String lib in libsToMerge) {
-        // DÜZELTİLDİ: Isar 3.x sürümünde findAll() hatasını önlemek için .build().findAll() eklendi
-        List<WordModel> toUpdate = await isar.wordModels.filter().libraryNameEqualTo(lib).build().findAll();
+        // DÜZELTİLDİ: Isar 3.x sürümünde .build() kaldırıldı, doğrudan where() veya filter() üzerinden findAll() çağrılır
+        List<WordModel> toUpdate = await isar.wordModels.where().libraryNameEqualTo(lib).findAll();
         for (var w in toUpdate) { w.libraryName = newName; }
         await isar.wordModels.putAll(toUpdate);
       }
