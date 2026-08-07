@@ -8,7 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
-import 'core/db_helper.dart'; // EKLENDİ: Isar hatası çözüldü
+import 'core/db_helper.dart'; 
 import 'firebase_sync_service.dart';
 
 class LibraryManagerScreen extends StatefulWidget {
@@ -223,6 +223,7 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     
     await isar.writeTxn(() async {
       for (String lib in libsToMerge) {
+        // DÜZELTİLDİ: Isar 3.x sürümüne uygun doğru sorgu yapısı
         List<WordModel> toUpdate = await isar.wordModels.filter().libraryNameEqualTo(lib).findAll();
         for (var w in toUpdate) { w.libraryName = newName; }
         await isar.wordModels.putAll(toUpdate);
