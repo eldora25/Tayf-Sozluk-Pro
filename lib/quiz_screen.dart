@@ -14,7 +14,7 @@ class QuizScreen extends StatefulWidget {
   final int threshold;
   final int questionCount;
   final bool isWordNet; 
-  final bool isLowPowerMode; 
+  final bool isLowPowerMode; // YENİ: Düşük Güç (Performans) Modu
   
   final int currentBestTime;
   final int currentBestCorrect;
@@ -31,7 +31,7 @@ class QuizScreen extends StatefulWidget {
     required this.isWordNet,
     required this.currentBestTime,
     required this.currentBestCorrect,
-    required this.isLowPowerMode, 
+    required this.isLowPowerMode, // EKLENDİ
     required this.onWordMastered,
     required this.onWrongWord,
     required this.onQuizFinished,
@@ -60,7 +60,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   int _secondsElapsed = 0;
   bool isQuizFinished = false;
   bool isAudioEnabled = true;
-  bool _isStatsSaved = false;
+  bool _isStatsSaved = false; // ÇÖZÜM: Verilerin çift kaydedilmesini engeller
   
   int _sessionEarnedTP = 0; 
   int _currentQuestionAttempts = 0; 
@@ -137,7 +137,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     });
   }
 
-  void _saveStatsAndExit() {
+  // ÇÖZÜM: TP Gecikme Sorunu. Kullanıcı cihazın geri tuşuna basarsa veriler pop olmadan önce anında kaydedilir.
+  void _finalizeQuizAndPop() {
     if (!_isStatsSaved && answeredQuestions > 0) {
       _isStatsSaved = true;
       widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers, _isNewRecord);
@@ -152,6 +153,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
+    if (!_isStatsSaved && answeredQuestions > 0) {
+      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers, _isNewRecord);
+    }
     super.dispose();
   }
 
@@ -767,280 +771,292 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     if (widget.words.isEmpty) return Scaffold(appBar: AppBar(title: const Text("Quiz")), body: const Center(child: Text("Bu kütüphanede yeterli kelime yok.")));
 
-    if (isQuizFinished) {
-      return Scaffold(
-        appBar: AppBar(title: const Text("Lexis Eldora | Quiz İstatistikleri", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
-        body: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_isNewRecord) ...[
-                   const Text("🏆 YENİ REKOR KIRDINIZ!", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.amber, shadows: [Shadow(color: Colors.orange, blurRadius: 10)])),
-                   const SizedBox(height: 8),
-                   Text("$_secondsElapsed Saniyede $correctAnswers Doğru Bildin!", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
-                   const SizedBox(height: 10),
-                   Container(
-                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                     decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.amber)),
-                     child: Row(
-                       mainAxisSize: MainAxisSize.min,
-                       children: [
-                         const Icon(Icons.stars, color: Colors.amber, size: 24),
-                         const SizedBox(width: 8),
-                         Text("REKOR ÖDÜLÜ: +$_recordBonus TP", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 16)),
-                       ],
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        _finalizeQuizAndPop();
+      },
+      child: isQuizFinished 
+      ? Scaffold(
+          appBar: AppBar(title: const Text("Lexis Eldora | Quiz İstatistikleri", style: TextStyle(fontWeight: FontWeight.bold)), elevation: 0),
+          body: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_isNewRecord) ...[
+                     const Text("🏆 YENİ REKOR KIRDINIZ!", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.amber, shadows: [Shadow(color: Colors.orange, blurRadius: 10)])),
+                     const SizedBox(height: 8),
+                     Text("$_secondsElapsed Saniyede $correctAnswers Doğru Bildin!", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                     const SizedBox(height: 10),
+                     Container(
+                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                       decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.amber)),
+                       child: Row(
+                         mainAxisSize: MainAxisSize.min,
+                         children: [
+                           const Icon(Icons.stars, color: Colors.amber, size: 24),
+                           const SizedBox(width: 8),
+                           Text("REKOR ÖDÜLÜ: +$_recordBonus TP", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 16)),
+                         ],
+                       ),
                      ),
-                   ),
-                   const SizedBox(height: 20),
-                ] else ...[
-                   const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
-                   const SizedBox(height: 10),
-                   Lottie.network('https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', height: 150, repeat: true, errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber)),
-                   const SizedBox(height: 10),
-                   const Text("Congratulations!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                   const SizedBox(height: 20),
-                ],
+                     const SizedBox(height: 20),
+                  ] else ...[
+                     const Text("Quiz Tamamlandı! 🎉", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+                     const SizedBox(height: 10),
+                     Lottie.network('https://assets9.lottiefiles.com/packages/lf20_touohxv0.json', height: 150, repeat: true, errorBuilder: (context, error, stackTrace) => const Icon(Icons.emoji_events, size: 80, color: Colors.amber)),
+                     const SizedBox(height: 10),
+                     const Text("Congratulations!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                     const SizedBox(height: 20),
+                  ],
 
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 10))]
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      children: [
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Doğru Sayısı:", style: TextStyle(fontSize: 18)), Text("$correctAnswers", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green))]),
-                        const Divider(height: 15),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Yanlış Sayısı:", style: TextStyle(fontSize: 18)), Text("$wrongAnswers", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red))]),
-                        const Divider(height: 15),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Geçen Süre:", style: TextStyle(fontSize: 18)), Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue))]),
-                        const Divider(height: 30),
-                        
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Normal TP:", style: TextStyle(fontSize: 16)), Text("+$_normalTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
-                        if (widget.isWordNet)
-                          Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Bonusu:", style: TextStyle(fontSize: 16, color: Colors.indigo)), Text("+$_wordNetNormalBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigoAccent))])),
-                        if (_comboTP > 0)
-                          Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Combo Ödülü:", style: TextStyle(fontSize: 16, color: Colors.orange)), Text("+$_comboTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orangeAccent))])),
-                        if (widget.isWordNet && _wordNetComboBonus > 0)
-                          Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Combo:", style: TextStyle(fontSize: 16, color: Colors.deepPurple)), Text("+$_wordNetComboBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent))])),
-                        
-                        const Divider(height: 30),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Text("Toplam TP:", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), 
-                          Row(
-                            children: [
-                              Icon(Icons.diamond, color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.green, size: 24),
-                              const SizedBox(width: 6),
-                              Text("${_sessionEarnedTP > 0 ? '+' : ''}$_sessionEarnedTP", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.green)),
-                            ],
-                          )
-                        ]),
-                      ],
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 10))]
                     ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        children: [
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Doğru Sayısı:", style: TextStyle(fontSize: 18)), Text("$correctAnswers", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green))]),
+                          const Divider(height: 15),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Yanlış Sayısı:", style: TextStyle(fontSize: 18)), Text("$wrongAnswers", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red))]),
+                          const Divider(height: 15),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Geçen Süre:", style: TextStyle(fontSize: 18)), Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue))]),
+                          const Divider(height: 30),
+                          
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Normal TP:", style: TextStyle(fontSize: 16)), Text("+$_normalTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
+                          if (widget.isWordNet)
+                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Bonusu:", style: TextStyle(fontSize: 16, color: Colors.indigo)), Text("+$_wordNetNormalBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigoAccent))])),
+                          if (_comboTP > 0)
+                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Combo Ödülü:", style: TextStyle(fontSize: 16, color: Colors.orange)), Text("+$_comboTP", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orangeAccent))])),
+                          if (widget.isWordNet && _wordNetComboBonus > 0)
+                            Padding(padding: const EdgeInsets.only(top: 8.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("WordNet Combo:", style: TextStyle(fontSize: 16, color: Colors.deepPurple)), Text("+$_wordNetComboBonus", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent))])),
+                          
+                          const Divider(height: 30),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Text("Toplam TP:", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), 
+                            Row(
+                              children: [
+                                Icon(Icons.diamond, color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.green, size: 24),
+                                const SizedBox(width: 6),
+                                Text("${_sessionEarnedTP > 0 ? '+' : ''}$_sessionEarnedTP", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.green)),
+                              ],
+                            )
+                          ]),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  SizedBox(width: double.infinity, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 5), icon: const Icon(Icons.refresh), label: const Text("YENİ QUİZ BAŞLAT", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: _resetQuiz)),
+                  const SizedBox(height: 16),
+                  SizedBox(width: double.infinity, child: TextButton.icon(
+                    style: TextButton.styleFrom(padding: const EdgeInsets.all(16)), 
+                    icon: const Icon(Icons.home), 
+                    label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), 
+                    onPressed: () { 
+                      HapticFeedback.lightImpact(); 
+                      _finalizeQuizAndPop();
+                    }
+                  )),
+                  const SizedBox(height: 40), 
+                ],
+              ),
+            ),
+          ),
+        )
+      : Scaffold(
+          extendBodyBehindAppBar: true, 
+          appBar: AppBar(
+            title: const Text("Lexis Eldora | Quiz", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)), 
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: widget.isLowPowerMode 
+              ? Container(color: Theme.of(context).scaffoldBackgroundColor)
+              : ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(color: Theme.of(context).primaryColor.withOpacity(0.8)),
+                  ),
+                ),
+            actions: [
+              IconButton(
+                icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), 
+                onPressed: () { 
+                  HapticFeedback.selectionClick(); 
+                  setState(() => isAudioEnabled = !isAudioEnabled); 
+                }
+              )
+            ]
+          ),
+          body: Container(
+            decoration: widget.isLowPowerMode
+              ? BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor)
+              : BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Theme.of(context).primaryColor.withOpacity(0.1), Colors.transparent], 
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter
+                  )
+                ),
+            child: ListView(
+              padding: const EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 120), 
+              physics: const BouncingScrollPhysics(),
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(children: [const Icon(Icons.check_circle, color: Colors.green), const SizedBox(width: 5), Text(correctAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
+                    Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.blueAccent)),
+                    Row(children: [Text(wrongAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red)), const SizedBox(width: 5), const Icon(Icons.cancel, color: Colors.red)]),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_combo >= 2) _buildLiveComboBadge(),
+                      Text(
+                        "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
+                        style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)
+                      ),
+                      const SizedBox(width: 20),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black87,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _sessionEarnedTP < 0 ? Colors.redAccent.withOpacity(0.5) : Colors.lightBlueAccent.withOpacity(0.5)),
+                          boxShadow: [BoxShadow(color: _sessionEarnedTP < 0 ? Colors.redAccent.withOpacity(0.2) : Colors.lightBlueAccent.withOpacity(0.2), blurRadius: 8)]
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.diamond, color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.lightBlueAccent, size: 14),
+                            const SizedBox(width: 4),
+                            Text("$_sessionEarnedTP", style: TextStyle(color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.lightBlueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                LinearProgressIndicator(value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0, backgroundColor: Colors.grey[300], color: Theme.of(context).primaryColor, minHeight: 8, borderRadius: BorderRadius.circular(10)),
+                const SizedBox(height: 30),
+                
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _speakText(_displayWordStr, _currentReadLang); 
+                  },
+                  child: AnimatedBuilder(
+                    animation: _entranceController,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(0, 50 * (1 - _entranceController.value)),
+                        child: Opacity(
+                          opacity: _entranceController.value,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: widget.isLowPowerMode
+                            ? _buildQuestionCardContent()
+                            : BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: _buildQuestionCardContent()
+                              ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 40),
-                SizedBox(width: double.infinity, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 5), icon: const Icon(Icons.refresh), label: const Text("YENİ QUİZ BAŞLAT", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: _resetQuiz)),
-                const SizedBox(height: 16),
-                SizedBox(width: double.infinity, child: TextButton.icon(style: TextButton.styleFrom(padding: const EdgeInsets.all(16)), icon: const Icon(Icons.home), label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: () { HapticFeedback.lightImpact(); _saveStatsAndExit(); })),
-                const SizedBox(height: 40), 
+                
+                ...List.generate(options.length, (index) {
+                  String option = options[index];
+                  bool isCorrect = option == correctOption;
+                  bool isWrongSelected = selectedWrongOptions.contains(option);
+                  
+                  Color cardColor = Theme.of(context).cardColor;
+                  Widget? trailingIcon;
+                  
+                  if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.2); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); } 
+                  else if (isWrongSelected) { cardColor = Colors.red.withOpacity(0.2); trailingIcon = const Icon(Icons.cancel, color: Colors.red); }
+
+                  Widget tile = Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: cardColor, 
+                      border: Border.all(color: isAnsweredCorrectly && isCorrect ? Colors.green : (isWrongSelected ? Colors.red : borderColor.withOpacity(0.3)), width: 2), 
+                      borderRadius: BorderRadius.circular(16), 
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)]
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => _checkAnswer(option),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500)),
+                              ),
+                              if (trailingIcon != null) ...[
+                                const SizedBox(width: 12),
+                                trailingIcon,
+                              ]
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+
+                  if (isWrongSelected && option == _lastWrongOption) tile = AnimatedBuilder(animation: _shakeController, builder: (c, ch) => Transform.translate(offset: Offset(sin(_shakeController.value * pi * 6) * 10, 0), child: ch), child: tile);
+                  if (isAnsweredCorrectly && isCorrect) tile = AnimatedBuilder(animation: _scaleController, builder: (c, ch) => Transform.scale(scale: 1.0 + (_scaleController.value * 0.05), child: ch), child: tile);
+
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: Duration(milliseconds: 400 + (index * 150)), 
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Transform.translate(
+                        offset: Offset(0, 30 * (1 - value)),
+                        child: Opacity(
+                          opacity: value.clamp(0.0, 1.0),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: FadeTransition(
+                      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), 
+                      child: SlideTransition(
+                        position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), 
+                        child: tile
+                      )
+                    )
+                  );
+                }),
               ],
             ),
           ),
         ),
       );
-    }
-
-    Color borderColor = Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.5);
-
-    return Scaffold(
-      extendBodyBehindAppBar: true, 
-      appBar: AppBar(
-        title: const Text("Lexis Eldora | Quiz", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)), 
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: widget.isLowPowerMode 
-          ? Container(color: Theme.of(context).scaffoldBackgroundColor)
-          : ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(color: Theme.of(context).primaryColor.withOpacity(0.8)),
-              ),
-            ),
-        actions: [
-          IconButton(
-            icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), 
-            onPressed: () { 
-              HapticFeedback.selectionClick(); 
-              setState(() => isAudioEnabled = !isAudioEnabled); 
-            }
-          )
-        ]
-      ),
-      body: Container(
-        decoration: widget.isLowPowerMode
-          ? BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor)
-          : BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Theme.of(context).primaryColor.withOpacity(0.1), Colors.transparent], 
-                begin: Alignment.topCenter, end: Alignment.bottomCenter
-              )
-            ),
-        child: ListView(
-          padding: const EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 120), 
-          physics: const BouncingScrollPhysics(),
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(children: [const Icon(Icons.check_circle, color: Colors.green), const SizedBox(width: 5), Text(correctAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))]),
-                Text(_formatTime(_secondsElapsed), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.blueAccent)),
-                Row(children: [Text(wrongAnswers.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red)), const SizedBox(width: 5), const Icon(Icons.cancel, color: Colors.red)]),
-              ],
-            ),
-            const SizedBox(height: 10),
-            
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_combo >= 2) _buildLiveComboBadge(),
-                  Text(
-                    "Soru: ${min(answeredQuestions + 1, totalQuestions)} / $totalQuestions", 
-                    style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)
-                  ),
-                  const SizedBox(width: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _sessionEarnedTP < 0 ? Colors.redAccent.withOpacity(0.5) : Colors.lightBlueAccent.withOpacity(0.5)),
-                      boxShadow: [BoxShadow(color: _sessionEarnedTP < 0 ? Colors.redAccent.withOpacity(0.2) : Colors.lightBlueAccent.withOpacity(0.2), blurRadius: 8)]
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.diamond, color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.lightBlueAccent, size: 14),
-                        const SizedBox(width: 4),
-                        Text("$_sessionEarnedTP", style: TextStyle(color: _sessionEarnedTP < 0 ? Colors.redAccent : Colors.lightBlueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 8),
-            LinearProgressIndicator(value: totalQuestions > 0 ? answeredQuestions / totalQuestions : 0, backgroundColor: Colors.grey[300], color: Theme.of(context).primaryColor, minHeight: 8, borderRadius: BorderRadius.circular(10)),
-            const SizedBox(height: 30),
-            
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                _speakText(_displayWordStr, _currentReadLang); 
-              },
-              child: AnimatedBuilder(
-                animation: _entranceController,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, 50 * (1 - _entranceController.value)),
-                    child: Opacity(
-                      opacity: _entranceController.value,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: widget.isLowPowerMode
-                        ? _buildQuestionCardContent()
-                        : BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: _buildQuestionCardContent()
-                          ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 40),
-            
-            ...List.generate(options.length, (index) {
-              String option = options[index];
-              bool isCorrect = option == correctOption;
-              bool isWrongSelected = selectedWrongOptions.contains(option);
-              
-              Color cardColor = Theme.of(context).cardColor;
-              Widget? trailingIcon;
-              
-              if (isAnsweredCorrectly && isCorrect) { cardColor = Colors.green.withOpacity(0.2); trailingIcon = const Icon(Icons.check_circle, color: Colors.green); } 
-              else if (isWrongSelected) { cardColor = Colors.red.withOpacity(0.2); trailingIcon = const Icon(Icons.cancel, color: Colors.red); }
-
-              Widget tile = Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: cardColor, 
-                  border: Border.all(color: isAnsweredCorrectly && isCorrect ? Colors.green : (isWrongSelected ? Colors.red : borderColor.withOpacity(0.3)), width: 2), 
-                  borderRadius: BorderRadius.circular(16), 
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)]
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () => _checkAnswer(option),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(option, style: const TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w500)),
-                          ),
-                          if (trailingIcon != null) ...[
-                            const SizedBox(width: 12),
-                            trailingIcon,
-                          ]
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-
-              if (isWrongSelected && option == _lastWrongOption) tile = AnimatedBuilder(animation: _shakeController, builder: (c, ch) => Transform.translate(offset: Offset(sin(_shakeController.value * pi * 6) * 10, 0), child: ch), child: tile);
-              if (isAnsweredCorrectly && isCorrect) tile = AnimatedBuilder(animation: _scaleController, builder: (c, ch) => Transform.scale(scale: 1.0 + (_scaleController.value * 0.05), child: ch), child: tile);
-
-              return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: Duration(milliseconds: 400 + (index * 150)), 
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) {
-                  return Transform.translate(
-                    offset: Offset(0, 30 * (1 - value)),
-                    child: Opacity(
-                      opacity: value.clamp(0.0, 1.0),
-                      child: child,
-                    ),
-                  );
-                },
-                child: FadeTransition(
-                  opacity: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), 
-                  child: SlideTransition(
-                    position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(CurvedAnimation(parent: _entranceController, curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut))), 
-                    child: tile
-                  )
-                )
-              );
-            }),
-          ],
-        ),
-      ),
-    );
   }
 
+  // Modüler hale getirilmiş Kart İçeriği
   Widget _buildQuestionCardContent() {
     return Container(
       width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
@@ -1080,18 +1096,27 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               ),
             ),
 
+          // YENİ PREMİUM YUVARLAK BİOHAZARD İKONU (Quiz Ekranı İçin)
           if (currentWord.libraryName.startsWith('\u{1F9EC}') && !_isCurrentWordNet)
             Padding(
               padding: const EdgeInsets.only(top: 24.0),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Transform.rotate(
-                    angle: -0.5,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white30, width: 1), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)), BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0))]),
-                      child: Transform.rotate(angle: 0.5, child: const Text("\u{1F9EC}", style: TextStyle(fontSize: 16, shadows: [Shadow(color: Colors.orangeAccent, blurRadius: 15), Shadow(color: Colors.purpleAccent, blurRadius: 15)]))),
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black,
+                      border: Border.all(color: Colors.yellowAccent.shade700, width: 2),
+                      boxShadow: [BoxShadow(color: Colors.yellowAccent.withOpacity(0.5), blurRadius: 8)]
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/biohazardicon.webp',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.coronavirus, color: Colors.yellowAccent, size: 24),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
