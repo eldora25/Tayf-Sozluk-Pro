@@ -23,7 +23,7 @@ class SettingsScreen extends StatefulWidget {
     required this.selectedLibrary,
     required this.selectedLevel,
     required this.isGlobalSrsEnabled,
-    required this.isLowPowerMode,
+    required this.isLowPowerMode, // YENİ
     required this.availableLibraries,
     required this.onSaveSettings,
     required this.onAddPackage,
@@ -125,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0 + MediaQuery.of(context).padding.bottom),
             children: [
               
-              // YENİ: DÜŞÜK GÜÇ MODU
+              // YENİ: DÜŞÜK GÜÇ / PERFORMANS MODU
               _buildSectionTitle("Sistem & Performans", Icons.speed),
               _buildCard(
                 padding: const EdgeInsets.all(8),
