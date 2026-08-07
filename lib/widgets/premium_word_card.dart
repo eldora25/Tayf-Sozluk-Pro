@@ -196,7 +196,7 @@ class PremiumWordCard extends StatelessWidget {
                               shape: BoxShape.circle, color: Colors.black, border: Border.all(color: Colors.yellowAccent.shade700, width: 2),
                               boxShadow: [BoxShadow(color: Colors.yellowAccent.withOpacity(0.5), blurRadius: 8)]
                             ),
-                            child: ClipOval(child: Image.asset('assets/acd21dcc2efa6d403b570d2bcaa10ef5.webp', fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.coronavirus, color: Colors.yellowAccent, size: 24))),
+                            child: ClipOval(child: Image.asset('assets/biohazardicon.webp', fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.coronavirus, color: Colors.yellowAccent, size: 24))),
                           ),
                           const SizedBox(width: 8),
                           Container(
