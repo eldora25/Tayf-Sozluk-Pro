@@ -3,8 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; 
 import 'models.dart';
-import 'core/db_helper.dart';
-import 'core/tts_manager.dart';
 
 class StatisticsScreen extends StatelessWidget {
   final List<WordModel> allWords;
@@ -229,7 +227,7 @@ class StatisticsScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text("Hangi kelimeden kaç adet saf kart üretildi?", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    const Text("Hangi kök kelimeden kaç adet saf kart üretildi?", style: TextStyle(color: Colors.grey, fontSize: 13)),
                     const SizedBox(height: 20),
                     Flexible(
                       child: treeData.isEmpty 
@@ -239,7 +237,7 @@ class StatisticsScreen extends StatelessWidget {
                             physics: const BouncingScrollPhysics(),
                             itemCount: treeData.length,
                             itemBuilder: (ctx, i) {
-                              String word = treeData[i].key;
+                              String word = treeData[i].key; // YENİ: Kök Kelime (rootWord)
                               int count = treeData[i].value;
                               return Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -255,7 +253,7 @@ class StatisticsScreen extends StatelessWidget {
                                     decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), shape: BoxShape.circle),
                                     child: const Icon(Icons.biotech, color: Colors.purpleAccent),
                                   ),
-                                  title: Text(word, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  title: Text("Kök: $word", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                   trailing: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
@@ -417,10 +415,12 @@ class StatisticsScreen extends StatelessWidget {
     int totalMitosisCount = 0;
     Map<String, int> mitosisTree = {};
 
+    // YENİ: Mitoz klonları kök kelimeye (rootWord) göre gruplanır
     for (var w in allActiveWords) {
       if (w.libraryName.startsWith('\u{1F9EC} Mitoz')) {
         totalMitosisCount++;
-        mitosisTree[w.word] = (mitosisTree[w.word] ?? 0) + 1;
+        String parent = (w.rootWord != null && w.rootWord!.isNotEmpty) ? w.rootWord! : w.word;
+        mitosisTree[parent] = (mitosisTree[parent] ?? 0) + 1;
       }
     }
     
