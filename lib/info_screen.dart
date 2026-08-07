@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class InfoScreen extends StatelessWidget {
   const InfoScreen({super.key});
@@ -8,10 +9,11 @@ class InfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
+    bool isTr = context.locale.languageCode == 'tr';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+        title: Text(isTr ? "Nasıl Kullanılır & Özellikler" : "How to Use & Features", style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
         elevation: 0,
       ),
       body: ListView(
@@ -30,12 +32,16 @@ class InfoScreen extends StatelessWidget {
               boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8))],
             ),
             child: Column(
-              children: const [
-                Icon(Icons.menu_book_rounded, size: 64, color: Colors.white),
-                SizedBox(height: 16),
-                Text("Lexis Eldora", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2)),
-                SizedBox(height: 8),
-                Text("Akıllı Kelime Öğrenme & Aralıklı Tekrar Sistemi", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontStyle: FontStyle.italic, fontSize: 14)),
+              children: [
+                const Icon(Icons.menu_book_rounded, size: 64, color: Colors.white),
+                const SizedBox(height: 16),
+                const Text("Lexis Eldora", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2)),
+                const SizedBox(height: 8),
+                Text(
+                  isTr ? "Akıllı Kelime Öğrenme & Aralıklı Tekrar Sistemi" : "Smart Word Learning & Spaced Repetition System", 
+                  textAlign: TextAlign.center, 
+                  style: const TextStyle(color: Colors.white70, fontStyle: FontStyle.italic, fontSize: 14)
+                ),
               ],
             ),
           ),
@@ -45,45 +51,56 @@ class InfoScreen extends StatelessWidget {
             context,
             icon: Icons.language,
             color: Colors.indigo,
-            title: "WordNet Veritabanı (150.000+ Kelime)",
-            description: "Gelişmiş İngilizce-İngilizce kelime ağından oluşan bu devasa sözlük, ilk kullanımda Isar veritabanına kalıcı olarak gömülür. Bu işlem sadece bir kez yapılır ve cihazınızın hızına bağlı olarak 1-2 dakika sürebilir. Sonrasında tüm sorgularınız, quiz eşleştirmeleriniz ve listeleriniz tamamen offline (internetsiz) ve ışık hızında çalışır.",
+            title: isTr ? "WordNet Veritabanı (150.000+ Kelime)" : "WordNet Database (150,000+ Words)",
+            description: isTr 
+                ? "Gelişmiş İngilizce-İngilizce kelime ağından oluşan bu devasa sözlük, ilk kullanımda Isar veritabanına kalıcı olarak gömülür. Bu işlem sadece bir kez yapılır ve cihazınızın hızına bağlı olarak 1-2 dakika sürebilir. Sonrasında tüm sorgularınız, quiz eşleştirmeleriniz ve listeleriniz tamamen offline (internetsiz) ve ışık hızında çalışır."
+                : "Consisting of an advanced English-English word net, this massive dictionary is permanently embedded into the Isar database upon first use. This process is done only once and can take 1-2 minutes depending on your device's speed. Afterwards, all your queries, quiz matches, and lists work completely offline and at lightning speed.",
           ),
           _buildFeatureCard(
             context,
             icon: Icons.schedule,
             color: Colors.blue,
-            title: "Aralıklı Tekrar Sistemi (SRS)",
-            description: "Öğrendiğiniz kelimeler hafıza eğrinize göre (1, 2, 4, 9, 14 gün) aralıklarla karşınıza çıkar. 'Biliyorum' dediğiniz kelimelerin seviyesi artar, 'Tekrar' dediğiniz kelimeler başa döner.",
+            title: isTr ? "Aralıklı Tekrar Sistemi (SRS)" : "Spaced Repetition System (SRS)",
+            description: isTr
+                ? "Öğrendiğiniz kelimeler hafıza eğrinize göre (1, 2, 4, 9, 14 gün) aralıklarla karşınıza çıkar. 'Biliyorum' dediğiniz kelimelerin seviyesi artar, 'Tekrar' dediğiniz kelimeler başa döner."
+                : "The words you learn appear to you at intervals according to your memory curve (1, 2, 4, 9, 14 days). The level of words you say 'I know' increases, and words you say 'Repeat' go back to the beginning.",
           ),
           _buildFeatureCard(
             context,
             icon: Icons.local_fire_department,
             color: Colors.orange,
-            title: "Günlük Seri & Buz Kalkanı",
-            description: "Uygulamayı her gün kullanarak serinizi büyütün. Kazandığınız Tayf Puanlarıyla (TP) 'Buz Kalkanı' alarak, uygulamaya giremediğiniz günlerde serinizin bozulmasını engelleyebilirsiniz.",
+            title: isTr ? "Günlük Seri & Buz Kalkanı" : "Daily Streak & Freeze Shield",
+            description: isTr
+                ? "Uygulamayı her gün kullanarak serinizi büyütün. Kazandığınız Tayf Puanlarıyla (TP) 'Buz Kalkanı' alarak, uygulamaya giremediğiniz günlerde serinizin bozulmasını engelleyebilirsiniz."
+                : "Grow your streak by using the app every day. By purchasing a 'Freeze Shield' with the Tayf Points (TP) you earned, you can prevent your streak from breaking on days you cannot open the app.",
           ),
           _buildFeatureCard(
             context,
             icon: Icons.quiz,
             color: Colors.deepPurpleAccent,
-            title: "Dinamik Quiz Modu",
-            description: "Kelimeleri ezberlemek için %40 zorlu kelimeler, %60 yeni kelimelerle harmanlanmış, zamana karşı yarışılan çoktan seçmeli zeki quiz modlarını kullanabilirsiniz.",
+            title: isTr ? "Dinamik Quiz Modu" : "Dynamic Quiz Mode",
+            description: isTr
+                ? "Kelimeleri ezberlemek için %40 zorlu kelimeler, %60 yeni kelimelerle harmanlanmış, zamana karşı yarışılan çoktan seçmeli zeki quiz modlarını kullanabilirsiniz."
+                : "To memorize words, you can use intelligent multiple-choice timed quiz modes blended with 40% difficult words and 60% new words.",
           ),
           _buildFeatureCard(
             context,
             icon: Icons.warning_amber_rounded,
             color: Colors.amber,
-            title: "İncelenecekler (Karantina)",
-            description: "Ana ekranda çalışırken hatalı olduğunu düşündüğünüz bir karta denk gelirseniz, '!' (Sarı Ünlem) butonuna basarak onu anında eski havuzundan koparıp İncelenecekler listesine atabilirsiniz. Bu işlem, buluttaki güven skorunu da otonom olarak düşürür.",
+            title: isTr ? "İncelenecekler (Karantina)" : "Review Pool (Quarantine)",
+            description: isTr
+                ? "Ana ekranda çalışırken hatalı olduğunu düşündüğünüz bir karta denk gelirseniz, '!' (Sarı Ünlem) butonuna basarak onu anında eski havuzundan koparıp İncelenecekler listesine atabilirsiniz. Bu işlem, buluttaki güven skorunu da otonom olarak düşürür."
+                : "If you encounter a card while studying on the main screen that you think is flawed, you can instantly pull it out of its old pool and throw it into the Review list by pressing the '!' (Yellow Exclamation) button. This action also autonomously lowers its trust score in the cloud.",
           ),
 
-          // YENİ EKLENDİ: Parçalama (Split) Bilgisi
           _buildFeatureCard(
             context,
             icon: Icons.call_split_rounded,
             color: Colors.teal,
-            title: "🛠️ Kartları Ayrıştır ve Parçala (Split)",
-            description: "Kelime listelerinizde veya karantinada birleşik/hatalı kaydedilmiş kartlar görürseniz (Örn: Kelime: Apple, Apples) bu kelimeyi düzenle diyerek 'PARÇALA' butonuna basın. Tek dokunuşla bu kartı bağımsız kök kelimelere ayırıp, eşsiz DNA'ları ile sisteme saf kartlar olarak geri kazandırabilirsiniz.",
+            title: isTr ? "🛠️ Kartları Ayrıştır ve Parçala (Split)" : "🛠️ Split and Breakdown Cards (Split)",
+            description: isTr
+                ? "Kelime listelerinizde veya karantinada birleşik/hatalı kaydedilmiş kartlar görürseniz (Örn: Kelime: Apple, Apples) bu kelimeyi düzenle diyerek 'PARÇALA' butonuna basın. Tek dokunuşla bu kartı bağımsız kök kelimelere ayırıp, eşsiz DNA'ları ile sisteme saf kartlar olarak geri kazandırabilirsiniz."
+                : "If you see combined/incorrectly saved cards in your word lists or quarantine (e.g., Word: Apple, Apples), tap edit and press the 'SPLIT' button. With a single touch, you can separate this card into independent root words and bring them back to the system as pure cards with their unique DNAs.",
           ),
           
           const SizedBox(height: 16),
@@ -109,10 +126,10 @@ class InfoScreen extends StatelessWidget {
                     children: [
                       const Icon(Icons.public, color: Colors.deepPurpleAccent, size: 28),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          "🌍 Firebase Topluluk & 🧬 Mitoz Bulut Ekosistemi",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent),
+                          isTr ? "🌍 Firebase Topluluk & 🧬 Mitoz Bulut Ekosistemi" : "🌍 Firebase Community & 🧬 Mitosis Cloud Ecosystem",
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent),
                         ),
                       ),
                       Container(
@@ -122,13 +139,15 @@ class InfoScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.4), blurRadius: 4)]
                         ),
-                        child: const Text("YENİ", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                        child: Text(isTr ? "YENİ" : "NEW", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
                       )
                     ],
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "Lexis Eldora artık e-posta gönderip bekleme devrini kapatarak tamamen otonomleşti! Doğrudan bulut entegrasyonu sayesinde verileriniz anlık olarak senkronize edilir ve kalite filtreden geçer.",
+                    isTr 
+                        ? "Lexis Eldora artık e-posta gönderip bekleme devrini kapatarak tamamen otonomleşti! Doğrudan bulut entegrasyonu sayesinde verileriniz anlık olarak senkronize edilir ve kalite filtreden geçer."
+                        : "Lexis Eldora has now become completely autonomous, eliminating the era of sending emails and waiting! Thanks to direct cloud integration, your data is synchronized instantly and filtered for quality.",
                     style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
                   ),
                   const SizedBox(height: 20),
@@ -136,39 +155,46 @@ class InfoScreen extends StatelessWidget {
                     context, 
                     Icons.biotech, 
                     Colors.purple, 
-                    "Mitoz Bölünme (Saf Kartlar):", 
-                    "Quiz çözerken çok anlamlı kelimeler (Örn: Apple = Elma, Meyve) doğru bilindikçe otomatik bölünür ve 'Mitoz' kütüphanenize tek anlamlı kusursuz bilgi kartları olarak eşsiz DNA damgasıyla düşer."
+                    isTr ? "Mitoz Bölünme (Saf Kartlar):" : "Mitotic Fission (Pure Cards):", 
+                    isTr 
+                        ? "Quiz çözerken çok anlamlı kelimeler (Örn: Apple = Elma, Meyve) doğru bilindikçe otomatik bölünür ve 'Mitoz' kütüphanenize tek anlamlı kusursuz bilgi kartları olarak eşsiz DNA damgasıyla düşer."
+                        : "Multi-meaning words while solving quizzes (e.g., Apple = Elma, Meyve) automatically split as they are answered correctly and drop into your 'Mitosis' library as single-meaning perfect flashcards with a unique DNA stamp."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
                     context, 
                     Icons.cloud_upload_rounded, 
                     Colors.purpleAccent, 
-                    "Buluta Senkronize Et (Toplu Batch Gönderim):", 
-                    "Kütüphane Yönetimi ekranındaki mor yükleme butonuna basarak mitoz kartlarınızı saniyeler içinde Firebase bulutuna aktarabilirsiniz. Kompozit anahtar mimarisi (Kelime + Anlam) sayesinde mükerrer kayıtlar engellenir, popülarite skoru artar ve +50 TP kazanırsınız."
+                    isTr ? "Buluta Senkronize Et (Toplu Batch Gönderim):" : "Sync to Cloud (Batch Upload):", 
+                    isTr
+                        ? "Kütüphane Yönetimi ekranındaki mor yükleme butonuna basarak mitoz kartlarınızı saniyeler içinde Firebase bulutuna aktarabilirsiniz. Kompozit anahtar mimarisi (Kelime + Anlam) sayesinde mükerrer kayıtlar engellenir, popülarite skoru artar ve +50 TP kazanırsınız."
+                        : "You can transfer your mitosis cards to the Firebase cloud in seconds by pressing the purple upload button on the Library Management screen. Thanks to the composite key architecture (Word + Meaning), duplicate entries are prevented, the popularity score increases, and you earn +50 TP."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
                     context, 
                     Icons.shield_rounded, 
                     Colors.redAccent, 
-                    "Otonom Karantina ve Kalite Filtresi:", 
-                    "Hatalı olduğunu düşündüğünüz kartlar için '!' karantina butonunu kullandığınızda, sistem buluttaki kartın Güven Skorunu (Trust Score) otonom olarak düşürür. Eksi skora düşen bozuk kartlar havuzdan otomatik olarak imha edilir."
+                    isTr ? "Otonom Karantina ve Kalite Filtresi:" : "Autonomous Quarantine and Quality Filter:", 
+                    isTr
+                        ? "Hatalı olduğunu düşündüğünüz kartlar için '!' karantina butonunu kullandığınızda, sistem buluttaki kartın Güven Skorunu (Trust Score) otonom olarak düşürür. Eksi skora düşen bozuk kartlar havuzdan otomatik olarak imha edilir."
+                        : "When you use the '!' quarantine button for cards you think are incorrect, the system autonomously lowers the Trust Score of the card in the cloud. Broken cards falling into negative scores are automatically destroyed from the pool."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
                     context, 
                     Icons.cloud_download, 
                     Colors.blue, 
-                    "Buluttan Havuz İndir (Çek):", 
-                    "Kütüphane Yönetimi ekranındaki Bulut ikonuna dokunarak isterseniz Standart Topluluk Havuzunu, isterseniz de %100 saf kartlardan oluşan Global Mitoz Havuzunu doğrudan güncel olarak indirebilirsiniz."
+                    isTr ? "Buluttan Havuz İndir (Çek):" : "Download Pool from Cloud (Pull):", 
+                    isTr
+                        ? "Kütüphane Yönetimi ekranındaki Bulut ikonuna dokunarak isterseniz Standart Topluluk Havuzunu, isterseniz de %100 saf kartlardan oluşan Global Mitoz Havuzunu doğrudan güncel olarak indirebilirsiniz."
+                        : "By tapping the Cloud icon on the Library Management screen, you can download either the Standard Community Pool or the Global Mitosis Pool consisting of 100% pure cards as up-to-date."
                   ),
                 ],
               ),
             ),
           ),
 
-          // YENİ EKLENDİ: İlerleme ve Username Bilgisi
           Container(
             margin: const EdgeInsets.only(bottom: 24),
             decoration: BoxDecoration(
@@ -192,7 +218,7 @@ class InfoScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          "İlerleme Geçmişi (Bulut Yedekleme)",
+                          isTr ? "İlerleme Geçmişi (Bulut Yedekleme)" : "Progress History (Cloud Backup)",
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.cyan.shade700),
                         ),
                       ),
@@ -200,7 +226,9 @@ class InfoScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "Emek vererek ulaştığınız SRS (Hafıza) seviyeleri, Tayf Puanları (TP), Ateşli Serileriniz ve satın aldığınız Buz Kalkanları artık tamamen güvende!",
+                    isTr
+                        ? "Emek vererek ulaştığınız SRS (Hafıza) seviyeleri, Tayf Puanları (TP), Ateşli Serileriniz ve satın aldığınız Buz Kalkanları artık tamamen güvende!"
+                        : "The SRS (Memory) levels, Tayf Points (TP), Streaks, and Freeze Shields you reached with your hard work are now completely safe!",
                     style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
                   ),
                   const SizedBox(height: 20),
@@ -208,24 +236,30 @@ class InfoScreen extends StatelessWidget {
                     context, 
                     Icons.person_pin_circle, 
                     Colors.cyan.shade600, 
-                    "Sana Özel Kullanıcı Adı (Username):", 
-                    "Yan menünün (Drawer) en üstünden 3-11 haneli büyük/küçük harf duyarlı şık bir Kullanıcı Adı (Örn: Tayfun25) belirleyebilirsiniz. Tüm kayıtlarınız bulutta sadece bu anahtarla şifrelenir."
+                    isTr ? "Sana Özel Kullanıcı Adı (Username):" : "Custom Username:", 
+                    isTr
+                        ? "Yan menünün (Drawer) en üstünden 3-11 haneli büyük/küçük harf duyarlı şık bir Kullanıcı Adı (Örn: Tayfun25) belirleyebilirsiniz. Tüm kayıtlarınız bulutta sadece bu anahtarla şifrelenir."
+                        : "You can set an elegant 3-11 digit case-sensitive Username (e.g., Tayfun25) from the top of the side menu (Drawer). All your records are encrypted in the cloud using only this key."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
                     context, 
                     Icons.cloud_upload, 
                     Colors.blueAccent, 
-                    "Günde 4 Kez Buluta Kilit (6 Saat Limiti):", 
-                    "Yan menüdeki 'Buluta Yedekle' seçeneği ile o anki tüm gelişiminizi kendi adınızla Firebase'e gönderebilirsiniz. Adil kullanım için bu işlem günde sadece 4 kez (6 saatte bir) yapılabilir."
+                    isTr ? "Günde 4 Kez Buluta Kilit (6 Saat Limiti):" : "Cloud Lock 4 Times a Day (6-Hour Limit):", 
+                    isTr
+                        ? "Yan menüdeki 'Buluta Yedekle' seçeneği ile o anki tüm gelişiminizi kendi adınızla Firebase'e gönderebilirsiniz. Adil kullanım için bu işlem günde sadece 4 kez (6 saatte bir) yapılabilir."
+                        : "You can send all your current progress to Firebase under your own name with the 'Backup to Cloud' option in the side menu. For fair use, this action can only be done 4 times a day (every 6 hours)."
                   ),
                   const SizedBox(height: 16),
                   _buildSubFeatureRow(
                     context, 
                     Icons.sync_rounded, 
                     Colors.green, 
-                    "Her Cihazda Anında Geri Yükleme:", 
-                    "Cihaz değiştirdiğinizde veya uygulamayı sildiğinizde, 'Buluttan Geri Yükle' sekmesine belirlediğiniz Kullanıcı Adını girmeniz yeterlidir. Tüm ilerlemeniz otonom olarak yeni cihaza taşınır. (Geri yüklemede süre sınırı yoktur)."
+                    isTr ? "Her Cihazda Anında Geri Yükleme:" : "Instant Restore on Every Device:", 
+                    isTr
+                        ? "Cihaz değiştirdiğinizde veya uygulamayı sildiğinizde, 'Buluttan Geri Yükle' sekmesine belirlediğiniz Kullanıcı Adını girmeniz yeterlidir. Tüm ilerlemeniz otonom olarak yeni cihaza taşınır. (Geri yüklemede süre sınırı yoktur)."
+                        : "When you change devices or uninstall the app, simply enter the Username you set into the 'Restore from Cloud' tab. All your progress is autonomously migrated to the new device. (There is no time limit on restore)."
                   ),
                 ],
               ),
@@ -253,7 +287,7 @@ class InfoScreen extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "PRO İPUCU: Akıllı Seslendirme (TTS)", 
+                        isTr ? "PRO İPUCU: Akıllı Seslendirme (TTS)" : "PRO TIP: Smart Voiceover (TTS)", 
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.amber.shade800),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -262,7 +296,9 @@ class InfoScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Uygulamanın yüklediğiniz dosyaları İngilizce mi yoksa Türkçe mi okuyacağını bilmesi için; dosya adınıza 'ing-tr' (veya 'eng-tur') ekleyebilirsiniz. \nÖrn: benim_sozlugum_ing-tr.csv\n\nVeya doğrudan dosyanızın İLK SATIRINA '#tts:ing-tr' parametresini yazarak motoru kusursuzca yönlendirebilirsiniz.",
+                  isTr
+                      ? "Uygulamanın yüklediğiniz dosyaları İngilizce mi yoksa Türkçe mi okuyacağını bilmesi için; dosya adınıza 'ing-tr' (veya 'eng-tur') ekleyebilirsiniz. \nÖrn: benim_sozlugum_ing-tr.csv\n\nVeya doğrudan dosyanızın İLK SATIRINA '#tts:ing-tr' parametresini yazarak motoru kusursuzca yönlendirebilirsiniz."
+                      : "For the app to know whether to read your uploaded files in English or Turkish, you can append 'ing-tr' (or 'eng-tur') to your filename.\nE.g., my_dictionary_ing-tr.csv\n\nOr you can directly guide the engine flawlessly by writing the '#tts:ing-tr' parameter on the FIRST LINE of your file.",
                   style: TextStyle(fontSize: 13.5, height: 1.5, color: isDark ? Colors.amber.shade100 : Colors.black87),
                 ),
               ],
@@ -277,27 +313,31 @@ class InfoScreen extends StatelessWidget {
                 child: const Icon(Icons.download_for_offline, color: Colors.green, size: 28),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  "İçe Aktarma (Import) Format Rehberi",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+                  isTr ? "İçe Aktarma (Import) Format Rehberi" : "Import Format Guide",
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            "Uygulamaya kendi kelime listelerinizi (TXT, CSV veya JSON) hatasız, kayıpsız ve en verimli şekilde aktarabilmek için dosyalarınızı aşağıdaki ideal formatlara göre düzenlemeniz önerilir.",
-            style: TextStyle(fontSize: 14, height: 1.5),
+          Text(
+            isTr
+                ? "Uygulamaya kendi kelime listelerinizi (TXT, CSV veya JSON) hatasız, kayıpsız ve en verimli şekilde aktarabilmek için dosyalarınızı aşağıdaki ideal formatlara göre düzenlemeniz önerilir."
+                : "To import your own word lists (TXT, CSV or JSON) into the app flawlessly, losslessly and in the most efficient way, it is recommended to organize your files according to the ideal formats below.",
+            style: const TextStyle(fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: 24),
 
           _buildFormatCard(
             context,
-            title: "1. TXT Formatı (Önerilen Basit Format)",
+            title: isTr ? "1. TXT Formatı (Önerilen Basit Format)" : "1. TXT Format (Recommended Simple Format)",
             extension: ".txt",
             color: Colors.blueGrey,
-            explanation: "Kelime ile anlamı ayırmak için İki Nokta ( : ), birden fazla anlamı birbirinden ayırmak için Noktalı Virgül ( ; ) kullanmalısınız. İsteğe bağlı olarak ilk satıra TTS dilini belirten parametreyi yazabilirsiniz.",
+            explanation: isTr
+                ? "Kelime ile anlamı ayırmak için İki Nokta ( : ), birden fazla anlamı birbirinden ayırmak için Noktalı Virgül ( ; ) kullanmalısınız. İsteğe bağlı olarak ilk satıra TTS dilini belirten parametreyi yazabilirsiniz."
+                : "You must use a Colon ( : ) to separate the word from its meaning, and a Semicolon ( ; ) to separate multiple meanings from each other. Optionally, you can write the parameter specifying the TTS language on the first line.",
             exampleCode: """#tts:ing-tr
 elma : meyve ; kırmızı veya yeşil renkli tatlı meyve
 araba : taşıt ; motorlu araç
@@ -306,10 +346,12 @@ book : kitap ; ayırtmak ; rezervasyon yapmak""",
 
           _buildFormatCard(
             context,
-            title: "2. CSV Formatı (Excel Tarzı Gelişmiş Format)",
+            title: isTr ? "2. CSV Formatı (Excel Tarzı Gelişmiş Format)" : "2. CSV Format (Excel Style Advanced Format)",
             extension: ".csv",
             color: Colors.teal,
-            explanation: "Sütunlar virgül ( , ) ile ayrılır. Sırasıyla: Kelime, Anlamlar, Örnekler, Seviye. Bir hücrenin içinde birden fazla anlam veya örnek varsa bunları Üç Boru ( ||| ) ile ayırabilirsiniz.",
+            explanation: isTr
+                ? "Sütunlar virgül ( , ) ile ayrılır. Sırasıyla: Kelime, Anlamlar, Örnekler, Seviye. Bir hücrenin içinde birden fazla anlam veya örnek varsa bunları Üç Boru ( ||| ) ile ayırabilirsiniz."
+                : "Columns are separated by commas ( , ). Respectively: Word, Meanings, Examples, Level. If a cell contains multiple meanings or examples, you can separate them with Three Pipes ( ||| ).",
             exampleCode: """#tts:ing-tr
 Word,Meaning,Example,Level
 apple,elma ||| meyve,I ate an apple.,Başlangıç
@@ -318,10 +360,12 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
 
           _buildFormatCard(
             context,
-            title: "3. JSON Formatı (Programcı Formatı)",
+            title: isTr ? "3. JSON Formatı (Programcı Formatı)" : "3. JSON Format (Developer Format)",
             extension: ".json",
             color: Colors.deepPurple,
-            explanation: "Dosyanız bir liste (array) içinde JSON objelerinden oluşmalıdır. 'word' kelimeyi, 'meanings' anlamları (dizi olarak), 'examples' örnekleri belirtir.",
+            explanation: isTr
+                ? "Dosyanız bir liste (array) içinde JSON objelerinden oluşmalıdır. 'word' kelimeyi, 'meanings' anlamları (dizi olarak), 'examples' örnekleri belirtir."
+                : "Your file must consist of JSON objects within a list (array). 'word' specifies the word, 'meanings' specifies meanings (as an array), and 'examples' specifies examples.",
             exampleCode: """[
   {
     "tts_language": "ing-tr",
@@ -407,6 +451,7 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
 
   Widget _buildFormatCard(BuildContext context, {required String title, required String extension, required Color color, required String explanation, required String exampleCode}) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
+    bool isTr = context.locale.languageCode == 'tr';
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -435,7 +480,7 @@ abandon,terk etmek ||| bırakmak,Don't abandon me. ||| He abandoned his car.,İl
               children: [
                 Text(explanation, style: const TextStyle(fontSize: 13.5, height: 1.5)),
                 const SizedBox(height: 16),
-                const Text("Örnek Dosya İçeriği:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+                Text(isTr ? "Örnek Dosya İçeriği:" : "Sample File Content:", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(16),
