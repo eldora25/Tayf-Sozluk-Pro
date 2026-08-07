@@ -21,7 +21,7 @@ import '../../core/data_parser.dart';
 import '../../widgets/shimmer_loading.dart';
 import '../../firebase_sync_service.dart';
 import '../../wordnet.dart'; 
-import '../../notification_service.dart'; // EKLENDİ: NotificationService hatası çözüldü
+import '../../notification_service.dart'; 
 
 import '../../quiz_screen.dart';
 import '../../add_word_screen.dart';
@@ -83,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   String selectedLibrary = 'Test Paketi'; 
   String selectedLevel = 'Genel';
+  bool _globalSrs = false; // YENİ: Global SRS Ayarı
   int dailyGoal = 10, quizThreshold = 10, quizQuestionCount = 10, currentCardIndex = 0;
   bool isFlipped = false;
   
@@ -619,9 +620,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           HapticFeedback.lightImpact();
                           Navigator.pop(context); 
                           Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen(
-                            currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, availableLibraries: safeLibraries(), 
-                            onSaveSettings: (nG, nT, nQC, nTI, nL, nLv) async { 
-                              setState(() { dailyGoal = nG; quizThreshold = nT; quizQuestionCount = nQC; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; }); 
+                            currentGoal: dailyGoal, currentThreshold: quizThreshold, currentQuestionCount: quizQuestionCount, currentThemeIndex: widget.themeIndex, selectedLibrary: selectedLibrary, selectedLevel: selectedLevel, isGlobalSrsEnabled: _globalSrs, availableLibraries: safeLibraries(), 
+                            onSaveSettings: (nG, nT, nQC, nTI, nL, nLv, glSrs) async { 
+                              setState(() { dailyGoal = nG; quizThreshold = nT; quizQuestionCount = nQC; widget.onThemeChanged(nTI); selectedLibrary = nL; selectedLevel = nLv; _globalSrs = glSrs; }); 
                               await buildActiveDeck(); 
                               savePreferencesOnly(); 
                               Future.delayed(const Duration(milliseconds: 150), () {
@@ -862,6 +863,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     double progress = totalLibWords > 0 ? (learnedLibWords / totalLibWords) : 0.0;
     double bottomHeight = selectedLibrary != 'Tekrarlanması Gerekenler' ? 90.0 : 60.0;
 
+    // YENİ: Global SRS Kapalıysa, diğer kütüphanelerdeki acil kartları bul
+    int pendingGlobalSrs = 0;
+    if (!_globalSrs && selectedLibrary != 'Tekrarlanması Gerekenler') {
+       pendingGlobalSrs = toSRSRepeatWords.where((w) => w.libraryName != selectedLibrary).length + 
+                          toRepeatWords.where((w) => w.libraryName != selectedLibrary).length;
+    }
+
     return Scaffold(
       extendBodyBehindAppBar: true, 
       appBar: AppBar(
@@ -886,6 +894,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(isSrsMode ? "SRS Tekrar Modu" : "$selectedLibrary - $selectedLevel (${deck.length})", style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
+        actions: [
+          // YENİ: Kırmızı Rozet Uyarı Bildirimi
+          if (pendingGlobalSrs > 0)
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Dikkat! Diğer kütüphanelerde süresi gelmiş $pendingGlobalSrs SRS kartınız var. Ayarlardan Global SRS'i açarak onları buraya çekebilirsiniz."),
+                    backgroundColor: Colors.redAccent,
+                    duration: const Duration(seconds: 4),
+                  )
+                );
+              },
+              child: AnimatedBuilder(
+                animation: _warningPulseController,
+                builder: (context, child) {
+                  return Container(
+                    margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(0.6 * _warningPulseController.value), blurRadius: 10, spreadRadius: 2)]
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notifications_active, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text("$pendingGlobalSrs", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                      ],
+                    ),
+                  );
+                }
+              ),
+            )
+        ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(bottomHeight),
           child: Column(
