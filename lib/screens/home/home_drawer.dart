@@ -1,4 +1,5 @@
 part of 'home_screen.dart';
+import 'package:easy_localization/easy_localization.dart'; // ÇÖZÜM: context.locale ve setLocale için eksik olan import eklendi
 
 extension HomeDrawer on _HomeScreenState {
   Widget buildDrawer() {
@@ -92,7 +93,7 @@ extension HomeDrawer on _HomeScreenState {
                 
                 ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (100 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); buyFreeze(); }),
                 
-                // YENİ: TR - ENG Dil Değiştirme Butonu
+                // TR - ENG Dil Değiştirme Butonu (Import eklendiği için artık hatasız derlenecek)
                 ListTile(
                   leading: const Icon(Icons.translate, color: Colors.teal),
                   title: const Text("Dil Değiştir / Change Language", style: TextStyle(fontWeight: FontWeight.bold)),
