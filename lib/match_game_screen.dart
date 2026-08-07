@@ -5,7 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'package:isar/isar.dart';
 import 'models.dart';
-import 'main.dart'; 
+import 'main.dart';
+import 'core/db_helper.dart';
 
 class MatchGameScreen extends StatefulWidget {
   final List<WordModel> words;
