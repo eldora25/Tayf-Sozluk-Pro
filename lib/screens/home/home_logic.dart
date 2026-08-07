@@ -55,7 +55,8 @@ extension HomeLogic on _HomeScreenState {
       bestQuizTime = prefs.getInt('bestQuizTime') ?? 999999;
       bestQuizCorrect = prefs.getInt('bestQuizCorrect') ?? 0;
       bestQuizDate = prefs.getString('bestQuizDate') ?? "Henüz rekor yok";
-      _globalSrs = prefs.getBool('globalSrs') ?? false; // YENİ: Global SRS Ayarı
+      _globalSrs = prefs.getBool('globalSrs') ?? false; 
+      _isLowPowerMode = prefs.getBool('isLowPowerMode') ?? false; 
 
       int wordNetCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
 
@@ -195,13 +196,12 @@ extension HomeLogic on _HomeScreenState {
         createDefaultLibrary();
       }
 
-      // 4. WORDNET BEKLEME ANİMASYONU
       if (selectedLibrary == 'WordNet Veritabanı') {
         setState(() {
           _isAppLoading = true;
           _loadingText = "Devasa WordNet veritabanından en iyi kelimeler hazırlanıyor, lütfen sabırlı olun...";
         });
-        await Future.delayed(const Duration(milliseconds: 800)); // Premium hissiyat için kısa gecikme
+        await Future.delayed(const Duration(milliseconds: 100)); // UI yenilemesi için küçük bekleme
       }
 
       await buildActiveDeck();
@@ -241,7 +241,8 @@ extension HomeLogic on _HomeScreenState {
       prefs.setInt('bestQuizTime', bestQuizTime);
       prefs.setInt('bestQuizCorrect', bestQuizCorrect);
       prefs.setString('bestQuizDate', bestQuizDate);
-      prefs.setBool('globalSrs', _globalSrs); // YENİ
+      prefs.setBool('globalSrs', _globalSrs); 
+      prefs.setBool('isLowPowerMode', _isLowPowerMode); 
 
       if (learnedWordTimestamps.length > 5000) learnedWordTimestamps.removeRange(0, learnedWordTimestamps.length - 5000);
       if (completedQuizTimestamps.length > 5000) completedQuizTimestamps.removeRange(0, completedQuizTimestamps.length - 5000);
