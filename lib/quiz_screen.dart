@@ -601,6 +601,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               currentWord = existingMitosisCard;
               if (existingMitosisCard.correctCount >= widget.threshold) widget.onWordMastered(existingMitosisCard);
             } else {
+              // YENİ: Mitoz klonuna "rootWord" mirası atanıyor
               WordModel splitWord = WordModel(
                 word: currentWord.word,
                 meanings: isMeaning ? [_testedMeaningOrExample!] : [],
@@ -614,7 +615,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 nextReviewDate: currentWord.nextReviewDate,
                 sourceLanguage: currentWord.sourceLanguage,
                 targetLanguage: currentWord.targetLanguage,
-                pos: '', synonyms: [], antonyms: []
+                pos: '', synonyms: [], antonyms: [],
+                rootWord: currentWord.rootWord ?? currentWord.word, // Soy ağacı takibi
               );
               await isar.writeTxn(() async {
                 if (isGhostCard) {
@@ -703,6 +705,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               currentWord = existingMitosisCard;
               widget.onWrongWord(existingMitosisCard);
             } else {
+              // YENİ: Mitoz klonuna "rootWord" mirası atanıyor
               WordModel splitWord = WordModel(
                 word: currentWord.word,
                 meanings: isMeaning ? [_testedMeaningOrExample!] : [],
@@ -716,7 +719,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 nextReviewDate: currentWord.nextReviewDate,
                 sourceLanguage: currentWord.sourceLanguage,
                 targetLanguage: currentWord.targetLanguage,
-                pos: '', synonyms: [], antonyms: []
+                pos: '', synonyms: [], antonyms: [],
+                rootWord: currentWord.rootWord ?? currentWord.word, // Soy ağacı takibi
               );
               await isar.writeTxn(() async {
                 if (isGhostCard) {
