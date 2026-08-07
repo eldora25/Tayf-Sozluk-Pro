@@ -54,13 +54,12 @@ extension HomeLogic on _HomeScreenState {
       bestQuizCorrect = prefs.getInt('bestQuizCorrect') ?? 0;
       bestQuizDate = prefs.getString('bestQuizDate') ?? "Henüz rekor yok";
       _globalSrs = prefs.getBool('globalSrs') ?? false; 
-      _isLowPowerMode = prefs.getBool('isLowPowerMode') ?? false; // YENİ: Düşük Güç Modu
+      _isLowPowerMode = prefs.getBool('isLowPowerMode') ?? false; 
 
       int wordNetCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
 
       if (wordNetCount < 50000) {
         setState(() {
-          // ÇÖZÜM: BOTTOM OVERFLOW hatasını önlemek için metin kısaltıldı.
           _loadingText = "WordNet Kuruluyor...\n(1-2 dk sürebilir, bekleyiniz)";
         });
 
@@ -72,7 +71,6 @@ extension HomeLogic on _HomeScreenState {
 
         if (wnList.isNotEmpty) {
           setState(() {
-            // ÇÖZÜM: Overflow hatasını önlemek için optimize metin
             _loadingText = "Veritabanına Gömülüyor...\nLütfen uygulamayı kapatmayın.";
           });
 
@@ -242,7 +240,7 @@ extension HomeLogic on _HomeScreenState {
       prefs.setInt('bestQuizCorrect', bestQuizCorrect);
       prefs.setString('bestQuizDate', bestQuizDate);
       prefs.setBool('globalSrs', _globalSrs); 
-      prefs.setBool('isLowPowerMode', _isLowPowerMode); // YENİ
+      prefs.setBool('isLowPowerMode', _isLowPowerMode); 
 
       if (learnedWordTimestamps.length > 5000) learnedWordTimestamps.removeRange(0, learnedWordTimestamps.length - 5000);
       if (completedQuizTimestamps.length > 5000) completedQuizTimestamps.removeRange(0, completedQuizTimestamps.length - 5000);
@@ -281,7 +279,6 @@ extension HomeLogic on _HomeScreenState {
     savePreferencesOnly();
   }
 
-  // (Geri kalan metotlar aynen korunmuştur)
   List<String> safeLibraries() {
     var libs = allWords.map((e) => e.libraryName).toSet()
       ..addAll(learnedWords.map((e) => e.libraryName))
@@ -292,6 +289,132 @@ extension HomeLogic on _HomeScreenState {
     uniqueLibs.add('Tekrarlanması Gerekenler');
     uniqueLibs.add('WordNet Veritabanı');
     return uniqueLibs.toList();
+  }
+
+  // YENİ: İçe Aktarma Sihirbazına Yönlendirme (Refactoring)
+  Future<void> importFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json', 'csv', 'txt'],
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        PlatformFile file = result.files.first;
+
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ImportWizardScreen(
+                file: file,
+                availableLibraries: safeLibraries(),
+                onParseFile: (f) async {
+                   String content = await File(f.path!).readAsString();
+                   List<String> parsedJsons = await compute(parseLibraryDataInBackground, {
+                      'content': content,
+                      'extension': f.extension ?? '',
+                      'libraryName': 'Temp',
+                      'originalFileName': f.name
+                   });
+                   return parsedJsons.map((jsonStr) => WordModel.fromJson(jsonStr)).toList();
+                },
+                onImportConfirmed: (words, libName, level) async {
+                   setState(() {
+                     _isAppLoading = true;
+                     _loadingText = "Kelimeler Sihirbazdan Aktarılıyor...";
+                   });
+                   
+                   for(var w in words) {
+                     w.libraryName = libName;
+                     w.level = level;
+                     w.listType = 'all';
+                     allWords.add(w);
+                   }
+                   
+                   await isar.writeTxn(() async {
+                     await isar.wordModels.putAll(words);
+                   });
+                   
+                   selectedLibrary = libName;
+                   selectedLevel = level;
+                   
+                   await buildActiveDeck();
+                   savePreferencesOnly();
+                   
+                   setState(() {
+                     _isAppLoading = false;
+                   });
+                   
+                   if(mounted){
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${words.length} kelime başarıyla '$libName' kütüphanesine eklendi!"), backgroundColor: Colors.green));
+                   }
+                }
+              )
+            )
+          );
+        }
+      }
+    } catch (e) {
+       GlobalLogger.addLog("İçe aktarma sihirbazı hatası: $e");
+       if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dosya seçilemedi: $e"), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> loadPackageFromAssets(String assetPath, String extension, String libName) async {
+    setState(() {
+      _isAppLoading = true;
+      _loadingText = "$libName Paketi Yükleniyor...\nLütfen bekleyin.";
+    });
+
+    try {
+      final ByteData data = await rootBundle.load(assetPath);
+      final List<int> bytes = data.buffer.asUint8List();
+      final String content = utf8.decode(bytes);
+
+      final List<String> parsedJsons = await compute(parseLibraryDataInBackground, {
+        'content': content,
+        'extension': extension,
+        'libraryName': libName,
+        'originalFileName': assetPath.split('/').last
+      });
+
+      List<WordModel> newWords = [];
+      for (var jsonStr in parsedJsons) {
+        try {
+          newWords.add(WordModel.fromJson(jsonStr)..listType = 'all');
+        } catch (e) {}
+      }
+
+      await isar.writeTxn(() async {
+        await isar.wordModels.putAll(newWords);
+      });
+
+      setState(() {
+        allWords.addAll(newWords);
+        selectedLibrary = libName;
+      });
+
+      await buildActiveDeck();
+      savePreferencesOnly();
+
+      setState(() {
+        _isAppLoading = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$libName başarıyla yüklendi! (${newWords.length} kelime)"), backgroundColor: Colors.green));
+      }
+
+    } catch (e) {
+      GlobalLogger.addLog("Paket yükleme hatası: $e");
+      setState(() {
+        _isAppLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Paket yüklenirken hata oluştu: $e"), backgroundColor: Colors.red));
+      }
+    }
   }
 
   void speakWord(WordModel word, {bool isMeaning = false}) async {
