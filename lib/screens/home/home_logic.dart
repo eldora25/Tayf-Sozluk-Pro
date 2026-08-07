@@ -289,7 +289,7 @@ extension HomeLogic on _HomeScreenState {
     return uniqueLibs.toList();
   }
 
-  Future<void> speakWord(WordModel word, {bool isMeaning = false}) async {
+  void speakWord(WordModel word, {bool isMeaning = false}) async {
     try {
       await globalTts.stop();
       String rawText = "";
@@ -724,5 +724,289 @@ extension HomeLogic on _HomeScreenState {
         savePreferencesOnly();
       },
     )));
+  }
+
+  void triggerLevel5Celebration() {
+    for (int i = 0; i < 40; i++) { 
+      Future.delayed(Duration(milliseconds: i * 50), () {
+        List<Color> confettiColors = [Colors.redAccent, Colors.greenAccent, Colors.blueAccent, Colors.yellowAccent, Colors.purpleAccent, Colors.pinkAccent, Colors.orangeAccent];
+        Color randomColor = confettiColors[Random().nextInt(confettiColors.length)];
+        
+        showFlyingParticle(Icons.star, randomColor, () {
+          HapticFeedback.lightImpact();
+        }, targetIndex: Random().nextInt(3), isConfetti: true);
+      });
+    }
+  }
+
+  void showFlyingParticle(IconData icon, Color color, VoidCallback onArrived, {int targetIndex = 2, bool isConfetti = false}) {
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) {
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: Duration(milliseconds: isConfetti ? 1200 + Random().nextInt(600) : 1000), 
+          curve: isConfetti ? Curves.easeOutCirc : Curves.easeInOutCubic,
+          onEnd: () {
+            overlayEntry?.remove();
+            onArrived(); 
+          },
+          builder: (context, value, child) {
+            double startX = MediaQuery.of(context).size.width / 2 - 20 + (isConfetti ? (Random().nextDouble() * 150 - 75) : 0);
+            double startY = MediaQuery.of(context).size.height / 2 + (isConfetti ? (Random().nextDouble() * 150 - 75) : 0);
+            
+            double endX;
+            if (isConfetti) {
+              endX = startX + (Random().nextDouble() * 300 - 150);
+            } else {
+              if (targetIndex == 0) endX = MediaQuery.of(context).size.width * 0.2;
+              else if (targetIndex == 1) endX = MediaQuery.of(context).size.width * 0.5 - 20;
+              else endX = MediaQuery.of(context).size.width * 0.8;
+            }
+            
+            double endY = isConfetti ? MediaQuery.of(context).size.height + 50 : (MediaQuery.of(context).padding.top + 40.0); 
+
+            double currentX = startX + (endX - startX) * value;
+            double currentY = startY + (endY - startY) * value;
+
+            return Positioned(
+              left: currentX,
+              top: currentY,
+              child: Opacity(
+                opacity: isConfetti ? (1.0 - value).clamp(0.0, 1.0) : (value < 0.8 ? 1.0 : (1.0 - ((value - 0.8) * 5)).clamp(0.0, 1.0)), 
+                child: Transform.scale(
+                  scale: isConfetti ? (1.0 - (value * 0.5)) : (1.0 + (sin(value * pi) * 1.5)), 
+                  child: Transform.rotate(
+                    angle: isConfetti ? value * pi * 4 : 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: color.withOpacity(0.9), blurRadius: 25, spreadRadius: 5)]
+                      ),
+                      child: Icon(icon, color: color, size: isConfetti ? 20 : 30)
+                    ),
+                  )
+                )
+              ),
+            );
+          }
+        );
+      }
+    );
+    Overlay.of(context).insert(overlayEntry);
+  }
+
+  void recordActivity(int pointsEarned) {
+    if (pointsEarned > 0) {
+      int particles = pointsEarned > 5 ? 5 : pointsEarned;
+      int pointsPerParticle = pointsEarned ~/ particles;
+      int remainder = pointsEarned % particles;
+
+      for (int i = 0; i < particles; i++) {
+        Future.delayed(Duration(milliseconds: i * 250), () {
+          showFlyingParticle(Icons.diamond, Colors.lightBlueAccent, () {
+            if (mounted) {
+              setState(() => tayfPoints += pointsPerParticle + (i == particles - 1 ? remainder : 0));
+              savePreferencesOnly();
+              _tpFlashController.forward(from: 0.0).then((_) => _tpFlashController.reverse());
+            }
+          }, targetIndex: 2); 
+        });
+      }
+    } else {
+      savePreferencesOnly();
+    }
+  }
+
+  void buyFreeze() {
+    HapticFeedback.heavyImpact(); 
+    if (tayfPoints >= 100) {
+      setState(() { tayfPoints -= 100; });
+      savePreferencesOnly();
+      
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: "Kapat",
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (context, a1, a2) => const SizedBox(),
+        transitionBuilder: (context, a1, a2, child) {
+          return Transform.scale(
+            scale: Curves.easeOutBack.transform(a1.value),
+            child: AlertDialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              content: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 200, height: 200,
+                    decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.cyanAccent.withOpacity(0.6), blurRadius: 50, spreadRadius: 20)]),
+                  ),
+                  const Icon(Icons.ac_unit, size: 100, color: Colors.white),
+                  const Positioned(
+                    bottom: 0, 
+                    child: Text("KALKAN ALINDI!", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, shadows: [Shadow(blurRadius: 10, color: Colors.cyanAccent)]))
+                  )
+                ],
+              )
+            ),
+          );
+        }
+      );
+
+      Future.delayed(const Duration(milliseconds: 800), () {
+        showFlyingParticle(Icons.ac_unit, Colors.cyanAccent, () {
+          if (mounted) {
+            setState(() { streakFreezes++; });
+            savePreferencesOnly();
+            _freezeFlashController.forward(from: 0.0).then((_) => _freezeFlashController.reverse());
+          }
+        }, targetIndex: 1); 
+      });
+
+    } else {
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: "Kapat",
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (context, a1, a2) => const SizedBox(),
+        transitionBuilder: (context, a1, a2, child) {
+          return Transform.scale(
+            scale: Curves.easeOutBack.transform(a1.value),
+            child: AlertDialog(
+              backgroundColor: Colors.redAccent.withOpacity(0.9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Center(child: Icon(Icons.warning, color: Colors.white, size: 50)),
+              content: const Text("Yetersiz Tayf Puanı (TP). Kalkan için 100 TP gereklidir.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          );
+        }
+      );
+    }
+  }
+
+  void showCenteredDialog({required String title, required String message, required IconData icon, required Color color}) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 70),
+            const SizedBox(height: 16),
+            Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+            const SizedBox(height: 12),
+            Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.4)),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Tamam", style: TextStyle(fontWeight: FontWeight.bold))
+            )
+          ]
+        )
+      )
+    );
+  }
+
+  void changeUsernameDialog() {
+    TextEditingController userCtrl = TextEditingController(text: _username);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.badge, color: Theme.of(context).primaryColor, size: 28),
+            const SizedBox(width: 10),
+            const Text("Kullanıcı Adı", style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: TextField(
+          controller: userCtrl,
+          maxLength: 11,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')), 
+          ],
+          decoration: InputDecoration(
+            hintText: "Örn: Tayfun25",
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            filled: true,
+            fillColor: Theme.of(context).primaryColor.withOpacity(0.05),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            onPressed: () async {
+              String newName = userCtrl.text.trim();
+              if (newName.length >= 3 && newName.length <= 11) {
+                setState(() => _username = newName);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('username', newName);
+                if (mounted) Navigator.pop(context);
+              } else {
+                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kullanıcı adı en az 3, en fazla 11 karakter olmalıdır!")));
+              }
+            },
+            child: const Text("KAYDET", style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showInitialImportPrompt() {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Kapat",
+      transitionDuration: const Duration(milliseconds: 600),
+      pageBuilder: (context, a1, a2) => const SizedBox(),
+      transitionBuilder: (context, a1, a2, child) {
+        return Transform.translate(
+          offset: Offset(0, -50 * (1 - a1.value)),
+          child: Opacity(
+            opacity: a1.value,
+            child: AlertDialog(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Theme.of(context).primaryColor, width: 2)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Lottie.network('https://assets2.lottiefiles.com/packages/lf20_q5pk6p1k.json', height: 120, repeat: false, errorBuilder: (c, e, s) => Icon(Icons.cloud_sync, size: 80, color: Theme.of(context).primaryColor)),
+                  const SizedBox(height: 16),
+                  const Text("Geri Döndünüz!", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  const Text("Daha önce kaydettiğiniz bir ilerleme geçmişiniz (Tayf Puanı, Buz Kalkanı, SRS Seviyeleri, Ateşli Seri ve Rozetler) varsa, şimdi cihazınıza aktarabilirsiniz.", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, height: 1.4)),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.cloud_download),
+                      label: const Text("GEÇMİŞİ BULUTTAN İNDİR", style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        cloudRestoreProgress();
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context), 
+                    child: const Text("Sıfırdan Başla", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey))
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    );
   }
 }
