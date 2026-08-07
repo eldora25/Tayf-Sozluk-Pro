@@ -19,7 +19,7 @@ import '../../core/tts_manager.dart';
 import '../../core/srs_engine.dart'; 
 import '../../core/data_parser.dart';
 import '../../widgets/shimmer_loading.dart';
-import '../../widgets/premium_word_card.dart'; // YENİ: Parçalanmış (Refactored) Kart Modülü
+import '../../widgets/premium_word_card.dart'; 
 import '../../firebase_sync_service.dart';
 import '../../wordnet.dart'; 
 import '../../notification_service.dart'; 
@@ -32,7 +32,7 @@ import '../../statistics_screen.dart';
 import '../../edit_word_screen.dart';
 import '../../library_manager_screen.dart';
 import '../../manage_list_screen.dart';
-import '../import_wizard_screen.dart'; // YENİ: İçe Aktarma Sihirbazı Modülü
+import '../import_wizard_screen.dart'; 
 import '../../logger_screen.dart';
 import '../../match_game_screen.dart';
 import '../../pronunciation_screen.dart';
@@ -43,7 +43,7 @@ import '../../report_screen.dart';
 
 part 'home_logic.dart';
 part 'home_cloud.dart';
-part 'home_drawer.dart'; // YENİ: Parçalanmış Menü Modülü
+part 'home_drawer.dart'; 
 
 class HomeScreen extends StatefulWidget {
   final int themeIndex;
@@ -297,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           )
         ),
       ),
-      drawer: buildDrawer(), // ÇÖZÜM: Parçalanmış HomeDrawer modülünden çağrılır
+      drawer: buildDrawer(),
       body: _isLowPowerMode
         ? Container(
             color: Theme.of(context).scaffoldBackgroundColor,
@@ -420,7 +420,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 animation: _flipAnimation,
                                 builder: (context, child) {
                                   final angle = _flipAnimation.value * pi;
-                                  // ÇÖZÜM: Yüzlerce satırlık kart kodu parçalandı ve tek satıra indirgendi
                                   return Transform(
                                     transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateX(angle), 
                                     alignment: Alignment.center, 
@@ -510,7 +509,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         ),
                                         child: ClipOval(
                                           child: Image.asset(
-                                            'assets/acd21dcc2efa6d403b570d2bcaa10ef5.webp', // ÇÖZÜM: Image Optimization WebP
+                                            'assets/biohazardicon.webp',
                                             fit: BoxFit.cover,
                                             errorBuilder: (context, error, stackTrace) => const Icon(Icons.coronavirus, color: Colors.yellowAccent, size: 28),
                                           ),
