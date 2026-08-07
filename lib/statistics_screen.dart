@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; 
 import 'models.dart';
+import 'core/db_helper.dart';
+import 'core/tts_manager.dart';
 
 class StatisticsScreen extends StatelessWidget {
   final List<WordModel> allWords;
@@ -388,14 +390,13 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // DÜZELTİLDİ: Toplam istatistikler hesaplanırken tüm aktif listeler tek bir havuza alınır
     var allActiveWords = [
       ...allWords,
       ...learnedWords,
       ...learningWords,
       ...toRepeatWords,
       ...toSRSRepeatWords,
-      ...wrongWords // Hata Düzeltildi: Yanlış kelimeler de kapsama eklendi
+      ...wrongWords 
     ].toSet().toList();
 
     int totalSystemWords = allActiveWords.length;
