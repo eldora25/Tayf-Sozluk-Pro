@@ -113,7 +113,8 @@ class _PremiumShimmerLoadingState extends State<PremiumShimmerLoading> with Sing
         Center(
           child: Container(
             width: 290,
-            height: 380,
+            // YENİ: Sabit yükseklik yerine dinamik ekran oranı kullanılarak Overflow hatası engellendi
+            height: MediaQuery.of(context).size.height * 0.45, 
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.all(Radius.circular(24)),
