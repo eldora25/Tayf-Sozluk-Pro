@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart'; 
 import 'models.dart';
-import 'main.dart'; 
+import 'core/db_helper.dart';
+import 'core/tts_manager.dart'; 
 
 class ManageListScreen extends StatefulWidget {
   final String title;
@@ -15,7 +16,7 @@ class ManageListScreen extends StatefulWidget {
   final Function(WordModel)? onLearned; 
   final Function() onClearAll;
   final Future<void> Function(WordModel)? onEdit;
-  final List<String>? availableLibraries; // YENİ: Kara Liste Geri Yükleme İçin
+  final List<String>? availableLibraries; 
 
   const ManageListScreen({
     super.key,
@@ -121,7 +122,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
     );
   }
 
-  // YENİ: KARA LİSTEDEN GERİ YÜKLEME 
   void _restoreFromBlacklist(WordModel? word) {
     String selectedLib = widget.availableLibraries?.first ?? 'Varsayılan';
     
@@ -165,7 +165,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
                   HapticFeedback.mediumImpact();
                   
                   if (word == null) {
-                    // Tümü
                     for(var w in widget.words) {
                       w.listType = 'all';
                       w.libraryName = selectedLib;
@@ -175,7 +174,6 @@ class _ManageListScreenState extends State<ManageListScreen> {
                     setState(() { _filteredList.clear(); });
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Tüm kelimeler '$selectedLib' kütüphanesine taşındı."), backgroundColor: Colors.green));
                   } else {
-                    // Tekli
                     setState(() {
                       word.listType = 'all';
                       word.libraryName = selectedLib;
