@@ -91,6 +91,23 @@ extension HomeDrawer on _HomeScreenState {
                 ),
                 
                 ListTile(tileColor: Colors.blue.withOpacity(0.1), leading: const Icon(Icons.ac_unit, color: Colors.blue), title: const Text("Buz Kalkanı Al (100 💎)", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: Text("Mevcut Kalkan: $streakFreezes ❄️\nSerinin bozulmasını engeller."), onTap: () { Navigator.pop(context); buyFreeze(); }),
+                
+                // YENİ: TR - ENG Dil Değiştirme Butonu
+                ListTile(
+                  leading: const Icon(Icons.translate, color: Colors.teal),
+                  title: const Text("Dil Değiştir / Change Language", style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(context.locale.languageCode == 'tr' ? "Mevcut: Türkçe 🇹🇷" : "Current: English 🇺🇸"),
+                  onTap: () async {
+                    HapticFeedback.lightImpact();
+                    Navigator.pop(context);
+                    if (context.locale.languageCode == 'tr') {
+                      await context.setLocale(const Locale('en', 'US'));
+                    } else {
+                      await context.setLocale(const Locale('tr', 'TR'));
+                    }
+                  },
+                ),
+
                 const Divider(),
                 
                 ListTile(leading: const Icon(Icons.travel_explore, color: Colors.indigoAccent), title: const Text("WordNet Browser", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigoAccent)), subtitle: const Text("Gelişmiş İng-İng Sözlük Arama"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => WordNetSearchScreen(words: [...allWords, ...learnedWords, ...learningWords, ...toRepeatWords, ...toSRSRepeatWords]))); }),
@@ -118,7 +135,7 @@ extension HomeDrawer on _HomeScreenState {
                         setState(() { _isAppLoading = false; }); 
                         Future.delayed(const Duration(milliseconds: 150), () { showCenteredDialog(title: "Harika!", message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", icon: Icons.verified_user, color: Colors.green); });
                       }, 
-                      onAddPackage: installLocalPackage // ÇÖZÜM: Çakışma Düzeltildi
+                      onAddPackage: installLocalPackage 
                     ))); 
                   }
                 ),
@@ -152,7 +169,7 @@ extension HomeDrawer on _HomeScreenState {
                 
                 const Divider(),
                 ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
-                ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar (Sihirbaz)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); startImportWizard(); }), // ÇÖZÜM: İsim çakışması önlendi
+                ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar (Sihirbaz)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); startImportWizard(); }), 
                 ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); exportLibrary(selectedLibrary); }),
                 ListTile(leading: const Icon(Icons.cloud_upload, color: Colors.blueAccent), title: const Text("Buluta Yedekle", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("SRS, TP, Rozetler ve özel kartları dışa aktar", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); cloudBackupProgress(); }),
                 ListTile(leading: const Icon(Icons.cloud_download, color: Colors.green), title: const Text("Buluttan Geri Yükle", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Buluttaki yedeği cihazınıza çekin", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); cloudRestoreProgress(); }),
