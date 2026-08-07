@@ -5,21 +5,27 @@ extension HomeLogic on _HomeScreenState {
     _activeDeck.clear();
     _cardMistakes.clear();
 
-    if (selectedLibrary == 'Tekrarlanması Gerekenler') {
-      List<WordModel> urgent = [];
-      urgent.addAll(toSRSRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
-      urgent.addAll(toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
-      urgent.shuffle();
-      _activeDeck.addAll(urgent);
-    } else if (selectedLibrary == 'WordNet Veritabanı') {
-      List<WordModel> wnUrgent = [];
-      wnUrgent.addAll(toSRSRepeatWords.where((w) => w.libraryName == 'WordNet Veritabanı'));
-      wnUrgent.addAll(toRepeatWords.where((w) => w.libraryName == 'WordNet Veritabanı'));
-      wnUrgent.shuffle();
+    // 1. GLOBAL SRS MANTIĞI: Eğer ayar açıksa tüm kütüphanelerden süresi gelenleri ana havuza çek
+    List<WordModel> urgent = [];
+    if (_globalSrs) {
+      urgent.addAll(toSRSRepeatWords);
+      urgent.addAll(toRepeatWords);
+    } else {
+      if (selectedLibrary == 'Tekrarlanması Gerekenler') {
+        urgent.addAll(toSRSRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
+        urgent.addAll(toRepeatWords.where((w) => selectedLevel == 'Genel' || w.level == selectedLevel));
+      } else {
+        urgent.addAll(toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
+        urgent.addAll(toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
+      }
+    }
+    urgent.shuffle();
 
+    // 2. YENİ KELİMELERİ (Seçili Kütüphaneden) ÇEK
+    List<WordModel> newWords = [];
+    if (selectedLibrary == 'WordNet Veritabanı') {
       List<int> allWordNetIds = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').idProperty().findAll();
-      List<WordModel> wnNew = [];
-
+      
       if (allWordNetIds.isNotEmpty) {
         final random = Random();
         Set<int> selectedIds = {};
@@ -30,24 +36,15 @@ extension HomeLogic on _HomeScreenState {
         }
 
         List<WordModel?> fetchedWords = await isar.wordModels.getAll(selectedIds.toList());
-        wnNew = fetchedWords.whereType<WordModel>().toList();
+        newWords = fetchedWords.whereType<WordModel>().toList();
       }
-
-      _cachedWordNetDeck = [...wnUrgent, ...wnNew];
-      _activeDeck.addAll(_cachedWordNetDeck);
-    } else {
-      List<WordModel> urgent = [];
-      urgent.addAll(toSRSRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
-      urgent.addAll(toRepeatWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
-      urgent.shuffle();
-
-      List<WordModel> newWords = [];
+    } else if (selectedLibrary != 'Tekrarlanması Gerekenler') {
       newWords.addAll(allWords.where((w) => w.libraryName == selectedLibrary && (selectedLevel == 'Genel' || w.level == selectedLevel)));
       newWords.shuffle();
-
-      _activeDeck.addAll(urgent);
-      _activeDeck.addAll(newWords);
     }
+
+    _activeDeck.addAll(urgent);
+    _activeDeck.addAll(newWords);
   }
 
   Future<void> loadData() async {
@@ -58,6 +55,7 @@ extension HomeLogic on _HomeScreenState {
       bestQuizTime = prefs.getInt('bestQuizTime') ?? 999999;
       bestQuizCorrect = prefs.getInt('bestQuizCorrect') ?? 0;
       bestQuizDate = prefs.getString('bestQuizDate') ?? "Henüz rekor yok";
+      _globalSrs = prefs.getBool('globalSrs') ?? false; // YENİ: Global SRS Ayarı
 
       int wordNetCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
 
@@ -85,9 +83,6 @@ extension HomeLogic on _HomeScreenState {
             });
             await Future.delayed(const Duration(milliseconds: 10));
           }
-          GlobalLogger.addLog("WordNet Isar'a başarıyla kuruldu.");
-        } else {
-          GlobalLogger.addLog("HATA: WordNet verileri çıkarılamadı.");
         }
       }
 
@@ -113,7 +108,7 @@ extension HomeLogic on _HomeScreenState {
               try { newWords.add(WordModel.fromJson(jsonStr)..listType = 'all'); } catch (e) {}
             }
             await isar.writeTxn(() async { await isar.wordModels.putAll(newWords); });
-          } catch (e) { debugPrint("Test paketi yüklenemedi: $e"); }
+          } catch (e) {}
         }
         selectedLibrary = 'Test Paketi';
         prefs.setString('selectedLibrary', 'Test Paketi');
@@ -200,6 +195,15 @@ extension HomeLogic on _HomeScreenState {
         createDefaultLibrary();
       }
 
+      // 4. WORDNET BEKLEME ANİMASYONU
+      if (selectedLibrary == 'WordNet Veritabanı') {
+        setState(() {
+          _isAppLoading = true;
+          _loadingText = "Devasa WordNet veritabanından en iyi kelimeler hazırlanıyor, lütfen sabırlı olun...";
+        });
+        await Future.delayed(const Duration(milliseconds: 800)); // Premium hissiyat için kısa gecikme
+      }
+
       await buildActiveDeck();
 
       setState(() {
@@ -225,8 +229,6 @@ extension HomeLogic on _HomeScreenState {
       }
 
     } catch (e) {
-      debugPrint("Load Data Error: $e");
-      GlobalLogger.addLog("Load Data Error: $e");
       setState(() { _isAppLoading = false; });
     }
   }
@@ -239,6 +241,7 @@ extension HomeLogic on _HomeScreenState {
       prefs.setInt('bestQuizTime', bestQuizTime);
       prefs.setInt('bestQuizCorrect', bestQuizCorrect);
       prefs.setString('bestQuizDate', bestQuizDate);
+      prefs.setBool('globalSrs', _globalSrs); // YENİ
 
       if (learnedWordTimestamps.length > 5000) learnedWordTimestamps.removeRange(0, learnedWordTimestamps.length - 5000);
       if (completedQuizTimestamps.length > 5000) completedQuizTimestamps.removeRange(0, completedQuizTimestamps.length - 5000);
