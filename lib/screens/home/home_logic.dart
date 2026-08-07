@@ -54,13 +54,14 @@ extension HomeLogic on _HomeScreenState {
       bestQuizCorrect = prefs.getInt('bestQuizCorrect') ?? 0;
       bestQuizDate = prefs.getString('bestQuizDate') ?? "Henüz rekor yok";
       _globalSrs = prefs.getBool('globalSrs') ?? false; 
-      _isLowPowerMode = prefs.getBool('isLowPowerMode') ?? false; 
+      _isLowPowerMode = prefs.getBool('isLowPowerMode') ?? false; // YENİ: Düşük Güç Modu
 
       int wordNetCount = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').count();
 
       if (wordNetCount < 50000) {
         setState(() {
-          _loadingText = "WordNet İlk Kurulumu Yapılıyor...\n(Bu işlem sadece 1 kez yapılır\nve cihaz hızına göre 1-2 dk sürebilir)";
+          // ÇÖZÜM: BOTTOM OVERFLOW hatasını önlemek için metin kısaltıldı.
+          _loadingText = "WordNet Kuruluyor...\n(1-2 dk sürebilir, bekleyiniz)";
         });
 
         await isar.writeTxn(() async {
@@ -71,7 +72,8 @@ extension HomeLogic on _HomeScreenState {
 
         if (wnList.isNotEmpty) {
           setState(() {
-            _loadingText = "Veritabanına Gömülüyor...\n(${wnList.length} Kelime)\nLütfen uygulamayı kapatmayın...";
+            // ÇÖZÜM: Overflow hatasını önlemek için optimize metin
+            _loadingText = "Veritabanına Gömülüyor...\nLütfen uygulamayı kapatmayın.";
           });
 
           int batchSize = 5000;
@@ -240,7 +242,7 @@ extension HomeLogic on _HomeScreenState {
       prefs.setInt('bestQuizCorrect', bestQuizCorrect);
       prefs.setString('bestQuizDate', bestQuizDate);
       prefs.setBool('globalSrs', _globalSrs); 
-      prefs.setBool('isLowPowerMode', _isLowPowerMode); 
+      prefs.setBool('isLowPowerMode', _isLowPowerMode); // YENİ
 
       if (learnedWordTimestamps.length > 5000) learnedWordTimestamps.removeRange(0, learnedWordTimestamps.length - 5000);
       if (completedQuizTimestamps.length > 5000) completedQuizTimestamps.removeRange(0, completedQuizTimestamps.length - 5000);
@@ -279,6 +281,7 @@ extension HomeLogic on _HomeScreenState {
     savePreferencesOnly();
   }
 
+  // (Geri kalan metotlar aynen korunmuştur)
   List<String> safeLibraries() {
     var libs = allWords.map((e) => e.libraryName).toSet()
       ..addAll(learnedWords.map((e) => e.libraryName))
