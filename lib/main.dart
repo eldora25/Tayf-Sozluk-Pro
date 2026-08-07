@@ -7,10 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
 import 'models.dart';
-import 'core/db_helper.dart'; // Isar referansı
-import 'theme/theme_manager.dart'; // Tema motoru
+import 'core/db_helper.dart'; 
+import 'theme/theme_manager.dart'; 
 import 'notification_service.dart';
-import 'screens/home_screen.dart'; // Yeni ayırdığımız Ana Ekran
+import 'screens/home/home_screen.dart'; // DOĞRU DOSYA YOLU GÜNCELLENDİ
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
