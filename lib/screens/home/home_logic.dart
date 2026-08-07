@@ -107,7 +107,9 @@ extension HomeLogic on _HomeScreenState {
               try { newWords.add(WordModel.fromJson(jsonStr)..listType = 'all'); } catch (e) {}
             }
             await isar.writeTxn(() async { await isar.wordModels.putAll(newWords); });
-          } catch (e) {}
+          } catch (e) {
+            GlobalLogger.addLog("Hata: Test paketi yüklenemedi: $e");
+          }
         }
         selectedLibrary = 'Test Paketi';
         prefs.setString('selectedLibrary', 'Test Paketi');
@@ -227,6 +229,7 @@ extension HomeLogic on _HomeScreenState {
       }
 
     } catch (e) {
+      GlobalLogger.addLog("Hata: loadData metodunda çökme: $e");
       setState(() { _isAppLoading = false; });
     }
   }
@@ -267,7 +270,9 @@ extension HomeLogic on _HomeScreenState {
       prefs.setStringList('completedQuizTimestamps', completedQuizTimestamps);
       prefs.setStringList('viewedCardTimestamps', viewedCardTimestamps);
       prefs.setStringList('wrongAnswerTimestamps', wrongAnswerTimestamps);
-    } catch (e) {}
+    } catch (e) {
+      GlobalLogger.addLog("Hata: savePreferencesOnly başarısız: $e");
+    }
   }
 
   void createDefaultLibrary() {
@@ -291,8 +296,8 @@ extension HomeLogic on _HomeScreenState {
     return uniqueLibs.toList();
   }
 
-  // YENİ: İçe Aktarma Sihirbazına Yönlendirme (Refactoring)
-  Future<void> importFile() async {
+  // ÇÖZÜM: İçe aktarma sihirbazı çakışmasını önlemek için adı değiştirildi
+  Future<void> startImportWizard() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -356,12 +361,13 @@ extension HomeLogic on _HomeScreenState {
         }
       }
     } catch (e) {
-       GlobalLogger.addLog("İçe aktarma sihirbazı hatası: $e");
+       GlobalLogger.addLog("Hata: İçe aktarma sihirbazı hatası: $e");
        if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dosya seçilemedi: $e"), backgroundColor: Colors.red));
     }
   }
 
-  Future<void> loadPackageFromAssets(String assetPath, String extension, String libName) async {
+  // ÇÖZÜM: Hazır paket yükleme metodu çakışmayı önlemek için yeniden adlandırıldı
+  Future<void> installLocalPackage(String assetPath, String extension, String libName) async {
     setState(() {
       _isAppLoading = true;
       _loadingText = "$libName Paketi Yükleniyor...\nLütfen bekleyin.";
@@ -407,7 +413,7 @@ extension HomeLogic on _HomeScreenState {
       }
 
     } catch (e) {
-      GlobalLogger.addLog("Paket yükleme hatası: $e");
+      GlobalLogger.addLog("Hata: Paket yükleme hatası: $e");
       setState(() {
         _isAppLoading = false;
       });
@@ -464,7 +470,9 @@ extension HomeLogic on _HomeScreenState {
       globalTts.setLanguage(targetLang);
       globalTts.setSpeechRate(0.45);
       globalTts.speak(cleanText);
-    } catch (e) {}
+    } catch (e) {
+      GlobalLogger.addLog("Hata: TTS okuma hatası: $e");
+    }
   }
 
   void nextCard({bool increment = false}) {
@@ -801,6 +809,7 @@ extension HomeLogic on _HomeScreenState {
       await file.writeAsString(const ListToCsvConverter().convert(rows));
       await Share.shareXFiles([XFile(file.path, mimeType: 'text/csv')], subject: '$libName Yedeği');
     } catch (e) {
+      GlobalLogger.addLog("Hata: Dışa aktarma hatası: $e");
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dışa aktarma hatası: $e")));
     }
   }
