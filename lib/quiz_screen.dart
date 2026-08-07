@@ -14,6 +14,7 @@ class QuizScreen extends StatefulWidget {
   final int threshold;
   final int questionCount;
   final bool isWordNet; 
+  final bool isLowPowerMode; 
   
   final int currentBestTime;
   final int currentBestCorrect;
@@ -30,6 +31,7 @@ class QuizScreen extends StatefulWidget {
     required this.isWordNet,
     required this.currentBestTime,
     required this.currentBestCorrect,
+    required this.isLowPowerMode, 
     required this.onWordMastered,
     required this.onWrongWord,
     required this.onQuizFinished,
@@ -135,6 +137,14 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     });
   }
 
+  void _saveStatsAndExit() {
+    if (!_isStatsSaved && answeredQuestions > 0) {
+      _isStatsSaved = true;
+      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers, _isNewRecord);
+    }
+    Navigator.pop(context);
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -142,9 +152,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
-    if (!_isStatsSaved && answeredQuestions > 0) {
-      widget.onQuizFinished(_secondsElapsed, answeredQuestions, wrongAnswers, _sessionEarnedTP, correctAnswers, _isNewRecord);
-    }
     super.dispose();
   }
 
@@ -586,7 +593,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                    existingMitosisCard = mWord; break;
                 }
               }
-            } catch(e) { debugPrint("Arama hatası: $e"); }
+            } catch(e) {}
 
             if (existingMitosisCard != null) {
               existingMitosisCard.correctCount++;
@@ -601,7 +608,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               currentWord = existingMitosisCard;
               if (existingMitosisCard.correctCount >= widget.threshold) widget.onWordMastered(existingMitosisCard);
             } else {
-              // YENİ: Mitoz klonuna "rootWord" mirası atanıyor
               WordModel splitWord = WordModel(
                 word: currentWord.word,
                 meanings: isMeaning ? [_testedMeaningOrExample!] : [],
@@ -616,7 +622,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 sourceLanguage: currentWord.sourceLanguage,
                 targetLanguage: currentWord.targetLanguage,
                 pos: '', synonyms: [], antonyms: [],
-                rootWord: currentWord.rootWord ?? currentWord.word, // Soy ağacı takibi
+                rootWord: currentWord.rootWord ?? currentWord.word, 
               );
               await isar.writeTxn(() async {
                 if (isGhostCard) {
@@ -705,7 +711,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               currentWord = existingMitosisCard;
               widget.onWrongWord(existingMitosisCard);
             } else {
-              // YENİ: Mitoz klonuna "rootWord" mirası atanıyor
               WordModel splitWord = WordModel(
                 word: currentWord.word,
                 meanings: isMeaning ? [_testedMeaningOrExample!] : [],
@@ -720,7 +725,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 sourceLanguage: currentWord.sourceLanguage,
                 targetLanguage: currentWord.targetLanguage,
                 pos: '', synonyms: [], antonyms: [],
-                rootWord: currentWord.rootWord ?? currentWord.word, // Soy ağacı takibi
+                rootWord: currentWord.rootWord ?? currentWord.word, 
               );
               await isar.writeTxn(() async {
                 if (isGhostCard) {
@@ -842,7 +847,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 const SizedBox(height: 40),
                 SizedBox(width: double.infinity, child: ElevatedButton.icon(style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 5), icon: const Icon(Icons.refresh), label: const Text("YENİ QUİZ BAŞLAT", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: _resetQuiz)),
                 const SizedBox(height: 16),
-                SizedBox(width: double.infinity, child: TextButton.icon(style: TextButton.styleFrom(padding: const EdgeInsets.all(16)), icon: const Icon(Icons.home), label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: () { HapticFeedback.lightImpact(); Navigator.pop(context); })),
+                SizedBox(width: double.infinity, child: TextButton.icon(style: TextButton.styleFrom(padding: const EdgeInsets.all(16)), icon: const Icon(Icons.home), label: const Text("ANA EKRANA DÖN", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), onPressed: () { HapticFeedback.lightImpact(); _saveStatsAndExit(); })),
                 const SizedBox(height: 40), 
               ],
             ),
@@ -859,12 +864,14 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         title: const Text("Lexis Eldora | Quiz", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)), 
         backgroundColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(color: Theme.of(context).primaryColor.withOpacity(0.8)),
-          ),
-        ),
+        flexibleSpace: widget.isLowPowerMode 
+          ? Container(color: Theme.of(context).scaffoldBackgroundColor)
+          : ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(color: Theme.of(context).primaryColor.withOpacity(0.8)),
+              ),
+            ),
         actions: [
           IconButton(
             icon: Icon(isAudioEnabled ? Icons.volume_up : Icons.volume_off), 
@@ -876,12 +883,14 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         ]
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Theme.of(context).primaryColor.withOpacity(0.1), Colors.transparent], 
-            begin: Alignment.topCenter, end: Alignment.bottomCenter
-          )
-        ),
+        decoration: widget.isLowPowerMode
+          ? BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor)
+          : BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Theme.of(context).primaryColor.withOpacity(0.1), Colors.transparent], 
+                begin: Alignment.topCenter, end: Alignment.bottomCenter
+              )
+            ),
         child: ListView(
           padding: const EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 120), 
           physics: const BouncingScrollPhysics(),
@@ -945,80 +954,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                       opacity: _entranceController.value,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor.withOpacity(0.08), 
-                              borderRadius: BorderRadius.circular(20), 
-                              border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.4), width: 1.5), 
-                              boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.05), blurRadius: 20, spreadRadius: 5)]
-                            ),
-                            child: Column(
-                              children: [
-                                Text(_displayWordStr, textAlign: TextAlign.center, style: TextStyle(fontSize: _isCurrentWordNet && _questionSubtext.contains("Tanım") ? 22 : 30, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
-                                
-                                if (_questionSubtext.isNotEmpty)
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 24.0),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).cardColor.withOpacity(0.9),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: Colors.orangeAccent.withOpacity(0.5)),
-                                      boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.15), blurRadius: 10)]
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.help_outline, color: Colors.orangeAccent.shade700, size: 16),
-                                        const SizedBox(width: 8),
-                                        Flexible(
-                                          child: Text(
-                                            _questionSubtext, 
-                                            textAlign: TextAlign.center, 
-                                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.orangeAccent.shade700)
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                if (currentWord.libraryName.startsWith('\u{1F9EC}') && !_isCurrentWordNet)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 24.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Transform.rotate(
-                                          angle: -0.5,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                                            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white30, width: 1), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)), BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0))]),
-                                            child: Transform.rotate(angle: 0.5, child: const Text("\u{1F9EC}", style: TextStyle(fontSize: 16, shadows: [Shadow(color: Colors.orangeAccent, blurRadius: 15), Shadow(color: Colors.purpleAccent, blurRadius: 15)]))),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                          decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1), boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
-                                              const SizedBox(width: 6),
-                                              Text("DNA-" + currentWord.id.toString().padLeft(6, '0'), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
+                        child: widget.isLowPowerMode
+                        ? _buildQuestionCardContent()
+                        : BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: _buildQuestionCardContent()
                           ),
-                        ),
                       ),
                     ),
                   );
@@ -1096,6 +1037,80 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             }),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionCardContent() {
+    return Container(
+      width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withOpacity(0.08), 
+        borderRadius: BorderRadius.circular(20), 
+        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.4), width: 1.5), 
+        boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.05), blurRadius: 20, spreadRadius: 5)]
+      ),
+      child: Column(
+        children: [
+          Text(_displayWordStr, textAlign: TextAlign.center, style: TextStyle(fontSize: _isCurrentWordNet && _questionSubtext.contains("Tanım") ? 22 : 30, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor, letterSpacing: 1.2)),
+          
+          if (_questionSubtext.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(top: 24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.orangeAccent.withOpacity(0.5)),
+                boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.15), blurRadius: 10)]
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.help_outline, color: Colors.orangeAccent.shade700, size: 16),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      _questionSubtext, 
+                      textAlign: TextAlign.center, 
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.orangeAccent.shade700)
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          if (currentWord.libraryName.startsWith('\u{1F9EC}') && !_isCurrentWordNet)
+            Padding(
+              padding: const EdgeInsets.only(top: 24.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Transform.rotate(
+                    angle: -0.5,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white30, width: 1), boxShadow: [BoxShadow(color: Colors.orangeAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(-3, 0)), BoxShadow(color: Colors.purpleAccent.withOpacity(0.8), blurRadius: 15, spreadRadius: 2, offset: const Offset(3, 0))]),
+                      child: Transform.rotate(angle: 0.5, child: const Text("\u{1F9EC}", style: TextStyle(fontSize: 16, shadows: [Shadow(color: Colors.orangeAccent, blurRadius: 15), Shadow(color: Colors.purpleAccent, blurRadius: 15)]))),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.purpleAccent.withOpacity(0.8), width: 1), boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.5), blurRadius: 8)]),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.fingerprint, color: Colors.purpleAccent, size: 14),
+                        const SizedBox(width: 6),
+                        Text("DNA-" + currentWord.id.toString().padLeft(6, '0'), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2.0)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
