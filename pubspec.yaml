@@ -34,7 +34,6 @@ dependencies:
   archive: ^3.4.3
   
   easy_localization: ^3.0.3     
-  sentry_flutter: ^7.14.0       # ÇÖZÜM: Kotlin 1.6 derleme hatasını önleyen kararlı sürüm
   flutter_riverpod: ^2.4.9      
   get_it: ^7.6.4                
   home_widget: ^0.9.3           
