@@ -2,7 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'models.dart';
-import 'main.dart'; 
+import 'core/db_helper.dart';
+import 'core/tts_manager.dart'; 
 
 enum EditAction { update, delete, copy, move }
 
@@ -249,7 +250,6 @@ class _EditWordScreenState extends State<EditWordScreen> {
     );
   }
 
-  // YENİ: Karantina ve Düzenleme Ekranı İçin "KART PARÇALAMA" Özelliği
   void _showSplitBottomSheet() {
     TextEditingController mainWordCtrl = TextEditingController(text: _wordText);
     TextEditingController mainMeaningsCtrl = TextEditingController(text: _meaningControllers.map((c) => c.text).join(', '));
@@ -339,7 +339,7 @@ class _EditWordScreenState extends State<EditWordScreen> {
                                     ],
                                   ),
                                 );
-                              }).toList(), // EKSİK TOLIST EKLENDİ
+                              }).toList(),
                               TextButton.icon(
                                 onPressed: () => setModalState(() => extraCards.add({'word': TextEditingController(), 'meanings': TextEditingController()})), 
                                 icon: const Icon(Icons.add_circle, color: Colors.teal), 
