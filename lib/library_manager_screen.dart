@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:isar/isar.dart'; // EKLENDİ: findAll() ve filter() uzantılarının çalışması için zorunludur.
 import 'models.dart';
 import 'core/db_helper.dart'; 
 import 'firebase_sync_service.dart';
@@ -223,8 +224,8 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     
     await isar.writeTxn(() async {
       for (String lib in libsToMerge) {
-        // DÜZELTİLDİ: Isar 3.x sürümünde .build() kaldırıldı, doğrudan where() veya filter() üzerinden findAll() çağrılır
-        List<WordModel> toUpdate = await isar.wordModels.where().libraryNameEqualTo(lib).findAll();
+        // DÜZELTİLDİ: package:isar/isar.dart import edildiği için filter() ve findAll() hatasız çalışır
+        List<WordModel> toUpdate = await isar.wordModels.filter().libraryNameEqualTo(lib).findAll();
         for (var w in toUpdate) { w.libraryName = newName; }
         await isar.wordModels.putAll(toUpdate);
       }
