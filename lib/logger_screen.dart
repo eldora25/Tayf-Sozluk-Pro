@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sentry_flutter/sentry_flutter.dart'; // YENİ: Sentry Entegrasyonu
 
 // UYGULAMANIN HER YERİNDEN ERİŞİLEBİLECEK KÜRESEL LOG MERKEZİ
 class GlobalLogger {
@@ -13,6 +14,11 @@ class GlobalLogger {
     String timestamp = "[${DateTime.now().toLocal().toString().split('.')[0]}]";
     logs.add("$timestamp $message");
     print("$timestamp $message"); // Aynı zamanda konsola da yazdır
+
+    // YENİ: Hata veya Error kelimesi içeren logları Sentry ile eşzamanla
+    if (message.toLowerCase().contains('hata') || message.toLowerCase().contains('error')) {
+      Sentry.captureMessage(message, level: SentryLevel.error);
+    }
   }
 
   static String getAllLogs() {
@@ -45,6 +51,7 @@ class _LoggerScreenState extends State<LoggerScreen> {
       
       await Share.shareXFiles([XFile(file.path)], text: 'Tayf Sözlük Pro - Sistem Hata Logları');
     } catch (e) {
+      Sentry.captureException(e); // YENİ: Dışa aktarma hatasını Sentry'e at
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Log dışa aktarma hatası: $e")));
     }
   }
@@ -68,7 +75,6 @@ class _LoggerScreenState extends State<LoggerScreen> {
               padding: const EdgeInsets.all(8.0),
               itemCount: GlobalLogger.logs.length,
               itemBuilder: (context, index) {
-                // Hata mesajlarını kırmızı, bilgi mesajlarını yeşil göstermek için
                 bool isError = GlobalLogger.logs[index].toLowerCase().contains('hata') || 
                                GlobalLogger.logs[index].toLowerCase().contains('error') || 
                                GlobalLogger.logs[index].toLowerCase().contains('başarısız');
