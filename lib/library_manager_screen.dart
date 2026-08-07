@@ -216,7 +216,6 @@ class _LibraryManagerScreenState extends State<LibraryManagerScreen> {
     );
   }
 
-  // DÜZELTME: findAllSync yerine asenkron await findAll kullanıldı
   Future<void> _executeMerge(List<String> libsToMerge, String newName) async {
     setState(() {
       for (var w in widget.allWords) { if (libsToMerge.contains(w.libraryName)) w.libraryName = newName; }
