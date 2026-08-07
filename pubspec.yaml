@@ -34,10 +34,10 @@ dependencies:
   archive: ^3.4.3
   
   easy_localization: ^3.0.3     
-  sentry_flutter: ^7.14.0       
+  sentry_flutter: ^8.8.0        # ÇÖZÜM: Kotlin 1.4 desteği biten eski sürüm, güncel 8.8.0 sürümüne yükseltildi
   flutter_riverpod: ^2.4.9      
   get_it: ^7.6.4                
-  home_widget: ^0.9.3           # ÇÖZÜM: Logdaki tavsiyeye göre güncel ve kararlı sürüm
+  home_widget: ^0.9.3           
 
 dependency_overrides:
   flutter_plugin_android_lifecycle: 2.0.20
