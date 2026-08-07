@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easy_localization/easy_localization.dart'; 
 import 'package:flutter_riverpod/flutter_riverpod.dart'; 
 import 'package:home_widget/home_widget.dart'; 
 
@@ -17,6 +18,7 @@ import 'screens/home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized(); 
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -30,8 +32,13 @@ void main() async {
   isar = await Isar.open([WordModelSchema], directory: dir.path);
   
   runApp(
-    const ProviderScope( 
-      child: TayfSozlukApp(),
+    ProviderScope( 
+      child: EasyLocalization(
+        supportedLocales: const [Locale('en', 'US'), Locale('tr', 'TR')],
+        path: 'assets/translations', 
+        fallbackLocale: const Locale('en', 'US'), // Varsayılan dil İngilizce yapıldı
+        child: const TayfSozlukApp(),
+      ),
     ),
   );
 }
@@ -67,6 +74,9 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
     return MaterialApp(
       title: 'Lexis Eldora',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
       theme: AppThemeManager.getTheme(themeIndex),
       themeAnimationDuration: const Duration(milliseconds: 300), 
       home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
