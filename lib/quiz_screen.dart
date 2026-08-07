@@ -5,13 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:lottie/lottie.dart'; 
 import 'package:isar/isar.dart'; 
-import 'package:sentry_flutter/sentry_flutter.dart'; // YENİ: Sentry Entegrasyonu
+import 'package:sentry_flutter/sentry_flutter.dart'; 
 import 'models.dart';
 import 'core/db_helper.dart';
-import 'core/tts_manager.dart';
-import 'core/locator.dart'; // YENİ: GetIt Locator
-import 'widgets/premium_word_card.dart'; // YENİ: Parçalanmış Kart Widget'ı
-import 'logger_screen.dart'; // YENİ: GlobalLogger İçin
+import 'core/tts_manager.dart'; // globalTts için gerekli
+import 'logger_screen.dart'; 
 
 class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -90,9 +88,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   String? _lastWrongOption; 
   
   bool _isCurrentWordNet = false;
-  
-  // YENİ: GetIt ile çağırılan TtsManager
-  final TtsManager _ttsManager = locator<TtsManager>();
 
   @override
   void initState() {
@@ -138,7 +133,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         _generateQuestion();
       }
     } catch (e, stackTrace) {
-      // YENİ: Sentry'ye hata bildirme
       Sentry.captureException(e, stackTrace: stackTrace);
       GlobalLogger.addLog("Quiz Başlatma Hatası: $e");
     }
@@ -161,7 +155,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _timer?.cancel();
-    _ttsManager.stop(); // YENİ: GetIt kullanılarak durduruldu
+    globalTts.stop(); // ÇÖZÜM: Orijinal globalTts kullanıldı
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
@@ -182,15 +176,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await _ttsManager.stop(); 
+      await globalTts.stop(); 
       String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
                              .replaceAll(RegExp(r'[\[\]\{\}\\|_»•:;*+><=~]'), ' ')
                              .trim();
-      _ttsManager.setLanguage(languageCode);
-      _ttsManager.setSpeechRate(0.45); 
-      _ttsManager.speak(cleanText);
+      globalTts.setLanguage(languageCode);
+      globalTts.setSpeechRate(0.45); 
+      globalTts.speak(cleanText);
     } catch (e, stackTrace) {
-      Sentry.captureException(e, stackTrace: stackTrace); // YENİ: Sentry'e at
+      Sentry.captureException(e, stackTrace: stackTrace);
       GlobalLogger.addLog("TTS Error: $e");
     }
   }
@@ -611,7 +605,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 }
               }
             } catch(e) { 
-              Sentry.captureException(e); // YENİ
+              Sentry.captureException(e);
               GlobalLogger.addLog("Arama hatası: $e"); 
             }
 
@@ -717,7 +711,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 }
               }
             } catch(e) {
-              Sentry.captureException(e); // YENİ
+              Sentry.captureException(e);
             }
 
             if (existingMitosisCard != null) {
@@ -788,6 +782,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     if (widget.words.isEmpty) return Scaffold(appBar: AppBar(title: const Text("Quiz")), body: const Center(child: Text("Bu kütüphanede yeterli kelime yok.")));
+
+    Color safeBorderColor = Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.5);
 
     return PopScope(
       canPop: false,
@@ -987,10 +983,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             child: widget.isLowPowerMode
-                            ? _buildQuestionCardContent() // ÇÖZÜM: Parçalanmış Kart
+                            ? _buildQuestionCardContent() 
                             : BackdropFilter(
                                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                child: _buildQuestionCardContent() // ÇÖZÜM: Parçalanmış Kart
+                                child: _buildQuestionCardContent() 
                               ),
                           ),
                         ),
@@ -1015,7 +1011,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: cardColor, 
-                      border: Border.all(color: isAnsweredCorrectly && isCorrect ? Colors.green : (isWrongSelected ? Colors.red : borderColor.withOpacity(0.3)), width: 2), 
+                      // ÇÖZÜM: borderColor hatası safeBorderColor ile düzeltildi
+                      border: Border.all(color: isAnsweredCorrectly && isCorrect ? Colors.green : (isWrongSelected ? Colors.red : safeBorderColor.withOpacity(0.3)), width: 2), 
                       borderRadius: BorderRadius.circular(16), 
                       boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)]
                     ),
@@ -1129,7 +1126,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                     ),
                     child: ClipOval(
                       child: Image.asset(
-                        'assets/acd21dcc2efa6d403b570d2bcaa10ef5.jpg',
+                        'assets/biohazardicon.webp',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.coronavirus, color: Colors.yellowAccent, size: 24),
                       ),
