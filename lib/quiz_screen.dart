@@ -5,10 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:lottie/lottie.dart'; 
 import 'package:isar/isar.dart'; 
-import 'package:sentry_flutter/sentry_flutter.dart'; 
 import 'models.dart';
 import 'core/db_helper.dart';
-import 'core/tts_manager.dart'; // globalTts için gerekli
+import 'core/tts_manager.dart'; 
 import 'logger_screen.dart'; 
 
 class QuizScreen extends StatefulWidget {
@@ -132,8 +131,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         _startTimer();
         _generateQuestion();
       }
-    } catch (e, stackTrace) {
-      Sentry.captureException(e, stackTrace: stackTrace);
+    } catch (e) {
       GlobalLogger.addLog("Quiz Başlatma Hatası: $e");
     }
   }
@@ -155,7 +153,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _timer?.cancel();
-    globalTts.stop(); // ÇÖZÜM: Orijinal globalTts kullanıldı
+    globalTts.stop(); 
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
@@ -183,8 +181,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       globalTts.setLanguage(languageCode);
       globalTts.setSpeechRate(0.45); 
       globalTts.speak(cleanText);
-    } catch (e, stackTrace) {
-      Sentry.captureException(e, stackTrace: stackTrace);
+    } catch (e) {
       GlobalLogger.addLog("TTS Error: $e");
     }
   }
@@ -605,7 +602,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 }
               }
             } catch(e) { 
-              Sentry.captureException(e);
               GlobalLogger.addLog("Arama hatası: $e"); 
             }
 
@@ -710,9 +706,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                    existingMitosisCard = mWord; break;
                 }
               }
-            } catch(e) {
-              Sentry.captureException(e);
-            }
+            } catch(e) {}
 
             if (existingMitosisCard != null) {
               existingMitosisCard.wrongCount++;
@@ -1011,7 +1005,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: cardColor, 
-                      // ÇÖZÜM: borderColor hatası safeBorderColor ile düzeltildi
                       border: Border.all(color: isAnsweredCorrectly && isCorrect ? Colors.green : (isWrongSelected ? Colors.red : safeBorderColor.withOpacity(0.3)), width: 2), 
                       borderRadius: BorderRadius.circular(16), 
                       boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)]
