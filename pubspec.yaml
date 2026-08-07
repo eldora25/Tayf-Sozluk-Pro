@@ -33,12 +33,11 @@ dependencies:
   http: ^1.2.0
   archive: ^3.4.3
   
-  # YENİ: Faz 3 ve Faz 4 Geliştirmeleri İçin Profesyonel Paketler
-  easy_localization: ^3.0.3     # Çoklu Dil (i18n)
-  sentry_flutter: ^7.14.0       # Gerçek Zamanlı Hata Takibi (Sentry)
-  flutter_riverpod: ^2.4.9      # State Management (Clean Architecture)
-  get_it: ^7.6.4                # Dependency Injection
-  home_widget: ^0.3.1           # Ana Ekran Widget (Günün Kelimesi)
+  easy_localization: ^3.0.3     
+  sentry_flutter: ^7.14.0       
+  flutter_riverpod: ^2.4.9      
+  get_it: ^7.6.4                
+  home_widget: ^0.4.2           # ÇÖZÜM: ViewConfiguration hatası için versiyon yükseltildi
 
 dependency_overrides:
   flutter_plugin_android_lifecycle: 2.0.20
@@ -61,4 +60,4 @@ flutter:
     - assets/ic_launcher.png 
     - assets/Free-KH.txt
     - assets/wordnet/wordnet_data.zip
-    - assets/biohazardicon.webp # Premium Mitoz İkonu
+    - assets/biohazardicon.webp
