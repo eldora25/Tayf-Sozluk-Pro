@@ -8,9 +8,10 @@ class SettingsScreen extends StatefulWidget {
   final int currentThemeIndex;
   final String selectedLibrary;
   final String selectedLevel;
-  final bool isGlobalSrsEnabled; // YENİ
+  final bool isGlobalSrsEnabled; 
+  final bool isLowPowerMode; // YENİ: Performans Modu
   final List<String> availableLibraries;
-  final Function(int, int, int, int, String, String, bool) onSaveSettings; // YENİ: bool eklendi
+  final Function(int, int, int, int, String, String, bool, bool) onSaveSettings; // YENİ: bool eklendi
   final Function(String, String, String) onAddPackage; 
 
   const SettingsScreen({
@@ -22,6 +23,7 @@ class SettingsScreen extends StatefulWidget {
     required this.selectedLibrary,
     required this.selectedLevel,
     required this.isGlobalSrsEnabled,
+    required this.isLowPowerMode,
     required this.availableLibraries,
     required this.onSaveSettings,
     required this.onAddPackage,
@@ -38,7 +40,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _themeIndex;
   late String _library;
   late String _level;
-  late bool _globalSrs; // YENİ
+  late bool _globalSrs; 
+  late bool _lowPowerMode; // YENİ
   
   late List<String> _safeLibraries;
 
@@ -69,7 +72,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _thresholdValue = widget.currentThreshold.toDouble().clamp(2.0, 50.0);
     _questionCountValue = widget.currentQuestionCount.toDouble().clamp(5.0, 100.0);
     _themeIndex = widget.currentThemeIndex.clamp(0, _themeNames.length - 1);
-    _globalSrs = widget.isGlobalSrsEnabled; // YENİ
+    _globalSrs = widget.isGlobalSrsEnabled; 
+    _lowPowerMode = widget.isLowPowerMode; // YENİ
     
     _library = _safeLibraries.contains(widget.selectedLibrary) 
         ? widget.selectedLibrary 
@@ -121,6 +125,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 120.0 + MediaQuery.of(context).padding.bottom),
             children: [
               
+              // YENİ: DÜŞÜK GÜÇ MODU
+              _buildSectionTitle("Sistem & Performans", Icons.speed),
+              _buildCard(
+                padding: const EdgeInsets.all(8),
+                child: SwitchListTile(
+                  activeColor: Colors.greenAccent.shade700,
+                  secondary: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: Colors.greenAccent.withOpacity(0.1), shape: BoxShape.circle),
+                    child: Icon(Icons.battery_charging_full, color: Colors.greenAccent.shade700),
+                  ),
+                  title: const Text("Performans (Düşük Güç) Modu", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  subtitle: const Text("Eski cihazlar veya pil tasarrufu için cam efektlerini (Glassmorphism) ve ağır arkaplan animasyonlarını kapatır.", style: TextStyle(fontSize: 12, height: 1.4)),
+                  value: _lowPowerMode,
+                  onChanged: (val) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _lowPowerMode = val);
+                  },
+                ),
+              ),
+
               _buildSectionTitle("Aralıklı Tekrar (SRS) Motoru", Icons.schedule),
               _buildCard(
                 padding: const EdgeInsets.all(8),
@@ -263,7 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text("Boyutu büyük paketlerin yüklenmesi birkaç saniye sürebilir.", style: TextStyle(color: Colors.grey, fontSize: 12)),
                     const SizedBox(height: 16),
-                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet Veritabanı", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), subtitle: const Text("150.000+ kelimelik devasa sözlük Isar veritabanına kalıcı olarak yüklendi. 'Aktif Kütüphane' menüsünden seçebilirsiniz."), trailing: const Icon(Icons.check_circle, color: Colors.indigo, size: 32)),
+                    ListTile(tileColor: Colors.indigo.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("WordNet Veritabanı (Aktif)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), subtitle: const Text("150.000+ kelimelik devasa sözlük Isar veritabanına kalıcı olarak yüklendi. 'Aktif Kütüphane' menüsünden seçebilirsiniz."), trailing: const Icon(Icons.check_circle, color: Colors.indigo, size: 32)),
                     const SizedBox(height: 10),
                     ListTile(tileColor: Colors.orange.withOpacity(0.05), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), title: const Text("Tayf İngilizce-Türkçe", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Kısa Temel Kelimeler"), trailing: const Icon(Icons.download_for_offline, color: Colors.orange, size: 32), onTap: () { widget.onAddPackage("assets/EN-TR_tayf.txt", "txt", "Tayf İng-Tr"); }),
                     const SizedBox(height: 10),
@@ -300,12 +325,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   final ti = _themeIndex;
                   final lib = _library;
                   final lvl = _level;
-                  final glSrs = _globalSrs; // YENİ
+                  final glSrs = _globalSrs; 
+                  final lowPow = _lowPowerMode; // YENİ
                   
                   Navigator.pop(context);
                   
                   Future.delayed(const Duration(milliseconds: 150), () {
-                    widget.onSaveSettings(g, t, qc, ti, lib, lvl, glSrs);
+                    widget.onSaveSettings(g, t, qc, ti, lib, lvl, glSrs, lowPow);
                   });
                 },
               ),
