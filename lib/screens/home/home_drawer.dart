@@ -117,7 +117,8 @@ extension HomeDrawer on _HomeScreenState {
                         await buildActiveDeck(); savePreferencesOnly(); 
                         setState(() { _isAppLoading = false; }); 
                         Future.delayed(const Duration(milliseconds: 150), () { showCenteredDialog(title: "Harika!", message: "Ayarlar başarıyla kalıcı olarak kaydedildi.", icon: Icons.verified_user, color: Colors.green); });
-                      }, onAddPackage: loadPackageFromAssets
+                      }, 
+                      onAddPackage: installLocalPackage // ÇÖZÜM: Çakışma Düzeltildi
                     ))); 
                   }
                 ),
@@ -133,6 +134,7 @@ extension HomeDrawer on _HomeScreenState {
                 
                 const Divider(),
                 ListTile(leading: const Icon(Icons.my_library_books), title: const Text("Kütüphane Yönetimi"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => LibraryManagerScreen(allWords: allWords, learningWords: learningWords, learnedWords: learnedWords, toRepeatWords: [...toRepeatWords, ...toSRSRepeatWords], wrongWords: wrongWords, onRename: renameLibrary, onDelete: deleteLibrary, onExport: exportLibrary, onPointsEarned: (points) => recordActivity(points)))); }),
+                
                 ListTile(leading: const Icon(Icons.extension, color: Colors.purpleAccent), title: const Text("Eşleştirme Oyunu"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => MatchGameScreen(words: _activeDeck, isWordNet: selectedLibrary == 'WordNet Veritabanı', onGameFinished: (points) { recordActivity(points); savePreferencesOnly(); }))); }),
                 ListTile(leading: const Icon(Icons.mic, color: Colors.teal), title: const Text("Telaffuz Sınavı"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => PronunciationScreen(words: _activeDeck, isWordNet: selectedLibrary == 'WordNet Veritabanı', onGameFinished: (points) { recordActivity(points); savePreferencesOnly(); }))); }),
                 ListTile(leading: const Icon(Icons.quiz), title: const Text("Quiz Modu"), onTap: () { 
@@ -150,7 +152,7 @@ extension HomeDrawer on _HomeScreenState {
                 
                 const Divider(),
                 ListTile(leading: const Icon(Icons.info_outline, color: Colors.indigo), title: const Text("Nasıl Kullanılır & Özellikler", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => const InfoScreen())); }),
-                ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar (Ham Veri)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); importFile(); }),
+                ListTile(leading: const Icon(Icons.download), title: const Text("İçe Aktar (Sihirbaz)"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); startImportWizard(); }), // ÇÖZÜM: İsim çakışması önlendi
                 ListTile(leading: const Icon(Icons.share), title: const Text("Paylaş / Dışa Aktar"), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); exportLibrary(selectedLibrary); }),
                 ListTile(leading: const Icon(Icons.cloud_upload, color: Colors.blueAccent), title: const Text("Buluta Yedekle", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("SRS, TP, Rozetler ve özel kartları dışa aktar", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); cloudBackupProgress(); }),
                 ListTile(leading: const Icon(Icons.cloud_download, color: Colors.green), title: const Text("Buluttan Geri Yükle", style: TextStyle(fontWeight: FontWeight.bold)), subtitle: const Text("Buluttaki yedeği cihazınıza çekin", style: TextStyle(fontSize: 12)), onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); cloudRestoreProgress(); }),
