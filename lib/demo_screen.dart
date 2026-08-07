@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:isar/isar.dart';
 import 'models.dart';
-import 'main.dart'; 
+import 'core/db_helper.dart';
+import 'core/tts_manager.dart';
 import 'notification_service.dart';
 
 class DemoScreen extends StatefulWidget {
@@ -24,7 +25,6 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 
-  // YENİ: 5 Normal + 5 Mitoz olmak üzere 10 kartlık süper demo destesi
   Future<void> _injectFiveLevelDemoWords() async {
     HapticFeedback.mediumImpact();
     int pastTime = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
@@ -35,14 +35,12 @@ class _DemoScreenState extends State<DemoScreen> {
     });
     
     List<WordModel> demoWords = [
-      // NORMAL KARTLAR (5 SEVİYE)
       WordModel(word: 'Level 1 Normal', meanings: ['Normal L1 Sarı Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 1, nextReviewDate: pastTime, correctCount: 1),
       WordModel(word: 'Level 2 Normal', meanings: ['Normal L2 Mor Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 2, nextReviewDate: pastTime, correctCount: 2),
       WordModel(word: 'Level 3 Normal', meanings: ['Normal L3 Mavi Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 3, nextReviewDate: pastTime, correctCount: 3),
       WordModel(word: 'Level 4 Normal', meanings: ['Normal L4 Turuncu Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 4, nextReviewDate: pastTime, correctCount: 4),
       WordModel(word: 'Level 5 Normal', meanings: ['Normal L5 Yeşil Çerçeve'], examples: ['Bu standart çok anlamlı bir kart.'], libraryName: 'Varsayılan', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 5, nextReviewDate: pastTime, correctCount: 5),
 
-      // MİTOZ KARTLARI (5 SEVİYE) - Özel genetik renkleri ve taçları olacak
       WordModel(word: 'Mitoz L1 Saf', meanings: ['Mitoz L1 Sarı Çerçeve'], examples: ['Bu bölünmüş saf (atomic) bir kart.'], libraryName: '🧬 Mitoz (Demo)', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 1, nextReviewDate: pastTime, correctCount: 1),
       WordModel(word: 'Mitoz L2 Saf', meanings: ['Mitoz L2 Mor Çerçeve'], examples: ['Bu bölünmüş saf (atomic) bir kart.'], libraryName: '🧬 Mitoz (Demo)', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 2, nextReviewDate: pastTime, correctCount: 2),
       WordModel(word: 'Mitoz L3 Saf', meanings: ['Mitoz L3 Mavi Çerçeve'], examples: ['Bu bölünmüş saf (atomic) bir kart.'], libraryName: '🧬 Mitoz (Demo)', level: 'Genel', listType: 'toSRSRepeat', srsLevel: 3, nextReviewDate: pastTime, correctCount: 3),
