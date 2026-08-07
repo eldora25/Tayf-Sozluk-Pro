@@ -34,14 +34,15 @@ class WordModel {
   @Index(type: IndexType.value)
   int nextReviewDate = 0;
 
-  // TTS için Kalıcı Dil Kimliği Parametreleri
   String sourceLanguage = 'en-US';
   String targetLanguage = 'tr-TR';
 
-  // YENİ: WordNet Entegrasyon Parametreleri (Geriye Dönük Uyumluluk İçin Varsayılan Değerli)
   String pos = '';
   List<String> synonyms = [];
   List<String> antonyms = [];
+
+  // YENİ: Mitoz klonlarının atasını takip eden genetik miras parametresi
+  String? rootWord; 
 
   WordModel({
     required this.word,
@@ -59,6 +60,7 @@ class WordModel {
     this.pos = '',
     this.synonyms = const [],
     this.antonyms = const [],
+    this.rootWord,
   });
 
   factory WordModel.fromJson(String jsonString) {
@@ -79,6 +81,13 @@ class WordModel {
       pos: map['pos'] ?? '',
       synonyms: map['synonyms'] != null ? List<String>.from(map['synonyms']) : [],
       antonyms: map['antonyms'] != null ? List<String>.from(map['antonyms']) : [],
+      rootWord: map['rootWord'],
     );
   }
+}
+
+class WrongWordModel {
+  final WordModel wordInfo;
+  final int wrongCount;
+  WrongWordModel({required this.wordInfo, required this.wrongCount});
 }
