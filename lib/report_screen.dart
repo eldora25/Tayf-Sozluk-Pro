@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'logger_screen.dart'; // YENİ: Tüm logları çekmek için eklendi
+import 'logger_screen.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -63,7 +63,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
       if (_includeLogs) {
         reportContent.writeln("SİSTEM LOGLARI:");
-        reportContent.writeln(GlobalLogger.getAllLogs()); // YENİ: Küresel loglar rapora eklendi
+        reportContent.writeln(GlobalLogger.getAllLogs()); 
         reportContent.writeln("------------------------------------------------");
       }
 
