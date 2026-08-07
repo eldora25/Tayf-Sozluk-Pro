@@ -10,9 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
     
-  # YENİ: Firebase Paketleri
-  firebase_core: 
-  cloud_firestore: 
+  firebase_core: any
+  cloud_firestore: any
   
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.3.2
@@ -32,8 +31,14 @@ dependencies:
   permission_handler: ^11.3.0
   image_picker: ^1.1.2
   http: ^1.2.0
-  # ZIP dosyalarını bellekte anlık çözmek için eklenen paket:
   archive: ^3.4.3
+  
+  # YENİ: Faz 3 ve Faz 4 Geliştirmeleri İçin Profesyonel Paketler
+  easy_localization: ^3.0.3     # Çoklu Dil (i18n)
+  sentry_flutter: ^7.14.0       # Gerçek Zamanlı Hata Takibi (Sentry)
+  flutter_riverpod: ^2.4.9      # State Management (Clean Architecture)
+  get_it: ^7.6.4                # Dependency Injection
+  home_widget: ^0.3.1           # Ana Ekran Widget (Günün Kelimesi)
 
 dependency_overrides:
   flutter_plugin_android_lifecycle: 2.0.20
@@ -44,6 +49,7 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   build_runner: ^2.4.13
   isar_generator: ^3.1.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -54,6 +60,5 @@ flutter:
     - assets/Babylon_Turkish_English_donustu.csv
     - assets/ic_launcher.png 
     - assets/Free-KH.txt
-    # Yeni eklenen ZIP dosyası:
     - assets/wordnet/wordnet_data.zip
-    - acd21dcc2efa6d403b570d2bcaa10ef5.webp
+    - assets/biohazardicon.webp # Premium Mitoz İkonu
