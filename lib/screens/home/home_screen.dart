@@ -21,6 +21,7 @@ import '../../core/data_parser.dart';
 import '../../widgets/shimmer_loading.dart';
 import '../../firebase_sync_service.dart';
 import '../../wordnet.dart'; 
+import '../../notification_service.dart'; // EKLENDİ: NotificationService hatası çözüldü
 
 import '../../quiz_screen.dart';
 import '../../add_word_screen.dart';
@@ -38,7 +39,6 @@ import '../../wordnet_search_screen.dart';
 import '../../demo_screen.dart'; 
 import '../../report_screen.dart'; 
 
-// ALT MODÜLLERİ BURAYA BAĞLIYORUZ (Sihir burada gerçekleşiyor!)
 part 'home_logic.dart';
 part 'home_cloud.dart';
 
