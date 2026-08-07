@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'models.dart';
-import 'main.dart'; 
+import 'core/db_helper.dart';
+import 'core/tts_manager.dart'; 
 
 class AddWordScreen extends StatefulWidget {
   final List<String> availableLibraries;
@@ -139,7 +140,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
             child: Form(
               key: _formKey,
               child: ListView(
-                physics: const BouncingScrollPhysics(), // YENİ: Yaylanma efekti
+                physics: const BouncingScrollPhysics(),
                 padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120 + MediaQuery.of(context).padding.bottom),
                 children: [
                   TextFormField(
@@ -270,7 +271,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
                   )),
 
                   const SizedBox(height: 20),
-                  // DÜZELTİLDİ: Taşma sorununu çözmek için isExpanded: true eklendi
                   DropdownButtonFormField<String>(
                     isExpanded: true, 
                     value: _level,
@@ -285,7 +285,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
-                        // DÜZELTİLDİ: Taşma sorununu çözmek için isExpanded: true eklendi ve metin korumaya alındı
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
                           value: _currentLibraries.contains(_library) ? _library : _currentLibraries.first,
