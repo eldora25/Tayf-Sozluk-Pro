@@ -6,7 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart'; 
 import 'package:isar/isar.dart'; 
 import 'models.dart';
-import 'main.dart'; 
+import 'core/db_helper.dart';
+import 'core/tts_manager.dart';
 
 class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -180,7 +181,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _speakText(text, lang);
   }
 
-  // YUKARI KAYAN COMBO EFEKTİ
   void _showComboAnimation(int multiplier, int tp) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
@@ -241,7 +241,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     HapticFeedback.vibrate();
   }
   
-  // YENİ: SABİT, CANLI VE NEON COMBO ROZETİ (Üst Bar İçin)
   Widget _buildLiveComboBadge() {
     if (_combo < 2) return const SizedBox.shrink(); 
     
@@ -893,7 +892,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 10),
             
-            // DÜZELTİLDİ: FittedBox ve Combo Rozeti eklendi, taşma önlendi
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Row(
