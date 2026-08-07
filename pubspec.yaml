@@ -60,3 +60,5 @@ flutter:
     - assets/Free-KH.txt
     - assets/wordnet/wordnet_data.zip
     - assets/biohazardicon.webp
+    - assets/translations/tr-TR.json
+    - assets/translations/en-US.json
