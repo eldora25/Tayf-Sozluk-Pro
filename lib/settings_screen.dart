@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
+import 'core/db_helper.dart';
+import 'core/tts_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   final int currentGoal;
@@ -144,10 +146,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             HapticFeedback.selectionClick();
                             setState(() => _themeIndex = index);
                           },
-                          // DÜZELTİLDİ: AnimatedContainer'ın oluşturduğu negatif değerler sıfırlanıyor (RSOD Çözümü)
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
-                            // Curves.easeOutBack negatif değer (ör: blurRadius -0.2) ürettiği için Curves.easeOut ile değiştirildi.
                             curve: Curves.easeOut, 
                             height: isSelected ? 50 : 42,
                             width: isSelected ? 50 : 42,
@@ -156,7 +156,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               shape: BoxShape.circle,
                               border: isSelected ? Border.all(color: Theme.of(context).primaryColor, width: 3) : Border.all(color: Colors.grey.withOpacity(0.4), width: 1),
                               boxShadow: isSelected 
-                                  // Eğer isSelected true ise pozitif değerler uygulanır, negatif ihtimali ortadan kalkar
                                   ? [BoxShadow(color: _themeColors[index].withOpacity(0.5), blurRadius: 10.0, spreadRadius: 2.0)] 
                                   : const [],
                             ),
@@ -279,10 +278,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   final lib = _library;
                   final lvl = _level;
                   
-                  // YENİ RSOD ÇÖZÜMÜ: Önce sayfayı kapat (unmount işlemi bitsin)
                   Navigator.pop(context);
                   
-                  // Kısa bir beklemeden sonra kök dizindeki temayı ve State'i güncelle
                   Future.delayed(const Duration(milliseconds: 150), () {
                     widget.onSaveSettings(g, t, qc, ti, lib, lvl);
                   });
