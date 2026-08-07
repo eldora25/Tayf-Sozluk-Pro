@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:isar/isar.dart'; 
 import 'models.dart';
 import 'core/db_helper.dart';
-import 'core/tts_manager.dart'; 
 
 class ManageListScreen extends StatefulWidget {
   final String title;
@@ -39,15 +38,31 @@ class _ManageListScreenState extends State<ManageListScreen> {
   String searchQuery = '';
   Timer? _debounceTimer; 
   List<WordModel> _filteredList = [];
+  
+  // YENİ: Sayfalama (Pagination) Değişkenleri
+  final ScrollController _scrollController = ScrollController();
+  int _currentMax = 50; // İlk başta sadece 50 kart yüklenecek
 
   @override
   void initState() {
     super.initState();
     _filteredList = widget.words;
+    
+    // Listenin sonuna yaklaştıkça 50 öğe daha ekle
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+        if (_currentMax < _filteredList.length) {
+          setState(() {
+            _currentMax += 50;
+          });
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _debounceTimer?.cancel(); 
     super.dispose();
   }
@@ -59,6 +74,8 @@ class _ManageListScreenState extends State<ManageListScreen> {
       if (mounted) {
         setState(() {
           searchQuery = query;
+          _currentMax = 50; // Arama değiştiğinde gösterilecek maksimum limiti sıfırla
+          
           if (query.trim().isEmpty) {
             _filteredList = widget.words;
           } else {
@@ -97,6 +114,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
               Navigator.pop(context);
               setState(() {
                 _filteredList = widget.words;
+                _currentMax = 50;
               });
             },
             child: const Text("TÜMÜNÜ ÇIKAR", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -171,7 +189,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
                     }
                     isar.writeTxnSync(() { isar.wordModels.putAllSync(widget.words); });
                     widget.onClearAll(); 
-                    setState(() { _filteredList.clear(); });
+                    setState(() { _filteredList.clear(); _currentMax = 50; });
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Tüm kelimeler '$selectedLib' kütüphanesine taşındı."), backgroundColor: Colors.green));
                   } else {
                     setState(() {
@@ -207,11 +225,11 @@ class _ManageListScreenState extends State<ManageListScreen> {
   Widget _buildAnimatedItem(BuildContext context, int index, Widget child) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (min<int>(index, 10) * 50)), 
+      duration: Duration(milliseconds: 200 + (min<int>(index % 10, 10) * 30)), 
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
-          offset: Offset(0, 50 * (1 - value)),
+          offset: Offset(0, 20 * (1 - value)),
           child: Opacity(
             opacity: value.clamp(0.0, 1.0),
             child: child,
@@ -441,6 +459,7 @@ class _ManageListScreenState extends State<ManageListScreen> {
 
     return Scaffold(
       body: CustomScrollView(
+        controller: _scrollController, // YENİ: Sonsuz sayfalama (Pagination) dinleyicisi eklendi
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
@@ -488,9 +507,20 @@ class _ManageListScreenState extends State<ManageListScreen> {
             : SliverList(
                 delegate: SliverChildBuilderDelegate(
                   _buildListItem,
-                  childCount: _filteredList.length,
+                  childCount: min(_filteredList.length, _currentMax), // YENİ: Pagination RAM koruması
                 ),
               ),
+          
+          // YENİ: Listenin sonunda daha fazla yüklenebilecek kelime varsa Loading göstergesi çıkar
+          if (_currentMax < _filteredList.length)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                child: Center(
+                  child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                ),
+              ),
+            ),
         ],
       ),
     );
