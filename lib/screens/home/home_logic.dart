@@ -5,7 +5,6 @@ extension HomeLogic on _HomeScreenState {
     _activeDeck.clear();
     _cardMistakes.clear();
 
-    // 1. GLOBAL SRS MANTIĞI: Eğer ayar açıksa tüm kütüphanelerden süresi gelenleri ana havuza çek
     List<WordModel> urgent = [];
     if (_globalSrs) {
       urgent.addAll(toSRSRepeatWords);
@@ -21,7 +20,6 @@ extension HomeLogic on _HomeScreenState {
     }
     urgent.shuffle();
 
-    // 2. YENİ KELİMELERİ (Seçili Kütüphaneden) ÇEK
     List<WordModel> newWords = [];
     if (selectedLibrary == 'WordNet Veritabanı') {
       List<int> allWordNetIds = await isar.wordModels.filter().libraryNameEqualTo('WordNet Veritabanı').idProperty().findAll();
@@ -201,7 +199,7 @@ extension HomeLogic on _HomeScreenState {
           _isAppLoading = true;
           _loadingText = "Devasa WordNet veritabanından en iyi kelimeler hazırlanıyor, lütfen sabırlı olun...";
         });
-        await Future.delayed(const Duration(milliseconds: 100)); // UI yenilemesi için küçük bekleme
+        await Future.delayed(const Duration(milliseconds: 800)); 
       }
 
       await buildActiveDeck();
