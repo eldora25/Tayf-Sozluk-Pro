@@ -488,17 +488,6 @@ class _TayfSozlukAppState extends State<TayfSozlukApp> {
       default: return ThemeData.dark().copyWith(textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme), pageTransitionsTheme: smoothTransitions);
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Lexis Eldora',
-      debugShowCheckedModeBanner: false,
-      theme: _getTheme(),
-      themeAnimationDuration: const Duration(milliseconds: 300), 
-      home: HomeScreen(themeIndex: themeIndex, onThemeChanged: _toggleTheme),
-    );
-  }
 }
 
 class HomeScreen extends StatefulWidget {
@@ -2069,7 +2058,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _nextCard(increment: false);
   }
 
-  // YENİ: KARA LİSTE FONKSİYONU (MADDE 7)
+  // YENİ EKLENEN KARA LİSTE METODU (MADDE 7)
   void _moveToBlacklist(WordModel word) {
     HapticFeedback.heavyImpact();
     setState(() {
@@ -2620,7 +2609,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         }
                       ),
 
-                      // YENİ: KARA LİSTE ÇEKMECE MENÜSÜ (Madde 7)
+                      // KARA LİSTE ÇEKMECE MENÜSÜ
                       ListTile(
                         leading: const Icon(Icons.dangerous, color: Colors.redAccent), 
                         title: const Text("Bir daha görmek istemiyorum", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)), 
@@ -3037,7 +3026,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     ),
                                     const SizedBox(width: 12),
                                     
-                                    // YENİ: KARANTİNA VE BİOHAZARD BUTONU BİRLEŞİMİ (MADDE 7)
+                                    // BİOHAZARD BUTONU EKLENTİSİ (Madde 7)
                                     Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
