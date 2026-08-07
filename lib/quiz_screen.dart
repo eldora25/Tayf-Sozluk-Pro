@@ -14,7 +14,7 @@ class QuizScreen extends StatefulWidget {
   final int threshold;
   final int questionCount;
   final bool isWordNet; 
-  final bool isLowPowerMode; // YENİ: Düşük Güç (Performans) Modu
+  final bool isLowPowerMode; 
   
   final int currentBestTime;
   final int currentBestCorrect;
@@ -31,7 +31,7 @@ class QuizScreen extends StatefulWidget {
     required this.isWordNet,
     required this.currentBestTime,
     required this.currentBestCorrect,
-    required this.isLowPowerMode, // EKLENDİ
+    required this.isLowPowerMode, 
     required this.onWordMastered,
     required this.onWrongWord,
     required this.onQuizFinished,
@@ -60,7 +60,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   int _secondsElapsed = 0;
   bool isQuizFinished = false;
   bool isAudioEnabled = true;
-  bool _isStatsSaved = false; // ÇÖZÜM: Verilerin çift kaydedilmesini engeller
+  bool _isStatsSaved = false; 
   
   int _sessionEarnedTP = 0; 
   int _currentQuestionAttempts = 0; 
@@ -137,7 +137,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     });
   }
 
-  // ÇÖZÜM: TP Gecikme Sorunu. Kullanıcı cihazın geri tuşuna basarsa veriler pop olmadan önce anında kaydedilir.
   void _finalizeQuizAndPop() {
     if (!_isStatsSaved && answeredQuestions > 0) {
       _isStatsSaved = true;
@@ -1056,7 +1055,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       );
   }
 
-  // Modüler hale getirilmiş Kart İçeriği
   Widget _buildQuestionCardContent() {
     return Container(
       width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
@@ -1096,7 +1094,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
               ),
             ),
 
-          // YENİ PREMİUM YUVARLAK BİOHAZARD İKONU (Quiz Ekranı İçin)
           if (currentWord.libraryName.startsWith('\u{1F9EC}') && !_isCurrentWordNet)
             Padding(
               padding: const EdgeInsets.only(top: 24.0),
