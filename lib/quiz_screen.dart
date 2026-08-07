@@ -5,9 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:lottie/lottie.dart'; 
 import 'package:isar/isar.dart'; 
+import 'package:sentry_flutter/sentry_flutter.dart'; // YENİ: Sentry Entegrasyonu
 import 'models.dart';
 import 'core/db_helper.dart';
 import 'core/tts_manager.dart';
+import 'core/locator.dart'; // YENİ: GetIt Locator
+import 'widgets/premium_word_card.dart'; // YENİ: Parçalanmış Kart Widget'ı
+import 'logger_screen.dart'; // YENİ: GlobalLogger İçin
 
 class QuizScreen extends StatefulWidget {
   final List<WordModel> words;
@@ -86,6 +90,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   String? _lastWrongOption; 
   
   bool _isCurrentWordNet = false;
+  
+  // YENİ: GetIt ile çağırılan TtsManager
+  final TtsManager _ttsManager = locator<TtsManager>();
 
   @override
   void initState() {
@@ -94,40 +101,46 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
 
-    List<WordModel> reviewPool = widget.words.where((w) => w.listType == 'toRepeat' || w.wrongCount > 0).toList();
-    reviewPool.sort((a, b) => b.wrongCount.compareTo(a.wrongCount)); 
+    try {
+      List<WordModel> reviewPool = widget.words.where((w) => w.listType == 'toRepeat' || w.wrongCount > 0).toList();
+      reviewPool.sort((a, b) => b.wrongCount.compareTo(a.wrongCount)); 
 
-    List<WordModel> newPool = widget.words.where((w) => w.listType == 'all' && w.wrongCount == 0).toList();
-    newPool.shuffle();
+      List<WordModel> newPool = widget.words.where((w) => w.listType == 'all' && w.wrongCount == 0).toList();
+      newPool.shuffle();
 
-    int targetReviewCount = (widget.questionCount * 0.4).round();
-    int targetNewCount = widget.questionCount - targetReviewCount;
+      int targetReviewCount = (widget.questionCount * 0.4).round();
+      int targetNewCount = widget.questionCount - targetReviewCount;
 
-    List<WordModel> selectedReview = [];
-    List<WordModel> selectedNew = [];
+      List<WordModel> selectedReview = [];
+      List<WordModel> selectedNew = [];
 
-    if (reviewPool.length <= targetReviewCount) {
-      selectedReview = reviewPool;
-      targetNewCount = widget.questionCount - selectedReview.length; 
-      selectedNew = newPool.take(targetNewCount).toList();
-    } else {
-      selectedReview = reviewPool.take(targetReviewCount).toList()..shuffle(); 
-      selectedNew = newPool.take(targetNewCount).toList();
-    }
+      if (reviewPool.length <= targetReviewCount) {
+        selectedReview = reviewPool;
+        targetNewCount = widget.questionCount - selectedReview.length; 
+        selectedNew = newPool.take(targetNewCount).toList();
+      } else {
+        selectedReview = reviewPool.take(targetReviewCount).toList()..shuffle(); 
+        selectedNew = newPool.take(targetNewCount).toList();
+      }
 
-    quizWords = [...selectedReview, ...selectedNew];
-    
-    if (quizWords.length < widget.questionCount) {
-      var remaining = widget.words.where((w) => !quizWords.contains(w)).toList()..shuffle();
-      quizWords.addAll(remaining.take(widget.questionCount - quizWords.length));
-    }
-    
-    quizWords.shuffle(); 
-    totalQuestions = quizWords.length;
+      quizWords = [...selectedReview, ...selectedNew];
+      
+      if (quizWords.length < widget.questionCount) {
+        var remaining = widget.words.where((w) => !quizWords.contains(w)).toList()..shuffle();
+        quizWords.addAll(remaining.take(widget.questionCount - quizWords.length));
+      }
+      
+      quizWords.shuffle(); 
+      totalQuestions = quizWords.length;
 
-    if (totalQuestions > 0) {
-      _startTimer();
-      _generateQuestion();
+      if (totalQuestions > 0) {
+        _startTimer();
+        _generateQuestion();
+      }
+    } catch (e, stackTrace) {
+      // YENİ: Sentry'ye hata bildirme
+      Sentry.captureException(e, stackTrace: stackTrace);
+      GlobalLogger.addLog("Quiz Başlatma Hatası: $e");
     }
   }
 
@@ -148,7 +161,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _timer?.cancel();
-    globalTts.stop(); 
+    _ttsManager.stop(); // YENİ: GetIt kullanılarak durduruldu
     _entranceController.dispose();
     _shakeController.dispose();
     _scaleController.dispose();
@@ -169,15 +182,16 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   Future<void> _speakText(String text, String languageCode) async {
     if (!isAudioEnabled) return;
     try {
-      await globalTts.stop(); 
+      await _ttsManager.stop(); 
       String cleanText = text.replaceAll(RegExp(r'\[ID:[a-zA-Z0-9\-]+\]'), '')
                              .replaceAll(RegExp(r'[\[\]\{\}\\|_»•:;*+><=~]'), ' ')
                              .trim();
-      globalTts.setLanguage(languageCode);
-      globalTts.setSpeechRate(0.45); 
-      globalTts.speak(cleanText);
-    } catch (e) {
-      debugPrint("TTS Error: $e");
+      _ttsManager.setLanguage(languageCode);
+      _ttsManager.setSpeechRate(0.45); 
+      _ttsManager.speak(cleanText);
+    } catch (e, stackTrace) {
+      Sentry.captureException(e, stackTrace: stackTrace); // YENİ: Sentry'e at
+      GlobalLogger.addLog("TTS Error: $e");
     }
   }
 
@@ -596,7 +610,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                    existingMitosisCard = mWord; break;
                 }
               }
-            } catch(e) {}
+            } catch(e) { 
+              Sentry.captureException(e); // YENİ
+              GlobalLogger.addLog("Arama hatası: $e"); 
+            }
 
             if (existingMitosisCard != null) {
               existingMitosisCard.correctCount++;
@@ -699,7 +716,9 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                    existingMitosisCard = mWord; break;
                 }
               }
-            } catch(e) {}
+            } catch(e) {
+              Sentry.captureException(e); // YENİ
+            }
 
             if (existingMitosisCard != null) {
               existingMitosisCard.wrongCount++;
@@ -968,10 +987,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             child: widget.isLowPowerMode
-                            ? _buildQuestionCardContent()
+                            ? _buildQuestionCardContent() // ÇÖZÜM: Parçalanmış Kart
                             : BackdropFilter(
                                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                child: _buildQuestionCardContent()
+                                child: _buildQuestionCardContent() // ÇÖZÜM: Parçalanmış Kart
                               ),
                           ),
                         ),
@@ -1110,7 +1129,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                     ),
                     child: ClipOval(
                       child: Image.asset(
-                        'assets/biohazardicon.webp',
+                        'assets/acd21dcc2efa6d403b570d2bcaa10ef5.jpg',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.coronavirus, color: Colors.yellowAccent, size: 24),
                       ),
