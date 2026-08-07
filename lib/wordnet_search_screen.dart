@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:isar/isar.dart';
 import 'models.dart';
 import 'main.dart';
+import 'core/db_helper.dart';
 
 class WordNetSearchScreen extends StatefulWidget {
   final List<WordModel> words;
